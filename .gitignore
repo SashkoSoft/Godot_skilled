@@ -1,0 +1,26 @@
+# --- Движок и большие внешние клоны (восстанавливаются скриптом, см. docs/fetch_docs.sh) ---
+# Бинарник Godot 178 МБ — больше лимита GitHub на файл (100 МБ).
+Godot_v*_win64.exe
+Godot_v*_win64_console.exe
+Godot_v*.zip
+
+# Клоны официальных репозиториев (~970 МБ, своя история git внутри).
+docs/godot-docs/
+docs/godot-demo-projects/
+
+# --- Godot-проект ---
+.godot/
+build/
+*.tmp
+export_presets.cfg.bak
+
+# --- Временное ---
+*.log
+shots/
+__pycache__/
+
+# --- Houdini ---
+*.hip.bak
+*.hiplc.bak
+backup/
+houdini_temp/

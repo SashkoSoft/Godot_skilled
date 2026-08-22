@@ -1,0 +1,19 @@
+# Перевод строк
+* text=auto
+
+# Скрипты для bash должны остаться с LF, иначе ломается shebang
+*.sh text eol=lf
+
+# Скрипты PowerShell и файлы Godot — CRLF на Windows
+*.ps1 text eol=crlf
+
+# Бинарные ассеты не трогать
+*.glb binary
+*.png binary
+*.exr binary
+*.hdr binary
+*.webp binary
+*.wav binary
+*.ogg binary
+*.hip binary
+*.hiplc binary
