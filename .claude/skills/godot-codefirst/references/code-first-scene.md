@@ -20,7 +20,7 @@ func _ready() -> void:
     _setup_scene()   # WorldEnvironment, солнце, камера — создаются ОДИН раз
     _build_ui()      # CanvasLayer'ы, живут через все перестройки мира
     _regenerate()    # собственно мир (может вызываться повторно)
-    _shot_if_asked() # dev-харнесс, всегда последним (см. «Цикл разработки и проверки» в SKILL.md)
+    _shot_if_asked() # dev-харнесс, всегда последним (харнесс: godot-selfcheck-3d/references/self-test-harness.md)
 ```
 
 Разделяй «создаётся один раз» и «пересобирается»:
