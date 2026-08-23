@@ -20,9 +20,13 @@ if [ $# -ge 1 ]; then
 	[ -d "$SRC" ] || { echo "Нет такой папки: $SRC"; exit 1; }
 	rm -rf "$PROJ/incoming"
 	mkdir -p "$PROJ/incoming"
-	# .md и превью не проверяем — только сами ассеты
+	# Копируем только сами ассеты: соседние .tres/.tscn/.gd тянут ссылки по UID
+	# и ломают импорт всей папки — проверено на демо-проектах.
 	find "$SRC" -maxdepth 1 -type f \
-		! -name '*.md' ! -name 'preview.*' ! -name '*.import' \
+		\( -iname '*.glb' -o -iname '*.gltf' -o -iname '*.obj' -o -iname '*.dae' -o -iname '*.fbx' \
+		-o -iname '*.png' -o -iname '*.webp' -o -iname '*.exr' -o -iname '*.hdr' -o -iname '*.tga' \
+		-o -iname '*.wav' -o -iname '*.ogg' -o -iname '*.mp3' \) \
+		! -iname 'preview.*' \
 		-exec cp {} "$PROJ/incoming/" \;
 	echo "Скопировано в incoming/: $(ls -1 "$PROJ/incoming" | wc -l) файл(ов)"
 fi
