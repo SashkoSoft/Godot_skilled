@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git pull:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git mv:*)",
+      "Bash(git rm:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(bash pipeline/status.sh:*)",
+      "Bash(python:*)",
+      "Bash(curl:*)"
+    ]
+  }
+}
