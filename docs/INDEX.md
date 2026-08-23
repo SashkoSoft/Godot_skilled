@@ -11,6 +11,9 @@ build `5b4e0cb0f`). Актуальный патч на момент сборки
 | `docs/godot-docs/classes/` | Полный API-референс движка (сгенерирован из исходников) | 1079 классов |
 | `docs/godot-demo-projects/` | Официальные демо-проекты (ветка `master`, рабочий код на GDScript и C#) | ~120 проектов |
 | `docs/GODOT_4.7_NOTES.md` | Выжимка: что изменилось в 4.6 и 4.7, новые дефолты, грабли | — |
+| `docs/ECOSYSTEM.md` | Сторонние ресурсы: что актуально под 4.7, лицензии, что взято локально | — |
+| `docs/ecosystem/` | Клоны: awesome-godot, phantom-camera, персонажи GDQuest, 2D-билдер | ~77 МБ |
+| `tools/asset_check/` | Паспорт присланного ассета: габариты, полигонаж, анимации, замечания | — |
 | `docs/CHEATSHEET.md` | Типовые паттерны GDScript + CLI движка | — |
 
 Обновить документацию: `git -C docs/godot-docs pull` и `git -C docs/godot-demo-projects pull`.

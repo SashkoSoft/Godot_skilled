@@ -24,3 +24,6 @@ __pycache__/
 *.hiplc.bak
 backup/
 houdini_temp/
+
+# Клоны экосистемы (docs/ECOSYSTEM.md, восстановление: docs/fetch_ecosystem.sh)
+docs/ecosystem/
