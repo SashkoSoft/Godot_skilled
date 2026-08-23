@@ -23,12 +23,15 @@ get() { # get <owner/repo> <папка> <описание>
 # --- базовый набор ---
 get godotengine/awesome-godot            awesome-godot           "каталог плагинов и шаблонов"
 get ramokz/phantom-camera                phantom-camera          "камера, аналог Cinemachine, MIT"
-get gdquest-demos/godot-4-3D-Characters  godot-4-3D-Characters   "анимированные персонажи, проект на 4.7; арт CC-BY-NC-SA"
 get gdquest-demos/godot-2d-builder       godot-2d-builder        "2D-симуляция: инвентарь, сетка, drag-and-drop, MIT"
+
+# НЕ тянем: арт GDQuest под CC-BY-NC-SA (некоммерческая + share-alike).
+#   gdquest-demos/godot-4-3D-Characters, gdquest-demos/godot-4-3d-third-person-controller
+# Их код под MIT, но модели и текстуры в релиз брать нельзя. Нужен эталон структуры —
+# смотреть на github, в рабочее окружение не класть.
 
 # --- тяжёлое и по потребности ---
 if [ "${1:-}" = "--all" ]; then
-	get gdquest-demos/godot-4-3d-third-person-controller  godot-4-3d-third-person-controller  "TPS-контроллер, ~390 МБ"
 	get dialogic-godot/dialogic                           dialogic                            "диалоги и визуальные новеллы, 2.0-alpha"
 	get TokisanGames/Terrain3D                            Terrain3D                           "ландшафт; стабильный релиз заявляет 4.4-4.6, под 4.7 нужен main"
 fi
