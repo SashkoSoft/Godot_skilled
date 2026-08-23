@@ -24,6 +24,8 @@ func _init() -> void:
 				problems.append_array(_inspect_scene(path))
 			"png", "webp", "exr", "hdr", "svg", "tga":
 				problems.append_array(_inspect_image(path))
+			"wav", "ogg", "mp3":
+				problems.append_array(_inspect_audio(path))
 			_:
 				print("  тип не проверяется")
 
@@ -168,3 +170,47 @@ func _inspect_image(path: String) -> Array[String]:
 
 func _is_pow2(v: int) -> bool:
 	return v > 0 and (v & (v - 1)) == 0
+
+
+func _inspect_audio(path: String) -> Array[String]:
+	var problems: Array[String] = []
+	var stream := load(path)
+	if stream == null:
+		problems.append("%s: не загружается" % path.get_file())
+		print("  ОШИБКА: не загружается")
+		return problems
+	if not (stream is AudioStream):
+		print("  не аудио: %s" % stream.get_class())
+		return problems
+
+	var length: float = (stream as AudioStream).get_length()
+	print("  длительность: %.2f с" % length)
+
+	var fname := path.get_file().to_lower()
+	var looks_looping := fname.contains("loop") or fname.contains("ambient") or fname.contains("music")
+
+	if stream is AudioStreamWAV:
+		var w := stream as AudioStreamWAV
+		var fmt := ["8-bit", "16-bit", "IMA ADPCM", "Quite OK Audio"]
+		print("  WAV: %s, %d Гц, %s" % [
+			fmt[w.format] if w.format < fmt.size() else str(w.format),
+			w.mix_rate,
+			"стерео" if w.stereo else "моно",
+		])
+		print("  зацикливание: %s" % ("нет" if w.loop_mode == AudioStreamWAV.LOOP_DISABLED else "да (%d..%d сэмпл)" % [w.loop_begin, w.loop_end]))
+		if w.format == AudioStreamWAV.FORMAT_8_BITS:
+			problems.append("%s: 8 бит — заметная потеря качества, нужно 16" % path.get_file())
+		if w.mix_rate < 22050:
+			problems.append("%s: частота %d Гц — низковато, ожидается 44100 или 48000" % [path.get_file(), w.mix_rate])
+		if w.stereo:
+			problems.append("%s: стерео — для звука в 3D-точке нужен моно, иначе панорама не работает" % path.get_file())
+		if looks_looping and w.loop_mode == AudioStreamWAV.LOOP_DISABLED:
+			problems.append("%s: по имени это зацикленный звук, но loop_mode выключен" % path.get_file())
+	else:
+		print("  формат: %s" % stream.get_class())
+
+	if length > 30.0 and not looks_looping:
+		problems.append("%s: %.0f с — длинновато для SFX, для музыки используйте .ogg" % [path.get_file(), length])
+	if length < 0.01:
+		problems.append("%s: длительность почти нулевая" % path.get_file())
+	return problems
