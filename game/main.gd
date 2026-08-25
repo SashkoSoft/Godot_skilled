@@ -22,6 +22,7 @@ var _shot_frames: int = SHOT_DEFAULT_FRAMES
 var _shot_yaw_deg: float = -1.0
 var _start_floor: int = 0
 var _walk_test := false
+var _walk_route := "stairs"
 var _route: Array[Vector3] = []
 var _route_i := 0
 var _route_time := 0.0
@@ -98,7 +99,9 @@ func _build_world() -> void:
 	gmat.albedo_color = Color(0.31, 0.33, 0.28)
 	gmat.roughness = 1.0
 	gm.material_override = gmat
-	ground.position.y = -0.2
+	# Земля ниже пола дома: при совпадении верхних граней получается
+	# z-fighting — пол мерцает. Порог в 15 см игрок перешагивает (step-up).
+	ground.position.y = -0.35
 	ground.add_child(gm)
 	var gs := CollisionShape3D.new()
 	var gbox := BoxShape3D.new()
@@ -126,16 +129,27 @@ func _build_world() -> void:
 	rig.snap()
 
 	if _walk_test:
-		# Маршрут: старт -> коридор -> комната с лестницей -> низ лестницы -> верх.
-		_route = [
-			Vector3(1.0, 0, 3.4),      # проём в перегородке z=2.6
-			Vector3(2.5, 0, -1.0),     # к проёму в перегородке z=-2.0
-			Vector3(4.5, 0, -1.2),     # к проёму напротив лестницы
-			Vector3(4.5, 0, -2.3),     # встать перед первой ступенью
-			Vector3(4.5, 3, -6.6),     # подъём на второй этаж
-			Vector3(6.6, 3, -7.2),     # сойти с лестницы на площадку
-			Vector3(0.0, 3, -6.0),     # пройти вглубь второго этажа
-		]
+		# У автопрохода нет поиска пути — он идёт по прямой, поэтому маршруты
+		# заданы по точкам и разделены по проверяемому сценарию.
+		match _walk_route:
+			"outdoor":
+				# порог у входа: игрок должен выйти на улицу и вернуться
+				_route = [
+					Vector3(0.5, 0, 6.0),
+					Vector3(0.5, 0, 11.0),
+					Vector3(0.5, 0, 6.5),
+				]
+			_:
+				# путь до лестницы и подъём на второй этаж
+				_route = [
+					Vector3(1.0, 0, 3.4),
+					Vector3(2.5, 0, -1.0),
+					Vector3(4.5, 0, -1.2),
+					Vector3(4.5, 0, -2.3),
+					Vector3(4.5, 3, -6.6),
+					Vector3(6.6, 3, -7.2),
+					Vector3(0.0, 3, -6.0),
+				]
 		player.auto_target = _route[0]
 
 	occ = Occlusion.new()
@@ -185,8 +199,10 @@ func _parse_args() -> void:
 			_shot_yaw_deg = float(a.substr(11))
 		elif a.begins_with("--start-floor="):
 			_start_floor = int(a.substr(14))
-		elif a == "--walk-test":
+		elif a == "--walk-test" or a.begins_with("--walk-test="):
 			_walk_test = true
+			if a.contains("="):
+				_walk_route = a.split("=")[1]
 
 
 func _take_shot() -> void:
