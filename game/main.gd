@@ -143,8 +143,10 @@ func _build_world() -> void:
 			_:
 				# путь по лестничной клетке: два марша с разворотом на каждый этаж
 				_route = [
-					Vector3(1.0, 0, 3.4),
-					Vector3(3.3, 0, -1.5),
+					Vector3(-1.5, 0, 2.0),     # к проёму в перегородке квартиры
+					Vector3(-1.5, 0, -1.5),    # прошли в прихожую
+					Vector3(1.2, 0, -3.2),     # входная дверь квартиры
+					Vector3(3.3, 0, -3.2),     # вышли на этажную площадку
 				]
 				for f in _floors - 1:
 					var y := f * 3.0
@@ -152,6 +154,11 @@ func _build_world() -> void:
 					_route.append(Vector3(2.6, y + 1.5, -6.6))    # промежуточная площадка
 					_route.append(Vector3(4.0, y + 1.5, -6.6))    # разворот на второй марш
 					_route.append(Vector3(4.0, y + 3.0, -4.3))    # выход на следующий этаж
+				# на верхнем этаже — войти в квартиру с площадки
+				var top := (_floors - 1) * 3.0
+				_route.append(Vector3(3.3, top, -3.2))            # к двери квартиры
+				_route.append(Vector3(1.0, top, -3.2))            # вошли в квартиру
+				_route.append(Vector3(-1.5, top, -1.0))           # прошли вглубь
 		player.auto_target = _route[0]
 
 	occ = Occlusion.new()

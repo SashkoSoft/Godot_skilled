@@ -19,6 +19,9 @@ const BAY_Z_NEAR := -4.1      ## ближний край: отсюда вход�
 const FLIGHT_RUN := 2.2       ## горизонтальная длина одного марша
 const FLIGHT_W := 1.2         ## ширина марша
 const STEPS_PER_FLIGHT := 7
+const BAY_Z_LANDING := -2.0   ## где кончается подъезд: за ним квартира
+const APT_DOOR_Z := -3.2      ## двери квартир — на этажной площадке
+const FLAT_DOOR_W := 1.1
 const DOOR_W := 1.2
 const DOOR_H := 2.1
 
@@ -110,18 +113,35 @@ func _build_floor(f: int, with_stairs: bool = true) -> void:
 	_slab(f, false)                    # пол этажа
 
 	var half := SIZE * 0.5
-	# Внешние стены: одна сплошная, остальные с оконными проёмами.
+	var bay_mid := (BAY_X0 + BAY_X1) * 0.5
+
+	# Внешние стены. В торце подъезда — вход с улицы (на первом этаже)
+	# и окно лестничной клетки на остальных.
 	_wall_run(f, Vector3(-half, y, 0), Vector3(0, 0, 1), SIZE, [Vector2(-4.0, 1.8), Vector2(3.0, 1.8)])
 	_wall_run(f, Vector3(half, y, 0), Vector3(0, 0, 1), SIZE, [Vector2(-4.5, 1.8), Vector2(2.5, 1.8)])
-	_wall_run(f, Vector3(0, y, -half), Vector3(1, 0, 0), SIZE, [Vector2(-3.0, 1.8), Vector2(2.0, 1.8)])
+	_wall_run(f, Vector3(0, y, -half), Vector3(1, 0, 0), SIZE,
+			[Vector2(-4.0, 1.8), Vector2(bay_mid, 1.6)])
 	_wall_run(f, Vector3(0, y, half), Vector3(1, 0, 0), SIZE, [Vector2(0.5, 1.8)])
 
-	# Внутренние перегородки. Проём напротив лестницы обязателен:
-	# иначе к ней просто не подойти.
-	_wall_run(f, Vector3(0, y, -2.0), Vector3(1, 0, 0), SIZE,
-			[Vector2(-4.5, DOOR_W), Vector2((BAY_X0 + BAY_X1) * 0.5, BAY_X1 - BAY_X0)], true)
-	_wall_run(f, Vector3(0, y, 3.0), Vector3(1, 0, 0), SIZE, [Vector2(1.0, DOOR_W)], true)
-	_wall_run(f, Vector3(-2.0, y, -5.0), Vector3(0, 0, 1), 6.0, [Vector2(1.5, DOOR_W)], true)
+	# --- Подъезд: общая лестничная клетка + этажная площадка ---
+	# Полоса x[BAY_X0..BAY_X1] от торцевой стены до z = BAY_Z_LANDING.
+	var bay_len := BAY_Z_LANDING + half
+	var bay_center_z := (-half + BAY_Z_LANDING) * 0.5
+	# Стены подъезда с входными дверями в квартиры.
+	_wall_run(f, Vector3(BAY_X0, y, bay_center_z), Vector3(0, 0, 1), bay_len,
+			[Vector2(APT_DOOR_Z - bay_center_z, FLAT_DOOR_W)], true)
+	_wall_run(f, Vector3(BAY_X1, y, bay_center_z), Vector3(0, 0, 1), bay_len,
+			[Vector2(APT_DOOR_Z - bay_center_z, FLAT_DOOR_W)], true)
+	# Торец подъезда — глухая стена, отделяющая его от квартиры.
+	_wall_run(f, Vector3(bay_mid, y, BAY_Z_LANDING), Vector3(1, 0, 0),
+			BAY_X1 - BAY_X0, [] as Array[Vector2], true)
+
+	# --- Перегородки внутри квартир ---
+	# Левая квартира
+	_wall_run(f, Vector3(-3.0, y, 0.0), Vector3(1, 0, 0), 10.0, [Vector2(1.5, DOOR_W)], true)
+	_wall_run(f, Vector3(-3.0, y, -4.0), Vector3(0, 0, 1), 8.0, [Vector2(2.0, DOOR_W)], true)
+	# Правая квартира
+	_wall_run(f, Vector3(6.3, y, 0.0), Vector3(1, 0, 0), 3.4, [Vector2(0.6, DOOR_W)], true)
 
 	if f > 0:
 		_stairwell_hole(f)
