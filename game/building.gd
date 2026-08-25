@@ -8,7 +8,14 @@ extends Node3D
 
 const FLOOR_HEIGHT := 3.0     ## высота этажа в метрах
 const WALL_THICK := 0.2
-const SIZE := 12.0            ## дом 12x12 м
+const SIZE := 16.0            ## дом 16x16 м
+## Лестница: положение и габариты марша. Из них же считается проём
+## в перекрытии и площадка наверху — иначе со ступеней некуда выйти.
+const STAIR_X := 4.5
+const STAIR_W := 1.5
+const STAIR_Z0 := -2.4        ## низ марша (со стороны комнаты)
+const STAIR_RUN := 4.2        ## горизонтальная длина: угол ~36°
+const LANDING := 1.4          ## глубина площадки за верхом марша
 const DOOR_W := 1.2
 const DOOR_H := 2.1
 
@@ -100,17 +107,18 @@ func _build_floor(f: int, with_stairs: bool = true) -> void:
 	_slab(f, false)                    # пол этажа
 
 	var half := SIZE * 0.5
-	# Внешние стены: две сплошные, две с оконными проёмами.
-	_wall_run(f, Vector3(-half, y, 0), Vector3(0, 0, 1), SIZE, [] as Array[Vector2])
-	_wall_run(f, Vector3(half, y, 0), Vector3(0, 0, 1), SIZE, [Vector2(-3.4, 1.6), Vector2(2.2, 1.6)])
-	_wall_run(f, Vector3(0, y, -half), Vector3(1, 0, 0), SIZE, [Vector2(-2.0, 1.6), Vector2(3.0, 1.6)])
-	_wall_run(f, Vector3(0, y, half), Vector3(1, 0, 0), SIZE, [Vector2(0.5, 1.6)])
+	# Внешние стены: одна сплошная, остальные с оконными проёмами.
+	_wall_run(f, Vector3(-half, y, 0), Vector3(0, 0, 1), SIZE, [Vector2(-4.0, 1.8), Vector2(3.0, 1.8)])
+	_wall_run(f, Vector3(half, y, 0), Vector3(0, 0, 1), SIZE, [Vector2(-4.5, 1.8), Vector2(2.5, 1.8)])
+	_wall_run(f, Vector3(0, y, -half), Vector3(1, 0, 0), SIZE, [Vector2(-3.0, 1.8), Vector2(2.0, 1.8)])
+	_wall_run(f, Vector3(0, y, half), Vector3(1, 0, 0), SIZE, [Vector2(0.5, 1.8)])
 
-	# Внутренние перегородки: коридор по центру + две комнаты, проёмы дверные.
-	# Проём напротив лестницы обязателен: иначе к ней просто не подойти.
-	_wall_run(f, Vector3(0, y, -2.0), Vector3(1, 0, 0), SIZE, [Vector2(-3.5, DOOR_W), Vector2(4.5, 1.6)], true)
-	_wall_run(f, Vector3(0, y, 2.6), Vector3(1, 0, 0), SIZE, [Vector2(1.0, DOOR_W)], true)
-	_wall_run(f, Vector3(-1.5, y, -4.3), Vector3(0, 0, 1), 4.6, [] as Array[Vector2], true)
+	# Внутренние перегородки. Проём напротив лестницы обязателен:
+	# иначе к ней просто не подойти.
+	_wall_run(f, Vector3(0, y, -2.0), Vector3(1, 0, 0), SIZE,
+			[Vector2(-4.5, DOOR_W), Vector2(STAIR_X, 1.8)], true)
+	_wall_run(f, Vector3(0, y, 3.0), Vector3(1, 0, 0), SIZE, [Vector2(1.0, DOOR_W)], true)
+	_wall_run(f, Vector3(-2.0, y, -5.0), Vector3(0, 0, 1), 6.0, [Vector2(1.5, DOOR_W)], true)
 
 	if f > 0:
 		_stairwell_hole(f)
@@ -195,9 +203,16 @@ func _stairwell_hole(f: int) -> void:
 			(by_floor[f] as Array).erase(body)
 			body.queue_free()
 	var y := f * FLOOR_HEIGHT
+	var top_z := STAIR_Z0 - STAIR_RUN          # где марш выходит на этаж
+	var x0 := STAIR_X - STAIR_W * 0.5 - 0.4    # края проёма с запасом
+	var x1 := SIZE * 0.5
 	var pieces: Array[Rect2] = [
-		Rect2(Vector2(-6, -6), Vector2(9, 12)),
-		Rect2(Vector2(3, -1), Vector2(3, 7)),
+		# всё, что левее лестницы
+		Rect2(Vector2(-SIZE * 0.5, -SIZE * 0.5), Vector2(x0 + SIZE * 0.5, SIZE)),
+		# правее лестницы, ближняя часть
+		Rect2(Vector2(x0, STAIR_Z0 + 1.2), Vector2(x1 - x0, SIZE * 0.5 - STAIR_Z0 - 1.2)),
+		# ПЛОЩАДКА за верхом марша — без неё со ступеней некуда выйти
+		Rect2(Vector2(x0, -SIZE * 0.5), Vector2(x1 - x0, top_z + SIZE * 0.5)),
 	]
 	for i in pieces.size():
 		var r: Rect2 = pieces[i]
@@ -216,25 +231,25 @@ func _stairwell_hole(f: int) -> void:
 ## Ступени — только визуал. Физика — один наклонный коллайдер (рампа):
 ## CharacterBody3D не умеет шагать на уступ, для него ступенька это стена.
 func _stairs(f: int) -> void:
-	var steps := 12
+	var steps := 14
 	var y0 := f * FLOOR_HEIGHT
 	var step_h := FLOOR_HEIGHT / float(steps)
-	var step_d := 0.28
-	var z0 := -2.5                      # низ — в комнате, за проёмом в перегородке
-	var run := step_d * steps           # горизонтальная длина
+	var z0 := STAIR_Z0
+	var run := STAIR_RUN
+	var step_d := run / float(steps)
 	var rise := FLOOR_HEIGHT
 
 	for i in steps:
 		var mesh := BoxMesh.new()
-		mesh.size = Vector3(1.4, step_h, step_d)
-		var mi := _spawn_visual(mesh, Vector3(4.5, y0 + step_h * (i + 0.5), z0 - step_d * i),
+		mesh.size = Vector3(STAIR_W, step_h, step_d)
+		var mi := _spawn_visual(mesh, Vector3(STAIR_X, y0 + step_h * (i + 0.5), z0 - step_d * i),
 				_mat_stair, f)
 		mi.name = "Step_%d_%d" % [f, i]
 
 	# Коллизия лестницы — клин (треугольная призма), а не коробка:
 	# у клина нулевая высота на входе, поэтому нет торца-уступа и капсула
 	# не зажимается между рампой и плитой пола.
-	var hw := 0.75
+	var hw := STAIR_W * 0.5
 	var pts := PackedVector3Array([
 		Vector3(-hw, 0.0, z0),                    # нижняя кромка, у пола
 		Vector3(hw, 0.0, z0),
@@ -250,7 +265,7 @@ func _stairs(f: int) -> void:
 	var shape := CollisionShape3D.new()
 	shape.shape = wedge
 	ramp.add_child(shape)
-	ramp.position = Vector3(4.5, y0, 0.0)
+	ramp.position = Vector3(STAIR_X, y0, 0.0)
 	add_child(ramp)
 	ramp.set_meta("floor", f)
 	(by_floor[f] as Array).append(ramp)

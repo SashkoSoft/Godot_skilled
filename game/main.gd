@@ -132,7 +132,9 @@ func _build_world() -> void:
 			Vector3(2.5, 0, -1.0),     # к проёму в перегородке z=-2.0
 			Vector3(4.5, 0, -1.2),     # к проёму напротив лестницы
 			Vector3(4.5, 0, -2.3),     # встать перед первой ступенью
-			Vector3(4.5, 3, -5.4),     # подъём на второй этаж
+			Vector3(4.5, 3, -6.6),     # подъём на второй этаж
+			Vector3(6.6, 3, -7.2),     # сойти с лестницы на площадку
+			Vector3(0.0, 3, -6.0),     # пройти вглубь второго этажа
 		]
 		player.auto_target = _route[0]
 
@@ -213,7 +215,7 @@ func _run_walk_test(delta: float) -> void:
 	var target: Vector3 = _route[_route_i]
 	var flat := Vector2(player.global_position.x - target.x, player.global_position.z - target.z)
 
-	if flat.length() < 0.6 and absf(player.global_position.y - target.y) < 1.2:
+	if flat.length() < 0.7 and absf(player.global_position.y - target.y) < 0.6:
 		print("[walk] точка %d достигнута за %.1f с  pos=(%.1f, %.1f, %.1f) этаж %d" % [
 			_route_i, _route_time,
 			player.global_position.x, player.global_position.y, player.global_position.z,

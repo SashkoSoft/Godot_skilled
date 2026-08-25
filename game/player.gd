@@ -45,11 +45,12 @@ func _ready() -> void:
 	add_child(_visual)
 
 	# «Нос» — чтобы было видно, куда повёрнут персонаж.
+	# Поворот считается через atan2(dir.x, dir.z), поэтому перёд — это +Z.
 	var nose := MeshInstance3D.new()
 	var nm := BoxMesh.new()
 	nm.size = Vector3(0.12, 0.12, 0.4)
 	nose.mesh = nm
-	nose.position = Vector3(0, HEIGHT * 0.72, -RADIUS - 0.15)
+	nose.position = Vector3(0, HEIGHT * 0.72, RADIUS + 0.15)
 	nose.material_override = mat
 	add_child(nose)
 
