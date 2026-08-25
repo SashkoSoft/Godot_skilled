@@ -19,6 +19,8 @@ const FOLLOW_LERP := 8.0
 var yaw: float = deg_to_rad(45.0)
 var target: Node3D
 var indoor: bool = false
+## Принудительная дистанция (для обзорных кадров планировки).
+var dist_override: float = 0.0
 
 var _dist: float = DIST_OUTDOOR
 var _cam: Camera3D
@@ -55,7 +57,7 @@ func _process(delta: float) -> void:
 	if target:
 		_pivot = _pivot.lerp(target.global_position, clampf(FOLLOW_LERP * delta, 0.0, 1.0))
 
-	var want := DIST_INDOOR if indoor else DIST_OUTDOOR
+	var want := dist_override if dist_override > 0.0 else (DIST_INDOOR if indoor else DIST_OUTDOOR)
 	_dist = lerpf(_dist, want, clampf(3.0 * delta, 0.0, 1.0))
 
 	var pitch := deg_to_rad(PITCH_DEG)
@@ -73,5 +75,5 @@ func _process(delta: float) -> void:
 func snap() -> void:
 	if target:
 		_pivot = target.global_position
-	_dist = DIST_INDOOR if indoor else DIST_OUTDOOR
+	_dist = dist_override if dist_override > 0.0 else (DIST_INDOOR if indoor else DIST_OUTDOOR)
 	_process(1.0)

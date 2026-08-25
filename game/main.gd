@@ -22,7 +22,8 @@ var _shot_frames: int = SHOT_DEFAULT_FRAMES
 var _shot_yaw_deg: float = -1.0
 var _start_floor: int = 0
 var _floors: int = 4
-var _spawn := Vector2(-3.0, 4.0)
+var _cam_dist: float = 0.0
+var _spawn := Vector2(-4.6, 4.6)
 var _walk_test := false
 var _walk_route := "stairs"
 var _route: Array[Vector3] = []
@@ -170,6 +171,7 @@ func _build_world() -> void:
 	rig.name = "CameraRig"
 	rig.target = player
 	rig.indoor = true
+	rig.dist_override = _cam_dist
 	add_child(rig)
 	player.rig = rig
 	rig.snap()
@@ -186,31 +188,23 @@ func _build_world() -> void:
 					Vector3(0.5, 0, 6.5),
 				]
 			_:
-				# Точки считаются из габаритов лестничной клетки: иначе маршрут
-				# приходится править руками при каждом изменении размеров.
-				var x_up := Building.BAY_X0 + Building.FLIGHT_W * 0.5
-				var x_dn := Building.BAY_X1 - Building.FLIGHT_W * 0.5
-				var z_near := Building.BAY_Z_NEAR
-				var z_mid := z_near - Building.FLIGHT_RUN
-				var door_z := Building.APT_DOOR_Z
+				# Обход всех восьми квартир по кольцевому коридору: у каждой
+				# двери — шаг внутрь. Если хоть одна дверь ведёт не туда
+				# или её нет, тест упрётся и назовёт номер точки.
 				_route = [
-					Vector3(-1.5, 0, 2.0),          # к проёму в перегородке квартиры
-					Vector3(-1.5, 0, -1.5),         # прихожая
-					Vector3(0.6, 0, door_z),        # входная дверь квартиры
-					Vector3(x_up, 0, door_z),       # этажная площадка
+					Vector3(-4.6, 0, 0.0),
+					Vector3(-4.6, 0, -3.3), Vector3(-6.8, 0, -3.3), Vector3(-4.6, 0, -3.3),   # 1К зап
+					Vector3(-4.6, 0, 2.1), Vector3(-6.8, 0, 2.1), Vector3(-4.6, 0, 2.1),      # 2К зап
+					Vector3(-4.6, 0, -4.6),
+					Vector3(-2.9, 0, -4.6), Vector3(-2.9, 0, -6.6), Vector3(-2.9, 0, -4.6),   # 3К сев
+					Vector3(3.3, 0, -4.6), Vector3(3.3, 0, -6.6), Vector3(3.3, 0, -4.6),      # 2К сев
+					Vector3(4.6, 0, -4.6),
+					Vector3(4.6, 0, -2.1), Vector3(6.8, 0, -2.1), Vector3(4.6, 0, -2.1),      # 1К вост
+					Vector3(4.6, 0, 3.3), Vector3(6.8, 0, 3.3), Vector3(4.6, 0, 3.3),         # 2К вост
+					Vector3(4.6, 0, 4.6),
+					Vector3(2.9, 0, 4.6), Vector3(2.9, 0, 6.6), Vector3(2.9, 0, 4.6),         # 3К юж
+					Vector3(-3.3, 0, 4.6), Vector3(-3.3, 0, 6.6),                             # 2К юж
 				]
-				for f in _floors - 1:
-					var y := f * 3.0
-					_route.append(Vector3(x_up, y, z_near - 0.3))
-					_route.append(Vector3(x_up, y + 1.5, z_mid - 0.4))
-					_route.append(Vector3(x_dn, y + 1.5, z_mid - 0.4))
-					# выходить надо не на край марша, а на саму этажную площадку,
-					# иначе тест засчитывает подъём, пока игрок ещё на ступенях
-					_route.append(Vector3(x_dn, y + 3.0, door_z))
-				var top := (_floors - 1) * 3.0
-				_route.append(Vector3(x_up, top, door_z))
-				_route.append(Vector3(0.6, top, door_z))
-				_route.append(Vector3(-1.5, top, -1.0))
 		player.auto_target = _route[0]
 
 	occ = Occlusion.new()
@@ -264,6 +258,8 @@ func _parse_args() -> void:
 			var parts := a.substr(8).split(",")
 			if parts.size() == 2:
 				_spawn = Vector2(float(parts[0]), float(parts[1]))
+		elif a.begins_with("--cam-dist="):
+			_cam_dist = float(a.substr(11))
 		elif a.begins_with("--floors="):
 			_floors = maxi(2, int(a.substr(9)))
 		elif a == "--walk-test" or a.begins_with("--walk-test="):
