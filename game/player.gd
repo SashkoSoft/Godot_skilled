@@ -40,7 +40,7 @@ func _ready() -> void:
 	# Игрок должен читаться даже в тени и сквозь вырез в стене.
 	mat.emission_enabled = true
 	mat.emission = Color(0.95, 0.80, 0.35)
-	mat.emission_energy_multiplier = 0.55
+	mat.emission_energy_multiplier = 0.28
 	_visual.material_override = mat
 	add_child(_visual)
 

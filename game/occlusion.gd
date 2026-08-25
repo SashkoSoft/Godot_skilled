@@ -8,7 +8,7 @@ extends Node
 ## Гашение — через per-instance uniform `fade` в шейдере: один материал на все
 ## стены, никаких дубликатов и лишних draw call.
 
-const FADE_HIDDEN := 0.10      ## насколько гасим то, что мешает
+const FADE_HIDDEN := 0.20      ## насколько гасим то, что мешает
 const FADE_SPEED := 9.0
 
 var building: Building

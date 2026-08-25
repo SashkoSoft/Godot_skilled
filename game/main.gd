@@ -45,47 +45,91 @@ func _setup_environment() -> void:
 	var env := Environment.new()
 	env.background_mode = Environment.BG_SKY
 
+	# Небо: низкое солнце, тёплый горизонт против холодного зенита.
+	# Этот контраст и делает картинку — интерьер получает холодную заливку
+	# от неба и тёплые пятна от прямого света.
 	var sky := Sky.new()
 	var sky_mat := ProceduralSkyMaterial.new()
-	sky_mat.sky_top_color = Color(0.42, 0.51, 0.60)
-	sky_mat.sky_horizon_color = Color(0.71, 0.72, 0.68)
-	sky_mat.ground_bottom_color = Color(0.24, 0.24, 0.22)
-	sky_mat.ground_horizon_color = Color(0.55, 0.55, 0.50)
+	sky_mat.sky_top_color = Color(0.30, 0.42, 0.58)
+	sky_mat.sky_horizon_color = Color(0.78, 0.74, 0.63)
+	sky_mat.sky_energy_multiplier = 1.1
+	sky_mat.ground_bottom_color = Color(0.18, 0.19, 0.17)
+	sky_mat.ground_horizon_color = Color(0.52, 0.50, 0.44)
+	sky_mat.sun_angle_max = 18.0
+	sky_mat.sun_curve = 0.12
 	sky.sky_material = sky_mat
 	env.sky = sky
 
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy = 2.2   # интерьеры без этого проваливаются в тень
-	# Заполняющий свет обязателен: камера вращается, и без него половина
-	# ракурсов проваливается в черноту.
+	env.ambient_light_energy = 0.48   # низкая заливка: тогда видны пятна света из окон
 	env.ambient_light_sky_contribution = 1.0
 
-	env.fog_enabled = true
-	env.fog_light_color = Color(0.72, 0.74, 0.70)
-	env.fog_density = 0.0025
+	# Объёмный туман: из-за него из окон в комнаты бьют видимые лучи.
+	env.volumetric_fog_enabled = true
+	env.volumetric_fog_density = 0.0032   # плотнее — и сцена тонет в молоке
+	env.volumetric_fog_albedo = Color(0.80, 0.84, 0.88)
+	env.volumetric_fog_anisotropy = 0.35
+	env.volumetric_fog_length = 90.0
+	env.volumetric_fog_ambient_inject = 0.12
+	env.volumetric_fog_sky_affect = 0.1
 
-	env.tonemap_mode = Environment.TONE_MAPPER_ACES
+	# Лёгкая дымка вдаль, чтобы дальние стены не были такими же контрастными.
+	env.fog_enabled = true
+	env.fog_mode = Environment.FOG_MODE_DEPTH
+	env.fog_light_color = Color(0.74, 0.76, 0.72)
+	env.fog_light_energy = 0.7
+	env.fog_density = 0.0005
+	env.fog_sky_affect = 0.0
+
+	# Затенение в углах и стыках — без него интерьер выглядит плоским.
+	env.ssao_enabled = true
+	env.ssao_radius = 1.4
+	env.ssao_intensity = 2.6
+	env.ssao_power = 1.6
+	env.ssao_detail = 0.6
+	env.ssao_light_affect = 0.25
+
+	# Свечение только на пересветах: окна и залитые солнцем пятна пола.
+	env.glow_enabled = true
+	env.glow_intensity = 0.28
+	env.glow_bloom = 0.05
+	env.glow_hdr_threshold = 1.05
+	env.glow_strength = 1.0
+
+	env.tonemap_mode = Environment.TONE_MAPPER_ACES   # AgX слишком выбеливает
+	env.tonemap_exposure = 0.92
 	env.tonemap_white = 6.0
+
+	env.adjustment_enabled = true
+	env.adjustment_contrast = 1.12
+	env.adjustment_saturation = 1.06
 
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
 
+	# Ключевой свет: низкое тёплое солнце, длинные тени, мягкий край.
 	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-52.0, 38.0, 0.0)
-	sun.light_energy = 1.5
-	sun.light_color = Color(1.0, 0.96, 0.88)
+	# Азимут подобран так, чтобы лучи шли сквозь оконные проёмы внутрь,
+	# а не били в глухую стену: иначе интерьер освещается только заливкой.
+	sun.rotation_degrees = Vector3(-26.0, 96.0, 0.0)
+	sun.light_energy = 2.3
+	sun.light_color = Color(1.0, 0.90, 0.74)
 	sun.shadow_enabled = true
-	sun.directional_shadow_max_distance = 90.0
+	sun.light_angular_distance = 1.2          # мягкая граница тени
+	sun.directional_shadow_max_distance = 120.0
+	sun.directional_shadow_blend_splits = true
+	sun.light_volumetric_fog_energy = 3.2     # это и рисует лучи из окон
 	add_child(sun)
 
-	# Заполняющий свет с противоположной стороны: камера вращается, и без него
-	# половина ракурсов оказывается в глухой тени.
+	# Заполняющий холодный свет с противоположной стороны: камера вращается,
+	# и без него половина ракурсов уходит в глухую тень.
 	var fill := DirectionalLight3D.new()
-	fill.rotation_degrees = Vector3(-28.0, -140.0, 0.0)
-	fill.light_energy = 0.45
-	fill.light_color = Color(0.82, 0.88, 0.95)
+	fill.rotation_degrees = Vector3(-30.0, -70.0, 0.0)
+	fill.light_energy = 0.5
+	fill.light_color = Color(0.72, 0.82, 0.98)
 	fill.shadow_enabled = false
+	fill.light_volumetric_fog_energy = 0.2
 	add_child(fill)
 
 
@@ -141,24 +185,31 @@ func _build_world() -> void:
 					Vector3(0.5, 0, 6.5),
 				]
 			_:
-				# путь по лестничной клетке: два марша с разворотом на каждый этаж
+				# Точки считаются из габаритов лестничной клетки: иначе маршрут
+				# приходится править руками при каждом изменении размеров.
+				var x_up := Building.BAY_X0 + Building.FLIGHT_W * 0.5
+				var x_dn := Building.BAY_X1 - Building.FLIGHT_W * 0.5
+				var z_near := Building.BAY_Z_NEAR
+				var z_mid := z_near - Building.FLIGHT_RUN
+				var door_z := Building.APT_DOOR_Z
 				_route = [
-					Vector3(-1.5, 0, 2.0),     # к проёму в перегородке квартиры
-					Vector3(-1.5, 0, -1.5),    # прошли в прихожую
-					Vector3(1.2, 0, -3.2),     # входная дверь квартиры
-					Vector3(3.3, 0, -3.2),     # вышли на этажную площадку
+					Vector3(-1.5, 0, 2.0),          # к проёму в перегородке квартиры
+					Vector3(-1.5, 0, -1.5),         # прихожая
+					Vector3(0.6, 0, door_z),        # входная дверь квартиры
+					Vector3(x_up, 0, door_z),       # этажная площадка
 				]
 				for f in _floors - 1:
 					var y := f * 3.0
-					_route.append(Vector3(2.6, y, -3.9))          # низ первого марша
-					_route.append(Vector3(2.6, y + 1.5, -6.6))    # промежуточная площадка
-					_route.append(Vector3(4.0, y + 1.5, -6.6))    # разворот на второй марш
-					_route.append(Vector3(4.0, y + 3.0, -4.3))    # выход на следующий этаж
-				# на верхнем этаже — войти в квартиру с площадки
+					_route.append(Vector3(x_up, y, z_near - 0.3))
+					_route.append(Vector3(x_up, y + 1.5, z_mid - 0.4))
+					_route.append(Vector3(x_dn, y + 1.5, z_mid - 0.4))
+					# выходить надо не на край марша, а на саму этажную площадку,
+					# иначе тест засчитывает подъём, пока игрок ещё на ступенях
+					_route.append(Vector3(x_dn, y + 3.0, door_z))
 				var top := (_floors - 1) * 3.0
-				_route.append(Vector3(3.3, top, -3.2))            # к двери квартиры
-				_route.append(Vector3(1.0, top, -3.2))            # вошли в квартиру
-				_route.append(Vector3(-1.5, top, -1.0))           # прошли вглубь
+				_route.append(Vector3(x_up, top, door_z))
+				_route.append(Vector3(0.6, top, door_z))
+				_route.append(Vector3(-1.5, top, -1.0))
 		player.auto_target = _route[0]
 
 	occ = Occlusion.new()

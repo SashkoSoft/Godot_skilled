@@ -12,15 +12,15 @@ const SIZE := 16.0            ## дом 16x16 м
 ## Лестничная клетка: два марша с разворотом на 180° и промежуточной
 ## площадкой — как в обычном жилом доме.
 ## Подступенок ~21 см, проступь ~31 см, уклон ~34° — реальные пропорции.
-const BAY_X0 := 2.0           ## границы клетки по X
-const BAY_X1 := 4.6
-const BAY_Z_FAR := -7.5       ## дальний край (за промежуточной площадкой)
-const BAY_Z_NEAR := -4.1      ## ближний край: отсюда входят и сюда выходят
-const FLIGHT_RUN := 2.2       ## горизонтальная длина одного марша
-const FLIGHT_W := 1.2         ## ширина марша
+const BAY_X0 := 1.2           ## границы клетки по X
+const BAY_X1 := 6.0
+const BAY_Z_FAR := -7.8       ## дальний край (за промежуточной площадкой)
+const BAY_Z_NEAR := -3.6      ## ближний край: отсюда входят и сюда выходят
+const FLIGHT_RUN := 2.4       ## горизонтальная длина одного марша
+const FLIGHT_W := 1.5         ## ширина марша
 const STEPS_PER_FLIGHT := 7
 const BAY_Z_LANDING := -2.0   ## где кончается подъезд: за ним квартира
-const APT_DOOR_Z := -3.2      ## двери квартир — на этажной площадке
+const APT_DOOR_Z := -2.9      ## двери квартир — на этажной площадке
 const FLAT_DOOR_W := 1.1
 const DOOR_W := 1.2
 const DOOR_H := 2.1
@@ -79,9 +79,9 @@ void fragment() {
 
 
 func build(floors_count: int = 2) -> void:
-	_mat_wall = _make_mat(Color(0.62, 0.60, 0.56))
-	_mat_floor = _make_mat(Color(0.40, 0.39, 0.37))
-	_mat_stair = _make_mat(Color(0.52, 0.45, 0.38))
+	_mat_wall = _make_mat(Color(0.60, 0.60, 0.58))
+	_mat_floor = _make_mat(Color(0.33, 0.34, 0.33))
+	_mat_stair = _make_mat(Color(0.46, 0.42, 0.37))
 
 	for f in floors_count:
 		by_floor[f] = []
@@ -104,7 +104,7 @@ func _make_mat(c: Color) -> ShaderMaterial:
 	var m := ShaderMaterial.new()
 	m.shader = sh
 	m.set_shader_parameter("base_color", c)
-	m.set_shader_parameter("tint_top", Color(1.06, 1.04, 1.0))
+	m.set_shader_parameter("tint_top", Color(1.04, 1.03, 1.0))
 	return m
 
 
@@ -141,7 +141,7 @@ func _build_floor(f: int, with_stairs: bool = true) -> void:
 	_wall_run(f, Vector3(-3.0, y, 0.0), Vector3(1, 0, 0), 10.0, [Vector2(1.5, DOOR_W)], true)
 	_wall_run(f, Vector3(-3.0, y, -4.0), Vector3(0, 0, 1), 8.0, [Vector2(2.0, DOOR_W)], true)
 	# Правая квартира
-	_wall_run(f, Vector3(6.3, y, 0.0), Vector3(1, 0, 0), 3.4, [Vector2(0.6, DOOR_W)], true)
+	_wall_run(f, Vector3(7.0, y, 0.0), Vector3(1, 0, 0), 2.0, [Vector2(0.0, DOOR_W)], true)
 
 	if f > 0:
 		_stairwell_hole(f)
