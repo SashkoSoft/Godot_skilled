@@ -8,8 +8,14 @@ extends Node
 ## Гашение — через per-instance uniform `fade` в шейдере: один материал на все
 ## стены, никаких дубликатов и лишних draw call.
 
-const FADE_HIDDEN := 0.20      ## насколько гасим то, что мешает
+const FADE_HIDDEN := 0.20      ## насколько гасим то, что реально загораживает
 const FADE_SPEED := 9.0
+## Чем ближе стена к игроку, тем слабее её гасим: вплотную она остаётся
+## отчётливо видимой (иначе кажется, что персонаж проваливается сквозь неё),
+## и только на отдалении уходит в 20%.
+const NEAR_MIN := 0.4          ## вплотную
+const NEAR_MAX := 2.6          ## отсюда гасим полностью
+const FADE_NEAR := 0.55        ## плотность стены, к которой прижался игрок
 
 var building: Building
 var player: Player
@@ -46,7 +52,10 @@ func _process(delta: float) -> void:
 
 		var want := 1.0
 		if not is_ceiling and _blocks(mi, from, to):
-			want = FADE_HIDDEN
+			# чем ближе стена к игроку, тем меньше её гасим
+			var d := _distance_to_player(mi)
+			var k := clampf((d - NEAR_MIN) / (NEAR_MAX - NEAR_MIN), 0.0, 1.0)
+			want = lerpf(FADE_NEAR, FADE_HIDDEN, k)
 
 		var cur: float = _fade_now.get(mi, 1.0)
 		cur = lerpf(cur, want, clampf(FADE_SPEED * delta, 0.0, 1.0))
@@ -60,6 +69,18 @@ func _process(delta: float) -> void:
 func _blocks(mi: MeshInstance3D, from: Vector3, to: Vector3) -> bool:
 	var aabb := mi.global_transform * mi.get_aabb()
 	return aabb.intersects_segment(from, to) != null
+
+
+## Горизонтальное расстояние от игрока до ближайшей точки объекта.
+func _distance_to_player(mi: MeshInstance3D) -> float:
+	var aabb := mi.global_transform * mi.get_aabb()
+	var p := player.global_position
+	var closest := Vector3(
+		clampf(p.x, aabb.position.x, aabb.position.x + aabb.size.x),
+		p.y,
+		clampf(p.z, aabb.position.z, aabb.position.z + aabb.size.z)
+	)
+	return Vector2(closest.x - p.x, closest.z - p.z).length()
 
 
 ## Крыша дома: её гасим всегда, когда игрок внутри.

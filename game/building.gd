@@ -47,8 +47,8 @@ uniform vec3 tint_top : source_color = vec3(1.0);
 // Позиция игрока и радиус «окна»: гасим не всю стену, а круг вокруг персонажа —
 // так стена остаётся читаемой, а игрок виден.
 uniform vec3 focus_pos = vec3(0.0);
-uniform float focus_radius = 2.4;
-uniform float focus_soft = 1.1;
+uniform float focus_radius = 1.9;
+uniform float focus_soft = 0.9;
 
 instance uniform float fade = 1.0;
 // 1 = гасить только круг вокруг игрока (стены), 0 = гасить целиком (перекрытия)

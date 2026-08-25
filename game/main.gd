@@ -22,6 +22,7 @@ var _shot_frames: int = SHOT_DEFAULT_FRAMES
 var _shot_yaw_deg: float = -1.0
 var _start_floor: int = 0
 var _floors: int = 4
+var _spawn := Vector2(-3.0, 4.0)
 var _walk_test := false
 var _walk_route := "stairs"
 var _route: Array[Vector3] = []
@@ -162,7 +163,7 @@ func _build_world() -> void:
 
 	player = Player.new()
 	player.name = "Player"
-	player.position = Vector3(-3.0, 0.2 + _start_floor * Building.FLOOR_HEIGHT, 4.0)
+	player.position = Vector3(_spawn.x, 0.2 + _start_floor * Building.FLOOR_HEIGHT, _spawn.y)
 	add_child(player)
 
 	rig = CameraRig.new()
@@ -259,6 +260,10 @@ func _parse_args() -> void:
 			_shot_yaw_deg = float(a.substr(11))
 		elif a.begins_with("--start-floor="):
 			_start_floor = int(a.substr(14))
+		elif a.begins_with("--spawn="):
+			var parts := a.substr(8).split(",")
+			if parts.size() == 2:
+				_spawn = Vector2(float(parts[0]), float(parts[1]))
 		elif a.begins_with("--floors="):
 			_floors = maxi(2, int(a.substr(9)))
 		elif a == "--walk-test" or a.begins_with("--walk-test="):
