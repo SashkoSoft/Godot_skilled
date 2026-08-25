@@ -107,7 +107,8 @@ func _build_floor(f: int, with_stairs: bool = true) -> void:
 	_wall_run(f, Vector3(0, y, half), Vector3(1, 0, 0), SIZE, [Vector2(0.5, 1.6)])
 
 	# Внутренние перегородки: коридор по центру + две комнаты, проёмы дверные.
-	_wall_run(f, Vector3(0, y, -2.0), Vector3(1, 0, 0), SIZE, [Vector2(-3.5, DOOR_W), Vector2(2.5, DOOR_W)], true)
+	# Проём напротив лестницы обязателен: иначе к ней просто не подойти.
+	_wall_run(f, Vector3(0, y, -2.0), Vector3(1, 0, 0), SIZE, [Vector2(-3.5, DOOR_W), Vector2(4.5, 1.6)], true)
 	_wall_run(f, Vector3(0, y, 2.6), Vector3(1, 0, 0), SIZE, [Vector2(1.0, DOOR_W)], true)
 	_wall_run(f, Vector3(-1.5, y, -4.3), Vector3(0, 0, 1), 4.6, [] as Array[Vector2], true)
 
@@ -183,11 +184,16 @@ func _wall_run(f: int, center: Vector3, dir: Vector3, length: float,
 
 ## Проём в перекрытии под лестницу.
 func _stairwell_hole(f: int) -> void:
-	# Плита строится целиком, поэтому вырезаем «дыру» тем, что ставим
-	# перекрытие четырьмя кусками вокруг лестничного проёма.
-	var slab: Node = get_node_or_null("Floor_%d" % f)
-	if slab:
-		slab.queue_free()
+	# Плита строится целиком, поэтому убираем её и ставим перекрытие кусками
+	# вокруг лестничного проёма.
+	# Имя задаётся мешу, а тело — его родитель: искать надо через меш,
+	# иначе плита остаётся на месте и игрок бьётся головой на лестнице.
+	for mi in fadeable.duplicate():
+		if mi.name == "Floor_%d" % f:
+			fadeable.erase(mi)
+			var body: Node = mi.get_parent()
+			(by_floor[f] as Array).erase(body)
+			body.queue_free()
 	var y := f * FLOOR_HEIGHT
 	var pieces: Array[Rect2] = [
 		Rect2(Vector2(-6, -6), Vector2(9, 12)),
@@ -207,17 +213,47 @@ func _stairwell_hole(f: int) -> void:
 
 
 ## Лестница с этажа f на f+1.
+## Ступени — только визуал. Физика — один наклонный коллайдер (рампа):
+## CharacterBody3D не умеет шагать на уступ, для него ступенька это стена.
 func _stairs(f: int) -> void:
 	var steps := 12
 	var y0 := f * FLOOR_HEIGHT
 	var step_h := FLOOR_HEIGHT / float(steps)
-	var step_d := 0.32
+	var step_d := 0.28
+	var z0 := -2.5                      # низ — в комнате, за проёмом в перегородке
+	var run := step_d * steps           # горизонтальная длина
+	var rise := FLOOR_HEIGHT
+
 	for i in steps:
 		var mesh := BoxMesh.new()
 		mesh.size = Vector3(1.4, step_h, step_d)
-		var pos := Vector3(4.5, y0 + step_h * (i + 0.5), -5.6 + step_d * i)
-		var mi := _spawn(mesh, pos, _mat_stair, f)
+		var mi := _spawn_visual(mesh, Vector3(4.5, y0 + step_h * (i + 0.5), z0 - step_d * i),
+				_mat_stair, f)
 		mi.name = "Step_%d_%d" % [f, i]
+
+	# Коллизия лестницы — клин (треугольная призма), а не коробка:
+	# у клина нулевая высота на входе, поэтому нет торца-уступа и капсула
+	# не зажимается между рампой и плитой пола.
+	var hw := 0.75
+	var pts := PackedVector3Array([
+		Vector3(-hw, 0.0, z0),                    # нижняя кромка, у пола
+		Vector3(hw, 0.0, z0),
+		Vector3(-hw, 0.0, z0 - run),              # дальний низ
+		Vector3(hw, 0.0, z0 - run),
+		Vector3(-hw, rise, z0 - run),             # верх лестницы
+		Vector3(hw, rise, z0 - run),
+	])
+	var wedge := ConvexPolygonShape3D.new()
+	wedge.points = pts
+
+	var ramp := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	shape.shape = wedge
+	ramp.add_child(shape)
+	ramp.position = Vector3(4.5, y0, 0.0)
+	add_child(ramp)
+	ramp.set_meta("floor", f)
+	(by_floor[f] as Array).append(ramp)
 
 
 func _spawn(mesh: Mesh, pos: Vector3, mat: ShaderMaterial, f: int) -> MeshInstance3D:
@@ -240,4 +276,16 @@ func _spawn(mesh: Mesh, pos: Vector3, mat: ShaderMaterial, f: int) -> MeshInstan
 	body.set_meta("floor", f)
 	fadeable.append(mi)
 	(by_floor[f] as Array).append(body)
+	return mi
+
+
+## Кусок геометрии без коллизии — для того, что не должно мешать движению.
+func _spawn_visual(mesh: Mesh, pos: Vector3, mat: ShaderMaterial, f: int) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.material_override = mat
+	mi.position = pos
+	add_child(mi)
+	mi.set_meta("floor", f)
+	fadeable.append(mi)
 	return mi

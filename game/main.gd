@@ -21,6 +21,10 @@ var _shot_path: String = ""
 var _shot_frames: int = SHOT_DEFAULT_FRAMES
 var _shot_yaw_deg: float = -1.0
 var _start_floor: int = 0
+var _walk_test := false
+var _route: Array[Vector3] = []
+var _route_i := 0
+var _route_time := 0.0
 var _frame := 0
 
 
@@ -121,6 +125,17 @@ func _build_world() -> void:
 	player.rig = rig
 	rig.snap()
 
+	if _walk_test:
+		# Маршрут: старт -> коридор -> комната с лестницей -> низ лестницы -> верх.
+		_route = [
+			Vector3(1.0, 0, 3.4),      # проём в перегородке z=2.6
+			Vector3(2.5, 0, -1.0),     # к проёму в перегородке z=-2.0
+			Vector3(4.5, 0, -1.2),     # к проёму напротив лестницы
+			Vector3(4.5, 0, -2.3),     # встать перед первой ступенью
+			Vector3(4.5, 3, -5.4),     # подъём на второй этаж
+		]
+		player.auto_target = _route[0]
+
 	occ = Occlusion.new()
 	occ.name = "Occlusion"
 	occ.building = building
@@ -144,6 +159,8 @@ func _build_hud() -> void:
 
 func _process(_delta: float) -> void:
 	_frame += 1
+	if _walk_test:
+		_run_walk_test(_delta)
 	if _hud:
 		_hud.text = "FPS %d    этаж %d    Q/E — поворот камеры, стрелки — движение" % [
 			Engine.get_frames_per_second(), player.floor_index
@@ -166,6 +183,8 @@ func _parse_args() -> void:
 			_shot_yaw_deg = float(a.substr(11))
 		elif a.begins_with("--start-floor="):
 			_start_floor = int(a.substr(14))
+		elif a == "--walk-test":
+			_walk_test = true
 
 
 func _take_shot() -> void:
@@ -184,3 +203,33 @@ func _take_shot() -> void:
 		Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),
 	])
 	get_tree().quit()
+
+
+## Автопроверка проходимости: доходит ли игрок до лестницы и поднимается ли.
+func _run_walk_test(delta: float) -> void:
+	if _route_i >= _route.size():
+		return
+	_route_time += delta
+	var target: Vector3 = _route[_route_i]
+	var flat := Vector2(player.global_position.x - target.x, player.global_position.z - target.z)
+
+	if flat.length() < 0.6 and absf(player.global_position.y - target.y) < 1.2:
+		print("[walk] точка %d достигнута за %.1f с  pos=(%.1f, %.1f, %.1f) этаж %d" % [
+			_route_i, _route_time,
+			player.global_position.x, player.global_position.y, player.global_position.z,
+			player.floor_index])
+		_route_i += 1
+		_route_time = 0.0
+		if _route_i < _route.size():
+			player.auto_target = _route[_route_i]
+		else:
+			print("[walk] маршрут пройден полностью")
+			get_tree().quit()
+		return
+
+	if _route_time > 12.0:
+		print("[walk] ЗАСТРЯЛ на точке %d (цель %.1f, %.1f, %.1f), стоит в (%.1f, %.1f, %.1f) этаж %d" % [
+			_route_i, target.x, target.y, target.z,
+			player.global_position.x, player.global_position.y, player.global_position.z,
+			player.floor_index])
+		get_tree().quit()
