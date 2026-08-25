@@ -27,3 +27,6 @@ houdini_temp/
 
 # Клоны экосистемы (docs/ECOSYSTEM.md, восстановление: docs/fetch_ecosystem.sh)
 docs/ecosystem/
+
+# Godot-проект: кэш импорта
+game/.godot/
