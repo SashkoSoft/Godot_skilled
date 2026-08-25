@@ -21,6 +21,7 @@ var _shot_path: String = ""
 var _shot_frames: int = SHOT_DEFAULT_FRAMES
 var _shot_yaw_deg: float = -1.0
 var _start_floor: int = 0
+var _floors: int = 4
 var _walk_test := false
 var _walk_route := "stairs"
 var _route: Array[Vector3] = []
@@ -113,7 +114,7 @@ func _build_world() -> void:
 	building = Building.new()
 	building.name = "Building"
 	add_child(building)
-	building.build(2)
+	building.build(_floors)
 
 	player = Player.new()
 	player.name = "Player"
@@ -140,16 +141,17 @@ func _build_world() -> void:
 					Vector3(0.5, 0, 6.5),
 				]
 			_:
-				# путь до лестницы и подъём на второй этаж
+				# путь по лестничной клетке: два марша с разворотом на каждый этаж
 				_route = [
 					Vector3(1.0, 0, 3.4),
-					Vector3(2.5, 0, -1.0),
-					Vector3(4.5, 0, -1.2),
-					Vector3(4.5, 0, -2.3),
-					Vector3(4.5, 3, -6.6),
-					Vector3(6.6, 3, -7.2),
-					Vector3(0.0, 3, -6.0),
+					Vector3(3.3, 0, -1.5),
 				]
+				for f in _floors - 1:
+					var y := f * 3.0
+					_route.append(Vector3(2.6, y, -3.9))          # низ первого марша
+					_route.append(Vector3(2.6, y + 1.5, -6.6))    # промежуточная площадка
+					_route.append(Vector3(4.0, y + 1.5, -6.6))    # разворот на второй марш
+					_route.append(Vector3(4.0, y + 3.0, -4.3))    # выход на следующий этаж
 		player.auto_target = _route[0]
 
 	occ = Occlusion.new()
@@ -199,6 +201,8 @@ func _parse_args() -> void:
 			_shot_yaw_deg = float(a.substr(11))
 		elif a.begins_with("--start-floor="):
 			_start_floor = int(a.substr(14))
+		elif a.begins_with("--floors="):
+			_floors = maxi(2, int(a.substr(9)))
 		elif a == "--walk-test" or a.begins_with("--walk-test="):
 			_walk_test = true
 			if a.contains("="):
