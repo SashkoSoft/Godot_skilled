@@ -215,18 +215,18 @@ func paint_plan(f: int) -> void:
 	]
 	for fl in flats():
 		var id: int = fl["id"]
-		_plate(f, fl["rect"] as Rect2, palette[id % palette.size()], 0.18, y + 0.03)
+		_plate(f, fl["rect"] as Rect2, palette[id % palette.size()], 0.12, y + 0.03)
 	for r in rooms():
 		var col: Color
 		match int(r["kind"]):
-			Room.KITCHEN: col = Color(0.98, 0.62, 0.20)
-			Room.BATH:    col = Color(0.20, 0.80, 0.80)
-			Room.HALL:    col = Color(0.72, 0.72, 0.74)
-			Room.CORE:    col = Color(0.45, 0.55, 0.98)
-			Room.LOGGIA:  col = Color(0.55, 0.85, 0.45)
-			Room.SHAFT:   col = Color(0.30, 0.32, 0.38)
-			_:            col = Color(0.88, 0.86, 0.80)
-		_plate(f, r["rect"] as Rect2, col, 0.52, y + 0.06)
+			Room.KITCHEN: col = Color(0.97, 0.58, 0.16)
+			Room.BATH:    col = Color(0.16, 0.76, 0.82)
+			Room.HALL:    col = Color(0.66, 0.66, 0.70)
+			Room.CORE:    col = Color(0.36, 0.48, 0.96)
+			Room.LOGGIA:  col = Color(0.46, 0.82, 0.36)
+			Room.SHAFT:   col = Color(0.55, 0.20, 0.55)
+			_:            col = Color(0.92, 0.84, 0.58)
+		_plate(f, r["rect"] as Rect2, col, 0.62, y + 0.06)
 
 
 func _plate(f: int, r: Rect2, col: Color, alpha: float, y: float) -> void:
