@@ -339,6 +339,7 @@ func _opening(a: int, b: int, length: float, on_facade: bool) -> int:
 
 func _emit_walls(f: int, y: float) -> void:
 	var recs := _collect_walls()
+	_ensure_room_doors(recs)
 	_link_rooms(recs)
 	walls_built = recs
 	for w in recs:
@@ -491,6 +492,59 @@ func _fit_holes(holes: Array[Vector3], length: float) -> Array[Vector3]:
 ## Двери, добавленные проверкой проходимости (tools: main.gd --fix-reach).
 ## Ключ — "ось|координата|начало|конец", значение — Vector3(смещение, ширина, 0).
 static var extra_doors: Dictionary = {}
+
+## Санузел, кухня и комната открываются в прихожую своей квартиры — других
+## вариантов планировка не даёт. Где чертёж двери не дал (на скане 24 px/м,
+## проём санузла — 14 пикселей, и читается он через раз), ставим её сюда,
+## а не куда придётся.
+func _ensure_room_doors(recs: Array) -> void:
+	for i in ROOMS.size():
+		var kind := int(ROOMS[i][5])
+		if kind == SHF or kind == COR:
+			continue
+		var has_door := false
+		var best: Dictionary = {}
+		var best_rank := -1.0
+		var best_off := 0.0
+		var best_w := 0.0
+		for w in recs:
+			if w["parapet"]:
+				continue
+			var a: int = w["inner"]
+			var b: int = w["outer"]
+			if a != i and b != i:
+				continue
+			for h: Vector3 in (w["holes"] as Array[Vector3]):
+				if h.z < 0.5:
+					has_door = true
+			if b < 0:
+				continue
+			var other: int = b if a == i else a
+			var ok := int(ROOMS[other][5]) == HAL or int(ROOMS[other][5]) == COR
+			if kind == LOG:
+				ok = int(ROOMS[other][5]) == LIV or int(ROOMS[other][5]) == KIT
+			if not ok:
+				continue
+			if int(ROOMS[other][4]) != int(ROOMS[i][4]) and int(ROOMS[other][4]) != 8:
+				continue
+			var width := minf(DOOR_ROOM, w["len"] - 0.20)
+			if width < DOOR_ROOM and w["len"] >= 0.70:
+				width = w["len"]
+			if width < 0.65:
+				continue
+			var off := _door_pos(recs, w, width)
+			var rank := _clearance(recs, w["axis"], w["fixed"], w["mid"] + off, width) * 10.0
+			rank += minf(w["len"], 4.0)
+			if rank > best_rank:
+				best_rank = rank
+				best = w
+				best_off = off
+				best_w = width
+		if has_door or best.is_empty():
+			continue
+		_cut(recs, best, best_off, best_w)
+		rule_count += 1
+
 
 ## Черновая связка по графу дверей: из лестничной клетки должно быть достижимо
 ## каждое помещение. Настоящая проверка — физическая, см. ReachCheck.

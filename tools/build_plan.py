@@ -101,11 +101,27 @@ def trace(axis, fixed, a0, a1):
     off = min((c for c in cands if c[0] >= top - 0.02), key=lambda c: c[1])[2]
     core = slab(axis, fixed, a0, a1, off, 1).sum(axis=1)
     core2 = slab(axis, fixed, a0, a1, off, 2).sum(axis=1)
+    # На плане БТИ дверь — это разрыв стены плюс короткий штрих полотна
+    # ПОПЕРЁК стены. Штрих пересекает ось в одной точке и режет разрыв надвое,
+    # после чего обе половины короче порога. Заклеиваем такие пересечения.
+    LEAF = max(3, int(round(0.20 * S)))
+    empty = core == 0
+    i = 0
+    while i < len(empty):
+        if empty[i]:
+            i += 1
+            continue
+        j = i
+        while j < len(empty) and not empty[j]:
+            j += 1
+        if j - i <= LEAF and i > 0 and j < len(empty) and empty[i - 1] and empty[j]:
+            empty[i:j] = True
+        i = j
     wide = runs_across(slab(axis, fixed, a0, a1, off, HALF))
     total = len(core)
     edge = max(2, int(round(0.10 * S)))
     found = []
-    for flags, kind, wmin, wmax in ((core == 0, 0.0, 0.60, 2.20),
+    for flags, kind, wmin, wmax in ((empty, 0.0, 0.55, 2.30),
                                     (wide >= 3, 1.0, 0.60, 3.40)):
         for g0, g1 in spans(flags):
             if g0 < edge and g1 > total - edge:
