@@ -852,7 +852,9 @@ func _slab(f: int, is_roof: bool) -> void:
 		mi.set_meta("is_ceiling", false)
 		return
 
-	var hz0 := STAIR_Z0 + 1.6
+	# Проём в перекрытии начинается ЗА выходом со второго марша, иначе игрок,
+	# поднявшись, встаёт на пустоту и падает обратно на этаж ниже.
+	var hz0 := STAIR_Z0 + 3.10
 	var pieces: Array[Rect2] = [
 		Rect2(Vector2(-W_HALF, -D_HALF), Vector2(STAIR_X0 + W_HALF, D_HALF * 2.0)),
 		Rect2(Vector2(STAIR_X1, -D_HALF), Vector2(W_HALF - STAIR_X1, D_HALF * 2.0)),

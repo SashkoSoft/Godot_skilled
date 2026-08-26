@@ -23,7 +23,7 @@ var _shot_yaw_deg: float = -1.0
 var _start_floor: int = 0
 var _floors: int = 3
 var _cam_dist: float = 0.0
-var _marks := true
+var _marks := false   ## метки проёмов — только для разбора, флаг --marks
 var _plan_view := false
 var _check_reach := false
 var _reach_map := false
@@ -31,7 +31,7 @@ var _fix_reach := false
 var _prune := false
 var _audit := false
 var _no_fade := false   ## для осмотра: не гасить стены прозрачностью
-var _spawn := Vector2(-1.6, 1.2)   ## лестничная клетка
+var _spawn := Vector2(-1.7, 1.4)   ## лестничная клетка
 var _walk_test := false
 var _walk_route := "stairs"
 var _route: Array[Vector3] = []
@@ -193,34 +193,32 @@ func _build_world() -> void:
 		# У автопрохода нет поиска пути — он идёт по прямой, поэтому маршруты
 		# заданы по точкам и разделены по проверяемому сценарию.
 		match _walk_route:
-			_:
-				# обход этажа: по коридору с заходом в квартиры обоих рядов,
-				# затем в лифтовой холл
+			"stairs":
+				# подъём на этаж выше и обратно в коридор
 				_route = [
-					Vector3(-10.6, 0, 0.0),
-					Vector3(-10.6, 0, -2.4),   # 2К северная
-					Vector3(-10.6, 0, 0.0),
-					Vector3(-3.0, 0, -2.4),    # 3К северная
-					Vector3(-3.0, 0, 0.0),
-					Vector3(2.98, 0, -2.4),    # 1К северная
-					Vector3(2.98, 0, 0.0),
-					Vector3(5.9, 0, -2.4),     # 1К северная вторая
-					Vector3(5.9, 0, 0.0),
-					Vector3(10.6, 0, -2.4),    # 2К северо-восточная
-					Vector3(10.6, 0, 0.0),
-					Vector3(-4.9, 0, 0.0),
-					Vector3(-4.9, 0, 2.4),     # 2К южная у ядра
-					Vector3(-4.9, 0, 0.0),
-					Vector3(-10.6, 0, 0.0),
-					Vector3(-10.6, 0, 2.4),    # 2К юго-западная
-					Vector3(-10.6, 0, 0.0),
-					Vector3(4.9, 0, 0.0),
-					Vector3(4.9, 0, 2.4),      # 2К южная восточная
-					Vector3(4.9, 0, 0.0),
-					Vector3(10.6, 0, 2.4),     # 2К юго-восточная
-					Vector3(10.6, 0, 0.0),
-					Vector3(0.0, 0, 0.0),
-					Vector3(0.0, 0, 2.2),      # лифтовой холл
+					Vector3(-1.7, 0.0, 1.4),
+					Vector3(-2.08, 0.0, 2.6),
+					Vector3(-2.08, 1.5, 4.9),
+					Vector3(-1.65, 1.5, 5.6),
+					Vector3(-1.15, 1.5, 5.9),
+					Vector3(-1.15, 3.0, 3.6),
+					Vector3(-1.7, 3.0, 1.4),
+					Vector3(-2.3, 3.0, 1.2),
+					Vector3(-2.3, 3.0, 0.2),
+					Vector3(-8.0, 3.0, 0.2),
+					Vector3(-11.0, 3.0, -1.5),
+				]
+			_:
+				# коридор из конца в конец и в лифтовой холл: у автопрохода
+				# нет поиска пути, заходы в квартиры проверяет --audit
+				_route = [
+					Vector3(-8.0, 0, 0.2),
+					Vector3(-11.4, 0, 0.2),
+					Vector3(8.0, 0, 0.2),
+					Vector3(11.4, 0, 0.2),
+					Vector3(1.5, 0, 0.2),
+					Vector3(1.5, 0, 2.2),
+					Vector3(1.5, 0, 5.0),
 				]
 		player.auto_target = _route[0]
 
@@ -294,6 +292,8 @@ func _parse_args() -> void:
 			_no_fade = true
 		elif a == "--plan":
 			_plan_view = true
+		elif a == "--marks":
+			_marks = true
 		elif a == "--no-marks":
 			_marks = false
 		elif a.begins_with("--cam-dist="):
