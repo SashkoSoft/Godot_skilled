@@ -227,37 +227,76 @@ func _core_walls(f: int, y: float) -> void:
 
 
 ## Внутренние перегородки квартир.
+##
+## Раскладка по чертежу серии: квартиры вытянуты вглубь корпуса, а не лежат
+## полосами вдоль фасадов. Размеры комнат взяты с плана БТИ трёхкомнатной
+## квартиры: 20,8 (6,20 x 3,35), 15,0 (4,82 x 3,12), 12,6 (4,76 x 2,68),
+## кухня 9,2 (3,40 x 2,72).
 func _flats(f: int, y: float, is_ground: bool) -> void:
-	# --- северная пара: 3К слева, 2К справа ---
-	_wall_run(f, Vector3(1.5, y, -7.85), Vector3(0, 0, 1), 5.3, [] as Array[Vector3], true)
-	_wall_run(f, Vector3(-9.6, y, -7.6), Vector3(0, 0, 1), 5.6, [_door(1.4)], true)
-	_wall_run(f, Vector3(-6.4, y, -7.6), Vector3(1, 0, 0), 6.2,
-			[_door(-1.6), _door(2.0)], true)
-	_wall_run(f, Vector3(-3.3, y, -6.9), Vector3(0, 0, 1), 2.4, [] as Array[Vector3], true)
-	_wall_run(f, Vector3(4.6, y, -7.9), Vector3(0, 0, 1), 5.0, [_door(1.2)], true)
-	_wall_run(f, Vector3(8.2, y, -7.7), Vector3(1, 0, 0), 7.2, [_door(-2.0)], true)
+	# --- западная трёхкомнатная: X -13..-5,5, Z -10,5..-0,6 ---
+	_three_room(f, y, -1.0, 1.0)
+	# --- восточная трёхкомнатная: тот же план, повёрнутый на 180 ---
+	_three_room(f, y, 1.0, -1.0)
 
-	# --- южная пара: на первом этаже её нет, там вестибюль ---
+	# --- северные однокомнатные: между трёшкой и коридором ---
+	_wall_run(f, Vector3(0.5, y, -7.95), Vector3(0, 0, 1), 5.1, [] as Array[Vector3], true)
+	_one_room(f, y, -2.5, -1.0)
+	_one_room(f, y, 3.5, -1.0)
+
+	# --- южные двухкомнатные (на первом этаже вместо них вестибюль) ---
 	if not is_ground:
-		_wall_run(f, Vector3(-1.5, y, 7.85), Vector3(0, 0, 1), 5.3, [] as Array[Vector3], true)
-		_wall_run(f, Vector3(9.6, y, 7.6), Vector3(0, 0, 1), 5.6, [_door(-1.4)], true)
-		_wall_run(f, Vector3(6.4, y, 7.6), Vector3(1, 0, 0), 6.2,
-				[_door(1.6), _door(-2.0)], true)
-		_wall_run(f, Vector3(3.3, y, 6.9), Vector3(0, 0, 1), 2.4, [] as Array[Vector3], true)
-		_wall_run(f, Vector3(-4.6, y, 7.9), Vector3(0, 0, 1), 5.0, [_door(-1.2)], true)
-		_wall_run(f, Vector3(-8.2, y, 7.7), Vector3(1, 0, 0), 7.2, [_door(2.0)], true)
+		_wall_run(f, Vector3(-0.5, y, 7.95), Vector3(0, 0, 1), 5.1, [] as Array[Vector3], true)
+		_one_room(f, y, 2.5, 1.0)
+		_one_room(f, y, -3.5, 1.0)
 
-	# --- западная пара: 1К севернее, 2К южнее ---
-	_wall_run(f, Vector3(-9.2, y, -0.5), Vector3(1, 0, 0), 7.6, [] as Array[Vector3], true)
-	_wall_run(f, Vector3(-8.6, y, -3.0), Vector3(0, 0, 1), 4.4, [_door(1.2)], true)
-	_wall_run(f, Vector3(-8.6, y, 2.6), Vector3(0, 0, 1), 5.2, [_door(-1.4)], true)
-	_wall_run(f, Vector3(-10.8, y, 2.6), Vector3(1, 0, 0), 4.4, [_door(1.0)], true)
+	# --- западная и восточная двухкомнатные, южнее трёшек ---
+	_two_room(f, y, -1.0, 1.0)
+	_two_room(f, y, 1.0, -1.0)
 
-	# --- восточная пара: зеркально ---
-	_wall_run(f, Vector3(9.2, y, -0.5), Vector3(1, 0, 0), 7.6, [] as Array[Vector3], true)
-	_wall_run(f, Vector3(8.6, y, -3.0), Vector3(0, 0, 1), 4.4, [_door(1.2)], true)
-	_wall_run(f, Vector3(8.6, y, 2.6), Vector3(0, 0, 1), 5.2, [_door(-1.4)], true)
-	_wall_run(f, Vector3(10.8, y, 2.6), Vector3(1, 0, 0), 4.4, [_door(-1.0)], true)
+
+## Трёхкомнатная по плану БТИ. sx = -1 западная, +1 восточная;
+## sz задаёт разворот на 180 градусов.
+func _three_room(f: int, y: float, sx: float, sz: float) -> void:
+	var x_out := 12.8 * sx          # наружная стена
+	var x_in := 5.7 * sx            # стена коридора
+	var z_out := 10.3 * sz          # торцевой фасад
+	# комната 20,8: 6,20 вдоль фасада, 3,35 вглубь
+	_wall_run(f, Vector3((x_out + x_in) * 0.5, y, z_out - 3.35 * sz), Vector3(1, 0, 0), 7.1,
+			[_door(2.2 * sx)], true)
+	# коридор квартиры вдоль стены с соседями
+	_wall_run(f, Vector3(x_in + 1.6 * sx, y, z_out - 6.2 * sz), Vector3(0, 0, 1), 5.8,
+			[_door(1.2 * sz), _door(-1.6 * sz)], true)
+	# комната 15,0 и комната 12,6 — одна за другой вглубь
+	_wall_run(f, Vector3((x_out + x_in) * 0.5 - 0.8 * sx, y, z_out - 6.47 * sz), Vector3(1, 0, 0), 5.5,
+			[] as Array[Vector3], true)
+	# кухня 9,2 у дальнего конца
+	_wall_run(f, Vector3((x_out + x_in) * 0.5 - 0.8 * sx, y, z_out - 9.19 * sz), Vector3(1, 0, 0), 5.5,
+			[_door(-1.4 * sx)], true)
+	# санузел раздельный, у стены коридора
+	_wall_run(f, Vector3(x_in + 1.4 * sx, y, z_out - 8.0 * sz), Vector3(1, 0, 0), 2.8,
+			[] as Array[Vector3], true)
+
+
+## Двухкомнатная: тот же приём, короче на одну комнату.
+func _two_room(f: int, y: float, sx: float, sz: float) -> void:
+	var x_out := 12.8 * sx
+	var x_in := 5.7 * sx
+	var z_far := 10.3 * sz
+	_wall_run(f, Vector3((x_out + x_in) * 0.5, y, z_far - 3.4 * sz), Vector3(1, 0, 0), 7.1,
+			[_door(2.0 * sx)], true)
+	_wall_run(f, Vector3(x_in + 1.7 * sx, y, z_far - 6.0 * sz), Vector3(0, 0, 1), 5.4,
+			[_door(1.4 * sz)], true)
+	_wall_run(f, Vector3((x_out + x_in) * 0.5 - 0.9 * sx, y, z_far - 7.2 * sz), Vector3(1, 0, 0), 5.3,
+			[_door(-1.2 * sx)], true)
+
+
+## Однокомнатная: кухня, комната, санузел, прихожая.
+func _one_room(f: int, y: float, cx: float, sz: float) -> void:
+	var z_out := 10.3 * sz
+	_wall_run(f, Vector3(cx, y, z_out - 2.9 * sz), Vector3(1, 0, 0), 5.6,
+			[_door(1.6)], true)
+	_wall_run(f, Vector3(cx + 1.7, y, z_out - 1.5 * sz), Vector3(0, 0, 1), 2.9,
+			[] as Array[Vector3], true)
 
 
 ## Входная группа первого этажа: тамбур, вестибюль с почтовыми ящиками,
