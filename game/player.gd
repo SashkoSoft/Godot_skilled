@@ -70,7 +70,7 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, want_auto.x, ACCEL * delta)
 		velocity.z = move_toward(velocity.z, want_auto.z, ACCEL * delta)
 		move_and_slide()
-		floor_index = int(floor((global_position.y + 0.4) / Building.FLOOR_HEIGHT))
+		floor_index = int(floor((global_position.y + 0.4) / Tower.FLOOR_H))
 		return
 
 	var raw := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
@@ -92,7 +92,7 @@ func _physics_process(delta: float) -> void:
 		var target_yaw := atan2(dir.x, dir.z)
 		rotation.y = lerp_angle(rotation.y, target_yaw, clampf(12.0 * delta, 0.0, 1.0))
 
-	floor_index = int(floor((global_position.y + 0.4) / Building.FLOOR_HEIGHT))
+	floor_index = int(floor((global_position.y + 0.4) / Tower.FLOOR_H))
 
 
 ## Шаг на уступ. CharacterBody3D сам на ступеньку не поднимается: для него

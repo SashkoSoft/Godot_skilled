@@ -13,13 +13,19 @@ extends Node3D
 
 const FLOOR_HEIGHT := 3.0      ## от пола до пола; в свету 2,8 — как в II-67
 const WALL_THICK := 0.2
-const HALF_W := 13.0           ## габарит 26 x 21 м
-const HALF_D := 10.5
+## Габарит с чертежа: ширины квартир по фасаду складываются в 24,8 м.
+const HALF_W := 12.5           ## 25 x 20 м
+const HALF_D := 10.0
 
-const CORE_X := 3.8            ## ядро: лестница, лифты, мусоропровод
-const CORE_Z := 3.7
-const CORR_X := 5.5            ## кольцевой коридор снаружи ядра
-const CORR_Z := 5.4
+## Ядро смещено вправо от центра, как на плане: лестница, за ней два лифта
+## друг за другом, между ними холл. Двери ближних квартир выходят прямо в холл.
+const CORE_X0 := 1.0
+const CORE_X1 := 9.6
+const CORE_Z := 3.4            ## ядро от -CORE_Z до +CORE_Z
+
+## Коридор — линейная полоса, а не кольцо: идёт от западного торца к холлу.
+const CORR_Z := 1.6            ## полуширина коридора
+const CORR_X_END := CORE_X0
 
 const DOOR_W := 1.0            ## входная дверь квартиры
 const ROOM_DOOR := 0.9
@@ -170,7 +176,7 @@ func _build_floor(f: int, with_stairs: bool, is_ground: bool = false) -> void:
 	_slab(f, false)
 	_outer_walls(f, y, is_ground)
 	_corridor_walls(f, y, is_ground)
-	_core_walls(f, y)
+	_core_walls(f, y, is_ground)
 	if is_ground:
 		_ground_entrance(f, y)
 		_flats(f, y, true)
@@ -199,144 +205,108 @@ func _outer_walls(f: int, y: float, is_ground: bool = false) -> void:
 			[_win(-6.5), _win(-2.5), _win(2.5), _win(6.5)])
 
 
-## Стены кольцевого коридора: в них восемь входных дверей квартир.
+## Коридор: полоса от западного торца до лифтового холла.
+## Двери квартир выходят в него с севера и с юга.
 func _corridor_walls(f: int, y: float, is_ground: bool = false) -> void:
-	_wall_run(f, Vector3(0, y, -CORR_Z), Vector3(1, 0, 0), CORR_X * 2.0,
-			[_door(-2.9, DOOR_W), _door(3.3, DOOR_W)], true)
+	var len_x := CORR_X_END + HALF_W
+	var cx := (-HALF_W + CORR_X_END) * 0.5
+	# северная стена коридора: двери двух западных квартир
+	_wall_run(f, Vector3(cx, y, -CORR_Z), Vector3(1, 0, 0), len_x,
+			[_door(-3.0, DOOR_W), _door(3.6, DOOR_W)], true)
+	# южная стена: то же зеркально
 	if is_ground:
-		# на первом этаже южная сторона коридора открыта в вестибюль
-		_wall_run(f, Vector3(0, y, CORR_Z), Vector3(1, 0, 0), CORR_X * 2.0,
-				[_door(0.0, 3.4)], true)
+		_wall_run(f, Vector3(cx, y, CORR_Z), Vector3(1, 0, 0), len_x,
+				[_door(-3.0, DOOR_W)], true)
 	else:
-		_wall_run(f, Vector3(0, y, CORR_Z), Vector3(1, 0, 0), CORR_X * 2.0,
-				[_door(2.9, DOOR_W), _door(-3.3, DOOR_W)], true)
-	_wall_run(f, Vector3(-CORR_X, y, 0), Vector3(0, 0, 1), CORR_Z * 2.0,
-			[_door(-3.3, DOOR_W), _door(2.1, DOOR_W)], true)
-	_wall_run(f, Vector3(CORR_X, y, 0), Vector3(0, 0, 1), CORR_Z * 2.0,
-			[_door(-2.1, DOOR_W), _door(3.3, DOOR_W)], true)
+		_wall_run(f, Vector3(cx, y, CORR_Z), Vector3(1, 0, 0), len_x,
+				[_door(-3.0, DOOR_W), _door(3.6, DOOR_W)], true)
+	# западный торец коридора — глухой
+	_wall_run(f, Vector3(-HALF_W + 0.1, y, 0), Vector3(0, 0, 1), CORR_Z * 2.0,
+			[] as Array[Vector3], true)
 
 
-## Стены ядра. По чертежу серии лестница стоит между двумя лифтами,
-## поэтому с южной стороны три проёма: к лестнице по центру и к обеим шахтам.
-func _core_walls(f: int, y: float) -> void:
-	_wall_run(f, Vector3(0, y, -CORE_Z), Vector3(1, 0, 0), CORE_X * 2.0, [] as Array[Vector3], true)
-	_wall_run(f, Vector3(-CORE_X, y, 0), Vector3(0, 0, 1), CORE_Z * 2.0, [] as Array[Vector3], true)
-	_wall_run(f, Vector3(CORE_X, y, 0), Vector3(0, 0, 1), CORE_Z * 2.0, [] as Array[Vector3], true)
-	_wall_run(f, Vector3(0, y, CORE_Z), Vector3(1, 0, 0), CORE_X * 2.0,
-			[_door(-2.9, 1.2), _door(0.0, 2.6), _door(2.9, 1.2)], true)
+## Ядро: лестница у западного края, два лифта друг за другом восточнее,
+## между ними холл. В холл выходят двери ближних квартир.
+func _core_walls(f: int, y: float, is_ground: bool = false) -> void:
+	var cx := (CORE_X0 + CORE_X1) * 0.5
+	var w := CORE_X1 - CORE_X0
+	# северная стена ядра: дверь квартиры, что стоит за ним
+	_wall_run(f, Vector3(cx, y, -CORE_Z), Vector3(1, 0, 0), w,
+			[_door(-3.0, DOOR_W)], true)
+	# южная стена
+	if is_ground:
+		_wall_run(f, Vector3(cx, y, CORE_Z), Vector3(1, 0, 0), w, [] as Array[Vector3], true)
+	else:
+		_wall_run(f, Vector3(cx, y, CORE_Z), Vector3(1, 0, 0), w,
+				[_door(-3.0, DOOR_W)], true)
+	# восточная стена ядра: дверь угловой квартиры
+	_wall_run(f, Vector3(CORE_X1, y, 0), Vector3(0, 0, 1), CORE_Z * 2.0,
+			[_door(-1.8, DOOR_W), _door(1.8, DOOR_W)], true)
+	# перегородка между лестницей и лифтовым карманом
+	_wall_run(f, Vector3(CORE_X0 + 2.2, y, 0), Vector3(0, 0, 1), CORE_Z * 2.0,
+			[_door(2.0, 1.6)], true)
 
 
-## Внутренние перегородки квартир.
+## Планировка по чертежу БТИ, симметрично относительно оси дома.
 ##
-## Раскладка по чертежу серии: квартиры вытянуты вглубь корпуса, а не лежат
-## полосами вдоль фасадов. Размеры комнат взяты с плана БТИ трёхкомнатной
-## квартиры: 20,8 (6,20 x 3,35), 15,0 (4,82 x 3,12), 12,6 (4,76 x 2,68),
-## кухня 9,2 (3,40 x 2,72).
+## Половина этажа слева направо: 2К, 3К, 2К (за ядром), 1К (угловая).
+## Вторая половина — та же схема, повёрнутая на 180 градусов.
+## Размеры комнат сняты с чертежа:
+##   3К — 20,7 (3,37 x 6,10), 12,2 (2,57 x 4,71), 15,1 (3,24 x 4,72)
+##   2К — 14,0 (2,80 x 5,52) и 18,5 (3,42 x 5,54)
+##   1К — 19,1 (3,37 x 6,16)
 func _flats(f: int, y: float, is_ground: bool) -> void:
-	# --- западная трёхкомнатная: X -13..-5,5, Z -10,5..-0,6 ---
-	_three_room(f, y, -1.0, 1.0)
-	# --- восточная трёхкомнатная: тот же план, повёрнутый на 180 ---
-	_three_room(f, y, 1.0, -1.0)
-
-	# --- северные однокомнатные: между трёшкой и коридором ---
-	_wall_run(f, Vector3(0.5, y, -7.95), Vector3(0, 0, 1), 5.1, [] as Array[Vector3], true)
-	_one_room(f, y, -2.5, -1.0)
-	_one_room(f, y, 3.5, -1.0)
-
-	# --- южные двухкомнатные (на первом этаже вместо них вестибюль) ---
+	_flat_half(f, y, -1.0)
 	if not is_ground:
-		_wall_run(f, Vector3(-0.5, y, 7.95), Vector3(0, 0, 1), 5.1, [] as Array[Vector3], true)
-		_one_room(f, y, 2.5, 1.0)
-		_one_room(f, y, -3.5, 1.0)
-
-	# --- западная и восточная двухкомнатные, южнее трёшек ---
-	_two_room(f, y, -1.0, 1.0)
-	_two_room(f, y, 1.0, -1.0)
+		_flat_half(f, y, 1.0)
 
 
-## Трёхкомнатная по плану БТИ. sx = -1 западная, +1 восточная;
-## sz задаёт разворот на 180 градусов.
-func _three_room(f: int, y: float, sx: float, sz: float) -> void:
-	var x_out := 12.8 * sx          # наружная стена
-	var x_in := 5.7 * sx            # стена коридора
-	var z_out := 10.3 * sz          # торцевой фасад
-	# комната 20,8: 6,20 вдоль фасада, 3,35 вглубь
-	_wall_run(f, Vector3((x_out + x_in) * 0.5, y, z_out - 3.35 * sz), Vector3(1, 0, 0), 7.1,
-			[_door(2.2 * sx)], true)
-	# коридор квартиры вдоль стены с соседями
-	_wall_run(f, Vector3(x_in + 1.6 * sx, y, z_out - 6.2 * sz), Vector3(0, 0, 1), 5.8,
-			[_door(1.2 * sz), _door(-1.6 * sz)], true)
-	# комната 15,0 и комната 12,6 — одна за другой вглубь
-	_wall_run(f, Vector3((x_out + x_in) * 0.5 - 0.8 * sx, y, z_out - 6.47 * sz), Vector3(1, 0, 0), 5.5,
+## Половина этажа. sz = -1 северная, +1 южная.
+func _flat_half(f: int, y: float, sz: float) -> void:
+	var z_out := HALF_D * sz
+	var z_in := CORR_Z * sz
+	var mid := (z_out + z_in) * 0.5
+	var depth := HALF_D - CORR_Z
+
+	var b_23 := -6.3
+	var b_3c := CORE_X0
+	var b_c1 := CORE_X1
+
+	# межквартирные стены
+	_wall_run(f, Vector3(b_23, y, mid), Vector3(0, 0, 1), depth, [] as Array[Vector3], true)
+	_wall_run(f, Vector3(b_3c, y, mid), Vector3(0, 0, 1), depth, [] as Array[Vector3], true)
+	_wall_run(f, Vector3(b_c1, y, (z_out + CORE_Z * sz) * 0.5), Vector3(0, 0, 1),
+			HALF_D - CORE_Z, [] as Array[Vector3], true)
+
+	# 2К западная: комнаты 14,0 и 18,5
+	_wall_run(f, Vector3((-HALF_W + b_23) * 0.5, y, z_out - 5.5 * sz), Vector3(1, 0, 0), 6.2,
+			[_door(-1.5), _door(1.7)], true)
+	_wall_run(f, Vector3(-HALF_W + 2.8, y, z_out - 2.75 * sz), Vector3(0, 0, 1), 5.5,
 			[] as Array[Vector3], true)
-	# кухня 9,2 у дальнего конца
-	_wall_run(f, Vector3((x_out + x_in) * 0.5 - 0.8 * sx, y, z_out - 9.19 * sz), Vector3(1, 0, 0), 5.5,
-			[_door(-1.4 * sx)], true)
-	# санузел раздельный и кухня — у стены с коридором, там же стояки
-	_bath_block(f, y, x_in + 2.2 * sx, z_out - 7.4 * sz, sx, sz)
-	_kitchen_block(f, y, x_in + 3.4 * sx, z_out - 9.4 * sz, sx)
+	_bath_block(f, y, -HALF_W + 1.8, z_out - 7.0 * sz, 1.0, -sz)
 
-
-## Двухкомнатная: тот же приём, короче на одну комнату.
-func _two_room(f: int, y: float, sx: float, sz: float) -> void:
-	var x_out := 12.8 * sx
-	var x_in := 5.7 * sx
-	var z_far := 10.3 * sz
-	_wall_run(f, Vector3((x_out + x_in) * 0.5, y, z_far - 3.4 * sz), Vector3(1, 0, 0), 7.1,
-			[_door(2.0 * sx)], true)
-	_wall_run(f, Vector3(x_in + 1.7 * sx, y, z_far - 6.0 * sz), Vector3(0, 0, 1), 5.4,
-			[_door(1.4 * sz)], true)
-	_wall_run(f, Vector3((x_out + x_in) * 0.5 - 0.9 * sx, y, z_far - 7.2 * sz), Vector3(1, 0, 0), 5.3,
-			[_door(-1.2 * sx)], true)
-	_bath_block(f, y, x_in + 2.4 * sx, z_far - 8.6 * sz, sx, sz)
-	_kitchen_block(f, y, x_in + 4.6 * sx, z_far - 9.6 * sz, sx)
-
-
-## Раздельный санузел по чертежу: ванная и туалет — два отдельных помещения
-## у стены с коридором, стояки идут одной вертикалью через все этажи.
-## sx/sz задают разворот, как у квартир.
-func _bath_block(f: int, y: float, cx: float, cz: float, sx: float, sz: float) -> void:
-	var bw := 1.7      # ванная
-	var bd := 1.5
-	var tw := 0.9      # туалет
-	var td := 1.2
-
-	# перегородка между ванной и туалетом
-	_wall_run(f, Vector3(cx + (bw * 0.5) * sx, y, cz), Vector3(0, 0, 1), bd,
+	# 3К: три комнаты в ряд
+	_wall_run(f, Vector3(b_23 + 3.37, y, z_out - 3.05 * sz), Vector3(0, 0, 1), 6.1,
 			[] as Array[Vector3], true)
-	# двери в обе комнаты — из прихожей
-	_wall_run(f, Vector3(cx, y, cz + (bd * 0.5) * sz), Vector3(1, 0, 0), bw + tw,
-			[_door(-0.4 * sx, 0.7), _door(1.0 * sx, 0.7)], true)
-
-	# сантехника: ванна, унитаз, раковина. Заглушки под будущие ассеты.
-	_fixture(f, Vector3(cx - 0.35 * sx, y + 0.30, cz), Vector3(1.6, 0.60, 0.70), "Bath")
-	_fixture(f, Vector3(cx + 1.2 * sx, y + 0.40, cz - 0.2 * sz), Vector3(0.38, 0.80, 0.60), "Toilet")
-	_fixture(f, Vector3(cx + 0.55 * sx, y + 0.85, cz + 0.5 * sz), Vector3(0.55, 0.18, 0.42), "Sink")
-
-
-## Кухонное оборудование: плита и мойка у стены со стояками.
-func _kitchen_block(f: int, y: float, cx: float, cz: float, sx: float) -> void:
-	_fixture(f, Vector3(cx, y + 0.43, cz), Vector3(0.60, 0.85, 0.60), "Stove")
-	_fixture(f, Vector3(cx + 0.7 * sx, y + 0.45, cz), Vector3(0.70, 0.88, 0.60), "KitchenSink")
-
-
-func _fixture(f: int, pos: Vector3, size: Vector3, name_: String) -> void:
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	var mi := _spawn(mesh, pos, _mat_shaft, f)
-	mi.name = "%s_%d" % [name_, f]
-
-
-## Однокомнатная: кухня, комната, санузел, прихожая.
-func _one_room(f: int, y: float, cx: float, sz: float) -> void:
-	var z_out := 10.3 * sz
-	_wall_run(f, Vector3(cx, y, z_out - 2.9 * sz), Vector3(1, 0, 0), 5.6,
-			[_door(1.6)], true)
-	_wall_run(f, Vector3(cx + 1.7, y, z_out - 1.5 * sz), Vector3(0, 0, 1), 2.9,
+	_wall_run(f, Vector3(b_23 + 5.94, y, z_out - 2.36 * sz), Vector3(0, 0, 1), 4.7,
 			[] as Array[Vector3], true)
-	# в однокомнатной санузел совмещённый — ванна и унитаз в одном помещении
-	_fixture(f, Vector3(cx + 2.3, y + 0.30, z_out - 1.0 * sz), Vector3(1.6, 0.60, 0.70), "Bath")
-	_fixture(f, Vector3(cx + 2.3, y + 0.40, z_out - 2.2 * sz), Vector3(0.38, 0.80, 0.60), "Toilet")
+	_wall_run(f, Vector3(b_23 + 1.7, y, z_out - 6.10 * sz), Vector3(1, 0, 0), 3.4,
+			[_door(0.7)], true)
+	_wall_run(f, Vector3(b_23 + 4.65, y, z_out - 4.71 * sz), Vector3(1, 0, 0), 2.6,
+			[_door(-0.6)], true)
+	# санузел ставится западнее входной двери, иначе перекрывает проход
+	_bath_block(f, y, b_23 + 1.3, z_out - 7.6 * sz, 1.0, -sz)
+
+	# 2К за ядром
+	_wall_run(f, Vector3((b_3c + b_c1) * 0.5, y, z_out - 5.55 * sz), Vector3(1, 0, 0), 7.0,
+			[_door(-1.8), _door(2.0)], true)
+	_wall_run(f, Vector3(b_3c + 3.4, y, (z_out + (z_out - 5.55 * sz)) * 0.5), Vector3(0, 0, 1), 5.5,
+			[] as Array[Vector3], true)
+
+	# 1К угловая: комната 19,1
+	_wall_run(f, Vector3((b_c1 + HALF_W) * 0.5, y, z_out - 6.16 * sz), Vector3(1, 0, 0),
+			HALF_W - b_c1, [_door(0.8)], true)
+	_bath_block(f, y, b_c1 + 2.6, z_out - 8.2 * sz, 1.0, -sz)
 
 
 ## Входная группа первого этажа: тамбур, вестибюль с почтовыми ящиками,
@@ -360,15 +330,44 @@ func _ground_entrance(f: int, y: float) -> void:
 	_wall_run(f, Vector3(-5.7, y, -3.4), Vector3(0, 0, 1), 2.2, [_door(0.0, DOOR_W)], true)
 
 
-## Шахты лифтов по краям ядра, между ними лестница. Мусоропровод у северной
-## стены — его ствол идёт вертикально через все этажи в мусорокамеру внизу.
+## Раздельный санузел: ванная и туалет — два помещения у внутренней стены,
+## стояки идут одной вертикалью через все этажи.
+func _bath_block(f: int, y: float, cx: float, cz: float, sx: float, sz: float) -> void:
+	var bw := 1.7
+	var bd := 1.5
+	var tw := 0.9
+
+	_wall_run(f, Vector3(cx + (bw * 0.5) * sx, y, cz), Vector3(0, 0, 1), bd,
+			[] as Array[Vector3], true)
+	_wall_run(f, Vector3(cx, y, cz + (bd * 0.5) * sz), Vector3(1, 0, 0), bw + tw,
+			[_door(-0.4 * sx, 0.7), _door(1.0 * sx, 0.7)], true)
+
+	_fixture(f, Vector3(cx - 0.35 * sx, y + 0.30, cz), Vector3(1.6, 0.60, 0.70), "Bath")
+	_fixture(f, Vector3(cx + 1.2 * sx, y + 0.40, cz - 0.2 * sz), Vector3(0.38, 0.80, 0.60), "Toilet")
+	_fixture(f, Vector3(cx + 0.55 * sx, y + 0.85, cz + 0.5 * sz), Vector3(0.55, 0.18, 0.42), "Sink")
+
+
+## Кухонное оборудование у стены со стояками.
+func _kitchen_block(f: int, y: float, cx: float, cz: float, sx: float) -> void:
+	_fixture(f, Vector3(cx, y + 0.43, cz), Vector3(0.60, 0.85, 0.60), "Stove")
+	_fixture(f, Vector3(cx + 0.7 * sx, y + 0.45, cz), Vector3(0.70, 0.88, 0.60), "KitchenSink")
+
+
+func _fixture(f: int, pos: Vector3, size: Vector3, name_: String) -> void:
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	var mi := _spawn(mesh, pos, _mat_shaft, f)
+	mi.name = "%s_%d" % [name_, f]
+
+
+## Лифты друг за другом восточнее лестницы, между ними лифтовой холл.
 func _shafts(f: int, y: float) -> void:
 	var h := FLOOR_HEIGHT - WALL_THICK
-	_box(f, Vector3(-2.9, y + h * 0.5, 1.6), Vector3(1.7, h, 2.4), _mat_shaft, "LiftPass")
-	_box(f, Vector3(2.9, y + h * 0.5, 1.5), Vector3(1.7, h, 2.6), _mat_shaft, "LiftCargo")
+	_box(f, Vector3(7.1, y + h * 0.5, -2.0), Vector3(2.0, h, 2.4), _mat_shaft, "LiftPass")
+	_box(f, Vector3(7.1, y + h * 0.5, 2.0), Vector3(2.0, h, 2.4), _mat_shaft, "LiftCargo")
 	if f > 0:
-		_box(f, Vector3(-3.0, y + h * 0.5, -2.9), Vector3(1.2, h, 1.2), _mat_shaft, "Chute")
-	_box(f, Vector3(2.9, y + h * 0.5, -2.9), Vector3(1.6, h, 1.2), _mat_shaft, "Panel")
+		_box(f, Vector3(2.6, y + h * 0.5, -2.9), Vector3(1.0, h, 0.9), _mat_shaft, "Chute")
+	_box(f, Vector3(2.6, y + h * 0.5, 2.9), Vector3(1.2, h, 0.9), _mat_shaft, "Panel")
 
 
 # ---------------------------------------------------------------------------
@@ -390,12 +389,12 @@ func _slab(f: int, is_roof: bool) -> void:
 		return
 
 	# Проём под марши — западная половина ядра.
-	var hx0 := -1.8
-	var hx1 := 1.8
+	var hx0 := CORE_X0 + 2.4
+	var hx1 := CORE_X0 + 5.6
 	var pieces: Array[Rect2] = [
 		Rect2(Vector2(-HALF_W, -HALF_D), Vector2(hx0 + HALF_W, HALF_D * 2.0)),
 		Rect2(Vector2(hx1, -HALF_D), Vector2(HALF_W - hx1, HALF_D * 2.0)),
-		Rect2(Vector2(hx0, -HALF_D), Vector2(hx1 - hx0, -CORE_Z + HALF_D)),
+		Rect2(Vector2(hx0, -HALF_D), Vector2(hx1 - hx0, HALF_D - CORE_Z)),
 		Rect2(Vector2(hx0, CORE_Z), Vector2(hx1 - hx0, HALF_D - CORE_Z)),
 	]
 	for i in pieces.size():
@@ -416,12 +415,12 @@ func _stairs(f: int) -> void:
 	var y0 := f * FLOOR_HEIGHT
 	var half_rise := FLOOR_HEIGHT * 0.5
 	var run := 2.6
-	var z_near := CORE_Z - 0.6
+	var z_near := CORE_Z - 0.5
 	var z_mid := z_near - run
 
-	_flight(f, Vector3(-0.85, y0, z_near), Vector3(0, 0, -1), half_rise, run, 1.4)
+	_flight(f, Vector3(CORE_X0 + 3.3, y0, z_near), Vector3(0, 0, -1), half_rise, run, 1.4)
 	_landing(f, y0 + half_rise, z_mid)
-	_flight(f, Vector3(0.85, y0 + half_rise, z_mid), Vector3(0, 0, 1), half_rise, run, 1.4)
+	_flight(f, Vector3(CORE_X0 + 4.7, y0 + half_rise, z_mid), Vector3(0, 0, 1), half_rise, run, 1.4)
 
 
 func _flight(f: int, start: Vector3, dir: Vector3, rise: float, run: float, width: float) -> void:
@@ -464,7 +463,7 @@ func _flight(f: int, start: Vector3, dir: Vector3, rise: float, run: float, widt
 func _landing(f: int, y: float, z_mid: float) -> void:
 	var mesh := BoxMesh.new()
 	mesh.size = Vector3(3.2, WALL_THICK, 1.5)
-	var mi := _spawn(mesh, Vector3(0.0, y - WALL_THICK * 0.5, z_mid - 0.75), _mat_floor, f)
+	var mi := _spawn(mesh, Vector3(CORE_X0 + 4.0, y - WALL_THICK * 0.5, z_mid - 0.75), _mat_floor, f)
 	mi.name = "Landing_%d" % f
 
 

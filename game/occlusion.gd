@@ -17,7 +17,7 @@ const NEAR_MIN := 0.4          ## вплотную
 const NEAR_MAX := 2.6          ## отсюда гасим полностью
 const FADE_NEAR := 0.55        ## плотность стены, к которой прижался игрок
 
-var building: Building
+var building: Tower
 var player: Player
 var rig: CameraRig
 

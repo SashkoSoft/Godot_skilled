@@ -11,7 +11,7 @@ extends Node3D
 
 const SHOT_DEFAULT_FRAMES := 90
 
-var building: Building
+var building: Tower
 var player: Player
 var rig: CameraRig
 var occ: Occlusion
@@ -21,10 +21,10 @@ var _shot_path: String = ""
 var _shot_frames: int = SHOT_DEFAULT_FRAMES
 var _shot_yaw_deg: float = -1.0
 var _start_floor: int = 0
-var _floors: int = 2
+var _floors: int = 3
 var _cam_dist: float = 0.0
 var _marks := true
-var _spawn := Vector2(0.0, 13.0)
+var _spawn := Vector2(-9.3, 0.0)
 var _walk_test := false
 var _walk_route := "stairs"
 var _route: Array[Vector3] = []
@@ -158,7 +158,7 @@ func _build_world() -> void:
 	ground.add_child(gs)
 	add_child(ground)
 
-	building = Building.new()
+	building = Tower.new()
 	building.name = "Building"
 	building.marks_visible = _marks
 	add_child(building)
@@ -166,7 +166,7 @@ func _build_world() -> void:
 
 	player = Player.new()
 	player.name = "Player"
-	player.position = Vector3(_spawn.x, 0.2 + _start_floor * Building.FLOOR_HEIGHT, _spawn.y)
+	player.position = Vector3(_spawn.x, 0.2 + _start_floor * Tower.FLOOR_H, _spawn.y)
 	add_child(player)
 
 	rig = CameraRig.new()
@@ -182,32 +182,32 @@ func _build_world() -> void:
 		# У автопрохода нет поиска пути — он идёт по прямой, поэтому маршруты
 		# заданы по точкам и разделены по проверяемому сценарию.
 		match _walk_route:
-			"outdoor":
-				# порог у входа: игрок должен выйти на улицу и вернуться
-				_route = [
-					Vector3(0.5, 0, 6.0),
-					Vector3(0.5, 0, 11.0),
-					Vector3(0.5, 0, 6.5),
-				]
 			_:
-				# Обход всех восьми квартир по кольцевому коридору: у каждой
-				# двери — шаг внутрь. Если хоть одна дверь ведёт не туда
-				# или её нет, тест упрётся и назовёт номер точки.
+				# обход этажа: по коридору с заходом в квартиры обоих рядов,
+				# затем в лифтовой холл
 				_route = [
-					Vector3(0.0, 0, 13.0),        # снаружи, перед входом
-					Vector3(0.0, 0, 9.6),         # тамбур
-					Vector3(0.0, 0, 7.0),         # вестибюль
-					Vector3(0.0, 0, 4.6),         # коридор у ядра
-					Vector3(-0.85, 0, 2.9),       # низ первого марша
-					Vector3(-0.85, 1.5, 0.7),     # верх первого марша
-					Vector3(0.85, 1.5, 0.7),      # разворот на промежуточной площадке
-					Vector3(0.85, 3.0, 3.1),      # выход на второй этаж
-					Vector3(2.9, 3.0, 4.6),       # коридор второго этажа
-					Vector3(2.9, 3.0, 6.6),       # 3К южная
-					Vector3(2.9, 3.0, 4.6),       # назад в коридор
-					Vector3(-4.6, 3.0, 4.6),      # по коридору на западную сторону
-					Vector3(-4.6, 3.0, -3.3),     # к двери 1К
-					Vector3(-6.8, 3.0, -3.3),     # 1К западная
+					Vector3(-9.3, 0, 0.0),
+					Vector3(-9.3, 0, -2.6),   # 2К северная
+					Vector3(-9.3, 0, 0.0),
+					Vector3(-1.6, 0, -2.6),   # 3К северная
+					Vector3(-1.6, 0, 0.0),
+					Vector3(4.6, 0, -2.6),    # 1К северная
+					Vector3(4.6, 0, 0.0),
+					Vector3(9.4, 0, -2.6),    # 2К северо-восточная
+					Vector3(9.4, 0, 0.0),
+					Vector3(0.0, 0, 0.0),     # по коридору на запад
+					Vector3(-9.3, 0, 0.0),
+					Vector3(-9.3, 0, 2.6),    # 2К южная
+					Vector3(-9.3, 0, 0.0),
+					Vector3(-3.9, 0, 2.6),    # 1К южная
+					Vector3(-3.9, 0, 0.0),
+					Vector3(0.5, 0, 2.6),     # 1К южная вторая
+					Vector3(0.5, 0, 0.0),
+					Vector3(6.0, 0, 0.0),
+					Vector3(10.7, 0, 0.0),
+					Vector3(10.7, 0, 2.6),    # 1К восточная
+					Vector3(10.7, 0, 0.0),
+					Vector3(6.0, 0, 2.2),     # лифтовой холл
 				]
 		player.auto_target = _route[0]
 
