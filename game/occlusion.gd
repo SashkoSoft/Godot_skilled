@@ -40,6 +40,8 @@ func _process(delta: float) -> void:
 	for mi in building.fadeable:
 		if not is_instance_valid(mi):
 			continue
+		if mi.get_meta("is_mark", false):
+			continue
 		var mf: int = mi.get_meta("floor", 0)
 		var is_ceiling: bool = mi.get_meta("is_ceiling", false)
 

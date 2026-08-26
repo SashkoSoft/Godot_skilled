@@ -23,6 +23,7 @@ var _shot_yaw_deg: float = -1.0
 var _start_floor: int = 0
 var _floors: int = 2
 var _cam_dist: float = 0.0
+var _marks := true
 var _spawn := Vector2(0.0, 13.0)
 var _walk_test := false
 var _walk_route := "stairs"
@@ -159,6 +160,7 @@ func _build_world() -> void:
 
 	building = Building.new()
 	building.name = "Building"
+	building.marks_visible = _marks
 	add_child(building)
 	building.build(_floors)
 
@@ -260,6 +262,8 @@ func _parse_args() -> void:
 			var parts := a.substr(8).split(",")
 			if parts.size() == 2:
 				_spawn = Vector2(float(parts[0]), float(parts[1]))
+		elif a == "--no-marks":
+			_marks = false
 		elif a.begins_with("--cam-dist="):
 			_cam_dist = float(a.substr(11))
 		elif a.begins_with("--floors="):
