@@ -272,9 +272,9 @@ func _three_room(f: int, y: float, sx: float, sz: float) -> void:
 	# кухня 9,2 у дальнего конца
 	_wall_run(f, Vector3((x_out + x_in) * 0.5 - 0.8 * sx, y, z_out - 9.19 * sz), Vector3(1, 0, 0), 5.5,
 			[_door(-1.4 * sx)], true)
-	# санузел раздельный, у стены коридора
-	_wall_run(f, Vector3(x_in + 1.4 * sx, y, z_out - 8.0 * sz), Vector3(1, 0, 0), 2.8,
-			[] as Array[Vector3], true)
+	# санузел раздельный и кухня — у стены с коридором, там же стояки
+	_bath_block(f, y, x_in + 2.2 * sx, z_out - 7.4 * sz, sx, sz)
+	_kitchen_block(f, y, x_in + 3.4 * sx, z_out - 9.4 * sz, sx)
 
 
 ## Двухкомнатная: тот же приём, короче на одну комнату.
@@ -288,6 +288,43 @@ func _two_room(f: int, y: float, sx: float, sz: float) -> void:
 			[_door(1.4 * sz)], true)
 	_wall_run(f, Vector3((x_out + x_in) * 0.5 - 0.9 * sx, y, z_far - 7.2 * sz), Vector3(1, 0, 0), 5.3,
 			[_door(-1.2 * sx)], true)
+	_bath_block(f, y, x_in + 2.4 * sx, z_far - 8.6 * sz, sx, sz)
+	_kitchen_block(f, y, x_in + 4.6 * sx, z_far - 9.6 * sz, sx)
+
+
+## Раздельный санузел по чертежу: ванная и туалет — два отдельных помещения
+## у стены с коридором, стояки идут одной вертикалью через все этажи.
+## sx/sz задают разворот, как у квартир.
+func _bath_block(f: int, y: float, cx: float, cz: float, sx: float, sz: float) -> void:
+	var bw := 1.7      # ванная
+	var bd := 1.5
+	var tw := 0.9      # туалет
+	var td := 1.2
+
+	# перегородка между ванной и туалетом
+	_wall_run(f, Vector3(cx + (bw * 0.5) * sx, y, cz), Vector3(0, 0, 1), bd,
+			[] as Array[Vector3], true)
+	# двери в обе комнаты — из прихожей
+	_wall_run(f, Vector3(cx, y, cz + (bd * 0.5) * sz), Vector3(1, 0, 0), bw + tw,
+			[_door(-0.4 * sx, 0.7), _door(1.0 * sx, 0.7)], true)
+
+	# сантехника: ванна, унитаз, раковина. Заглушки под будущие ассеты.
+	_fixture(f, Vector3(cx - 0.35 * sx, y + 0.30, cz), Vector3(1.6, 0.60, 0.70), "Bath")
+	_fixture(f, Vector3(cx + 1.2 * sx, y + 0.40, cz - 0.2 * sz), Vector3(0.38, 0.80, 0.60), "Toilet")
+	_fixture(f, Vector3(cx + 0.55 * sx, y + 0.85, cz + 0.5 * sz), Vector3(0.55, 0.18, 0.42), "Sink")
+
+
+## Кухонное оборудование: плита и мойка у стены со стояками.
+func _kitchen_block(f: int, y: float, cx: float, cz: float, sx: float) -> void:
+	_fixture(f, Vector3(cx, y + 0.43, cz), Vector3(0.60, 0.85, 0.60), "Stove")
+	_fixture(f, Vector3(cx + 0.7 * sx, y + 0.45, cz), Vector3(0.70, 0.88, 0.60), "KitchenSink")
+
+
+func _fixture(f: int, pos: Vector3, size: Vector3, name_: String) -> void:
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	var mi := _spawn(mesh, pos, _mat_shaft, f)
+	mi.name = "%s_%d" % [name_, f]
 
 
 ## Однокомнатная: кухня, комната, санузел, прихожая.
@@ -297,6 +334,9 @@ func _one_room(f: int, y: float, cx: float, sz: float) -> void:
 			[_door(1.6)], true)
 	_wall_run(f, Vector3(cx + 1.7, y, z_out - 1.5 * sz), Vector3(0, 0, 1), 2.9,
 			[] as Array[Vector3], true)
+	# в однокомнатной санузел совмещённый — ванна и унитаз в одном помещении
+	_fixture(f, Vector3(cx + 2.3, y + 0.30, z_out - 1.0 * sz), Vector3(1.6, 0.60, 0.70), "Bath")
+	_fixture(f, Vector3(cx + 2.3, y + 0.40, z_out - 2.2 * sz), Vector3(0.38, 0.80, 0.60), "Toilet")
 
 
 ## Входная группа первого этажа: тамбур, вестибюль с почтовыми ящиками,
