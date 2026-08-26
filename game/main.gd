@@ -30,7 +30,9 @@ var _reach_map := false
 var _fix_reach := false
 var _prune := false
 var _audit := false
-var _no_fade := false   ## для осмотра: не гасить стены прозрачностью
+var _no_fade := false
+var _bots := 4          ## сколько жителей ходит по дому
+var _bot_log := false   ## для осмотра: не гасить стены прозрачностью
 var _spawn := Vector2(-1.7, 1.4)   ## лестничная клетка
 var _walk_test := false
 var _walk_route := "stairs"
@@ -222,6 +224,8 @@ func _build_world() -> void:
 				]
 		player.auto_target = _route[0]
 
+	_spawn_bots.call_deferred()
+
 	occ = Occlusion.new()
 	occ.name = "Occlusion"
 	occ.fade_enabled = not _no_fade
@@ -288,6 +292,10 @@ func _parse_args() -> void:
 		elif a == "--audit":
 			_check_reach = true
 			_audit = true
+		elif a.begins_with("--bots="):
+			_bots = int(a.split("=")[1])
+		elif a == "--bot-log":
+			_bot_log = true
 		elif a == "--no-fade":
 			_no_fade = true
 		elif a == "--plan":
@@ -588,3 +596,60 @@ func _audit_flats() -> void:
 			bad_rooms += miss.size()
 	print("[квартиры] с проблемами %d, недостижимых помещений внутри квартир %d"
 			% [bad_flats, bad_rooms])
+
+
+## Навигационная сетка и жители. Печём сетку по уже построенным коллизиям,
+## цели берём из таблицы помещений — бот обходит комнаты, а не случайные точки.
+func _spawn_bots() -> void:
+	if _bots <= 0:
+		return
+	var nav := Navigation.new()
+	nav.name = "Navigation"
+	add_child(nav)
+	nav.bake_from(building)
+	# Регион попадает на карту навигации только на следующем шаге физики;
+	# до этого любой запрос к карте возвращает ноль.
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	print("[навигация] полигонов в сетке: %d" % nav.polygon_count())
+	if nav.polygon_count() == 0:
+		print("[навигация] сетка пустая — боты не запущены")
+		return
+
+	# Цель должна быть достижима: центр тесного санузла лежит вне навигационной
+	# сетки, агент до него не доходит никогда и стоит у порога как вкопанный.
+	# Отсеиваем по габариту — минимальная сторона должна быть шире агента.
+	var min_side := (Navigation.AGENT_RADIUS + 0.12) * 2.0
+	var rooms: Array[Vector3] = []
+	var dropped := 0
+	for f in _floors:
+		for r in Tower.ROOMS:
+			var kind := int(r[5])
+			if kind == Tower.SHF or kind == Tower.LOG:
+				continue
+			var w: float = float(r[2]) - float(r[0])
+			var d: float = float(r[3]) - float(r[1])
+			if minf(w, d) < min_side or w * d < 1.6:
+				dropped += 1
+				continue
+			rooms.append(Vector3((float(r[0]) + float(r[2])) * 0.5,
+					f * Tower.FLOOR_H + 0.15, (float(r[1]) + float(r[3])) * 0.5))
+	print("[навигация] целей: %d, отброшено тесных: %d" % [rooms.size(), dropped])
+	if rooms.is_empty():
+		return
+
+	var colours := [Color(0.85, 0.35, 0.30), Color(0.35, 0.65, 0.90),
+			Color(0.55, 0.80, 0.35), Color(0.85, 0.60, 0.25),
+			Color(0.75, 0.45, 0.85), Color(0.30, 0.80, 0.70)]
+	for i in _bots:
+		var route: Array[Vector3] = []
+		for k in 6:
+			route.append(rooms[(i * 37 + k * 61) % rooms.size()])
+		var b := Bot.new()
+		b.name = "Bot%d" % i
+		add_child(b)
+		b.watcher = player
+		b.setup(route[0] + Vector3(0, 0.1, 0), route, colours[i % colours.size()],
+				_bot_log, "№%d" % (i + 1))
+		b.start()
+	print("[навигация] запущено жителей: %d" % _bots)
