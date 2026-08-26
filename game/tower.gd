@@ -37,80 +37,81 @@ const SHF := Room.SHAFT
 ## Квартиры пронумерованы как в БТИ: 46 44 45 43 по северу, 42 41 48 47 по югу,
 ## 8 — места общего пользования.
 const ROOMS := [
+
 	# --- 46, северо-запад -------------------------------------------------
-	[-17.80, -8.00, -16.35, -3.35, 0, LOG],
-	[-16.08, -8.87, -13.30, -3.35, 0, LIV],   # 14,0 = 2,80 x 5,52
-	[-13.30, -8.87,  -9.90, -3.33, 0, LIV],   # 18,5 = 3,42 x 5,54
-	[-17.30, -3.30, -14.14, -0.35, 0, KIT],
-	[-14.00, -2.30, -12.85, -0.35, 0, BAT],
-	[-12.75, -2.30, -11.80, -0.35, 0, BAT],
-	[-11.70, -3.30,  -9.90, -0.35, 0, HAL],
+	[-17.88,  -8.00, -16.23,  -3.14, 0, LOG],
+	[-16.08,  -8.74, -13.30,  -3.14, 0, LIV],  # 14,0 = 2,80 x 5,52
+	[-13.30,  -8.74,  -9.52,  -3.29, 0, LIV],  # 18,5 = 3,42 x 5,54
+	[-17.30,  -3.01, -14.14,  -0.39, 0, KIT],
+	[-14.12,  -2.13, -12.85,  -0.39, 0, BAT],
+	[-12.71,  -2.13, -11.97,  -0.39, 0, BAT],
+	[-11.70,  -3.01,  -9.52,  -0.39, 0, HAL],
 	# --- 44, север-центр, трёхкомнатная -----------------------------------
-	[ -9.51, -9.24,  -3.24, -8.06, 1, LOG],   # лоджия 1б
-	[ -3.06, -9.24,   2.84, -8.06, 1, LOG],   # лоджия 3а
-	[ -9.40, -7.60,  -6.03, -1.50, 1, LIV],   # 20,7 = 3,37 x 6,10
-	[ -6.03, -7.60,  -3.46, -2.89, 1, LIV],   # 12,2 = 2,57 x 4,71
-	[ -3.36, -7.60,  -0.12, -2.88, 1, LIV],   # 15,1 = 3,24 x 4,72
-	[ -6.03, -2.80,  -0.12, -1.50, 1, HAL],   # холл 7
-	[  0.60, -7.51,   3.02, -4.97, 1, KIT],
-	[  0.75, -3.43,   2.02, -2.61, 1, BAT],
-	[  0.75, -2.42,   3.02, -0.97, 1, BAT],
-	[ -0.05, -4.90,   0.70, -0.35, 1, HAL],
+	[ -9.51,  -9.24,  -3.28,  -8.06, 1, LOG],  # лоджия 1б
+	[ -3.06,  -9.24,   2.92,  -8.06, 1, LOG],  # лоджия 3а
+	[ -9.40,  -7.52,  -6.03,  -1.12, 1, LIV],  # 20,7 = 3,37 x 6,10
+	[ -6.03,  -7.52,  -3.42,  -2.89, 1, LIV],  # 12,2 = 2,57 x 4,71
+	[ -3.36,  -7.52,   0.17,  -2.88, 1, LIV],  # 15,1 = 3,24 x 4,72
+	[ -6.03,  -2.80,   0.17,  -1.12, 1, HAL],  # холл 7
+	[  0.43,  -7.51,   3.02,  -4.68, 1, KIT],
+	[  1.13,  -3.43,   1.90,  -2.94, 1, BAT],
+	[  1.13,  -2.46,   3.02,  -0.97, 1, BAT],
+	[ -0.05,  -4.90,   0.70,  -0.35, 1, HAL],
 	# --- 45, север справа от центра ---------------------------------------
-	[  3.20, -9.24,   9.19, -8.06, 2, LOG],   # лоджия 1а
-	[  3.56, -7.60,   5.93, -3.43, 2, LIV],
-	[  6.10, -7.60,   9.01, -1.44, 2, LIV],   # 19,1 = 3,37 x 6,16
-	[  3.20, -3.35,   4.93, -2.55, 2, BAT],
-	[  3.75, -2.45,   5.38, -1.16, 2, BAT],
-	[  5.56, -2.45,   7.38, -0.35, 2, HAL],
+	[  3.20,  -9.24,   9.31,  -8.06, 2, LOG],  # лоджия 1а
+	[  3.31,  -7.52,   5.93,  -3.43, 2, LIV],
+	[  5.97,  -7.52,   9.39,  -1.44, 2, LIV],  # 19,1 = 3,37 x 6,16
+	[  3.20,  -3.14,   4.93,  -2.55, 2, BAT],
+	[  3.37,  -2.66,   5.17,  -0.91, 2, BAT],
+	[  5.23,  -2.66,   7.38,  -0.39, 2, HAL],
 	# --- 43, северо-восток (зеркало 46) -----------------------------------
-	[ 16.35, -8.00,  17.80, -3.35, 3, LOG],
-	[ 13.30, -8.87,  16.08, -3.35, 3, LIV],   # 13,9
-	[  9.90, -8.87,  13.30, -3.33, 3, LIV],   # 18,2
-	[ 14.14, -3.30,  17.30, -0.35, 3, KIT],
-	[ 12.85, -2.30,  14.00, -0.35, 3, BAT],
-	[ 11.80, -2.30,  12.75, -0.35, 3, BAT],
-	[  9.90, -3.30,  11.70, -0.35, 3, HAL],
+	[ 16.23,  -8.00,  17.88,  -3.14, 3, LOG],
+	[ 13.30,  -8.74,  16.08,  -3.14, 3, LIV],  # 13,9
+	[  9.52,  -8.74,  13.30,  -3.29, 3, LIV],  # 18,2
+	[ 14.14,  -3.01,  17.30,  -0.39, 3, KIT],
+	[ 12.85,  -2.13,  14.33,  -0.39, 3, BAT],
+	[ 11.80,  -2.13,  12.71,  -0.39, 3, BAT],
+	[  9.52,  -3.01,  11.74,  -0.39, 3, HAL],
 	# --- общий коридор ----------------------------------------------------
-	[-11.70, -0.30,  11.70,  0.65, 8, HAL],
+	[-11.70,  -0.68,  11.74,   0.82, 8, HAL],
 	# --- 42, юго-запад ----------------------------------------------------
-	[-17.68,  3.70, -16.23,  8.44, 4, LOG],
-	[-15.68,  3.53, -13.50,  8.44, 4, LIV],   # 13,8
-	[-13.41,  3.53, -10.15,  8.44, 4, LIV],   # 18,6
-	[-17.32,  0.72, -14.60,  3.45, 4, KIT],
-	[-14.14,  0.72, -12.96,  3.45, 4, BAT],
-	[-12.77,  0.72, -11.87,  3.45, 4, BAT],
-	[-11.68,  0.70, -10.05,  3.53, 4, HAL],
+	[-17.85,   3.70, -16.11,   8.56, 4, LOG],
+	[-16.01,   3.28, -13.38,   8.56, 4, LIV],  # 13,8
+	[-13.37,   3.28,  -9.90,   8.56, 4, LIV],  # 18,6
+	[-17.32,   0.39, -14.35,   3.12, 4, KIT],
+	[-14.14,   0.39, -12.88,   3.12, 4, BAT],
+	[-12.77,   0.39, -11.87,   3.12, 4, BAT],
+	[-11.85,   0.87,  -9.72,   3.28, 4, HAL],
 	# --- 41, юг слева от ядра ---------------------------------------------
-	[ -9.32,  7.62,  -3.33,  9.07, 5, LOG],   # лоджия 1а
-	[ -9.15,  1.30,  -5.85,  7.40, 5, LIV],   # 18,5 = 3,34 x 6,08
-	[ -5.75,  0.70,  -4.90,  5.10, 5, HAL],
-	[ -4.80,  1.30,  -3.20,  2.55, 5, BAT],
-	[ -4.80,  2.65,  -3.20,  3.35, 5, BAT],
-	[ -4.80,  3.45,  -3.20,  5.10, 5, KIT],
-	[ -5.75,  5.20,  -3.20,  7.40, 5, LIV],
+	[ -9.32,   7.54,  -3.33,   9.20, 5, LOG],  # лоджия 1а
+	[ -9.32,   1.47,  -5.93,   7.40, 5, LIV],  # 18,5 = 3,34 x 6,08
+	[ -6.00,   0.87,  -4.98,   4.72, 5, HAL],
+	[ -4.80,   1.47,  -3.16,   2.55, 5, BAT],
+	[ -4.80,   2.65,  -3.16,   3.35, 5, BAT],
+	[ -4.80,   3.12,  -3.16,   4.72, 5, KIT],
+	[ -6.00,   5.20,  -3.16,   7.40, 5, LIV],
 	# --- 48, юг справа от ядра --------------------------------------------
-	[  3.67,  7.62,   9.66,  9.07, 6, LOG],
-	[  6.19,  1.30,   9.49,  7.40, 6, LIV],   # 19,2 = 3,39 x 6,20
-	[  5.24,  0.70,   6.09,  5.10, 6, HAL],
-	[  3.54,  1.30,   5.14,  2.55, 6, BAT],
-	[  3.54,  2.65,   5.14,  3.35, 6, BAT],
-	[  3.54,  3.45,   5.14,  5.10, 6, KIT],
-	[  3.54,  5.20,   6.09,  7.40, 6, LIV],
+	[  3.54,   7.54,   9.66,   9.20, 6, LOG],
+	[  6.32,   1.47,   9.49,   7.40, 6, LIV],  # 19,2 = 3,39 x 6,20
+	[  5.16,   0.87,   6.30,   4.72, 6, HAL],
+	[  3.46,   1.47,   5.14,   2.55, 6, BAT],
+	[  3.46,   2.65,   5.14,   3.35, 6, BAT],
+	[  3.46,   3.12,   5.14,   4.72, 6, KIT],
+	[  3.46,   5.20,   6.30,   7.40, 6, LIV],
 	# --- 47, юго-восток (зеркало 42) --------------------------------------
-	[ 16.23,  3.70,  17.68,  8.44, 7, LOG],
-	[ 13.50,  3.53,  15.68,  8.44, 7, LIV],   # 13,5
-	[ 10.15,  3.53,  13.41,  8.44, 7, LIV],   # 18,7
-	[ 14.60,  0.72,  17.32,  3.45, 7, KIT],
-	[ 12.96,  0.72,  14.14,  3.45, 7, BAT],
-	[ 11.87,  0.72,  12.77,  3.45, 7, BAT],
-	[ 10.05,  0.70,  11.68,  3.53, 7, HAL],
+	[ 16.23,   3.70,  17.97,   8.56, 7, LOG],
+	[ 13.50,   3.28,  15.68,   8.56, 7, LIV],  # 13,5
+	[ 10.03,   3.28,  13.41,   8.56, 7, LIV],  # 18,7
+	[ 14.43,   0.39,  17.32,   3.12, 7, KIT],
+	[ 12.92,   0.39,  14.14,   3.12, 7, BAT],
+	[ 11.87,   0.39,  12.77,   3.12, 7, BAT],
+	[ 10.01,   0.87,  11.80,   3.28, 7, HAL],
 	# --- ядро: лестница, лифтовой холл, две шахты, балкон «г» -------------
-	[ -2.70,  0.44,  -0.61,  7.49, 8, COR],
-	[ -0.50,  0.44,   3.30,  7.49, 8, COR],
-	[ -0.16,  1.08,   1.48,  2.90, 8, SHF],
-	[ -0.16,  5.35,   1.48,  7.16, 8, SHF],
-	[ -2.70,  7.62,  -0.61,  9.07, 8, LOG],
+	[ -2.83,   0.61,  -0.61,   7.49, 8, COR],
+	[ -0.54,   0.61,   3.38,   7.49, 8, COR],
+	[ -0.54,   0.70,   1.69,   2.86, 8, SHF],
+	[ -0.54,   5.35,   1.69,   7.37, 8, SHF],
+	[ -2.83,   7.54,  -0.61,   9.20, 8, LOG],
 ]
 
 ## Лестничная клетка — левая часть ядра.
@@ -122,6 +123,10 @@ const STAIR_Z1 := 7.49
 var fadeable: Array[MeshInstance3D] = []
 var by_floor: Dictionary = {}
 var marks_visible := true
+
+var traced_count := 0     ## стен с проёмами, снятыми с чертежа
+var rule_count := 0       ## стен, где оси на скане нет и проёмы выведены правилом
+var added_count := 0      ## дверей, добавленных ради проходимости
 
 var _m_wall: ShaderMaterial
 var _m_floor: ShaderMaterial
@@ -313,7 +318,27 @@ func _opening(a: int, b: int, length: float, on_facade: bool) -> int:
 
 
 func _emit_walls(f: int, y: float) -> void:
+	var recs := _collect_walls()
+	_link_rooms(recs)
+	for w in recs:
+		var axis: int = w["axis"]
+		var dir := Vector3(0, 0, 1) if axis == 1 else Vector3(1, 0, 0)
+		var fixed: float = w["fixed"]
+		var mid: float = w["mid"]
+		if w["parapet"]:
+			_parapet(f, y, axis, fixed, w["a0"], w["a1"])
+			continue
+		var center := Vector3(fixed, y, mid) if axis == 1 else Vector3(mid, y, fixed)
+		_wall(f, center, dir, w["len"], w["holes"] as Array[Vector3], w["thick"])
+
+
+## Собирает оси стен и навешивает на них проёмы: сперва снятые с чертежа,
+## и только если стены на скане не нашлось — выведенные правилом.
+func _collect_walls() -> Array:
+	var recs: Array = []
 	var seen: Dictionary = {}
+	traced_count = 0
+	rule_count = 0
 	for i in ROOMS.size():
 		var r = ROOMS[i]
 		var edges := [
@@ -348,25 +373,107 @@ func _emit_walls(f: int, y: float) -> void:
 			var facade := (absf(fixed) > 16.9) if axis == 1 else (absf(fixed) > 7.9)
 			if outer >= 0:
 				facade = false
-			if outer >= 0 and int(ROOMS[inner][5]) == LOG and int(ROOMS[outer][5]) == LOG:
+			if int(ROOMS[inner][5]) == LOG and (outer < 0 or int(ROOMS[outer][5]) == LOG):
+				if outer < 0:
+					recs.append({"axis": axis, "fixed": fixed, "a0": a0, "a1": a1,
+							"mid": mid, "len": length, "inner": inner, "outer": -1,
+							"holes": [] as Array[Vector3], "thick": WALL,
+							"parapet": true})
 				continue
-			if outer < 0 and int(ROOMS[inner][5]) == LOG:
-				_parapet(f, y, axis, fixed, a0, a1)
-				continue
-			var op := _opening(inner, outer, length, facade)
-			var thick := WALL_EXT if (outer < 0 and facade) else WALL
 			var holes: Array[Vector3] = []
-			if op == 0:
-				holes.append(Vector3(0.0, DOOR_FLAT if length > 3.0 else DOOR_ROOM, KIND_DOOR))
-			elif op == 1:
-				if length < 4.2:
-					holes.append(Vector3(0.0, WIN, KIND_WIN))
-				else:
-					holes.append(Vector3(-length * 0.22, WIN, KIND_WIN))
-					holes.append(Vector3(length * 0.22, WIN, KIND_WIN))
-			var dir := Vector3(0, 0, 1) if axis == 1 else Vector3(1, 0, 0)
-			var center := Vector3(fixed, y, mid) if axis == 1 else Vector3(mid, y, fixed)
-			_wall(f, center, dir, length, holes, thick)
+			if PlanOpenings.TRACED.has(key):
+				traced_count += 1
+				for v in PlanOpenings.TRACED[key]:
+					holes.append(v)
+			else:
+				rule_count += 1
+				var op := _opening(inner, outer, length, facade)
+				if op == 0:
+					holes.append(Vector3(0.0, DOOR_FLAT if length > 3.0 else DOOR_ROOM,
+							KIND_DOOR))
+				elif op == 1:
+					if length < 4.2:
+						holes.append(Vector3(0.0, WIN, KIND_WIN))
+					else:
+						holes.append(Vector3(-length * 0.22, WIN, KIND_WIN))
+						holes.append(Vector3(length * 0.22, WIN, KIND_WIN))
+			recs.append({"axis": axis, "fixed": fixed, "a0": a0, "a1": a1, "mid": mid,
+					"len": length, "inner": inner, "outer": outer, "holes": holes,
+					"thick": WALL_EXT if (outer < 0 and facade) else WALL,
+					"parapet": false})
+	return recs
+
+
+## Проверка проходимости: из лестничной клетки должно быть достижимо каждое
+## помещение. Куда чертёж двери не дал — добавляем и считаем отдельно.
+func _link_rooms(recs: Array) -> void:
+	added_count = 0
+	var start := -1
+	for i in ROOMS.size():
+		if int(ROOMS[i][5]) == COR:
+			start = i
+			break
+	if start < 0:
+		return
+	var need: Array[int] = []
+	for i in ROOMS.size():
+		if int(ROOMS[i][5]) != LOG and int(ROOMS[i][5]) != SHF:
+			need.append(i)
+
+	for _pass in 40:
+		var open_links: Dictionary = {}
+		for w in recs:
+			var o: int = w["outer"]
+			if o < 0:
+				continue
+			for h: Vector3 in (w["holes"] as Array[Vector3]):
+				if h.z < 0.5:
+					var a: int = w["inner"]
+					if not open_links.has(a):
+						open_links[a] = []
+					if not open_links.has(o):
+						open_links[o] = []
+					(open_links[a] as Array).append(o)
+					(open_links[o] as Array).append(a)
+					break
+		var seen_r := {start: true}
+		var queue: Array[int] = [start]
+		while not queue.is_empty():
+			var cur: int = queue.pop_back()
+			for nxt in (open_links.get(cur, []) as Array):
+				if not seen_r.has(nxt):
+					seen_r[nxt] = true
+					queue.append(nxt)
+		var stuck: Array[int] = []
+		for i in need:
+			if not seen_r.has(i):
+				stuck.append(i)
+		if stuck.is_empty():
+			return
+		var best: Dictionary = {}
+		var best_len := 0.0
+		for w in recs:
+			var o: int = w["outer"]
+			if o < 0 or w["parapet"]:
+				continue
+			var a: int = w["inner"]
+			var ka := seen_r.has(a)
+			var kb := seen_r.has(o)
+			if ka == kb:
+				continue
+			var far: int = o if ka else a
+			if not stuck.has(far):
+				continue
+			if int(ROOMS[far][5]) == SHF or int(ROOMS[a][5]) == SHF or int(ROOMS[o][5]) == SHF:
+				continue
+			if w["len"] > best_len:
+				best_len = w["len"]
+				best = w
+		if best.is_empty():
+			return
+		(best["holes"] as Array[Vector3]).append(
+				Vector3(0.0, DOOR_ROOM, KIND_DOOR))
+		added_count += 1
 
 
 func _parapet(f: int, y: float, axis: int, fixed: float, a0: float, a1: float) -> void:

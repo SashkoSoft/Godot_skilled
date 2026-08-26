@@ -164,6 +164,8 @@ func _build_world() -> void:
 	building.marks_visible = _marks
 	add_child(building)
 	building.build(_floors)
+	print("[план] проёмов с чертежа: стен %d, по правилу %d, дверей добавлено ради прохода %d"
+			% [building.traced_count, building.rule_count, building.added_count])
 	if _plan_view:
 		building.paint_plan(_start_floor)
 
