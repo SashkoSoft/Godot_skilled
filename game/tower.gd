@@ -101,6 +101,118 @@ static func win(offset: float, width: float = WIN) -> Vector3:
 	return Vector3(offset, width, KIND_WIN)
 
 
+## Квартиры и помещения выводятся из тех же констант, что строят стены,
+## поэтому разметка не может разойтись с геометрией.
+enum Room { LIVING, KITCHEN, BATH, HALL, CORE }
+
+func flats() -> Array:
+	var n := N_BOUNDS
+	var sb := S_BOUNDS
+	var zn0 := -D_HALF
+	var zn1 := -CORR
+	var zs0 := CORR
+	var zs1 := D_HALF
+	return [
+		{"name": "2К", "rect": Rect2(n[0], zn0, n[1] - n[0], zn1 - zn0)},
+		{"name": "3К", "rect": Rect2(n[1], zn0, n[2] - n[1], zn1 - zn0)},
+		{"name": "1К", "rect": Rect2(n[2], zn0, n[3] - n[2], zn1 - zn0)},
+		{"name": "2К", "rect": Rect2(n[3], zn0, n[4] - n[3], zn1 - zn0)},
+		{"name": "2К", "rect": Rect2(sb[0], zs0, sb[1] - sb[0], zs1 - zs0)},
+		{"name": "1К", "rect": Rect2(sb[1], zs0, sb[2] - sb[1], zs1 - zs0)},
+		{"name": "1К", "rect": Rect2(sb[2], zs0, sb[3] - sb[2], zs1 - zs0)},
+		{"name": "1К", "rect": Rect2(CORE_X1, zs0, W_HALF - CORE_X1, zs1 - zs0)},
+	]
+
+
+func rooms() -> Array:
+	var n := N_BOUNDS
+	var sb := S_BOUNDS
+	var z := -D_HALF
+	var out := []
+	# --- северная 2К ---
+	out.append({"kind": Room.LIVING, "rect": Rect2(n[0], z, 2.80, R_14_0)})
+	out.append({"kind": Room.LIVING, "rect": Rect2(n[0] + 2.80, z, 3.42, R_18_5)})
+	out.append({"kind": Room.KITCHEN, "rect": Rect2(n[0] + 0.2, z + R_18_5, 2.6, 2.2)})
+	out.append({"kind": Room.BATH, "rect": Rect2(n[0] + 3.0, z + R_18_5, 1.7, 1.5)})
+	out.append({"kind": Room.HALL, "rect": Rect2(n[0] + 4.8, z + R_18_5, 1.4, 3.5)})
+	# --- северная 3К ---
+	out.append({"kind": Room.LIVING, "rect": Rect2(n[1], z, 3.37, R_20_7)})
+	out.append({"kind": Room.LIVING, "rect": Rect2(n[1] + 3.37, z, 2.57, R_12_2)})
+	out.append({"kind": Room.LIVING, "rect": Rect2(n[1] + 5.94, z, 3.24, R_15_1)})
+	out.append({"kind": Room.KITCHEN, "rect": Rect2(n[1] + 6.4, z + R_15_1, 2.6, 2.4)})
+	out.append({"kind": Room.BATH, "rect": Rect2(n[1] + 4.0, z + R_12_2, 1.7, 1.5)})
+	out.append({"kind": Room.HALL, "rect": Rect2(n[1] + 1.8, z + R_20_7, 3.2, 2.6)})
+	# --- северная 1К ---
+	out.append({"kind": Room.LIVING, "rect": Rect2(n[2], z, 3.37, R_19_1)})
+	out.append({"kind": Room.KITCHEN, "rect": Rect2(n[2] + 0.2, z + R_19_1, 2.2, 2.2)})
+	out.append({"kind": Room.BATH, "rect": Rect2(n[2] + 2.5, z + R_19_1, 0.8, 1.6)})
+	# --- северо-восточная 2К ---
+	out.append({"kind": Room.LIVING, "rect": Rect2(n[3], z, 3.29, R_18_2)})
+	out.append({"kind": Room.LIVING, "rect": Rect2(n[3] + 3.29, z, 2.77, R_13_9)})
+	out.append({"kind": Room.KITCHEN, "rect": Rect2(n[3] + 3.4, z + R_13_9, 2.4, 2.2)})
+	out.append({"kind": Room.BATH, "rect": Rect2(n[3] + 0.4, z + R_18_2, 1.7, 1.5)})
+	# --- южный ряд ---
+	var zs := D_HALF
+	out.append({"kind": Room.LIVING, "rect": Rect2(sb[0], zs - R_14_0, 2.80, R_14_0)})
+	out.append({"kind": Room.LIVING, "rect": Rect2(sb[0] + 2.80, zs - R_18_5, 3.42, R_18_5)})
+	out.append({"kind": Room.KITCHEN, "rect": Rect2(sb[0] + 0.2, zs - R_18_5 - 2.2, 2.6, 2.2)})
+	out.append({"kind": Room.BATH, "rect": Rect2(sb[0] + 3.0, zs - R_18_5 - 1.5, 1.7, 1.5)})
+	out.append({"kind": Room.LIVING, "rect": Rect2(sb[1], zs - R_19_1, sb[2] - sb[1], R_19_1)})
+	out.append({"kind": Room.KITCHEN, "rect": Rect2(sb[1] + 0.3, zs - R_19_1 - 2.2, 2.2, 2.2)})
+	out.append({"kind": Room.LIVING, "rect": Rect2(sb[2], zs - R_19_1, sb[3] - sb[2], R_19_1)})
+	out.append({"kind": Room.KITCHEN, "rect": Rect2(sb[2] + 0.3, zs - R_19_1 - 2.2, 2.2, 2.2)})
+	out.append({"kind": Room.LIVING, "rect": Rect2(CORE_X1, zs - R_19_1, W_HALF - CORE_X1, R_19_1)})
+	out.append({"kind": Room.KITCHEN, "rect": Rect2(CORE_X1 + 0.3, zs - R_19_1 - 2.2, 2.2, 2.2)})
+	# --- ядро ---
+	out.append({"kind": Room.CORE, "rect": Rect2(CORE_X0, CORE_Z0, CORE_X1 - CORE_X0, HALL_Z - CORE_Z0)})
+	out.append({"kind": Room.CORE, "rect": Rect2(CORE_X0, HALL_Z, STAIR_X1 - CORE_X0, CORE_Z1 - HALL_Z)})
+	return out
+
+
+## Заливка квартир и помещений: каждая квартира своим цветом, помещения ярче.
+func paint_plan(f: int) -> void:
+	var y := f * FLOOR_H
+	var palette := [
+		Color(0.90, 0.42, 0.35), Color(0.95, 0.68, 0.25), Color(0.62, 0.78, 0.32),
+		Color(0.30, 0.75, 0.62), Color(0.35, 0.62, 0.90), Color(0.62, 0.48, 0.88),
+		Color(0.90, 0.45, 0.70), Color(0.75, 0.70, 0.45),
+	]
+	var i := 0
+	for fl in flats():
+		_plate(f, fl["rect"] as Rect2, palette[i % palette.size()], 0.22, y + 0.03)
+		i += 1
+	for r in rooms():
+		var kind: int = r["kind"]
+		var col: Color
+		match kind:
+			Room.KITCHEN: col = Color(0.98, 0.62, 0.20)
+			Room.BATH:    col = Color(0.20, 0.80, 0.80)
+			Room.HALL:    col = Color(0.70, 0.70, 0.72)
+			Room.CORE:    col = Color(0.55, 0.60, 0.95)
+			_:            col = Color(0.85, 0.85, 0.80)
+		_plate(f, r["rect"] as Rect2, col, 0.50, y + 0.06)
+
+
+func _plate(f: int, r: Rect2, col: Color, alpha: float, y: float) -> void:
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(absf(r.size.x) - 0.1, 0.02, absf(r.size.y) - 0.1)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(col.r, col.g, col.b, alpha)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.emission_enabled = true
+	mat.emission = col
+	mat.emission_energy_multiplier = 0.55
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.material_override = mat
+	mi.position = Vector3(r.position.x + r.size.x * 0.5, y, r.position.y + r.size.y * 0.5)
+	mi.name = "Plate_%d" % f
+	add_child(mi)
+	mi.set_meta("floor", f)
+	mi.set_meta("is_mark", true)
+
+
 # ---------------------------------------------------------------------------
 #  Сборка
 # ---------------------------------------------------------------------------

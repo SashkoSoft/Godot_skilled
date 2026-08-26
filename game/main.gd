@@ -24,6 +24,7 @@ var _start_floor: int = 0
 var _floors: int = 3
 var _cam_dist: float = 0.0
 var _marks := true
+var _plan_view := false
 var _spawn := Vector2(-9.3, 0.0)
 var _walk_test := false
 var _walk_route := "stairs"
@@ -163,6 +164,8 @@ func _build_world() -> void:
 	building.marks_visible = _marks
 	add_child(building)
 	building.build(_floors)
+	if _plan_view:
+		building.paint_plan(_start_floor)
 
 	player = Player.new()
 	player.name = "Player"
@@ -174,6 +177,8 @@ func _build_world() -> void:
 	rig.target = player
 	rig.indoor = true
 	rig.dist_override = _cam_dist
+	if _plan_view:
+		rig.pitch_override = 88.0
 	add_child(rig)
 	player.rig = rig
 	rig.snap()
@@ -262,6 +267,8 @@ func _parse_args() -> void:
 			var parts := a.substr(8).split(",")
 			if parts.size() == 2:
 				_spawn = Vector2(float(parts[0]), float(parts[1]))
+		elif a == "--plan":
+			_plan_view = true
 		elif a == "--no-marks":
 			_marks = false
 		elif a.begins_with("--cam-dist="):

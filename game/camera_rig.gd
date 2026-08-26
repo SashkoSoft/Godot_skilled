@@ -8,6 +8,7 @@ extends Node3D
 ## приводит к постоянным рывкам.
 
 const PITCH_DEG := 40.0        ## наклон, фиксирован
+var pitch_override: float = 0.0   ## для обзорных планов сверху
 const FOV := 16.0              ## узкий угол: почти ортогонально, но с объёмом
 ## При FOV 16 половина охвата = dist * tan(8°) ≈ dist * 0.14.
 ## Комната 5-6 м требует ~45 м дистанции, дом целиком — ~80.
@@ -60,7 +61,7 @@ func _process(delta: float) -> void:
 	var want := dist_override if dist_override > 0.0 else (DIST_INDOOR if indoor else DIST_OUTDOOR)
 	_dist = lerpf(_dist, want, clampf(3.0 * delta, 0.0, 1.0))
 
-	var pitch := deg_to_rad(PITCH_DEG)
+	var pitch := deg_to_rad(pitch_override if pitch_override > 0.0 else PITCH_DEG)
 	var offset := Vector3(
 		sin(yaw) * cos(pitch),
 		sin(pitch),
