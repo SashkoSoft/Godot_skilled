@@ -1,57 +1,20 @@
 class_name Tower
 extends Node3D
-## Типовой этаж одноподъездной башни, построенный по поэтажному плану БТИ.
+## Типовой этаж восьмиквартирной секции, снятый с поэтажного плана БТИ.
 ##
-## Все числа ниже сняты с чертежа и проверены суммами: ширины квартир по
-## северному фасаду складываются в 24,83 м — это и есть габарит корпуса.
-## Ничего не подгонялось «чтобы влезло»; если размер здесь не такой, как на
-## скане, это ошибка чтения, а не вольность.
+## Масштаб чертежа определён по комнате 18,5 (3,42 x 5,54 м): 23,94 px/м.
+## Габарит корпуса по контуру скана — 35,9 x 18,6 м, начало координат в
+## середине контура, X вдоль длинного фасада, Z вглубь, север = -Z.
 ##
-## Оси: X вдоль длинного фасада, Z вглубь корпуса, начало — центр дома.
+## Таблица ROOMS — это и есть чертёж: каждая строка снята со скана, стены
+## строятся по границам помещений, проёмы выводятся из соседства. Ничего
+## не подгоняется на глаз.
 
-# ---------------------------------------------------------------------------
-#  Таблица координат: снято с чертежа
-# ---------------------------------------------------------------------------
-
-const FLOOR_H := 3.0            ## от пола до пола; в свету 2,73 по чертежу
-const WALL := 0.2
-
-## Габарит снят сложением ширин квартир северного ряда:
-## 6,22 + 9,18 + 2,60 + 3,37 + 6,06 = 27,43
-const W_HALF := 13.72
-const D_HALF := 9.90             ## север 9,1 + коридор 1,6 + юг 9,1
-
-## Коридор — узкая полоса между рядами, проходит через весь корпус.
-const CORR := 0.80               ## полуширина
-
-## Ядро по центру южного ряда: лестница слева, два лифта друг за другом справа.
-const CORE_X0 := -2.40
-const CORE_X1 := 2.40
-const CORE_Z0 := 0.80            ## граница с коридором
-const CORE_Z1 := 9.90            ## до южного фасада
-const STAIR_X1 := -0.20          ## лестница от CORE_X0 до STAIR_X1
-
-## Границы квартир северного ряда (5 штук)
-const N_BOUNDS := [-13.72, -7.50, 1.68, 4.28, 7.65, 13.72]
-## Южный ряд: две квартиры западнее ядра, две восточнее
-const S_BOUNDS := [-13.72, -7.50, -2.40]
-const S_BOUNDS_E := [2.40, 7.50, 13.72]
-
-## Глубины комнат — поимённо с чертежа
-const R_20_7 := 6.10             ## 20,7 — 3,37 x 6,10
-const R_12_2 := 4.71             ## 12,2 — 2,57 x 4,71
-const R_15_1 := 4.72             ## 15,1 — 3,24 x 4,72
-const R_19_1 := 6.16             ## 19,1 — 3,37 x 6,16
-const R_19_2 := 6.20             ## 19,2 — 3,39 x 6,20
-const R_18_5 := 5.54             ## 18,5 — 3,42 x 5,54
-const R_18_5S := 6.08            ## 18,5 южная — 3,34 x 6,08
-const R_14_0 := 5.52             ## 14,0 — 2,80 x 5,52
-const R_18_2 := 5.58             ## 18,2 — 3,29 x 5,58
-const R_13_9 := 5.57             ## 13,9 — 2,77 x 5,57
-const R_13_8 := 5.57             ## 13,8 — 2,80 x 5,57
-const R_18_6 := 5.55             ## 18,6 — 3,39 x 5,55
-const R_18_7 := 5.55             ## 18,7 — 3,40 x 5,55
-const R_13_5 := 5.56             ## 13,5 — 2,71 x 5,56
+const FLOOR_H := 3.0             ## от пола до пола; в свету 2,73 по чертежу
+const WALL := 0.16               ## внутренние перегородки
+const WALL_EXT := 0.34           ## наружные
+const W_HALF := 17.96
+const D_HALF := 9.27
 
 const DOOR_FLAT := 1.0
 const DOOR_ROOM := 0.85
@@ -59,6 +22,102 @@ const WIN := 1.7
 
 const KIND_DOOR := 0.0
 const KIND_WIN := 1.0
+
+enum Room { LIVING, KITCHEN, BATH, HALL, CORE, LOGGIA, SHAFT }
+
+const LIV := Room.LIVING
+const KIT := Room.KITCHEN
+const BAT := Room.BATH
+const HAL := Room.HALL
+const COR := Room.CORE
+const LOG := Room.LOGGIA
+const SHF := Room.SHAFT
+
+## [x0, z0, x1, z1, квартира, назначение]
+## Квартиры пронумерованы как в БТИ: 46 44 45 43 по северу, 42 41 48 47 по югу,
+## 8 — места общего пользования.
+const ROOMS := [
+	# --- 46, северо-запад -------------------------------------------------
+	[-17.80, -8.00, -16.35, -3.35, 0, LOG],
+	[-16.08, -8.87, -13.30, -3.35, 0, LIV],   # 14,0 = 2,80 x 5,52
+	[-13.30, -8.87,  -9.90, -3.33, 0, LIV],   # 18,5 = 3,42 x 5,54
+	[-17.30, -3.30, -14.14, -0.35, 0, KIT],
+	[-14.00, -2.30, -12.85, -0.35, 0, BAT],
+	[-12.75, -2.30, -11.80, -0.35, 0, BAT],
+	[-11.70, -3.30,  -9.90, -0.35, 0, HAL],
+	# --- 44, север-центр, трёхкомнатная -----------------------------------
+	[ -9.51, -9.24,  -3.24, -8.06, 1, LOG],   # лоджия 1б
+	[ -3.06, -9.24,   2.84, -8.06, 1, LOG],   # лоджия 3а
+	[ -9.40, -7.60,  -6.03, -1.50, 1, LIV],   # 20,7 = 3,37 x 6,10
+	[ -6.03, -7.60,  -3.46, -2.89, 1, LIV],   # 12,2 = 2,57 x 4,71
+	[ -3.36, -7.60,  -0.12, -2.88, 1, LIV],   # 15,1 = 3,24 x 4,72
+	[ -6.03, -2.80,  -0.12, -1.50, 1, HAL],   # холл 7
+	[  0.60, -7.51,   3.02, -4.97, 1, KIT],
+	[  0.75, -3.43,   2.02, -2.61, 1, BAT],
+	[  0.75, -2.42,   3.02, -0.97, 1, BAT],
+	[ -0.05, -4.90,   0.70, -0.35, 1, HAL],
+	# --- 45, север справа от центра ---------------------------------------
+	[  3.20, -9.24,   9.19, -8.06, 2, LOG],   # лоджия 1а
+	[  3.56, -7.60,   5.93, -3.43, 2, LIV],
+	[  6.10, -7.60,   9.01, -1.44, 2, LIV],   # 19,1 = 3,37 x 6,16
+	[  3.20, -3.35,   4.93, -2.55, 2, BAT],
+	[  3.75, -2.45,   5.38, -1.16, 2, BAT],
+	[  5.56, -2.45,   7.38, -0.35, 2, HAL],
+	# --- 43, северо-восток (зеркало 46) -----------------------------------
+	[ 16.35, -8.00,  17.80, -3.35, 3, LOG],
+	[ 13.30, -8.87,  16.08, -3.35, 3, LIV],   # 13,9
+	[  9.90, -8.87,  13.30, -3.33, 3, LIV],   # 18,2
+	[ 14.14, -3.30,  17.30, -0.35, 3, KIT],
+	[ 12.85, -2.30,  14.00, -0.35, 3, BAT],
+	[ 11.80, -2.30,  12.75, -0.35, 3, BAT],
+	[  9.90, -3.30,  11.70, -0.35, 3, HAL],
+	# --- общий коридор ----------------------------------------------------
+	[-11.70, -0.30,  11.70,  0.65, 8, HAL],
+	# --- 42, юго-запад ----------------------------------------------------
+	[-17.68,  3.70, -16.23,  8.44, 4, LOG],
+	[-15.68,  3.53, -13.50,  8.44, 4, LIV],   # 13,8
+	[-13.41,  3.53, -10.15,  8.44, 4, LIV],   # 18,6
+	[-17.32,  0.72, -14.60,  3.45, 4, KIT],
+	[-14.14,  0.72, -12.96,  3.45, 4, BAT],
+	[-12.77,  0.72, -11.87,  3.45, 4, BAT],
+	[-11.68,  0.70, -10.05,  3.53, 4, HAL],
+	# --- 41, юг слева от ядра ---------------------------------------------
+	[ -9.32,  7.62,  -3.33,  9.07, 5, LOG],   # лоджия 1а
+	[ -9.15,  1.30,  -5.85,  7.40, 5, LIV],   # 18,5 = 3,34 x 6,08
+	[ -5.75,  0.70,  -4.90,  5.10, 5, HAL],
+	[ -4.80,  1.30,  -3.20,  2.55, 5, BAT],
+	[ -4.80,  2.65,  -3.20,  3.35, 5, BAT],
+	[ -4.80,  3.45,  -3.20,  5.10, 5, KIT],
+	[ -5.75,  5.20,  -3.20,  7.40, 5, LIV],
+	# --- 48, юг справа от ядра --------------------------------------------
+	[  3.67,  7.62,   9.66,  9.07, 6, LOG],
+	[  6.19,  1.30,   9.49,  7.40, 6, LIV],   # 19,2 = 3,39 x 6,20
+	[  5.24,  0.70,   6.09,  5.10, 6, HAL],
+	[  3.54,  1.30,   5.14,  2.55, 6, BAT],
+	[  3.54,  2.65,   5.14,  3.35, 6, BAT],
+	[  3.54,  3.45,   5.14,  5.10, 6, KIT],
+	[  3.54,  5.20,   6.09,  7.40, 6, LIV],
+	# --- 47, юго-восток (зеркало 42) --------------------------------------
+	[ 16.23,  3.70,  17.68,  8.44, 7, LOG],
+	[ 13.50,  3.53,  15.68,  8.44, 7, LIV],   # 13,5
+	[ 10.15,  3.53,  13.41,  8.44, 7, LIV],   # 18,7
+	[ 14.60,  0.72,  17.32,  3.45, 7, KIT],
+	[ 12.96,  0.72,  14.14,  3.45, 7, BAT],
+	[ 11.87,  0.72,  12.77,  3.45, 7, BAT],
+	[ 10.05,  0.70,  11.68,  3.53, 7, HAL],
+	# --- ядро: лестница, лифтовой холл, две шахты, балкон «г» -------------
+	[ -2.70,  0.44,  -0.61,  7.49, 8, COR],
+	[ -0.50,  0.44,   3.30,  7.49, 8, COR],
+	[ -0.16,  1.08,   1.48,  2.90, 8, SHF],
+	[ -0.16,  5.35,   1.48,  7.16, 8, SHF],
+	[ -2.70,  7.62,  -0.61,  9.07, 8, LOG],
+]
+
+## Лестничная клетка — левая часть ядра.
+const STAIR_X0 := -2.70
+const STAIR_X1 := -0.61
+const STAIR_Z0 := 0.44
+const STAIR_Z1 := 7.49
 
 var fadeable: Array[MeshInstance3D] = []
 var by_floor: Dictionary = {}
@@ -102,111 +161,72 @@ void fragment() {
 """
 
 
-static func door(offset: float, width: float = DOOR_ROOM) -> Vector3:
-	return Vector3(offset, width, KIND_DOOR)
-
-
-static func win(offset: float, width: float = WIN) -> Vector3:
-	return Vector3(offset, width, KIND_WIN)
-
-
-## Квартиры и помещения выводятся из тех же констант, что строят стены,
-## поэтому разметка не может разойтись с геометрией.
-enum Room { LIVING, KITCHEN, BATH, HALL, CORE }
-
-func flats() -> Array:
-	var n := N_BOUNDS
-	var w := S_BOUNDS
-	var e := S_BOUNDS_E
-	var zn0 := -D_HALF
-	var zn1 := -CORR
-	var zs0 := CORR
-	var zs1 := D_HALF
-	var out := []
-	var names := ["2К", "3К", "1К", "1К", "2К"]
-	for i in 5:
-		out.append({"name": names[i], "rect": Rect2(n[i], zn0, n[i + 1] - n[i], zn1 - zn0)})
-	out.append({"name": "2К", "rect": Rect2(w[0], zs0, w[1] - w[0], zs1 - zs0)})
-	out.append({"name": "2К", "rect": Rect2(w[1], zs0, w[2] - w[1], zs1 - zs0)})
-	out.append({"name": "2К", "rect": Rect2(e[0], zs0, e[1] - e[0], zs1 - zs0)})
-	out.append({"name": "2К", "rect": Rect2(e[1], zs0, e[2] - e[1], zs1 - zs0)})
-	return out
-
+# ---------------------------------------------------------------------------
+#  Разметка
+# ---------------------------------------------------------------------------
 
 func rooms() -> Array:
-	var n := N_BOUNDS
-	var w := S_BOUNDS
-	var e := S_BOUNDS_E
-	var z := -D_HALF
-	var zs := D_HALF
-	var out := []
-	# северный ряд
-	out.append({"kind": Room.LIVING, "rect": Rect2(n[0], z, 2.80, R_14_0)})
-	out.append({"kind": Room.LIVING, "rect": Rect2(n[0] + 2.80, z, 3.42, R_18_5)})
-	out.append({"kind": Room.KITCHEN, "rect": Rect2(n[0] + 0.2, z + R_18_5, 2.6, 2.2)})
-	out.append({"kind": Room.BATH, "rect": Rect2(n[0] + 3.0, z + R_18_5, 1.7, 1.5)})
-	out.append({"kind": Room.LIVING, "rect": Rect2(n[1], z, 3.37, R_20_7)})
-	out.append({"kind": Room.LIVING, "rect": Rect2(n[1] + 3.37, z, 2.57, R_12_2)})
-	out.append({"kind": Room.LIVING, "rect": Rect2(n[1] + 5.94, z, 3.24, R_15_1)})
-	out.append({"kind": Room.HALL, "rect": Rect2(n[1] + 1.8, z + R_20_7, 3.4, 2.4)})
-	out.append({"kind": Room.KITCHEN, "rect": Rect2(n[1] + 6.4, z + R_15_1, 2.4, 2.2)})
-	out.append({"kind": Room.BATH, "rect": Rect2(n[1] + 4.2, z + R_12_2, 1.6, 1.4)})
-	out.append({"kind": Room.LIVING, "rect": Rect2(n[2], z, n[3] - n[2], 4.4)})
-	out.append({"kind": Room.BATH, "rect": Rect2(n[2] + 0.3, z + 4.6, 1.6, 1.4)})
-	out.append({"kind": Room.LIVING, "rect": Rect2(n[3], z, n[4] - n[3], R_19_1)})
-	out.append({"kind": Room.KITCHEN, "rect": Rect2(n[3] + 0.3, z + R_19_1, 2.2, 2.0)})
-	out.append({"kind": Room.LIVING, "rect": Rect2(n[4], z, 3.29, R_18_2)})
-	out.append({"kind": Room.LIVING, "rect": Rect2(n[4] + 3.29, z, 2.77, R_13_9)})
-	out.append({"kind": Room.KITCHEN, "rect": Rect2(n[4] + 3.4, z + R_13_9, 2.4, 2.2)})
-	out.append({"kind": Room.BATH, "rect": Rect2(n[4] + 0.4, z + R_18_2, 1.7, 1.5)})
-	# южный ряд
-	out.append({"kind": Room.LIVING, "rect": Rect2(w[0], zs - R_13_8, 2.80, R_13_8)})
-	out.append({"kind": Room.LIVING, "rect": Rect2(w[0] + 2.80, zs - R_18_6, 3.39, R_18_6)})
-	out.append({"kind": Room.KITCHEN, "rect": Rect2(w[0] + 0.2, zs - R_18_6 - 2.2, 2.6, 2.2)})
-	out.append({"kind": Room.BATH, "rect": Rect2(w[0] + 3.0, zs - R_18_6 - 1.5, 1.7, 1.5)})
-	out.append({"kind": Room.LIVING, "rect": Rect2(w[1], zs - R_18_5S, 3.34, R_18_5S)})
-	out.append({"kind": Room.LIVING, "rect": Rect2(w[1] + 3.34, zs - 4.6, w[2] - w[1] - 3.34, 4.6)})
-	out.append({"kind": Room.KITCHEN, "rect": Rect2(w[1] + 0.3, zs - R_18_5S - 2.2, 2.4, 2.2)})
-	out.append({"kind": Room.LIVING, "rect": Rect2(e[0], zs - R_19_2, 3.39, R_19_2)})
-	out.append({"kind": Room.LIVING, "rect": Rect2(e[0] + 3.39, zs - 4.6, e[1] - e[0] - 3.39, 4.6)})
-	out.append({"kind": Room.KITCHEN, "rect": Rect2(e[0] + 0.3, zs - R_19_2 - 2.2, 2.4, 2.2)})
-	out.append({"kind": Room.LIVING, "rect": Rect2(e[1], zs - R_18_7, 3.40, R_18_7)})
-	out.append({"kind": Room.LIVING, "rect": Rect2(e[1] + 3.40, zs - R_13_5, 2.71, R_13_5)})
-	out.append({"kind": Room.KITCHEN, "rect": Rect2(e[1] + 3.5, zs - R_13_5 - 2.2, 2.4, 2.2)})
-	out.append({"kind": Room.BATH, "rect": Rect2(e[1] + 0.4, zs - R_18_7 - 1.5, 1.7, 1.5)})
-	# ядро
-	out.append({"kind": Room.CORE, "rect": Rect2(CORE_X0, CORE_Z0, STAIR_X1 - CORE_X0, CORE_Z1 - CORE_Z0)})
-	out.append({"kind": Room.CORE, "rect": Rect2(STAIR_X1, CORE_Z0, CORE_X1 - STAIR_X1, CORE_Z1 - CORE_Z0)})
+	var out: Array = []
+	for r in ROOMS:
+		out.append({
+			"rect": Rect2(Vector2(r[0], r[1]), Vector2(r[2] - r[0], r[3] - r[1])),
+			"kind": int(r[5]),
+			"flat": int(r[4]),
+		})
 	return out
 
 
-## Заливка квартир и помещений: каждая квартира своим цветом, помещения ярче.
+func flats() -> Array:
+	var box: Dictionary = {}
+	for r in ROOMS:
+		var f: int = int(r[4])
+		if int(r[5]) == LOG:
+			continue
+		if box.has(f):
+			var b: Array = box[f]
+			b[0] = minf(b[0], r[0]); b[1] = minf(b[1], r[1])
+			b[2] = maxf(b[2], r[2]); b[3] = maxf(b[3], r[3])
+		else:
+			box[f] = [r[0], r[1], r[2], r[3]]
+	var out: Array = []
+	var keys: Array = box.keys()
+	keys.sort()
+	for f in keys:
+		var b: Array = box[f]
+		out.append({
+			"id": f,
+			"rect": Rect2(Vector2(b[0], b[1]), Vector2(b[2] - b[0], b[3] - b[1])),
+		})
+	return out
+
+
 func paint_plan(f: int) -> void:
 	var y := f * FLOOR_H
 	var palette := [
 		Color(0.90, 0.42, 0.35), Color(0.95, 0.68, 0.25), Color(0.62, 0.78, 0.32),
 		Color(0.30, 0.75, 0.62), Color(0.35, 0.62, 0.90), Color(0.62, 0.48, 0.88),
-		Color(0.90, 0.45, 0.70), Color(0.75, 0.70, 0.45),
+		Color(0.90, 0.45, 0.70), Color(0.75, 0.70, 0.45), Color(0.55, 0.60, 0.95),
 	]
-	var i := 0
 	for fl in flats():
-		_plate(f, fl["rect"] as Rect2, palette[i % palette.size()], 0.22, y + 0.03)
-		i += 1
+		var id: int = fl["id"]
+		_plate(f, fl["rect"] as Rect2, palette[id % palette.size()], 0.18, y + 0.03)
 	for r in rooms():
-		var kind: int = r["kind"]
 		var col: Color
-		match kind:
+		match int(r["kind"]):
 			Room.KITCHEN: col = Color(0.98, 0.62, 0.20)
 			Room.BATH:    col = Color(0.20, 0.80, 0.80)
-			Room.HALL:    col = Color(0.70, 0.70, 0.72)
-			Room.CORE:    col = Color(0.55, 0.60, 0.95)
-			_:            col = Color(0.85, 0.85, 0.80)
-		_plate(f, r["rect"] as Rect2, col, 0.50, y + 0.06)
+			Room.HALL:    col = Color(0.72, 0.72, 0.74)
+			Room.CORE:    col = Color(0.45, 0.55, 0.98)
+			Room.LOGGIA:  col = Color(0.55, 0.85, 0.45)
+			Room.SHAFT:   col = Color(0.30, 0.32, 0.38)
+			_:            col = Color(0.88, 0.86, 0.80)
+		_plate(f, r["rect"] as Rect2, col, 0.52, y + 0.06)
 
 
 func _plate(f: int, r: Rect2, col: Color, alpha: float, y: float) -> void:
 	var mesh := BoxMesh.new()
-	mesh.size = Vector3(absf(r.size.x) - 0.1, 0.02, absf(r.size.y) - 0.1)
+	mesh.size = Vector3(maxf(absf(r.size.x) - 0.08, 0.05), 0.02,
+			maxf(absf(r.size.y) - 0.08, 0.05))
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color(col.r, col.g, col.b, alpha)
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -229,11 +249,10 @@ func _plate(f: int, r: Rect2, col: Color, alpha: float, y: float) -> void:
 # ---------------------------------------------------------------------------
 
 func build(floors: int = 3) -> void:
-	_m_wall = _mat(Color(0.60, 0.60, 0.58))
+	_m_wall = _mat(Color(0.62, 0.61, 0.58))
 	_m_floor = _mat(Color(0.33, 0.34, 0.33))
 	_m_stair = _mat(Color(0.46, 0.42, 0.37))
 	_m_shaft = _mat(Color(0.38, 0.40, 0.42))
-
 	for f in floors:
 		by_floor[f] = []
 		_floor(f, f < floors - 1)
@@ -249,135 +268,131 @@ func set_focus(p: Vector3) -> void:
 func _floor(f: int, with_stairs: bool) -> void:
 	var y := f * FLOOR_H
 	_slab(f, false)
-	_shell(f, y)
-	_corridor(f, y)
-	_core(f, y)
-	_north_row(f, y)
-	_south_row(f, y)
+	_emit_walls(f, y)
+	_shafts(f, y)
 	if with_stairs:
 		_stairs(f)
 
 
-## Наружные стены с окнами по фасадам.
-func _shell(f: int, y: float) -> void:
-	_wall(f, Vector3(0, y, -D_HALF), Vector3(1, 0, 0), W_HALF * 2.0,
-			[win(-9.5), win(-4.0), win(1.0), win(4.6), win(9.5)])
-	_wall(f, Vector3(0, y, D_HALF), Vector3(1, 0, 0), W_HALF * 2.0,
-			[win(-9.5), win(-4.0), win(0.5), win(10.8)])
-	_wall(f, Vector3(-W_HALF, y, 0), Vector3(0, 0, 1), D_HALF * 2.0,
-			[win(-7.0), win(-3.0), win(4.0), win(7.5)])
-	_wall(f, Vector3(W_HALF, y, 0), Vector3(0, 0, 1), D_HALF * 2.0,
-			[win(-7.0), win(-3.0), win(4.0), win(7.5)])
+# ---------------------------------------------------------------------------
+#  Стены выводятся из границ помещений
+# ---------------------------------------------------------------------------
+
+func _room_at(x: float, z: float) -> int:
+	for i in ROOMS.size():
+		var r = ROOMS[i]
+		if x > r[0] and x < r[2] and z > r[1] and z < r[3]:
+			return i
+	return -1
 
 
-## Коридор: узкая полоса через весь корпус между рядами квартир.
-func _corridor(f: int, y: float) -> void:
-	var n := N_BOUNDS
-	# северная стена: пять дверей, по одной в каждую квартиру ряда
-	_wall(f, Vector3(0, y, -CORR), Vector3(1, 0, 0), W_HALF * 2.0,
-			[door(-10.6, DOOR_FLAT), door(-3.0, DOOR_FLAT), door(2.98, DOOR_FLAT),
-			 door(5.9, DOOR_FLAT), door(10.6, DOOR_FLAT)], true)
-	# южная: две двери западнее ядра, две восточнее и проём в холл
-	_wall(f, Vector3(0, y, CORR), Vector3(1, 0, 0), W_HALF * 2.0,
-			[door(-10.6, DOOR_FLAT), door(-4.9, DOOR_FLAT), door(0.0, 2.6),
-			 door(4.9, DOOR_FLAT), door(10.6, DOOR_FLAT)], true)
-	_wall(f, Vector3(-W_HALF + 0.1, y, 0), Vector3(0, 0, 1), CORR * 2.0,
-			[] as Array[Vector3], true)
-	_wall(f, Vector3(W_HALF - 0.1, y, 0), Vector3(0, 0, 1), CORR * 2.0,
-			[] as Array[Vector3], true)
+## Что за проём между двумя помещениями: -1 глухая стена, 0 дверь, 1 окно.
+func _opening(a: int, b: int, length: float, on_facade: bool) -> int:
+	if a < 0:
+		return -1
+	var ra = ROOMS[a]
+	if int(ra[5]) == SHF:
+		return -1
+	if b >= 0 and int(ROOMS[b][5]) == SHF:
+		return -1
+	if b < 0:
+		if on_facade and length >= 1.9 and int(ra[5]) != BAT:
+			return 1
+		return -1
+	var rb = ROOMS[b]
+	if int(ra[5]) == LOG or int(rb[5]) == LOG:
+		return 0 if length >= 1.2 else -1
+	if int(ra[4]) == int(rb[4]):
+		return 0 if length >= 1.1 else -1
+	var common := int(ra[4]) == 8 or int(rb[4]) == 8
+	var hall_a := int(ra[5]) == HAL or int(ra[5]) == COR
+	var hall_b := int(rb[5]) == HAL or int(rb[5]) == COR
+	if common and hall_a and hall_b and length >= 1.0:
+		return 0
+	return -1
 
 
-## Ядро по центру: лестница слева, два лифта друг за другом справа,
-## между ними лифтовой холл — как на чертеже.
-func _core(f: int, y: float) -> void:
-	var cx := (CORE_X0 + CORE_X1) * 0.5
-	_wall(f, Vector3(CORE_X0, y, (CORE_Z0 + CORE_Z1) * 0.5), Vector3(0, 0, 1),
-			CORE_Z1 - CORE_Z0, [] as Array[Vector3], true)
-	_wall(f, Vector3(CORE_X1, y, (CORE_Z0 + CORE_Z1) * 0.5), Vector3(0, 0, 1),
-			CORE_Z1 - CORE_Z0, [] as Array[Vector3], true)
-	_wall(f, Vector3(STAIR_X1, y, (CORE_Z0 + CORE_Z1) * 0.5 + 1.0), Vector3(0, 0, 1),
-			CORE_Z1 - CORE_Z0 - 2.0, [] as Array[Vector3], true)
+func _emit_walls(f: int, y: float) -> void:
+	var seen: Dictionary = {}
+	for i in ROOMS.size():
+		var r = ROOMS[i]
+		var edges := [
+			[1, r[0], r[1], r[3]], [1, r[2], r[1], r[3]],
+			[0, r[1], r[0], r[2]], [0, r[3], r[0], r[2]],
+		]
+		for e in edges:
+			var key := "%d|%.2f|%.2f|%.2f" % [e[0], e[1], e[2], e[3]]
+			if seen.has(key):
+				continue
+			seen[key] = true
+			var axis: int = e[0]
+			var fixed: float = e[1]
+			var a0: float = e[2]
+			var a1: float = e[3]
+			var length: float = a1 - a0
+			if length < 0.25:
+				continue
+			var mid := (a0 + a1) * 0.5
+			var ia: int
+			var ib: int
+			if axis == 1:
+				ia = _room_at(fixed - 0.22, mid)
+				ib = _room_at(fixed + 0.22, mid)
+			else:
+				ia = _room_at(mid, fixed - 0.22)
+				ib = _room_at(mid, fixed + 0.22)
+			if ia < 0 and ib < 0:
+				continue
+			var inner := ia if ia >= 0 else ib
+			var outer := ib if ia >= 0 else -1
+			var facade := (absf(fixed) > 16.9) if axis == 1 else (absf(fixed) > 7.9)
+			if outer >= 0:
+				facade = false
+			if outer >= 0 and int(ROOMS[inner][5]) == LOG and int(ROOMS[outer][5]) == LOG:
+				continue
+			if outer < 0 and int(ROOMS[inner][5]) == LOG:
+				_parapet(f, y, axis, fixed, a0, a1)
+				continue
+			var op := _opening(inner, outer, length, facade)
+			var thick := WALL_EXT if (outer < 0 and facade) else WALL
+			var holes: Array[Vector3] = []
+			if op == 0:
+				holes.append(Vector3(0.0, DOOR_FLAT if length > 3.0 else DOOR_ROOM, KIND_DOOR))
+			elif op == 1:
+				if length < 4.2:
+					holes.append(Vector3(0.0, WIN, KIND_WIN))
+				else:
+					holes.append(Vector3(-length * 0.22, WIN, KIND_WIN))
+					holes.append(Vector3(length * 0.22, WIN, KIND_WIN))
+			var dir := Vector3(0, 0, 1) if axis == 1 else Vector3(1, 0, 0)
+			var center := Vector3(fixed, y, mid) if axis == 1 else Vector3(mid, y, fixed)
+			_wall(f, center, dir, length, holes, thick)
 
-	var h := FLOOR_H - WALL
-	_box(f, Vector3(1.35, y + h * 0.5, 3.4), Vector3(2.0, h, 2.2), _m_shaft, "LiftPass")
-	_box(f, Vector3(1.35, y + h * 0.5, 6.6), Vector3(2.0, h, 2.2), _m_shaft, "LiftCargo")
-	if f > 0:
-		_box(f, Vector3(-1.9, y + h * 0.5, 9.0), Vector3(0.9, h, 0.9), _m_shaft, "Chute")
+
+func _parapet(f: int, y: float, axis: int, fixed: float, a0: float, a1: float) -> void:
+	var length := a1 - a0
+	if length < 0.3:
+		return
+	var mesh := BoxMesh.new()
+	if axis == 1:
+		mesh.size = Vector3(0.14, 1.05, length)
+	else:
+		mesh.size = Vector3(length, 1.05, 0.14)
+	var mid := (a0 + a1) * 0.5
+	var pos := Vector3(fixed, y + 0.525, mid) if axis == 1 else Vector3(mid, y + 0.525, fixed)
+	var mi := _spawn(mesh, pos, _m_wall, f)
+	mi.name = "Parapet_%d" % f
 
 
-## Северный ряд по чертежу: 2К, 3К, 1К, 1К, 2К — слева направо.
-func _north_row(f: int, y: float) -> void:
-	var z_out := -D_HALF
-	var n := N_BOUNDS
-	for i in [1, 2, 3, 4]:
-		_wall(f, Vector3(n[i], y, (z_out - CORR) * 0.5), Vector3(0, 0, 1),
-				D_HALF - CORR, [] as Array[Vector3], true)
-
-	# 2К: комнаты 14,0 (2,80) и 18,5 (3,42)
-	_wall(f, Vector3(n[0] + 2.80, y, z_out + R_14_0 * 0.5), Vector3(0, 0, 1),
-			R_14_0, [] as Array[Vector3], true)
-	_wall(f, Vector3(n[0] + 3.11, y, z_out + R_18_5), Vector3(1, 0, 0), 6.22,
-			[door(-1.6), door(1.9)], true)
-
-	# 3К: 20,7 (3,37 x 6,10), 12,2 (2,57 x 4,71), 15,1 (3,24 x 4,72)
-	_wall(f, Vector3(n[1] + 3.37, y, z_out + R_20_7 * 0.5), Vector3(0, 0, 1),
-			R_20_7, [] as Array[Vector3], true)
-	_wall(f, Vector3(n[1] + 5.94, y, z_out + R_12_2 * 0.5), Vector3(0, 0, 1),
-			R_12_2, [] as Array[Vector3], true)
-	_wall(f, Vector3(n[1] + 1.68, y, z_out + R_20_7), Vector3(1, 0, 0), 3.37,
-			[door(0.9)], true)
-	_wall(f, Vector3(n[1] + 7.56, y, z_out + R_12_2), Vector3(1, 0, 0), 5.81,
-			[door(-2.0), door(1.6)], true)
-
-	# 1К узкая (санузлы и комната)
-	_wall(f, Vector3((n[2] + n[3]) * 0.5, y, z_out + 4.4), Vector3(1, 0, 0),
-			n[3] - n[2], [door(0.5)], true)
-
-	# 1К: комната 19,1 (3,37 x 6,16)
-	_wall(f, Vector3((n[3] + n[4]) * 0.5, y, z_out + R_19_1), Vector3(1, 0, 0),
-			n[4] - n[3], [door(0.7)], true)
-
-	# 2К: комнаты 18,2 (3,29) и 13,9 (2,77)
-	_wall(f, Vector3(n[4] + 3.29, y, z_out + R_18_2 * 0.5), Vector3(0, 0, 1),
-			R_18_2, [] as Array[Vector3], true)
-	_wall(f, Vector3(n[4] + 3.03, y, z_out + R_18_2), Vector3(1, 0, 0), 6.06,
-			[door(-1.7), door(1.8)], true)
-
-
-## Южный ряд: 2К и 2К западнее ядра, 2К и 2К восточнее.
-func _south_row(f: int, y: float) -> void:
-	var z_out := D_HALF
-	var w := S_BOUNDS
-	var e := S_BOUNDS_E
-	for i in [1, 2]:
-		_wall(f, Vector3(w[i], y, (z_out + CORR) * 0.5), Vector3(0, 0, 1),
-				D_HALF - CORR, [] as Array[Vector3], true)
-	_wall(f, Vector3(e[1], y, (z_out + CORR) * 0.5), Vector3(0, 0, 1),
-			D_HALF - CORR, [] as Array[Vector3], true)
-
-	# 2К западная: комнаты 13,8 (2,80) и 18,6 (3,39)
-	_wall(f, Vector3(w[0] + 2.80, y, z_out - R_13_8 * 0.5), Vector3(0, 0, 1),
-			R_13_8, [] as Array[Vector3], true)
-	_wall(f, Vector3(w[0] + 3.10, y, z_out - R_18_6), Vector3(1, 0, 0), 6.22,
-			[door(-1.6), door(1.9)], true)
-
-	# 2К у ядра слева: комната 18,5 (3,34 x 6,08)
-	_wall(f, Vector3(w[1] + 3.34, y, z_out - R_18_5S * 0.5), Vector3(0, 0, 1),
-			R_18_5S, [] as Array[Vector3], true)
-	_wall(f, Vector3((w[1] + w[2]) * 0.5, y, z_out - R_18_5S), Vector3(1, 0, 0),
-			w[2] - w[1], [door(-1.2), door(1.4)], true)
-
-	# 2К у ядра справа: комната 19,2 (3,39 x 6,20)
-	_wall(f, Vector3(e[0] + 3.39, y, z_out - R_19_2 * 0.5), Vector3(0, 0, 1),
-			R_19_2, [] as Array[Vector3], true)
-	_wall(f, Vector3((e[0] + e[1]) * 0.5, y, z_out - R_19_2), Vector3(1, 0, 0),
-			e[1] - e[0], [door(-1.4), door(1.2)], true)
-
-	# 2К восточная: комнаты 18,7 (3,40) и 13,5 (2,71)
-	_wall(f, Vector3(e[1] + 3.40, y, z_out - R_18_7 * 0.5), Vector3(0, 0, 1),
-			R_18_7, [] as Array[Vector3], true)
-	_wall(f, Vector3(e[1] + 3.11, y, z_out - R_18_7), Vector3(1, 0, 0), 6.22,
-			[door(-1.7), door(1.8)], true)
+func _shafts(f: int, y: float) -> void:
+	for r in ROOMS:
+		if int(r[5]) != SHF:
+			continue
+		var mesh := BoxMesh.new()
+		mesh.size = Vector3(r[2] - r[0], FLOOR_H - WALL, r[3] - r[1])
+		var mi := _spawn(mesh, Vector3((r[0] + r[2]) * 0.5, y + (FLOOR_H - WALL) * 0.5,
+				(r[1] + r[3]) * 0.5), _m_shaft, f)
+		mi.name = "Shaft_%d" % f
 
 
 # ---------------------------------------------------------------------------
@@ -398,13 +413,12 @@ func _slab(f: int, is_roof: bool) -> void:
 		mi.set_meta("is_ceiling", false)
 		return
 
-	# проём под марши — над лестничной частью ядра
-	var hx0 := CORE_X0
-	var hx1 := STAIR_X1
+	var hz0 := STAIR_Z0 + 1.6
 	var pieces: Array[Rect2] = [
-		Rect2(Vector2(-W_HALF, -D_HALF), Vector2(hx0 + W_HALF, D_HALF * 2.0)),
-		Rect2(Vector2(hx1, -D_HALF), Vector2(W_HALF - hx1, D_HALF * 2.0)),
-		Rect2(Vector2(hx0, -D_HALF), Vector2(hx1 - hx0, D_HALF + CORE_Z0)),
+		Rect2(Vector2(-W_HALF, -D_HALF), Vector2(STAIR_X0 + W_HALF, D_HALF * 2.0)),
+		Rect2(Vector2(STAIR_X1, -D_HALF), Vector2(W_HALF - STAIR_X1, D_HALF * 2.0)),
+		Rect2(Vector2(STAIR_X0, -D_HALF), Vector2(STAIR_X1 - STAIR_X0, D_HALF + hz0)),
+		Rect2(Vector2(STAIR_X0, STAIR_Z1), Vector2(STAIR_X1 - STAIR_X0, D_HALF - STAIR_Z1)),
 	]
 	for i in pieces.size():
 		var r: Rect2 = pieces[i]
@@ -418,21 +432,20 @@ func _slab(f: int, is_roof: bool) -> void:
 		mi.set_meta("is_ceiling", true)
 
 
-## Два марша с промежуточной площадкой — в левой части ядра.
 func _stairs(f: int) -> void:
 	var y0 := f * FLOOR_H
 	var half := FLOOR_H * 0.5
-	var run := 2.4
-	var z_near := CORE_Z0 + 0.6
+	var run := 2.6
+	var z_near := STAIR_Z0 + 1.7
 	var z_far := z_near + run
-
-	_flight(f, Vector3(CORE_X0 + 0.7, y0, z_near), 1.0, half, run, 1.2)
+	var w := 0.95
+	_flight(f, Vector3(STAIR_X0 + 0.62, y0, z_near), 1.0, half, run, w)
 	_landing(f, y0 + half, z_far)
-	_flight(f, Vector3(CORE_X0 + 1.9, y0 + half, z_far + 1.0), -1.0, half, run, 1.2)
+	_flight(f, Vector3(STAIR_X0 + 1.55, y0 + half, z_far + 1.05), -1.0, half, run, w)
 
 
 func _flight(f: int, start: Vector3, dz: float, rise: float, run: float, width: float) -> void:
-	var steps := 7
+	var steps := 8
 	var sh := rise / float(steps)
 	var sd := run / float(steps)
 	for i in steps:
@@ -464,8 +477,9 @@ func _flight(f: int, start: Vector3, dz: float, rise: float, run: float, width: 
 
 func _landing(f: int, y: float, z: float) -> void:
 	var mesh := BoxMesh.new()
-	mesh.size = Vector3(2.8, WALL, 1.2)
-	var mi := _spawn(mesh, Vector3(CORE_X0 + 1.3, y - WALL * 0.5, z + 0.5), _m_floor, f)
+	mesh.size = Vector3(STAIR_X1 - STAIR_X0 - 0.2, WALL, 1.05)
+	var mi := _spawn(mesh, Vector3((STAIR_X0 + STAIR_X1) * 0.5, y - WALL * 0.5, z + 0.5),
+			_m_floor, f)
 	mi.name = "Landing_%d" % f
 
 
@@ -474,7 +488,7 @@ func _landing(f: int, y: float, z: float) -> void:
 # ---------------------------------------------------------------------------
 
 func _wall(f: int, center: Vector3, dir: Vector3, length: float,
-		holes: Array[Vector3], interior: bool = false) -> void:
+		holes: Array[Vector3], thick: float = WALL) -> void:
 	var cuts: Array[Vector3] = holes.duplicate()
 	cuts.sort_custom(func(a, b): return a.x < b.x)
 
@@ -491,29 +505,39 @@ func _wall(f: int, center: Vector3, dir: Vector3, length: float,
 	var hw := FLOOR_H - WALL
 	for s: Vector2 in segs:
 		var sl: float = s.y - s.x
-		if sl < 0.05:
+		if sl < 0.04:
 			continue
 		var mesh := BoxMesh.new()
 		if dir.z > 0.5:
-			mesh.size = Vector3(WALL, hw, sl)
+			mesh.size = Vector3(thick, hw, sl)
 		else:
-			mesh.size = Vector3(sl, hw, WALL)
+			mesh.size = Vector3(sl, hw, thick)
 		var pos := center + dir * ((s.x + s.y) * 0.5)
 		pos.y = center.y + hw * 0.5
 		var mi := _spawn(mesh, pos, _m_wall, f)
 		mi.name = "Wall_%d" % f
 
 	for h: Vector3 in cuts:
-		var above := 0.7 if interior else 0.6
+		var above := 0.6 if h.z < 0.5 else 0.9
 		var mesh := BoxMesh.new()
 		if dir.z > 0.5:
-			mesh.size = Vector3(WALL, above, h.y)
+			mesh.size = Vector3(thick, above, h.y)
 		else:
-			mesh.size = Vector3(h.y, above, WALL)
+			mesh.size = Vector3(h.y, above, thick)
 		var pos := center + dir * h.x
 		pos.y = center.y + hw - above * 0.5
 		var mi := _spawn(mesh, pos, _m_wall, f)
 		mi.name = "Lintel_%d" % f
+		if h.z >= 0.5:
+			var sill := BoxMesh.new()
+			if dir.z > 0.5:
+				sill.size = Vector3(thick, 0.85, h.y)
+			else:
+				sill.size = Vector3(h.y, 0.85, thick)
+			var sp := center + dir * h.x
+			sp.y = center.y + 0.425
+			var ms := _spawn(sill, sp, _m_wall, f)
+			ms.name = "Sill_%d" % f
 		_mark(f, center + dir * h.x, dir, h.y, h.z, center.y)
 
 
@@ -524,9 +548,9 @@ func _mark(f: int, pos: Vector3, dir: Vector3, width: float, kind: float, base_y
 	var h := 1.0 if is_win else 2.1
 	var mesh := BoxMesh.new()
 	if dir.z > 0.5:
-		mesh.size = Vector3(WALL + 0.06, h, width)
+		mesh.size = Vector3(WALL + 0.12, h, width)
 	else:
-		mesh.size = Vector3(width, h, WALL + 0.06)
+		mesh.size = Vector3(width, h, WALL + 0.12)
 
 	var mat := StandardMaterial3D.new()
 	var col := Color(0.35, 0.70, 0.95) if is_win else Color(0.35, 0.85, 0.45)
@@ -545,13 +569,6 @@ func _mark(f: int, pos: Vector3, dir: Vector3, width: float, kind: float, base_y
 	add_child(mi)
 	mi.set_meta("floor", f)
 	mi.set_meta("is_mark", true)
-
-
-func _box(f: int, pos: Vector3, size: Vector3, mat: ShaderMaterial, name_: String) -> void:
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	var mi := _spawn(mesh, pos, mat, f)
-	mi.name = "%s_%d" % [name_, f]
 
 
 func _mat(c: Color) -> ShaderMaterial:
