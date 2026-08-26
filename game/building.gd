@@ -68,6 +68,8 @@ void fragment() {
 """
 
 
+## Первый этаж отличается от типового: вместо южной пары квартир — вестибюль,
+## тамбур с улицы, мусорокамера под стволом и колясочная.
 func build(floors_count: int = 4) -> void:
 	_mat_wall = _make_mat(Color(0.60, 0.60, 0.58))
 	_mat_floor = _make_mat(Color(0.33, 0.34, 0.33))
@@ -76,7 +78,7 @@ func build(floors_count: int = 4) -> void:
 
 	for f in floors_count:
 		by_floor[f] = []
-		_build_floor(f, f < floors_count - 1)
+		_build_floor(f, f < floors_count - 1, f == 0)
 	_slab(floors_count - 1, true)
 
 
@@ -101,23 +103,32 @@ func _make_mat(c: Color) -> ShaderMaterial:
 #  Этаж
 # ---------------------------------------------------------------------------
 
-func _build_floor(f: int, with_stairs: bool) -> void:
+func _build_floor(f: int, with_stairs: bool, is_ground: bool = false) -> void:
 	var y := f * FLOOR_HEIGHT
 	_slab(f, false)
-	_outer_walls(f, y)
-	_corridor_walls(f, y)
+	_outer_walls(f, y, is_ground)
+	_corridor_walls(f, y, is_ground)
 	_core_walls(f, y)
-	_flats(f, y)
+	if is_ground:
+		_ground_entrance(f, y)
+		_flats(f, y, true)
+	else:
+		_flats(f, y, false)
 	_shafts(f, y)
 	if with_stairs:
 		_stairs(f)
 
 
-func _outer_walls(f: int, y: float) -> void:
+func _outer_walls(f: int, y: float, is_ground: bool = false) -> void:
 	_wall_run(f, Vector3(0, y, -HALF_D), Vector3(1, 0, 0), HALF_W * 2.0,
 			[Vector2(-9.0, WIN_W), Vector2(-4.0, WIN_W), Vector2(3.0, WIN_W), Vector2(8.5, WIN_W)])
-	_wall_run(f, Vector3(0, y, HALF_D), Vector3(1, 0, 0), HALF_W * 2.0,
-			[Vector2(-8.5, WIN_W), Vector2(-3.0, WIN_W), Vector2(4.0, WIN_W), Vector2(9.0, WIN_W)])
+	var south: Array[Vector2] = [Vector2(-8.5, WIN_W), Vector2(9.0, WIN_W)]
+	if is_ground:
+		south.append(Vector2(0.0, 2.0))          # входная дверь в тамбур
+	else:
+		south.append(Vector2(-3.0, WIN_W))
+		south.append(Vector2(4.0, WIN_W))
+	_wall_run(f, Vector3(0, y, HALF_D), Vector3(1, 0, 0), HALF_W * 2.0, south)
 	_wall_run(f, Vector3(-HALF_W, y, 0), Vector3(0, 0, 1), HALF_D * 2.0,
 			[Vector2(-6.5, WIN_W), Vector2(-2.5, WIN_W), Vector2(2.5, WIN_W), Vector2(6.5, WIN_W)])
 	_wall_run(f, Vector3(HALF_W, y, 0), Vector3(0, 0, 1), HALF_D * 2.0,
@@ -125,28 +136,34 @@ func _outer_walls(f: int, y: float) -> void:
 
 
 ## Стены кольцевого коридора: в них восемь входных дверей квартир.
-func _corridor_walls(f: int, y: float) -> void:
+func _corridor_walls(f: int, y: float, is_ground: bool = false) -> void:
 	_wall_run(f, Vector3(0, y, -CORR_Z), Vector3(1, 0, 0), CORR_X * 2.0,
 			[Vector2(-2.9, DOOR_W), Vector2(3.3, DOOR_W)], true)
-	_wall_run(f, Vector3(0, y, CORR_Z), Vector3(1, 0, 0), CORR_X * 2.0,
-			[Vector2(2.9, DOOR_W), Vector2(-3.3, DOOR_W)], true)
+	if is_ground:
+		# на первом этаже южная сторона коридора открыта в вестибюль
+		_wall_run(f, Vector3(0, y, CORR_Z), Vector3(1, 0, 0), CORR_X * 2.0,
+				[Vector2(0.0, 3.4)], true)
+	else:
+		_wall_run(f, Vector3(0, y, CORR_Z), Vector3(1, 0, 0), CORR_X * 2.0,
+				[Vector2(2.9, DOOR_W), Vector2(-3.3, DOOR_W)], true)
 	_wall_run(f, Vector3(-CORR_X, y, 0), Vector3(0, 0, 1), CORR_Z * 2.0,
 			[Vector2(-3.3, DOOR_W), Vector2(2.1, DOOR_W)], true)
 	_wall_run(f, Vector3(CORR_X, y, 0), Vector3(0, 0, 1), CORR_Z * 2.0,
 			[Vector2(-2.1, DOOR_W), Vector2(3.3, DOOR_W)], true)
 
 
-## Стены ядра. С южной стороны два проёма: слева на лестницу, справа к лифтам.
+## Стены ядра. По чертежу серии лестница стоит между двумя лифтами,
+## поэтому с южной стороны три проёма: к лестнице по центру и к обеим шахтам.
 func _core_walls(f: int, y: float) -> void:
 	_wall_run(f, Vector3(0, y, -CORE_Z), Vector3(1, 0, 0), CORE_X * 2.0, [] as Array[Vector2], true)
 	_wall_run(f, Vector3(-CORE_X, y, 0), Vector3(0, 0, 1), CORE_Z * 2.0, [] as Array[Vector2], true)
 	_wall_run(f, Vector3(CORE_X, y, 0), Vector3(0, 0, 1), CORE_Z * 2.0, [] as Array[Vector2], true)
 	_wall_run(f, Vector3(0, y, CORE_Z), Vector3(1, 0, 0), CORE_X * 2.0,
-			[Vector2(-2.2, 1.6), Vector2(2.2, 2.2)], true)
+			[Vector2(-2.9, 1.2), Vector2(0.0, 2.6), Vector2(2.9, 1.2)], true)
 
 
 ## Внутренние перегородки квартир.
-func _flats(f: int, y: float) -> void:
+func _flats(f: int, y: float, is_ground: bool) -> void:
 	# --- северная пара: 3К слева, 2К справа ---
 	_wall_run(f, Vector3(1.5, y, -7.85), Vector3(0, 0, 1), 5.3, [] as Array[Vector2], true)
 	_wall_run(f, Vector3(-9.6, y, -7.6), Vector3(0, 0, 1), 5.6, [Vector2(1.4, ROOM_DOOR)], true)
@@ -156,14 +173,15 @@ func _flats(f: int, y: float) -> void:
 	_wall_run(f, Vector3(4.6, y, -7.9), Vector3(0, 0, 1), 5.0, [Vector2(1.2, ROOM_DOOR)], true)
 	_wall_run(f, Vector3(8.2, y, -7.7), Vector3(1, 0, 0), 7.2, [Vector2(-2.0, ROOM_DOOR)], true)
 
-	# --- южная пара: те же квартиры, повёрнутые на 180 градусов ---
-	_wall_run(f, Vector3(-1.5, y, 7.85), Vector3(0, 0, 1), 5.3, [] as Array[Vector2], true)
-	_wall_run(f, Vector3(9.6, y, 7.6), Vector3(0, 0, 1), 5.6, [Vector2(-1.4, ROOM_DOOR)], true)
-	_wall_run(f, Vector3(6.4, y, 7.6), Vector3(1, 0, 0), 6.2,
-			[Vector2(1.6, ROOM_DOOR), Vector2(-2.0, ROOM_DOOR)], true)
-	_wall_run(f, Vector3(3.3, y, 6.9), Vector3(0, 0, 1), 2.4, [] as Array[Vector2], true)
-	_wall_run(f, Vector3(-4.6, y, 7.9), Vector3(0, 0, 1), 5.0, [Vector2(-1.2, ROOM_DOOR)], true)
-	_wall_run(f, Vector3(-8.2, y, 7.7), Vector3(1, 0, 0), 7.2, [Vector2(2.0, ROOM_DOOR)], true)
+	# --- южная пара: на первом этаже её нет, там вестибюль ---
+	if not is_ground:
+		_wall_run(f, Vector3(-1.5, y, 7.85), Vector3(0, 0, 1), 5.3, [] as Array[Vector2], true)
+		_wall_run(f, Vector3(9.6, y, 7.6), Vector3(0, 0, 1), 5.6, [Vector2(-1.4, ROOM_DOOR)], true)
+		_wall_run(f, Vector3(6.4, y, 7.6), Vector3(1, 0, 0), 6.2,
+				[Vector2(1.6, ROOM_DOOR), Vector2(-2.0, ROOM_DOOR)], true)
+		_wall_run(f, Vector3(3.3, y, 6.9), Vector3(0, 0, 1), 2.4, [] as Array[Vector2], true)
+		_wall_run(f, Vector3(-4.6, y, 7.9), Vector3(0, 0, 1), 5.0, [Vector2(-1.2, ROOM_DOOR)], true)
+		_wall_run(f, Vector3(-8.2, y, 7.7), Vector3(1, 0, 0), 7.2, [Vector2(2.0, ROOM_DOOR)], true)
 
 	# --- западная пара: 1К севернее, 2К южнее ---
 	_wall_run(f, Vector3(-9.2, y, -0.5), Vector3(1, 0, 0), 7.6, [] as Array[Vector2], true)
@@ -178,13 +196,36 @@ func _flats(f: int, y: float) -> void:
 	_wall_run(f, Vector3(10.8, y, 2.6), Vector3(1, 0, 0), 4.4, [Vector2(-1.0, ROOM_DOOR)], true)
 
 
-## Шахты лифтов, мусоропровод и щитовая — глухие объёмы внутри ядра.
+## Входная группа первого этажа: тамбур, вестибюль с почтовыми ящиками,
+## колясочная и мусорокамера под стволом мусоропровода.
+func _ground_entrance(f: int, y: float) -> void:
+	# тамбур: вторая дверь отделяет улицу от вестибюля
+	_wall_run(f, Vector3(0, y, 8.6), Vector3(1, 0, 0), 5.2, [Vector2(0.0, 1.6)], true)
+	_wall_run(f, Vector3(-2.6, y, 9.5), Vector3(0, 0, 1), 1.9, [] as Array[Vector2], true)
+	_wall_run(f, Vector3(2.6, y, 9.5), Vector3(0, 0, 1), 1.9, [] as Array[Vector2], true)
+
+	# колясочная слева от вестибюля
+	_wall_run(f, Vector3(-5.6, y, 7.6), Vector3(0, 0, 1), 4.4, [Vector2(1.2, ROOM_DOOR)], true)
+	_wall_run(f, Vector3(-9.0, y, 5.4), Vector3(1, 0, 0), 6.8, [] as Array[Vector2], true)
+
+	# помещение уборщицы справа
+	_wall_run(f, Vector3(5.6, y, 7.6), Vector3(0, 0, 1), 4.4, [Vector2(1.2, ROOM_DOOR)], true)
+	_wall_run(f, Vector3(9.0, y, 5.4), Vector3(1, 0, 0), 6.8, [] as Array[Vector2], true)
+
+	# мусорокамера под стволом: вход из коридора, отдельный выход на улицу
+	_wall_run(f, Vector3(-4.7, y, -2.3), Vector3(1, 0, 0), 2.0, [] as Array[Vector2], true)
+	_wall_run(f, Vector3(-5.7, y, -3.4), Vector3(0, 0, 1), 2.2, [Vector2(0.0, DOOR_W)], true)
+
+
+## Шахты лифтов по краям ядра, между ними лестница. Мусоропровод у северной
+## стены — его ствол идёт вертикально через все этажи в мусорокамеру внизу.
 func _shafts(f: int, y: float) -> void:
 	var h := FLOOR_HEIGHT - WALL_THICK
-	_box(f, Vector3(1.5, y + h * 0.5, -1.9), Vector3(1.7, h, 2.4), _mat_shaft, "LiftPass")
-	_box(f, Vector3(3.3, y + h * 0.5, -1.7), Vector3(1.7, h, 2.8), _mat_shaft, "LiftCargo")
-	_box(f, Vector3(1.4, y + h * 0.5, 1.4), Vector3(1.2, h, 1.2), _mat_shaft, "Chute")
-	_box(f, Vector3(3.2, y + h * 0.5, 1.4), Vector3(1.6, h, 1.2), _mat_shaft, "Panel")
+	_box(f, Vector3(-2.9, y + h * 0.5, 1.6), Vector3(1.7, h, 2.4), _mat_shaft, "LiftPass")
+	_box(f, Vector3(2.9, y + h * 0.5, 1.5), Vector3(1.7, h, 2.6), _mat_shaft, "LiftCargo")
+	if f > 0:
+		_box(f, Vector3(-3.0, y + h * 0.5, -2.9), Vector3(1.2, h, 1.2), _mat_shaft, "Chute")
+	_box(f, Vector3(2.9, y + h * 0.5, -2.9), Vector3(1.6, h, 1.2), _mat_shaft, "Panel")
 
 
 # ---------------------------------------------------------------------------
@@ -206,8 +247,8 @@ func _slab(f: int, is_roof: bool) -> void:
 		return
 
 	# Проём под марши — западная половина ядра.
-	var hx0 := -CORE_X
-	var hx1 := -0.2
+	var hx0 := -1.8
+	var hx1 := 1.8
 	var pieces: Array[Rect2] = [
 		Rect2(Vector2(-HALF_W, -HALF_D), Vector2(hx0 + HALF_W, HALF_D * 2.0)),
 		Rect2(Vector2(hx1, -HALF_D), Vector2(HALF_W - hx1, HALF_D * 2.0)),
@@ -227,17 +268,17 @@ func _slab(f: int, is_roof: bool) -> void:
 		mi.set_meta("is_ceiling", true)
 
 
-## Лестница в два марша с промежуточной площадкой, внутри ядра.
+## Лестница в два марша между лифтовыми шахтами, по центру ядра.
 func _stairs(f: int) -> void:
 	var y0 := f * FLOOR_HEIGHT
 	var half_rise := FLOOR_HEIGHT * 0.5
 	var run := 2.6
-	var z_near := CORE_Z - 0.5
+	var z_near := CORE_Z - 0.6
 	var z_mid := z_near - run
 
-	_flight(f, Vector3(-3.0, y0, z_near), Vector3(0, 0, -1), half_rise, run, 1.4)
+	_flight(f, Vector3(-0.85, y0, z_near), Vector3(0, 0, -1), half_rise, run, 1.4)
 	_landing(f, y0 + half_rise, z_mid)
-	_flight(f, Vector3(-1.3, y0 + half_rise, z_mid), Vector3(0, 0, 1), half_rise, run, 1.4)
+	_flight(f, Vector3(0.85, y0 + half_rise, z_mid), Vector3(0, 0, 1), half_rise, run, 1.4)
 
 
 func _flight(f: int, start: Vector3, dir: Vector3, rise: float, run: float, width: float) -> void:
@@ -280,7 +321,7 @@ func _flight(f: int, start: Vector3, dir: Vector3, rise: float, run: float, widt
 func _landing(f: int, y: float, z_mid: float) -> void:
 	var mesh := BoxMesh.new()
 	mesh.size = Vector3(3.2, WALL_THICK, 1.5)
-	var mi := _spawn(mesh, Vector3(-2.15, y - WALL_THICK * 0.5, z_mid - 0.75), _mat_floor, f)
+	var mi := _spawn(mesh, Vector3(0.0, y - WALL_THICK * 0.5, z_mid - 0.75), _mat_floor, f)
 	mi.name = "Landing_%d" % f
 
 

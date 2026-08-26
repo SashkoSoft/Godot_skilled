@@ -21,9 +21,9 @@ var _shot_path: String = ""
 var _shot_frames: int = SHOT_DEFAULT_FRAMES
 var _shot_yaw_deg: float = -1.0
 var _start_floor: int = 0
-var _floors: int = 4
+var _floors: int = 2
 var _cam_dist: float = 0.0
-var _spawn := Vector2(-4.6, 4.6)
+var _spawn := Vector2(0.0, 13.0)
 var _walk_test := false
 var _walk_route := "stairs"
 var _route: Array[Vector3] = []
@@ -192,18 +192,20 @@ func _build_world() -> void:
 				# двери — шаг внутрь. Если хоть одна дверь ведёт не туда
 				# или её нет, тест упрётся и назовёт номер точки.
 				_route = [
-					Vector3(-4.6, 0, 0.0),
-					Vector3(-4.6, 0, -3.3), Vector3(-6.8, 0, -3.3), Vector3(-4.6, 0, -3.3),   # 1К зап
-					Vector3(-4.6, 0, 2.1), Vector3(-6.8, 0, 2.1), Vector3(-4.6, 0, 2.1),      # 2К зап
-					Vector3(-4.6, 0, -4.6),
-					Vector3(-2.9, 0, -4.6), Vector3(-2.9, 0, -6.6), Vector3(-2.9, 0, -4.6),   # 3К сев
-					Vector3(3.3, 0, -4.6), Vector3(3.3, 0, -6.6), Vector3(3.3, 0, -4.6),      # 2К сев
-					Vector3(4.6, 0, -4.6),
-					Vector3(4.6, 0, -2.1), Vector3(6.8, 0, -2.1), Vector3(4.6, 0, -2.1),      # 1К вост
-					Vector3(4.6, 0, 3.3), Vector3(6.8, 0, 3.3), Vector3(4.6, 0, 3.3),         # 2К вост
-					Vector3(4.6, 0, 4.6),
-					Vector3(2.9, 0, 4.6), Vector3(2.9, 0, 6.6), Vector3(2.9, 0, 4.6),         # 3К юж
-					Vector3(-3.3, 0, 4.6), Vector3(-3.3, 0, 6.6),                             # 2К юж
+					Vector3(0.0, 0, 13.0),        # снаружи, перед входом
+					Vector3(0.0, 0, 9.6),         # тамбур
+					Vector3(0.0, 0, 7.0),         # вестибюль
+					Vector3(0.0, 0, 4.6),         # коридор у ядра
+					Vector3(-0.85, 0, 2.9),       # низ первого марша
+					Vector3(-0.85, 1.5, 0.7),     # верх первого марша
+					Vector3(0.85, 1.5, 0.7),      # разворот на промежуточной площадке
+					Vector3(0.85, 3.0, 3.1),      # выход на второй этаж
+					Vector3(2.9, 3.0, 4.6),       # коридор второго этажа
+					Vector3(2.9, 3.0, 6.6),       # 3К южная
+					Vector3(2.9, 3.0, 4.6),       # назад в коридор
+					Vector3(-4.6, 3.0, 4.6),      # по коридору на западную сторону
+					Vector3(-4.6, 3.0, -3.3),     # к двери 1К
+					Vector3(-6.8, 3.0, -3.3),     # 1К западная
 				]
 		player.auto_target = _route[0]
 
