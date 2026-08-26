@@ -218,9 +218,9 @@ func paint_plan(f: int) -> void:
 		Color(0.30, 0.75, 0.62), Color(0.35, 0.62, 0.90), Color(0.62, 0.48, 0.88),
 		Color(0.90, 0.45, 0.70), Color(0.75, 0.70, 0.45), Color(0.55, 0.60, 0.95),
 	]
-	for fl in flats():
-		var id: int = fl["id"]
-		_plate(f, fl["rect"] as Rect2, palette[id % palette.size()], 0.12, y + 0.03)
+	# Габарит квартиры не заливаем: он накрывает и пустоты между помещениями,
+	# и от этого на картинке появляются цветные пятна, за которыми ничего нет.
+	# Принадлежность к квартире показывают подписи, а цвет — назначение.
 	for r in rooms():
 		var col: Color
 		match int(r["kind"]):
@@ -231,7 +231,7 @@ func paint_plan(f: int) -> void:
 			Room.LOGGIA:  col = Color(0.46, 0.82, 0.36)
 			Room.SHAFT:   col = Color(0.55, 0.20, 0.55)
 			_:            col = Color(0.92, 0.84, 0.58)
-		_plate(f, r["rect"] as Rect2, col, 0.62, y + 0.06)
+		_plate(f, r["rect"] as Rect2, col, 0.82, y + 0.06)
 
 
 func _plate(f: int, r: Rect2, col: Color, alpha: float, y: float) -> void:
