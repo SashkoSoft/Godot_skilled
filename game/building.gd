@@ -30,7 +30,54 @@ const WIN_W := 1.7
 const KIND_DOOR := 0.0
 const KIND_WINDOW := 1.0
 
-var marks_visible := true      ## показывать цветные метки проёмов
+var marks_visible := true      ## показывать цветные метки проёмов и помещений
+
+## Назначение помещения. По нему ставится метка, а позже — расставляется лут:
+## аптечка в санузле, консервы на кухне, инструмент в кладовой.
+enum Room { KITCHEN, BATH, STORAGE, BALCONY }
+
+## Помещения типового этажа: прямоугольник в плане и назначение.
+## Координаты совпадают с перегородками — если двигать стену, двигать и это.
+const ROOMS: Array = [
+	# северо-западная трёхкомнатная
+	[Rect2(-12.8, -10.3, 3.0, 2.6), Room.KITCHEN],
+	[Rect2(-3.1, -8.0, 2.0, 1.5), Room.BATH],
+	[Rect2(-3.1, -6.4, 2.0, 1.0), Room.STORAGE],
+	# северо-восточная двухкомнатная
+	[Rect2(1.8, -10.3, 2.6, 2.4), Room.KITCHEN],
+	[Rect2(4.9, -7.5, 1.9, 1.7), Room.BATH],
+	[Rect2(4.9, -5.7, 1.9, 0.9), Room.STORAGE],
+	# юго-восточная трёхкомнатная
+	[Rect2(9.8, 7.7, 3.0, 2.6), Room.KITCHEN],
+	[Rect2(1.1, 6.5, 2.0, 1.5), Room.BATH],
+	[Rect2(1.1, 5.4, 2.0, 1.0), Room.STORAGE],
+	# юго-западная двухкомнатная
+	[Rect2(-4.4, 7.9, 2.6, 2.4), Room.KITCHEN],
+	[Rect2(-6.8, 5.8, 1.9, 1.7), Room.BATH],
+	[Rect2(-6.8, 4.8, 1.9, 0.9), Room.STORAGE],
+	# западная однокомнатная
+	[Rect2(-12.8, -5.0, 2.8, 2.2), Room.KITCHEN],
+	[Rect2(-8.4, -2.9, 2.6, 1.6), Room.BATH],
+	# западная двухкомнатная
+	[Rect2(-12.8, 2.8, 2.8, 2.4), Room.KITCHEN],
+	[Rect2(-8.4, 1.0, 2.6, 1.5), Room.BATH],
+	[Rect2(-8.4, 2.6, 2.6, 0.9), Room.STORAGE],
+	# восточная однокомнатная
+	[Rect2(10.0, -5.0, 2.8, 2.2), Room.KITCHEN],
+	[Rect2(5.8, -2.9, 2.6, 1.6), Room.BATH],
+	# восточная двухкомнатная
+	[Rect2(10.0, 2.8, 2.8, 2.4), Room.KITCHEN],
+	[Rect2(5.8, 1.0, 2.6, 1.5), Room.BATH],
+	[Rect2(5.8, 2.6, 2.6, 0.9), Room.STORAGE],
+]
+
+## Лоджии по углам: выступают за фасад, поэтому строятся отдельной геометрией.
+const LOGGIAS: Array[Rect2] = [
+	Rect2(-12.6, -10.5, 3.4, -1.3),
+	Rect2(9.2, -10.5, 3.4, -1.3),
+	Rect2(-12.6, 10.5, 3.4, 1.3),
+	Rect2(9.2, 10.5, 3.4, 1.3),
+]
 
 
 static func _door(offset: float, width: float = ROOM_DOOR) -> Vector3:
@@ -130,6 +177,8 @@ func _build_floor(f: int, with_stairs: bool, is_ground: bool = false) -> void:
 	else:
 		_flats(f, y, false)
 	_shafts(f, y)
+	_loggias(f, y)
+	_room_marks(f, y)
 	if with_stairs:
 		_stairs(f)
 
@@ -388,6 +437,67 @@ func _wall_run(f: int, center: Vector3, dir: Vector3, length: float,
 		var mi := _spawn(mesh, pos, _mat_wall, f)
 		mi.name = "Lintel_%d" % f
 		_mark(f, center + dir * h.x, dir, h.y, h.z, center.y)
+
+
+## Лоджии: плита пола с ограждением, выступают за наружную стену.
+func _loggias(f: int, y: float) -> void:
+	for r: Rect2 in LOGGIAS:
+		var depth: float = absf(r.size.y)
+		var z_out: float = r.position.y + r.size.y
+		var cz: float = (r.position.y + z_out) * 0.5
+		var cx: float = r.position.x + r.size.x * 0.5
+
+		var slab := BoxMesh.new()
+		slab.size = Vector3(r.size.x, WALL_THICK, depth)
+		var mi := _spawn(slab, Vector3(cx, y - WALL_THICK * 0.5, cz), _mat_floor, f)
+		mi.name = "Loggia_%d" % f
+
+		# ограждение по внешнему краю, высотой 1,1 м
+		var rail := BoxMesh.new()
+		rail.size = Vector3(r.size.x, 1.1, 0.12)
+		var mi2 := _spawn(rail, Vector3(cx, y + 0.55, z_out), _mat_wall, f)
+		mi2.name = "LoggiaRail_%d" % f
+
+
+## Метки помещений на полу: кухня, санузел, кладовая, лоджия.
+func _room_marks(f: int, y: float) -> void:
+	if not marks_visible:
+		return
+	for entry in ROOMS:
+		_room_mark(f, entry[0] as Rect2, entry[1] as int, y)
+	for r: Rect2 in LOGGIAS:
+		var depth: float = absf(r.size.y)
+		var cz: float = r.position.y + r.size.y * 0.5
+		_room_mark(f, Rect2(r.position.x, cz - depth * 0.5, r.size.x, depth), Room.BALCONY, y)
+
+
+func _room_mark(f: int, r: Rect2, kind: int, y: float) -> void:
+	var col: Color
+	match kind:
+		Room.KITCHEN: col = Color(0.98, 0.62, 0.20)
+		Room.BATH:    col = Color(0.20, 0.78, 0.78)
+		Room.STORAGE: col = Color(0.72, 0.52, 0.28)
+		_:            col = Color(0.85, 0.38, 0.78)
+
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(r.size.x, 0.03, r.size.y)
+
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(col.r, col.g, col.b, 0.55)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.emission_enabled = true
+	mat.emission = col
+	mat.emission_energy_multiplier = 0.7
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.material_override = mat
+	mi.position = Vector3(r.position.x + r.size.x * 0.5, y + 0.02, r.position.y + r.size.y * 0.5)
+	mi.name = "RoomMark_%d" % f
+	add_child(mi)
+	mi.set_meta("floor", f)
+	mi.set_meta("is_mark", true)
 
 
 ## Цветная метка проёма: зелёная — дверь, голубая — окно.
