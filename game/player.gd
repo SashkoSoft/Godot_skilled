@@ -9,7 +9,7 @@ extends CharacterBody3D
 const SPEED := 4.2
 const ACCEL := 28.0
 const HEIGHT := 1.8
-const RADIUS := 0.35
+const RADIUS := 0.25        ## в плане человек занимает ~0,5 м, не 0,7
 
 var rig: CameraRig
 var floor_index: int = 0        ## этаж, на котором стоит игрок

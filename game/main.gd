@@ -25,6 +25,10 @@ var _floors: int = 3
 var _cam_dist: float = 0.0
 var _marks := true
 var _plan_view := false
+var _check_reach := false
+var _reach_map := false
+var _fix_reach := false
+var _prune := false
 var _spawn := Vector2(-1.6, 1.2)   ## лестничная клетка
 var _walk_test := false
 var _walk_route := "stairs"
@@ -159,13 +163,11 @@ func _build_world() -> void:
 	ground.add_child(gs)
 	add_child(ground)
 
-	building = Tower.new()
-	building.name = "Building"
-	building.marks_visible = _marks
-	add_child(building)
-	building.build(_floors)
-	print("[план] проёмов с чертежа: стен %d, по правилу %d, дверей добавлено ради прохода %d"
-			% [building.traced_count, building.rule_count, building.added_count])
+	_build_tower()
+	if _prune:
+		_prune_reach.call_deferred()
+	elif _check_reach:
+		_report_reach.call_deferred()
 	if _plan_view:
 		building.paint_plan(_start_floor)
 
@@ -271,6 +273,17 @@ func _parse_args() -> void:
 			var parts := a.substr(8).split(",")
 			if parts.size() == 2:
 				_spawn = Vector2(float(parts[0]), float(parts[1]))
+		elif a == "--reach-map":
+			_check_reach = true
+			_reach_map = true
+		elif a == "--prune-reach":
+			_check_reach = true
+			_prune = true
+		elif a == "--fix-reach":
+			_check_reach = true
+			_fix_reach = true
+		elif a == "--check-reach":
+			_check_reach = true
 		elif a == "--plan":
 			_plan_view = true
 		elif a == "--no-marks":
@@ -331,3 +344,138 @@ func _run_walk_test(delta: float) -> void:
 			player.global_position.x, player.global_position.y, player.global_position.z,
 			player.floor_index])
 		get_tree().quit()
+
+
+## Этаж пересобирается целиком: проверка проходимости прогоняется несколько раз.
+func _build_tower() -> void:
+	building = Tower.new()
+	building.name = "Building"
+	building.marks_visible = _marks
+	add_child(building)
+	building.build(_floors)
+	print("[план] проёмов с чертежа: стен %d, по правилу %d, дверей добавлено ради прохода %d"
+			% [building.traced_count, building.rule_count, building.added_count])
+	if not building.unreachable.is_empty():
+		print("[план] по графу не открылось: ", building.unreachable)
+	if _plan_view:
+		building.paint_plan(_start_floor)
+
+
+## Сколько помещений сейчас недостижимо физически.
+func _reach_bad() -> Array:
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var space := get_viewport().world_3d.direct_space_state
+	var res := ReachCheck.run(space, _start_floor * Tower.FLOOR_H)
+	if res.has("error"):
+		return [{"room": -1, "flat": -1, "kind": -1}]
+	var bad: Array = []
+	for r in res["rooms"]:
+		var f: int = r["free"]
+		if f < 6 or int(r["kind"]) == Tower.SHF:
+			continue
+		if float(r["reached"]) / float(f) < 0.15:
+			bad.append(r)
+	return bad
+
+
+## Отсев: лишняя дверь та, без которой этаж остаётся проходимым.
+func _prune_reach() -> void:
+	var keys: Array = Tower.extra_doors.keys()
+	var dropped := 0
+	for k in keys:
+		var saved = Tower.extra_doors[k]
+		Tower.extra_doors.erase(k)
+		building.queue_free()
+		building = null
+		await get_tree().process_frame
+		_build_tower()
+		var bad: Array = await _reach_bad()
+		if bad.is_empty():
+			dropped += 1
+		else:
+			Tower.extra_doors[k] = saved
+	print("[отсев] убрано лишних проёмов: %d, осталось %d"
+			% [dropped, Tower.extra_doors.size()])
+	building.queue_free()
+	building = null
+	await get_tree().process_frame
+	_build_tower()
+	var bad2: Array = await _reach_bad()
+	print("[отсев] контроль: недостижимо ", bad2.size())
+	_write_extra_doors()
+	get_tree().quit(0)
+
+
+## Физическая проверка проходимости. С --fix-reach недостающие двери
+## дорезаются и этаж пересобирается, пока каждое помещение не станет
+## достижимым; результат пишется в game/plan_extra_doors.gd.
+func _report_reach() -> void:
+	var passes := 25 if _fix_reach else 1
+	var bad: Array = []
+	for step in passes:
+		await get_tree().physics_frame
+		await get_tree().physics_frame
+		var space := get_viewport().world_3d.direct_space_state
+		var res := ReachCheck.run(space, _start_floor * Tower.FLOOR_H)
+		if res.has("error"):
+			print("[проход] ", res["error"])
+			get_tree().quit(1)
+			return
+		var reached: Dictionary = {}
+		bad = []
+		for r in res["rooms"]:
+			var f: int = r["free"]
+			var share := 1.0 if f < 6 else float(r["reached"]) / float(f)
+			reached[r["room"]] = share >= 0.15
+			if f >= 6 and share < 0.15 and int(r["kind"]) != Tower.SHF:
+				bad.append(r)
+		print("[проход] проход %d: свободно %d, достигнуто %d, недостижимо %d"
+				% [step, res["free"], res["reached"], bad.size()])
+		if bad.is_empty() or not _fix_reach:
+			break
+		var cut := 0
+		for r in bad:
+			if building.open_into(int(r["room"]), reached) != "":
+				cut += 1
+		if cut == 0:
+			print("[проход] больше нечего резать, осталось ", bad.size())
+			break
+		building.queue_free()
+		building = null
+		await get_tree().process_frame
+		_build_tower()
+	for r in bad:
+		print("   НЕТ ХОДА: помещение %d, квартира %d, назначение %d"
+				% [r["room"], r["flat"], r["kind"]])
+	if _fix_reach:
+		_write_extra_doors()
+	get_tree().quit(1 if bad.size() > 0 else 0)
+
+
+func _write_extra_doors() -> void:
+	var lines: Array[String] = []
+	var keys: Array = Tower.extra_doors.keys()
+	keys.sort()
+	for k in keys:
+		var items: Array[String] = []
+		for v: Vector3 in Tower.extra_doors[k]:
+			items.append("Vector3(%.3f, %.3f, %.1f)" % [v.x, v.y, v.z])
+		lines.append("	\"%s\": [%s]," % [k, ", ".join(items)])
+	var text := "class_name PlanExtraDoors
+extends RefCounted
+"
+	text += "## Двери, которых на чертеже нет, но без них в помещение не попасть.
+"
+	text += "## Найдены физической проверкой: main.gd --fix-reach.
+
+"
+	text += "const DOORS := {
+" + "
+".join(lines) + "
+}
+"
+	var f := FileAccess.open("res://plan_extra_doors.gd", FileAccess.WRITE)
+	f.store_string(text)
+	f.close()
+	print("[проход] дописано дверей: ", Tower.extra_doors.size())

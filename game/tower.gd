@@ -16,8 +16,8 @@ const WALL_EXT := 0.34           ## наружные
 const W_HALF := 17.96
 const D_HALF := 9.27
 
-const DOOR_FLAT := 1.0
-const DOOR_ROOM := 0.85
+const DOOR_FLAT := 0.90
+const DOOR_ROOM := 0.80
 const WIN := 1.7
 
 const KIND_DOOR := 0.0
@@ -37,87 +37,86 @@ const SHF := Room.SHAFT
 ## Квартиры пронумерованы как в БТИ: 46 44 45 43 по северу, 42 41 48 47 по югу,
 ## 8 — места общего пользования.
 const ROOMS := [
-
 	# --- 46, северо-запад -------------------------------------------------
-	[-17.88,  -8.00, -16.23,  -3.14, 0, LOG],
-	[-16.08,  -8.74, -13.30,  -3.14, 0, LIV],  # 14,0 = 2,80 x 5,52
+	[-17.88,  -8.03, -16.23,  -3.35, 0, LOG],
+	[-16.08,  -8.74, -13.30,  -3.35, 0, LIV],  # 14,0 = 2,80 x 5,52
 	[-13.30,  -8.74,  -9.52,  -3.29, 0, LIV],  # 18,5 = 3,42 x 5,54
-	[-17.30,  -3.01, -14.14,  -0.39, 0, KIT],
-	[-14.12,  -2.13, -12.85,  -0.39, 0, BAT],
-	[-12.71,  -2.13, -11.97,  -0.39, 0, BAT],
-	[-11.70,  -3.01,  -9.52,  -0.39, 0, HAL],
+	[-17.30,  -3.01, -14.14,  -0.68, 0, KIT],
+	[-14.12,  -2.13, -13.14,  -0.68, 0, BAT],
+	[-12.71,  -2.13, -11.97,  -0.68, 0, BAT],
+	[-11.70,  -3.01,  -9.52,  -0.68, 0, HAL],
 	# --- 44, север-центр, трёхкомнатная -----------------------------------
 	[ -9.51,  -9.24,  -3.28,  -8.06, 1, LOG],  # лоджия 1б
 	[ -3.06,  -9.24,   2.92,  -8.06, 1, LOG],  # лоджия 3а
 	[ -9.40,  -7.52,  -6.03,  -1.12, 1, LIV],  # 20,7 = 3,37 x 6,10
 	[ -6.03,  -7.52,  -3.42,  -2.89, 1, LIV],  # 12,2 = 2,57 x 4,71
-	[ -3.36,  -7.52,   0.17,  -2.88, 1, LIV],  # 15,1 = 3,24 x 4,72
-	[ -6.03,  -2.80,   0.17,  -1.12, 1, HAL],  # холл 7
-	[  0.43,  -7.51,   3.02,  -4.68, 1, KIT],
+	[ -3.32,  -7.52,  -0.09,  -2.88, 1, LIV],  # 15,1 = 3,24 x 4,72
+	[ -6.03,  -2.63,  -0.09,  -1.12, 1, HAL],  # холл 7
+	[  0.43,  -7.51,   3.02,  -4.89, 1, KIT],
 	[  1.13,  -3.43,   1.90,  -2.94, 1, BAT],
 	[  1.13,  -2.46,   3.02,  -0.97, 1, BAT],
-	[ -0.05,  -4.90,   0.70,  -0.35, 1, HAL],
+	[  0.16,  -4.93,   0.68,  -0.68, 1, HAL],
 	# --- 45, север справа от центра ---------------------------------------
-	[  3.20,  -9.24,   9.31,  -8.06, 2, LOG],  # лоджия 1а
-	[  3.31,  -7.52,   5.93,  -3.43, 2, LIV],
-	[  5.97,  -7.52,   9.39,  -1.44, 2, LIV],  # 19,1 = 3,37 x 6,16
-	[  3.20,  -3.14,   4.93,  -2.55, 2, BAT],
-	[  3.37,  -2.66,   5.17,  -0.91, 2, BAT],
-	[  5.23,  -2.66,   7.38,  -0.39, 2, HAL],
+	[  3.33,  -9.24,   9.31,  -8.06, 2, LOG],  # лоджия 1а
+	[  3.35,  -7.52,   5.93,  -3.43, 2, LIV],
+	[  6.10,  -7.52,   9.39,  -2.60, 2, LIV],  # 19,1 = 3,37 x 6,16
+	[  3.33,  -3.35,   4.93,  -2.59, 2, BAT],
+	[  3.37,  -2.60,   5.17,  -0.91, 2, BAT],
+	[  5.23,  -2.60,   9.39,  -0.68, 2, HAL],
 	# --- 43, северо-восток (зеркало 46) -----------------------------------
-	[ 16.23,  -8.00,  17.88,  -3.14, 3, LOG],
-	[ 13.30,  -8.74,  16.08,  -3.14, 3, LIV],  # 13,9
-	[  9.52,  -8.74,  13.30,  -3.29, 3, LIV],  # 18,2
-	[ 14.14,  -3.01,  17.30,  -0.39, 3, KIT],
-	[ 12.85,  -2.13,  14.33,  -0.39, 3, BAT],
-	[ 11.80,  -2.13,  12.71,  -0.39, 3, BAT],
-	[  9.52,  -3.01,  11.74,  -0.39, 3, HAL],
+	[ 16.23,  -8.03,  17.88,  -3.35, 3, LOG],
+	[ 13.30,  -8.74,  16.08,  -3.35, 3, LIV],  # 13,9
+	[  9.94,  -8.74,  13.30,  -3.29, 3, LIV],  # 18,2
+	[ 14.14,  -3.01,  17.30,  -0.68, 3, KIT],
+	[ 13.23,  -2.13,  14.12,  -0.68, 3, BAT],
+	[ 11.80,  -2.13,  12.71,  -0.68, 3, BAT],
+	[  9.94,  -3.01,  11.74,  -0.68, 3, HAL],
 	# --- общий коридор ----------------------------------------------------
-	[-11.70,  -0.68,  11.74,   0.82, 8, HAL],
+	[-11.70,  -0.68,  11.74,   0.70, 8, HAL],
 	# --- 42, юго-запад ----------------------------------------------------
 	[-17.85,   3.70, -16.11,   8.56, 4, LOG],
-	[-16.01,   3.28, -13.38,   8.56, 4, LIV],  # 13,8
-	[-13.37,   3.28,  -9.90,   8.56, 4, LIV],  # 18,6
-	[-17.32,   0.39, -14.35,   3.12, 4, KIT],
-	[-14.14,   0.39, -12.88,   3.12, 4, BAT],
-	[-12.77,   0.39, -11.87,   3.12, 4, BAT],
-	[-11.85,   0.87,  -9.72,   3.28, 4, HAL],
+	[-16.01,   3.51, -13.38,   8.56, 4, LIV],  # 13,8
+	[-13.37,   3.51,  -9.90,   8.56, 4, LIV],  # 18,6
+	[-17.32,   0.39, -14.35,   3.53, 4, KIT],
+	[-14.14,   0.39, -13.13,   3.53, 4, BAT],
+	[-12.77,   0.39, -11.91,   3.53, 4, BAT],
+	[-11.80,   0.70,  -9.72,   3.51, 4, HAL],
 	# --- 41, юг слева от ядра ---------------------------------------------
 	[ -9.32,   7.54,  -3.33,   9.20, 5, LOG],  # лоджия 1а
 	[ -9.32,   1.47,  -5.93,   7.40, 5, LIV],  # 18,5 = 3,34 x 6,08
-	[ -6.00,   0.87,  -4.98,   4.72, 5, HAL],
-	[ -4.80,   1.47,  -3.16,   2.55, 5, BAT],
-	[ -4.80,   2.65,  -3.16,   3.35, 5, BAT],
-	[ -4.80,   3.12,  -3.16,   4.72, 5, KIT],
-	[ -6.00,   5.20,  -3.16,   7.40, 5, LIV],
+	[ -5.92,   0.70,  -5.03,   4.72, 5, HAL],
+	[ -4.84,   1.47,  -3.16,   2.55, 5, BAT],
+	[ -4.84,   2.65,  -3.16,   3.35, 5, BAT],
+	[ -4.84,   3.53,  -3.16,   4.72, 5, KIT],
+	[ -5.92,   5.15,  -3.16,   7.40, 5, LIV],
 	# --- 48, юг справа от ядра --------------------------------------------
 	[  3.54,   7.54,   9.66,   9.20, 6, LOG],
 	[  6.32,   1.47,   9.49,   7.40, 6, LIV],  # 19,2 = 3,39 x 6,20
-	[  5.16,   0.87,   6.30,   4.72, 6, HAL],
+	[  5.25,   0.70,   6.09,   4.72, 6, HAL],
 	[  3.46,   1.47,   5.14,   2.55, 6, BAT],
 	[  3.46,   2.65,   5.14,   3.35, 6, BAT],
-	[  3.46,   3.12,   5.14,   4.72, 6, KIT],
-	[  3.46,   5.20,   6.30,   7.40, 6, LIV],
+	[  3.46,   3.53,   5.14,   4.72, 6, KIT],
+	[  3.46,   5.15,   6.09,   7.40, 6, LIV],
 	# --- 47, юго-восток (зеркало 42) --------------------------------------
 	[ 16.23,   3.70,  17.97,   8.56, 7, LOG],
-	[ 13.50,   3.28,  15.68,   8.56, 7, LIV],  # 13,5
-	[ 10.03,   3.28,  13.41,   8.56, 7, LIV],  # 18,7
-	[ 14.43,   0.39,  17.32,   3.12, 7, KIT],
-	[ 12.92,   0.39,  14.14,   3.12, 7, BAT],
-	[ 11.87,   0.39,  12.77,   3.12, 7, BAT],
-	[ 10.01,   0.87,  11.80,   3.28, 7, HAL],
+	[ 13.50,   3.51,  15.68,   8.56, 7, LIV],  # 13,5
+	[ 10.03,   3.51,  13.41,   8.56, 7, LIV],  # 18,7
+	[ 14.27,   0.39,  17.32,   3.53, 7, KIT],
+	[ 13.34,   0.39,  14.14,   3.53, 7, BAT],
+	[ 11.87,   0.39,  12.73,   3.53, 7, BAT],
+	[ 10.01,   0.70,  11.80,   3.51, 7, HAL],
 	# --- ядро: лестница, лифтовой холл, две шахты, балкон «г» -------------
-	[ -2.83,   0.61,  -0.61,   7.49, 8, COR],
-	[ -0.54,   0.61,   3.38,   7.49, 8, COR],
-	[ -0.54,   0.70,   1.69,   2.86, 8, SHF],
-	[ -0.54,   5.35,   1.69,   7.37, 8, SHF],
+	[ -2.83,   0.70,  -0.61,   7.49, 8, COR],
+	[ -0.54,   0.70,   3.38,   7.49, 8, COR],
+	[ -0.16,   1.20,   1.48,   3.00, 8, SHF],
+	[ -0.16,   5.35,   1.48,   7.16, 8, SHF],
 	[ -2.83,   7.54,  -0.61,   9.20, 8, LOG],
 ]
 
 ## Лестничная клетка — левая часть ядра.
 const STAIR_X0 := -2.70
 const STAIR_X1 := -0.61
-const STAIR_Z0 := 0.44
+const STAIR_Z0 := 0.70
 const STAIR_Z1 := 7.49
 
 var fadeable: Array[MeshInstance3D] = []
@@ -126,6 +125,8 @@ var marks_visible := true
 
 var traced_count := 0     ## стен с проёмами, снятыми с чертежа
 var rule_count := 0       ## стен, где оси на скане нет и проёмы выведены правилом
+var walls_built: Array = []
+var unreachable: Array[int] = []
 var added_count := 0      ## дверей, добавленных ради проходимости
 
 var _m_wall: ShaderMaterial
@@ -254,6 +255,7 @@ func _plate(f: int, r: Rect2, col: Color, alpha: float, y: float) -> void:
 # ---------------------------------------------------------------------------
 
 func build(floors: int = 3) -> void:
+	_load_extra_doors()
 	_m_wall = _mat(Color(0.62, 0.61, 0.58))
 	_m_floor = _mat(Color(0.33, 0.34, 0.33))
 	_m_stair = _mat(Color(0.46, 0.42, 0.37))
@@ -262,6 +264,19 @@ func build(floors: int = 3) -> void:
 		by_floor[f] = []
 		_floor(f, f < floors - 1)
 	_slab(floors - 1, true)
+
+
+## Двери, найденные физической проверкой, лежат отдельным файлом — он
+## перегенерируется командой  --fix-reach  и в игре только читается.
+func _load_extra_doors() -> void:
+	if not extra_doors.is_empty():
+		return
+	if not ResourceLoader.exists("res://plan_extra_doors.gd"):
+		return
+	var scr: GDScript = load("res://plan_extra_doors.gd")
+	var map := scr.get_script_constant_map()
+	if map.has("DOORS"):
+		extra_doors = (map["DOORS"] as Dictionary).duplicate(true)
 
 
 func set_focus(p: Vector3) -> void:
@@ -320,6 +335,7 @@ func _opening(a: int, b: int, length: float, on_facade: bool) -> int:
 func _emit_walls(f: int, y: float) -> void:
 	var recs := _collect_walls()
 	_link_rooms(recs)
+	walls_built = recs
 	for w in recs:
 		var axis: int = w["axis"]
 		var dir := Vector3(0, 0, 1) if axis == 1 else Vector3(1, 0, 0)
@@ -332,148 +348,295 @@ func _emit_walls(f: int, y: float) -> void:
 		_wall(f, center, dir, w["len"], w["holes"] as Array[Vector3], w["thick"])
 
 
-## Собирает оси стен и навешивает на них проёмы: сперва снятые с чертежа,
-## и только если стены на скане не нашлось — выведенные правилом.
+## Стены и проёмы берутся из PlanWalls — он собран по таблице ROOMS и скану
+## одной разбивкой, поэтому совпадающие оси соседних помещений это один
+## участок, а не две стены друг в друге.
 func _collect_walls() -> Array:
 	var recs: Array = []
-	var seen: Dictionary = {}
 	traced_count = 0
 	rule_count = 0
-	for i in ROOMS.size():
-		var r = ROOMS[i]
-		var edges := [
-			[1, r[0], r[1], r[3]], [1, r[2], r[1], r[3]],
-			[0, r[1], r[0], r[2]], [0, r[3], r[0], r[2]],
-		]
-		for e in edges:
-			var key := "%d|%.2f|%.2f|%.2f" % [e[0], e[1], e[2], e[3]]
-			if seen.has(key):
-				continue
-			seen[key] = true
-			var axis: int = e[0]
-			var fixed: float = e[1]
-			var a0: float = e[2]
-			var a1: float = e[3]
-			var length: float = a1 - a0
-			if length < 0.25:
-				continue
-			var mid := (a0 + a1) * 0.5
-			var ia: int
-			var ib: int
-			if axis == 1:
-				ia = _room_at(fixed - 0.22, mid)
-				ib = _room_at(fixed + 0.22, mid)
-			else:
-				ia = _room_at(mid, fixed - 0.22)
-				ib = _room_at(mid, fixed + 0.22)
-			if ia < 0 and ib < 0:
-				continue
-			var inner := ia if ia >= 0 else ib
-			var outer := ib if ia >= 0 else -1
-			var facade := (absf(fixed) > 16.9) if axis == 1 else (absf(fixed) > 7.9)
-			if outer >= 0:
-				facade = false
-			if int(ROOMS[inner][5]) == LOG and (outer < 0 or int(ROOMS[outer][5]) == LOG):
-				if outer < 0:
-					recs.append({"axis": axis, "fixed": fixed, "a0": a0, "a1": a1,
-							"mid": mid, "len": length, "inner": inner, "outer": -1,
-							"holes": [] as Array[Vector3], "thick": WALL,
-							"parapet": true})
-				continue
-			var holes: Array[Vector3] = []
-			if PlanOpenings.TRACED.has(key):
-				traced_count += 1
-				for v in PlanOpenings.TRACED[key]:
-					holes.append(v)
-			else:
-				rule_count += 1
-				var op := _opening(inner, outer, length, facade)
-				if op == 0:
-					holes.append(Vector3(0.0, DOOR_FLAT if length > 3.0 else DOOR_ROOM,
-							KIND_DOOR))
-				elif op == 1:
-					if length < 4.2:
-						holes.append(Vector3(0.0, WIN, KIND_WIN))
-					else:
-						holes.append(Vector3(-length * 0.22, WIN, KIND_WIN))
-						holes.append(Vector3(length * 0.22, WIN, KIND_WIN))
+	for w in PlanWalls.WALLS:
+		var axis: int = w[0]
+		var fixed: float = w[1]
+		var a0: float = w[2]
+		var a1: float = w[3]
+		var inner: int = w[4]
+		var outer: int = w[5]
+		var typ: int = w[6]
+		var length := a1 - a0
+		var mid := (a0 + a1) * 0.5
+		if typ == 2:
 			recs.append({"axis": axis, "fixed": fixed, "a0": a0, "a1": a1, "mid": mid,
-					"len": length, "inner": inner, "outer": outer, "holes": holes,
-					"thick": WALL_EXT if (outer < 0 and facade) else WALL,
-					"parapet": false})
+					"len": length, "inner": inner, "outer": -1,
+					"holes": [] as Array[Vector3], "thick": WALL, "parapet": true})
+			continue
+		var holes: Array[Vector3] = []
+		if int(w[8]) == 1:
+			traced_count += 1
+			for v in w[7]:
+				var h: Vector3 = v
+				# косяки на скане съедают края проёма — добавляем их обратно
+				if h.z < 0.5:
+					h.y = maxf(h.y, 0.70)
+				holes.append(h)
+		else:
+			rule_count += 1
+			var op := _opening(inner, outer, length, typ == 1)
+			if op == 0:
+				holes.append(Vector3(0.0, DOOR_FLAT if length > 3.0 else DOOR_ROOM, KIND_DOOR))
+			elif op == 1:
+				if length < 4.2:
+					holes.append(Vector3(0.0, WIN, KIND_WIN))
+				else:
+					holes.append(Vector3(-length * 0.22, WIN, KIND_WIN))
+					holes.append(Vector3(length * 0.22, WIN, KIND_WIN))
+		var key := "%d|%.2f|%.2f|%.2f" % [axis, fixed, a0, a1]
+		if extra_doors.has(key):
+			for v in extra_doors[key]:
+				holes.append(v)
+		recs.append({"axis": axis, "fixed": fixed, "a0": a0, "a1": a1, "mid": mid,
+				"len": length, "inner": inner, "outer": outer,
+				"holes": _fit_holes(holes, length),
+				"thick": WALL_EXT if typ == 1 else WALL, "parapet": false})
 	return recs
 
 
-## Проверка проходимости: из лестничной клетки должно быть достижимо каждое
-## помещение. Куда чертёж двери не дал — добавляем и считаем отдельно.
+## Место для двери выбирается там, где по обе стороны есть куда шагнуть:
+## иначе проём упирается в перпендикулярную стену или шахту лифта.
+func _door_pos(recs: Array, w: Dictionary, width: float) -> float:
+	var axis: int = w["axis"]
+	var fixed: float = w["fixed"]
+	var span: float = w["len"] - width - 0.20
+	if span <= 0.0:
+		return 0.0
+	var steps := maxi(int(span / 0.08), 1)
+	var best_c: float = w["mid"]
+	var best_score := -1.0
+	for i in steps + 1:
+		var c: float = w["a0"] + width * 0.5 + 0.10 + span * (float(i) / float(steps))
+		var score := _clearance(recs, axis, fixed, c, width)
+		# при равном просвете ближе к середине стены
+		score -= absf(c - w["mid"]) * 0.01
+		if score > best_score:
+			best_score = score
+			best_c = c
+	return best_c - w["mid"]
+
+
+## Насколько далеко от проёма ближайшая помеха по обе стороны.
+func _clearance(recs: Array, axis: int, fixed: float, c: float, width: float) -> float:
+	var lo := c - width * 0.5 - 0.10
+	var hi := c + width * 0.5 + 0.10
+	var near := 1.2
+	for o in recs:
+		if o["axis"] == axis:
+			continue
+		var of: float = o["fixed"]
+		if of < lo or of > hi:
+			continue
+		var oa: float = o["a0"]
+		var ob: float = o["a1"]
+		if ob < fixed - 1.2 or oa > fixed + 1.2:
+			continue
+		var solid := true
+		for h: Vector3 in (o["holes"] as Array[Vector3]):
+			var hs: float = o["mid"] + h.x - h.y * 0.5
+			var he: float = o["mid"] + h.x + h.y * 0.5
+			if hs <= fixed and fixed <= he:
+				solid = false
+		if not solid:
+			continue
+		var d := 1.2
+		if oa <= fixed and fixed <= ob:
+			d = 0.0
+		else:
+			d = minf(absf(oa - fixed), absf(ob - fixed))
+		near = minf(near, d)
+	for r in ROOMS:
+		if int(r[5]) != SHF:
+			continue
+		var sx0: float = r[0] if axis == 1 else r[1]
+		var sx1: float = r[2] if axis == 1 else r[3]
+		var sz0: float = r[1] if axis == 1 else r[0]
+		var sz1: float = r[3] if axis == 1 else r[2]
+		if sz1 < lo or sz0 > hi:
+			continue
+		if sx1 < fixed - 1.2 or sx0 > fixed + 1.2:
+			continue
+		var d2 := 0.0 if (sx0 <= fixed and fixed <= sx1) else minf(absf(sx0 - fixed), absf(sx1 - fixed))
+		near = minf(near, d2)
+	return near
+
+
+## Проём должен целиком лежать в стене и не упираться в угол: иначе капсула
+## игрока в него не входит, даже если по чертежу он там есть.
+func _fit_holes(holes: Array[Vector3], length: float) -> Array[Vector3]:
+	var out: Array[Vector3] = []
+	for h: Vector3 in holes:
+		var w := minf(h.y, length - 0.16)
+		if w < 0.4:
+			continue
+		var lim := (length - w) * 0.5 - 0.08
+		if lim < 0.0:
+			lim = 0.0
+		out.append(Vector3(clampf(h.x, -lim, lim), w, h.z))
+	return out
+
+
+## Двери, добавленные проверкой проходимости (tools: main.gd --fix-reach).
+## Ключ — "ось|координата|начало|конец", значение — Vector3(смещение, ширина, 0).
+static var extra_doors: Dictionary = {}
+
+## Черновая связка по графу дверей: из лестничной клетки должно быть достижимо
+## каждое помещение. Настоящая проверка — физическая, см. ReachCheck.
 func _link_rooms(recs: Array) -> void:
 	added_count = 0
-	var start := -1
+	unreachable = []
+	var start_room := -1
 	for i in ROOMS.size():
 		if int(ROOMS[i][5]) == COR:
-			start = i
+			start_room = i
 			break
-	if start < 0:
+	if start_room < 0:
 		return
-	var need: Array[int] = []
-	for i in ROOMS.size():
-		if int(ROOMS[i][5]) != LOG and int(ROOMS[i][5]) != SHF:
-			need.append(i)
-
-	for _pass in 40:
-		var open_links: Dictionary = {}
-		for w in recs:
-			var o: int = w["outer"]
-			if o < 0:
-				continue
-			for h: Vector3 in (w["holes"] as Array[Vector3]):
-				if h.z < 0.5:
-					var a: int = w["inner"]
-					if not open_links.has(a):
-						open_links[a] = []
-					if not open_links.has(o):
-						open_links[o] = []
-					(open_links[a] as Array).append(o)
-					(open_links[o] as Array).append(a)
-					break
-		var seen_r := {start: true}
-		var queue: Array[int] = [start]
-		while not queue.is_empty():
-			var cur: int = queue.pop_back()
-			for nxt in (open_links.get(cur, []) as Array):
-				if not seen_r.has(nxt):
-					seen_r[nxt] = true
-					queue.append(nxt)
-		var stuck: Array[int] = []
-		for i in need:
-			if not seen_r.has(i):
-				stuck.append(i)
-		if stuck.is_empty():
-			return
-		var best: Dictionary = {}
-		var best_len := 0.0
+	for _pass in 80:
+		var links: Dictionary = {}
 		for w in recs:
 			var o: int = w["outer"]
 			if o < 0 or w["parapet"]:
 				continue
-			var a: int = w["inner"]
-			var ka := seen_r.has(a)
-			var kb := seen_r.has(o)
-			if ka == kb:
-				continue
-			var far: int = o if ka else a
-			if not stuck.has(far):
-				continue
-			if int(ROOMS[far][5]) == SHF or int(ROOMS[a][5]) == SHF or int(ROOMS[o][5]) == SHF:
-				continue
-			if w["len"] > best_len:
-				best_len = w["len"]
-				best = w
-		if best.is_empty():
+			for h: Vector3 in (w["holes"] as Array[Vector3]):
+				if h.z < 0.5:
+					var a: int = w["inner"]
+					if not links.has(a):
+						links[a] = []
+					if not links.has(o):
+						links[o] = []
+					(links[a] as Array).append(o)
+					(links[o] as Array).append(a)
+					break
+		var seen := {start_room: true}
+		var queue: Array[int] = [start_room]
+		while not queue.is_empty():
+			var cur: int = queue.pop_back()
+			for nxt in (links.get(cur, []) as Array):
+				if not seen.has(nxt):
+					seen[nxt] = true
+					queue.append(nxt)
+		var stuck: Array[int] = []
+		for i in ROOMS.size():
+			if int(ROOMS[i][5]) != SHF and not seen.has(i):
+				stuck.append(i)
+		if stuck.is_empty():
 			return
-		(best["holes"] as Array[Vector3]).append(
-				Vector3(0.0, DOOR_ROOM, KIND_DOOR))
+		if not _open_one(recs, stuck, seen):
+			unreachable = stuck
+			return
 		added_count += 1
+
+
+func _open_one(recs: Array, stuck: Array[int], seen: Dictionary) -> bool:
+	var best: Dictionary = {}
+	var best_rank := -1.0
+	var best_off := 0.0
+	var best_w := 0.0
+	for w in recs:
+		if w["parapet"]:
+			continue
+		var a: int = w["inner"]
+		var b: int = w["outer"]
+		if b < 0 or int(ROOMS[a][5]) == SHF or int(ROOMS[b][5]) == SHF:
+			continue
+		var a_ok := seen.has(a)
+		var b_ok := seen.has(b)
+		if a_ok == b_ok:
+			continue
+		var far: int = b if a_ok else a
+		if not stuck.has(far):
+			continue
+		# короткая стена: дверь не влезает — открываем участок целиком
+		var width := minf(DOOR_ROOM, w["len"] - 0.20)
+		if width < DOOR_ROOM and w["len"] >= 0.70:
+			width = w["len"]
+		if width < 0.70:
+			continue
+		var off := _door_pos(recs, w, width)
+		var rank := _clearance(recs, w["axis"], w["fixed"], w["mid"] + off, width) * 10.0
+		rank += minf(w["len"], 4.0)
+		if rank > best_rank:
+			best_rank = rank
+			best = w
+			best_off = off
+			best_w = width
+	if best.is_empty():
+		return false
+	_cut(recs, best, best_off, best_w)
+	return true
+
+
+## Прорезает дверь и, если между помещениями осталась щель со второй стеной,
+## прорезает и её — иначе проём упрётся в соседнюю стену.
+func _cut(recs: Array, w: Dictionary, off: float, width: float) -> void:
+	(w["holes"] as Array[Vector3]).append(Vector3(off, width, KIND_DOOR))
+	var abs_c: float = w["mid"] + off
+	for w2 in recs:
+		if w2 == w or w2["parapet"] or w2["axis"] != w["axis"]:
+			continue
+		if absf(w2["fixed"] - w["fixed"]) > 0.45:
+			continue
+		if abs_c < w2["a0"] + width * 0.5 or abs_c > w2["a1"] - width * 0.5:
+			continue
+		var already := false
+		for h: Vector3 in (w2["holes"] as Array[Vector3]):
+			if h.z < 0.5 and absf(w2["mid"] + h.x - abs_c) < width * 0.6:
+				already = true
+		if not already:
+			(w2["holes"] as Array[Vector3]).append(
+					Vector3(abs_c - w2["mid"], width, KIND_DOOR))
+
+
+## Прорезать проход в помещение по требованию физической проверки.
+## Стены перебираются от лучшей к худшей; уже прорезанная стена расширяется
+## до полного проёма, а если и это не помогло — берётся следующая.
+func open_into(room: int, reached: Dictionary) -> String:
+	var ranked: Array = []
+	for w in walls_built:
+		if w["parapet"] or w["outer"] < 0:
+			continue
+		var a: int = w["inner"]
+		var b: int = w["outer"]
+		if a != room and b != room:
+			continue
+		var other: int = b if a == room else a
+		if int(ROOMS[other][5]) == SHF:
+			continue
+		if w["len"] < 0.70:
+			continue
+		var rank := 0.0
+		if reached.get(other, false):
+			rank += 100.0
+		var width := minf(DOOR_FLAT, w["len"] - 0.20)
+		if width < DOOR_ROOM:
+			width = w["len"]
+		var off := _door_pos(walls_built, w, width)
+		rank += _clearance(walls_built, w["axis"], w["fixed"], w["mid"] + off, width) * 10.0
+		rank += minf(w["len"], 4.0)
+		ranked.append({"w": w, "off": off, "width": width, "rank": rank})
+	ranked.sort_custom(func(a, b): return a["rank"] > b["rank"])
+	for c in ranked:
+		var w: Dictionary = c["w"]
+		var key := "%d|%.2f|%.2f|%.2f" % [w["axis"], w["fixed"], w["a0"], w["a1"]]
+		if not extra_doors.has(key):
+			extra_doors[key] = [Vector3(c["off"], c["width"], KIND_DOOR)]
+			return key
+		var full := false
+		for v: Vector3 in extra_doors[key]:
+			if v.y >= w["len"] - 0.05:
+				full = true
+		if not full:
+			extra_doors[key] = [Vector3(0.0, w["len"], KIND_DOOR)]
+			return key
+	return ""
 
 
 func _parapet(f: int, y: float, axis: int, fixed: float, a0: float, a1: float) -> void:
