@@ -29,6 +29,7 @@ var _check_reach := false
 var _reach_map := false
 var _fix_reach := false
 var _prune := false
+var _no_fade := false   ## для осмотра: не гасить стены прозрачностью
 var _spawn := Vector2(-1.6, 1.2)   ## лестничная клетка
 var _walk_test := false
 var _walk_route := "stairs"
@@ -224,6 +225,7 @@ func _build_world() -> void:
 
 	occ = Occlusion.new()
 	occ.name = "Occlusion"
+	occ.fade_enabled = not _no_fade
 	occ.building = building
 	occ.player = player
 	occ.rig = rig
@@ -284,6 +286,8 @@ func _parse_args() -> void:
 			_fix_reach = true
 		elif a == "--check-reach":
 			_check_reach = true
+		elif a == "--no-fade":
+			_no_fade = true
 		elif a == "--plan":
 			_plan_view = true
 		elif a == "--no-marks":

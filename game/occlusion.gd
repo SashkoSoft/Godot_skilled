@@ -17,6 +17,7 @@ const NEAR_MIN := 0.4          ## вплотную
 const NEAR_MAX := 2.6          ## отсюда гасим полностью
 const FADE_NEAR := 0.55        ## плотность стены, к которой прижался игрок
 
+var fade_enabled := true   ## для осмотра можно оставить только срез этажей
 var building: Tower
 var player: Player
 var rig: CameraRig
@@ -53,7 +54,7 @@ func _process(delta: float) -> void:
 		mi.visible = true
 
 		var want := 1.0
-		if not is_ceiling and _blocks(mi, from, to):
+		if fade_enabled and not is_ceiling and _blocks(mi, from, to):
 			# чем ближе стена к игроку, тем меньше её гасим
 			var d := _distance_to_player(mi)
 			var k := clampf((d - NEAR_MIN) / (NEAR_MAX - NEAR_MIN), 0.0, 1.0)

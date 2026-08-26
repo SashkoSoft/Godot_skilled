@@ -528,7 +528,7 @@ func _ensure_room_doors(recs: Array) -> void:
 			if int(ROOMS[other][4]) != int(ROOMS[i][4]) and int(ROOMS[other][4]) != 8:
 				continue
 			var width := minf(DOOR_ROOM, w["len"] - 0.20)
-			if width < DOOR_ROOM and w["len"] >= 0.70:
+			if width < DOOR_ROOM and w["len"] >= 0.70 and w["len"] <= 1.60:
 				width = w["len"]
 			if width < 0.65:
 				continue
@@ -615,8 +615,8 @@ func _open_one(recs: Array, stuck: Array[int], seen: Dictionary) -> bool:
 			continue
 		# короткая стена: дверь не влезает — открываем участок целиком
 		var width := minf(DOOR_ROOM, w["len"] - 0.20)
-		if width < DOOR_ROOM and w["len"] >= 0.70:
-			width = w["len"]
+		if width < DOOR_ROOM and w["len"] >= 0.70 and w["len"] <= 1.60:
+			width = w["len"]        # короткий простенок открываем целиком
 		if width < 0.70:
 			continue
 		var off := _door_pos(recs, w, width)
@@ -676,7 +676,7 @@ func open_into(room: int, reached: Dictionary) -> String:
 			rank += 100.0
 		var width := minf(DOOR_FLAT, w["len"] - 0.20)
 		if width < DOOR_ROOM:
-			width = w["len"]
+			width = minf(w["len"], 1.60)
 		var off := _door_pos(walls_built, w, width)
 		rank += _clearance(walls_built, w["axis"], w["fixed"], w["mid"] + off, width) * 10.0
 		rank += minf(w["len"], 4.0)
@@ -690,10 +690,10 @@ func open_into(room: int, reached: Dictionary) -> String:
 			return key
 		var full := false
 		for v: Vector3 in extra_doors[key]:
-			if v.y >= w["len"] - 0.05:
+			if v.y >= minf(w["len"], 1.60) - 0.05:
 				full = true
 		if not full:
-			extra_doors[key] = [Vector3(0.0, w["len"], KIND_DOOR)]
+			extra_doors[key] = [Vector3(0.0, minf(w["len"], 1.60), KIND_DOOR)]
 			return key
 	return ""
 
