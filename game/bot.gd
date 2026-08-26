@@ -22,6 +22,10 @@ var _last_pos := Vector3.ZERO
 var _check := 0.0
 var _retried := 0
 var _since_target := 0.0
+var _cur := Vector3.INF
+var cycle := true            ## false — обойти список один раз и остановиться
+var done := false
+var visited: Array = []      ## [цель, дошёл ли]
 var _reached := 0
 var _failed := 0
 var _log := false
@@ -73,18 +77,24 @@ func start() -> void:
 	_next_target()
 
 
-func _next_target() -> void:
+func _next_target(ok := true) -> void:
+	if _cur != Vector3.INF:
+		visited.append([_cur, ok])
 	if _targets.is_empty():
+		done = true
+		_cur = Vector3.INF
 		return
 	# Берём цель подальше: если она рядом, агент отчитается о приходе в тот же
 	# кадр, и бот будет «доходить» до целей сотнями раз в секунду, не двигаясь.
 	var t: Vector3 = _targets.pop_front()
-	_targets.append(t)                 # цели идут по кругу
-	for _try in mini(_targets.size(), 12):
-		if t.distance_to(global_position) > 3.0:
-			break
-		t = _targets.pop_front()
-		_targets.append(t)
+	if cycle:
+		_targets.append(t)             # цели идут по кругу
+		for _try in mini(_targets.size(), 12):
+			if t.distance_to(global_position) > 3.0:
+				break
+			t = _targets.pop_front()
+			_targets.append(t)
+	_cur = t
 	agent.target_position = t
 	_stuck = 0.0
 	_retried = 0
@@ -92,7 +102,7 @@ func _next_target() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if agent == null or _targets.is_empty():
+	if agent == null or done:
 		return
 	if not is_on_floor():
 		velocity.y -= GRAVITY * delta
@@ -161,7 +171,7 @@ func _physics_process(delta: float) -> void:
 					if _log:
 						print("[бот] %s ЗАСТРЯЛ у (%.1f, %.1f, %.1f), беру следующую цель"
 								% [_name, position.x, position.y, position.z])
-					_next_target()
+					_next_target(false)
 		else:
 			_stuck = 0.0
 		_last_pos = global_position

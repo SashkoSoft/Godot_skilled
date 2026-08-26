@@ -34,6 +34,7 @@ var _no_fade := false
 var _bots := 4          ## сколько жителей ходит по дому
 var _bot_log := false
 var _bot_audit := false
+var _walk_all := false
 var _audit_countdown := -1   ## для осмотра: не гасить стены прозрачностью
 var _spawn := Vector2(-1.7, 1.4)   ## лестничная клетка
 var _walk_test := false
@@ -253,6 +254,8 @@ func _build_hud() -> void:
 ## Аудит охвата запускаем внутри шага физики: снаружи сервер навигации
 ## возвращает пустой путь, хотя агенты по той же карте ходят.
 func _physics_process(_delta: float) -> void:
+	if _walk_all:
+		_walk_all_step()
 	if _audit_countdown > 0:
 		_audit_countdown -= 1
 		if _audit_countdown == 0:
@@ -307,6 +310,8 @@ func _parse_args() -> void:
 			_audit = true
 		elif a.begins_with("--bots="):
 			_bots = int(a.split("=")[1])
+		elif a == "--walk-all":
+			_walk_all = true
 		elif a == "--bot-audit":
 			_bot_audit = true
 		elif a == "--bot-log":
@@ -641,11 +646,11 @@ func _spawn_bots() -> void:
 	for f in _floors:
 		for r in Tower.ROOMS:
 			var kind := int(r[5])
-			if kind == Tower.SHF or kind == Tower.LOG:
+			if kind == Tower.SHF:
 				continue
 			var w: float = float(r[2]) - float(r[0])
 			var d: float = float(r[3]) - float(r[1])
-			if minf(w, d) < min_side or w * d < 1.6:
+			if minf(w, d) < min_side or w * d < 1.0:
 				dropped += 1
 				continue
 			rooms.append(Vector3((float(r[0]) + float(r[2])) * 0.5,
@@ -661,11 +666,19 @@ func _spawn_bots() -> void:
 		# Цели по всему дому: сетка связана по лестнице, житель ходит с этажа
 		# на этаж сам.
 		var route: Array[Vector3] = []
-		for k in 6:
-			route.append(rooms[(i * 37 + k * 61) % rooms.size()])
+		if _walk_all:
+			# каждому боту своя четверть списка, обходим все помещения по одному разу
+			var from := int(rooms.size() * i / _bots)
+			var to := int(rooms.size() * (i + 1) / _bots)
+			for k in range(from, to):
+				route.append(rooms[k])
+		else:
+			for k in 6:
+				route.append(rooms[(i * 37 + k * 61) % rooms.size()])
 		var b := Bot.new()
 		b.name = "Bot%d" % i
 		add_child(b)
+		b.cycle = not _walk_all
 		b.watcher = player
 		b.setup(route[0] + Vector3(0, 0.1, 0), route, colours[i % colours.size()],
 				_bot_log, "№%d" % (i + 1))
@@ -771,4 +784,37 @@ func _audit_step() -> void:
 				break
 			print("      этаж %d, кв %s" % [b["floor"], AUDIT_BTI.get(int(b["flat"]), "?")])
 			shown += 1
+	get_tree().quit()
+
+
+## Обход всех помещений по-настоящему: бот идёт в каждое и мы считаем,
+## куда он реально дошёл, а не куда смог построить путь.
+var _walk_done := false
+
+
+func _walk_all_step() -> void:
+	if _walk_done:
+		return
+	var bots: Array = []
+	for c in get_children():
+		if c is Bot:
+			bots.append(c)
+	if bots.is_empty():
+		return
+	for b in bots:
+		if not (b as Bot).done:
+			return
+	_walk_done = true
+	var ok := 0
+	var bad := 0
+	for b in bots:
+		for v in (b as Bot).visited:
+			if v[1]:
+				ok += 1
+			else:
+				bad += 1
+				var p: Vector3 = v[0]
+				print("   не дошёл: (%.1f, %.1f, %.1f), этаж %d"
+						% [p.x, p.y, p.z, int(floor((p.y + 0.4) / Tower.FLOOR_H))])
+	print("[обход] дошёл до %d помещений из %d" % [ok, ok + bad])
 	get_tree().quit()
