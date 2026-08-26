@@ -62,8 +62,8 @@ func setup(spawn: Vector3, targets: Array[Vector3], colour: Color, log_moves: bo
 	agent = NavigationAgent3D.new()
 	agent.radius = Navigation.AGENT_RADIUS
 	agent.height = Player.HEIGHT
-	agent.path_desired_distance = 0.5
-	agent.target_desired_distance = 0.6
+	agent.path_desired_distance = 0.30
+	agent.target_desired_distance = 0.55
 	agent.path_max_distance = 3.0
 	agent.avoidance_enabled = false
 	add_child(agent)
@@ -115,12 +115,14 @@ func _physics_process(delta: float) -> void:
 		return
 
 	var next := agent.get_next_path_position()
+	var climb := absf(next.y - global_position.y)
+	var speed := SPEED * (0.65 if climb > 0.12 else 1.0)   # на марше тише
 	var dir := next - global_position
 	dir.y = 0.0
 	if dir.length() > 0.05:
 		dir = dir.normalized()
-		velocity.x = dir.x * SPEED
-		velocity.z = dir.z * SPEED
+		velocity.x = dir.x * speed
+		velocity.z = dir.z * speed
 		var want := atan2(dir.x, dir.z)
 		rotation.y = lerp_angle(rotation.y, want, TURN * delta)
 	else:

@@ -852,9 +852,10 @@ func _slab(f: int, is_roof: bool) -> void:
 		mi.set_meta("is_ceiling", false)
 		return
 
-	# Проём в перекрытии начинается ЗА выходом со второго марша, иначе игрок,
-	# поднявшись, встаёт на пустоту и падает обратно на этаж ниже.
-	var hz0 := STAIR_Z0 + 3.10
+	# Край проёма совпадает с верхом второго марша. Дальше — игрок падает в
+	# проём; ближе — марш упирается в торец перекрытия ступенькой в 20 см,
+	# которую бот перешагнуть не умеет.
+	var hz0 := STAIR_Z0 + 1.70
 	var pieces: Array[Rect2] = [
 		Rect2(Vector2(-W_HALF, -D_HALF), Vector2(STAIR_X0 + W_HALF, D_HALF * 2.0)),
 		Rect2(Vector2(STAIR_X1, -D_HALF), Vector2(W_HALF - STAIR_X1, D_HALF * 2.0)),
@@ -884,7 +885,9 @@ func _stairs(f: int) -> void:
 	var w := 1.02
 	_flight(f, Vector3(STAIR_X0 + 0.58, y0, z_near), 1.0, half, run, w)
 	_landing(f, y0 + half, z_far)
-	_flight(f, Vector3(STAIR_X0 + 1.62, y0 + half, z_far + 1.05), -1.0, half, run, w)
+	# Второй марш начинается У площадки и уходит обратно, а не проходит НАД
+	# ней: иначе под ним остаётся 8 см просвета и на площадке не пройти.
+	_flight(f, Vector3(STAIR_X0 + 1.62, y0 + half, z_far), -1.0, half, run, w)
 
 
 func _flight(f: int, start: Vector3, dz: float, rise: float, run: float, width: float) -> void:

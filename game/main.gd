@@ -204,8 +204,8 @@ func _build_world() -> void:
 					Vector3(-2.08, 0.0, 2.6),
 					Vector3(-2.08, 1.5, 4.9),
 					Vector3(-1.65, 1.5, 5.6),
-					Vector3(-1.15, 1.5, 5.9),
-					Vector3(-1.15, 3.0, 3.6),
+					Vector3(-1.08, 1.5, 4.8),
+					Vector3(-1.08, 3.0, 2.5),
 					Vector3(-1.7, 3.0, 1.4),
 					Vector3(-2.3, 3.0, 1.2),
 					Vector3(-2.3, 3.0, 0.2),
@@ -658,18 +658,11 @@ func _spawn_bots() -> void:
 			Color(0.55, 0.80, 0.35), Color(0.85, 0.60, 0.25),
 			Color(0.75, 0.45, 0.85), Color(0.30, 0.80, 0.70)]
 	for i in _bots:
-		# Каждому жителю — свой этаж: между этажами навигационная сетка пока
-		# не связана, и цель на чужом этаже он строить не может.
-		var my_floor := i % _floors
-		var mine: Array[Vector3] = []
-		for c in rooms:
-			if int(floor((c.y + 0.4) / Tower.FLOOR_H)) == my_floor:
-				mine.append(c)
-		if mine.is_empty():
-			mine = rooms
+		# Цели по всему дому: сетка связана по лестнице, житель ходит с этажа
+		# на этаж сам.
 		var route: Array[Vector3] = []
 		for k in 6:
-			route.append(mine[(i * 37 + k * 61) % mine.size()])
+			route.append(rooms[(i * 37 + k * 61) % rooms.size()])
 		var b := Bot.new()
 		b.name = "Bot%d" % i
 		add_child(b)
