@@ -311,6 +311,19 @@ func _room_at(x: float, z: float) -> int:
 	return -1
 
 
+## Дверь допустима только внутри одной квартиры или из мест общего
+## пользования. Межквартирную стену не режем никогда — как бы ни хотелось
+## проверке проходимости: из комнаты в комнату соседней квартиры хода нет.
+func _may_open(a: int, b: int) -> bool:
+	if a < 0 or b < 0:
+		return false
+	if int(ROOMS[a][5]) == SHF or int(ROOMS[b][5]) == SHF:
+		return false
+	var fa := int(ROOMS[a][4])
+	var fb := int(ROOMS[b][4])
+	return fa == fb or fa == 8 or fb == 8
+
+
 ## Что за проём между двумя помещениями: -1 глухая стена, 0 дверь, 1 окно.
 func _opening(a: int, b: int, length: float, on_facade: bool) -> int:
 	if a < 0:
@@ -383,6 +396,8 @@ func _collect_walls() -> Array:
 				var h: Vector3 = v
 				# косяки на скане съедают края проёма — добавляем их обратно
 				if h.z < 0.5:
+					if not _may_open(inner, outer) and outer >= 0:
+						continue      # «дверь» сквозь межквартирную стену — промах чтения
 					h.y = maxf(h.y, 0.70)
 				holes.append(h)
 		else:
@@ -477,7 +492,7 @@ func _clearance(recs: Array, axis: int, fixed: float, c: float, width: float) ->
 ## Проём должен целиком лежать в стене и не упираться в угол: иначе капсула
 ## игрока в него не входит, даже если по чертежу он там есть.
 func _fit_holes(holes: Array[Vector3], length: float) -> Array[Vector3]:
-	var out: Array[Vector3] = []
+	var fitted: Array[Vector3] = []
 	for h: Vector3 in holes:
 		var w := minf(h.y, length - 0.16)
 		if w < 0.4:
@@ -485,7 +500,20 @@ func _fit_holes(holes: Array[Vector3], length: float) -> Array[Vector3]:
 		var lim := (length - w) * 0.5 - 0.08
 		if lim < 0.0:
 			lim = 0.0
-		out.append(Vector3(clampf(h.x, -lim, lim), w, h.z))
+		fitted.append(Vector3(clampf(h.x, -lim, lim), w, h.z))
+
+	# Окно и дверь на одном месте несовместимы: у окна остаётся подоконник,
+	# и он наглухо перекрывает дверной проём. Дверь важнее — окно убираем.
+	var out: Array[Vector3] = []
+	for h: Vector3 in fitted:
+		if h.z >= 0.5:
+			var blocked := false
+			for d: Vector3 in fitted:
+				if d.z < 0.5 and absf(d.x - h.x) < (d.y + h.y) * 0.5 - 0.05:
+					blocked = true
+			if blocked:
+				continue
+		out.append(h)
 	return out
 
 
@@ -525,7 +553,7 @@ func _ensure_room_doors(recs: Array) -> void:
 				ok = int(ROOMS[other][5]) == LIV or int(ROOMS[other][5]) == KIT
 			if not ok:
 				continue
-			if int(ROOMS[other][4]) != int(ROOMS[i][4]) and int(ROOMS[other][4]) != 8:
+			if not _may_open(i, other):
 				continue
 			var width := minf(DOOR_ROOM, w["len"] - 0.20)
 			if width < DOOR_ROOM and w["len"] >= 0.70 and w["len"] <= 1.60:
@@ -604,7 +632,7 @@ func _open_one(recs: Array, stuck: Array[int], seen: Dictionary) -> bool:
 			continue
 		var a: int = w["inner"]
 		var b: int = w["outer"]
-		if b < 0 or int(ROOMS[a][5]) == SHF or int(ROOMS[b][5]) == SHF:
+		if b < 0 or not _may_open(a, b):
 			continue
 		var a_ok := seen.has(a)
 		var b_ok := seen.has(b)
@@ -641,7 +669,7 @@ func _cut(recs: Array, w: Dictionary, off: float, width: float) -> void:
 	for w2 in recs:
 		if w2 == w or w2["parapet"] or w2["axis"] != w["axis"]:
 			continue
-		if absf(w2["fixed"] - w["fixed"]) > 0.45:
+		if absf(w2["fixed"] - w["fixed"]) > 0.85:
 			continue
 		if abs_c < w2["a0"] + width * 0.5 or abs_c > w2["a1"] - width * 0.5:
 			continue
@@ -652,6 +680,29 @@ func _cut(recs: Array, w: Dictionary, off: float, width: float) -> void:
 		if not already:
 			(w2["holes"] as Array[Vector3]).append(
 					Vector3(abs_c - w2["mid"], width, KIND_DOOR))
+
+
+## Если между помещениями осталась щель, стены там две — вторую надо
+## прорезать тоже, иначе дверь упрётся в неё.
+func _twin(w: Dictionary, off: float, width: float) -> void:
+	var abs_c: float = w["mid"] + off
+	for w2 in walls_built:
+		if w2 == w or w2["parapet"] or w2["axis"] != w["axis"]:
+			continue
+		if absf(w2["fixed"] - w["fixed"]) > 0.85:
+			continue
+		if abs_c < w2["a0"] + width * 0.5 or abs_c > w2["a1"] - width * 0.5:
+			continue
+		var key2 := "%d|%.2f|%.2f|%.2f" % [w2["axis"], w2["fixed"], w2["a0"], w2["a1"]]
+		var already := false
+		for h: Vector3 in (w2["holes"] as Array[Vector3]):
+			if h.z < 0.5 and absf(w2["mid"] + h.x - abs_c) < width * 0.6:
+				already = true
+		if already:
+			continue
+		var list: Array = extra_doors.get(key2, [])
+		list.append(Vector3(abs_c - w2["mid"], width, KIND_DOOR))
+		extra_doors[key2] = list
 
 
 ## Прорезать проход в помещение по требованию физической проверки.
@@ -667,7 +718,7 @@ func open_into(room: int, reached: Dictionary) -> String:
 		if a != room and b != room:
 			continue
 		var other: int = b if a == room else a
-		if int(ROOMS[other][5]) == SHF:
+		if not _may_open(a, b):
 			continue
 		if w["len"] < 0.70:
 			continue
@@ -687,13 +738,16 @@ func open_into(room: int, reached: Dictionary) -> String:
 		var key := "%d|%.2f|%.2f|%.2f" % [w["axis"], w["fixed"], w["a0"], w["a1"]]
 		if not extra_doors.has(key):
 			extra_doors[key] = [Vector3(c["off"], c["width"], KIND_DOOR)]
+			_twin(w, c["off"], c["width"])
 			return key
 		var full := false
 		for v: Vector3 in extra_doors[key]:
 			if v.y >= minf(w["len"], 1.60) - 0.05:
 				full = true
 		if not full:
-			extra_doors[key] = [Vector3(0.0, minf(w["len"], 1.60), KIND_DOOR)]
+			var fw := minf(w["len"], 1.60)
+			extra_doors[key] = [Vector3(0.0, fw, KIND_DOOR)]
+			_twin(w, 0.0, fw)
 			return key
 	return ""
 

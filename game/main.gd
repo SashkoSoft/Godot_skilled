@@ -29,6 +29,7 @@ var _check_reach := false
 var _reach_map := false
 var _fix_reach := false
 var _prune := false
+var _audit := false
 var _no_fade := false   ## для осмотра: не гасить стены прозрачностью
 var _spawn := Vector2(-1.6, 1.2)   ## лестничная клетка
 var _walk_test := false
@@ -286,6 +287,9 @@ func _parse_args() -> void:
 			_fix_reach = true
 		elif a == "--check-reach":
 			_check_reach = true
+		elif a == "--audit":
+			_check_reach = true
+			_audit = true
 		elif a == "--no-fade":
 			_no_fade = true
 		elif a == "--plan":
@@ -449,6 +453,8 @@ func _report_reach() -> void:
 		building = null
 		await get_tree().process_frame
 		_build_tower()
+	if _audit:
+		_audit_rooms()
 	for r in bad:
 		print("   НЕТ ХОДА: помещение %d, квартира %d, назначение %d"
 				% [r["room"], r["flat"], r["kind"]])
@@ -483,3 +489,52 @@ extends RefCounted
 	f.store_string(text)
 	f.close()
 	print("[проход] дописано дверей: ", Tower.extra_doors.size())
+
+
+## Поимённая сверка: у каждого помещения — свои двери и своя достижимость.
+func _audit_rooms() -> void:
+	var space := get_viewport().world_3d.direct_space_state
+	var res := ReachCheck.run(space, _start_floor * Tower.FLOOR_H)
+	var share: Dictionary = {}
+	for r in res["rooms"]:
+		share[r["room"]] = [r["free"], r["reached"]]
+	var names := ["жилая", "кухня", "санузел", "прихожая", "ядро", "лоджия", "шахта"]
+	var bti := {0: "46", 1: "44", 2: "45", 3: "43", 4: "42", 5: "41",
+			6: "48", 7: "47", 8: "общее"}
+	var no_door := 0
+	var tiny := 0
+	var unreached := 0
+	var counted := 0
+	print("[сверка] помещение | квартира | назначение | дверей | ячеек | залито")
+	for i in Tower.ROOMS.size():
+		var r = Tower.ROOMS[i]
+		var kind := int(r[5])
+		if kind == Tower.SHF:
+			continue
+		counted += 1
+		var doors := 0
+		for w in building.walls_built:
+			if w["parapet"]:
+				continue
+			if w["inner"] != i and w["outer"] != i:
+				continue
+			for h: Vector3 in (w["holes"] as Array[Vector3]):
+				if h.z < 0.5:
+					doors += 1
+		var st: Array = share.get(i, [0, 0])
+		var free: int = st[0]
+		var got: int = st[1]
+		var mark := ""
+		if doors == 0:
+			mark += "  БЕЗ ДВЕРИ"
+			no_door += 1
+		if free < 6:
+			mark += "  тесно для проверки"
+			tiny += 1
+		elif float(got) / float(free) < 0.15:
+			mark += "  НЕ ДОСТАЁТСЯ"
+			unreached += 1
+		print("   %2d | кв %-6s | %-9s | %d | %4d | %4d%s"
+				% [i, bti.get(int(r[4]), "?"), names[kind], doors, free, got, mark])
+	print("[сверка] помещений %d, без двери %d, недостижимо %d, слишком тесных %d"
+			% [counted, no_door, unreached, tiny])
