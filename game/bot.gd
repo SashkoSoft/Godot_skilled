@@ -10,7 +10,7 @@ const SPEED := 1.3
 const TURN := 9.0
 const GRAVITY := 22.0
 const STUCK_TIME := 1.5         ## столько стоим на месте, прежде чем что-то делать
-const NUDGES := 3               ## сколько раз качнуться вбок, прежде чем сдаться
+const NUDGES := 6               ## сколько раз качнуться вбок, прежде чем сдаться
 
 var agent: NavigationAgent3D
 var watcher: Player          ## чей этаж показываем: жителей с других этажей не рисуем
@@ -105,6 +105,12 @@ func _physics_process(delta: float) -> void:
 		if _log:
 			print("[бот] %s дошёл до цели %d, этаж %d, позиция (%.1f, %.1f, %.1f)"
 					% [_name, _reached, floor_index, position.x, position.y, position.z])
+		if _log:
+			print("[бот] %s длина пути %d, следующая точка (%.1f, %.1f, %.1f)"
+					% [_name, agent.get_current_navigation_path().size(),
+							agent.get_next_path_position().x,
+							agent.get_next_path_position().y,
+							agent.get_next_path_position().z])
 		_next_target()
 		return
 

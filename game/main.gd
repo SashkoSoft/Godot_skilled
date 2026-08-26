@@ -32,7 +32,9 @@ var _prune := false
 var _audit := false
 var _no_fade := false
 var _bots := 4          ## сколько жителей ходит по дому
-var _bot_log := false   ## для осмотра: не гасить стены прозрачностью
+var _bot_log := false
+var _bot_audit := false
+var _audit_countdown := -1   ## для осмотра: не гасить стены прозрачностью
 var _spawn := Vector2(-1.7, 1.4)   ## лестничная клетка
 var _walk_test := false
 var _walk_route := "stairs"
@@ -248,6 +250,17 @@ func _build_hud() -> void:
 	layer.add_child(_hud)
 
 
+## Аудит охвата запускаем внутри шага физики: снаружи сервер навигации
+## возвращает пустой путь, хотя агенты по той же карте ходят.
+func _physics_process(_delta: float) -> void:
+	if _audit_countdown > 0:
+		_audit_countdown -= 1
+		if _audit_countdown == 0:
+			_audit_bot_coverage()
+	elif _audit_i >= 0:
+		_audit_step()
+
+
 func _process(_delta: float) -> void:
 	_frame += 1
 	if _walk_test:
@@ -294,6 +307,8 @@ func _parse_args() -> void:
 			_audit = true
 		elif a.begins_with("--bots="):
 			_bots = int(a.split("=")[1])
+		elif a == "--bot-audit":
+			_bot_audit = true
 		elif a == "--bot-log":
 			_bot_log = true
 		elif a == "--no-fade":
@@ -607,6 +622,7 @@ func _spawn_bots() -> void:
 	nav.name = "Navigation"
 	add_child(nav)
 	nav.bake_from(building)
+	nav.add_stair_links(_floors)
 	# Регион попадает на карту навигации только на следующем шаге физики;
 	# до этого любой запрос к карте возвращает ноль.
 	await get_tree().physics_frame
@@ -642,9 +658,18 @@ func _spawn_bots() -> void:
 			Color(0.55, 0.80, 0.35), Color(0.85, 0.60, 0.25),
 			Color(0.75, 0.45, 0.85), Color(0.30, 0.80, 0.70)]
 	for i in _bots:
+		# Каждому жителю — свой этаж: между этажами навигационная сетка пока
+		# не связана, и цель на чужом этаже он строить не может.
+		var my_floor := i % _floors
+		var mine: Array[Vector3] = []
+		for c in rooms:
+			if int(floor((c.y + 0.4) / Tower.FLOOR_H)) == my_floor:
+				mine.append(c)
+		if mine.is_empty():
+			mine = rooms
 		var route: Array[Vector3] = []
 		for k in 6:
-			route.append(rooms[(i * 37 + k * 61) % rooms.size()])
+			route.append(mine[(i * 37 + k * 61) % mine.size()])
 		var b := Bot.new()
 		b.name = "Bot%d" % i
 		add_child(b)
@@ -653,3 +678,104 @@ func _spawn_bots() -> void:
 				_bot_log, "№%d" % (i + 1))
 		b.start()
 	print("[навигация] запущено жителей: %d" % _bots)
+	if _bot_audit:
+		_audit_countdown = 90
+
+
+## Куда бот действительно может дойти. Меряем живым агентом: прямой запрос
+## к серверу навигации в этой сборке возвращает пустой путь, хотя агенты по
+## той же карте ходят, поэтому доверяем только агенту.
+var _audit_agent: NavigationAgent3D
+var _audit_list: Array = []
+var _audit_i := -1
+var _audit_wait := 0
+var _audit_ok := 0
+var _audit_bad: Array = []
+
+const AUDIT_NAMES := ["жилая", "кухня", "санузел", "прихожая", "ядро", "лоджия", "шахта"]
+const AUDIT_BTI := {0: "46", 1: "44", 2: "45", 3: "43", 4: "42", 5: "41",
+		6: "48", 7: "47", 8: "общее"}
+
+
+func _audit_bot_coverage() -> void:
+	var probe := Node3D.new()
+	add_child(probe)
+	_audit_agent = NavigationAgent3D.new()
+	_audit_agent.radius = Navigation.AGENT_RADIUS
+	_audit_agent.height = Player.HEIGHT
+	_audit_agent.avoidance_enabled = false
+	probe.add_child(_audit_agent)
+
+	for f in _floors:
+		for i in Tower.ROOMS.size():
+			var r = Tower.ROOMS[i]
+			if int(r[5]) == Tower.SHF:
+				continue
+			_audit_list.append({
+				"pos": Vector3((float(r[0]) + float(r[2])) * 0.5,
+						f * Tower.FLOOR_H + 0.15,
+						(float(r[1]) + float(r[3])) * 0.5),
+				"kind": int(r[5]), "flat": int(r[4]), "floor": f,
+			})
+	# Пробник ставим туда же, где стоит живой бот: агент, стоящий вне сетки,
+	# не строит путь вообще, и замер получается пустым.
+	var origin: Vector3 = _audit_list[0]["pos"]
+	for c in get_children():
+		if c is Bot and (c as Bot).floor_index == _start_floor:
+			origin = (c as Bot).global_position
+			break
+	probe.position = origin
+	print("[бот-охват] пробник в (%.1f, %.1f, %.1f), проверяю %d помещений на %d этажах"
+			% [origin.x, origin.y, origin.z, _audit_list.size(), _floors])
+	_audit_i = 0
+	_audit_wait = 0
+	_audit_agent.target_position = _audit_list[0]["pos"]
+	_audit_agent.get_next_path_position()
+
+
+func _audit_step() -> void:
+	if _audit_i >= _audit_list.size():
+		return
+	_audit_wait += 1
+	if _audit_wait < 3:
+		return
+	_audit_wait = 0
+	var t: Dictionary = _audit_list[_audit_i]
+	# путь считается лениво: пока не спросишь следующую точку, его нет
+	_audit_agent.get_next_path_position()
+	var path := _audit_agent.get_current_navigation_path()
+	var target: Vector3 = t["pos"]
+	var ok := path.size() > 0 and path[path.size() - 1].distance_to(target) < 1.0
+	if ok:
+		_audit_ok += 1
+	else:
+		_audit_bad.append(t)
+	_audit_i += 1
+	if _audit_i < _audit_list.size():
+		_audit_agent.target_position = _audit_list[_audit_i]["pos"]
+		return
+
+	print("[бот-охват] доходит до %d помещений из %d"
+			% [_audit_ok, _audit_list.size()])
+	var per_floor: Dictionary = {}
+	for b in _audit_bad:
+		var fl: int = b["floor"]
+		per_floor[fl] = int(per_floor.get(fl, 0)) + 1
+	for fl in per_floor:
+		print("   этаж %d: не доходит %d" % [int(fl), int(per_floor[fl])])
+	var by_kind: Dictionary = {}
+	for b in _audit_bad:
+		var k: int = b["kind"]
+		if not by_kind.has(k):
+			by_kind[k] = []
+		(by_kind[k] as Array).append(b)
+	for k in by_kind:
+		var list: Array = by_kind[k]
+		print("   не доходит: %s — %d шт." % [AUDIT_NAMES[int(k)], list.size()])
+		var shown := 0
+		for b in list:
+			if shown >= 4:
+				break
+			print("      этаж %d, кв %s" % [b["floor"], AUDIT_BTI.get(int(b["flat"]), "?")])
+			shown += 1
+	get_tree().quit()

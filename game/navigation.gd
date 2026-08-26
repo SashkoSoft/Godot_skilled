@@ -8,7 +8,7 @@ extends NavigationRegion3D
 ## поднимается по ним сам.
 
 const CELL := 0.08              ## мельче дверного проёма, иначе двери «зарастают»
-const AGENT_RADIUS := 0.30      ## путь держится дальше от косяков, чем габарит бота
+const AGENT_RADIUS := 0.22      ## шире — рвётся лестница и теряются комнаты
 const AGENT_HEIGHT := 1.8
 const MAX_CLIMB := 0.30         ## порог ступени
 const MAX_SLOPE := 50.0         ## марш идёт под 30°
@@ -29,6 +29,32 @@ func bake_from(building: Node3D) -> void:
 	NavigationServer3D.parse_source_geometry_data(nav, src, building)
 	NavigationServer3D.bake_from_source_geometry_data(nav, src)
 	navigation_mesh = nav
+
+
+## Явные связи по маршам. Запекание рвёт узкий марш на куски, и этажи
+## оказываются не соединены; связь склеивает их надёжно и не зависит от того,
+## как Recast поделил лестницу на регионы.
+func add_stair_links(floors: int) -> void:
+	var run := 2.6
+	var half := Tower.FLOOR_H * 0.5
+	var z_near := Tower.STAIR_Z0 + 1.7
+	var z_far := z_near + run
+	for f in floors - 1:
+		var y0 := f * Tower.FLOOR_H
+		_link(Vector3(Tower.STAIR_X0 + 0.58, y0 + 0.10, z_near - 0.40),
+				Vector3(Tower.STAIR_X0 + 0.58, y0 + half + 0.10, z_far + 0.40))
+		_link(Vector3(Tower.STAIR_X0 + 1.62, y0 + half + 0.10, z_far + 1.45),
+				Vector3(Tower.STAIR_X0 + 1.62, y0 + Tower.FLOOR_H + 0.10,
+						z_far + 1.05 - run - 0.40))
+
+
+func _link(a: Vector3, b: Vector3) -> void:
+	var l := NavigationLink3D.new()
+	l.start_position = a
+	l.end_position = b
+	l.bidirectional = true
+	l.navigation_layers = 1
+	add_child(l)
 
 
 ## Сколько всего полигонов получилось — по этому числу видно, испеклось ли.

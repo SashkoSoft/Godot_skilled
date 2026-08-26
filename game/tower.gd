@@ -879,13 +879,18 @@ func _stairs(f: int) -> void:
 	var run := 2.6
 	var z_near := STAIR_Z0 + 1.7
 	var z_far := z_near + run
-	var w := 0.95
-	_flight(f, Vector3(STAIR_X0 + 0.62, y0, z_near), 1.0, half, run, w)
+	# Марши пошире: узкий марш после эрозии на радиус агента рвётся в
+	# навигационной сетке, и этажи оказываются не связаны.
+	var w := 1.02
+	_flight(f, Vector3(STAIR_X0 + 0.58, y0, z_near), 1.0, half, run, w)
 	_landing(f, y0 + half, z_far)
-	_flight(f, Vector3(STAIR_X0 + 1.55, y0 + half, z_far + 1.05), -1.0, half, run, w)
+	_flight(f, Vector3(STAIR_X0 + 1.62, y0 + half, z_far + 1.05), -1.0, half, run, w)
 
 
 func _flight(f: int, start: Vector3, dz: float, rise: float, run: float, width: float) -> void:
+	# Ступени — только вид, ходим по наклонной плите: по отдельным коробкам
+	# капсула игрока цепляется за подступёнки и застревает на середине марша
+	# (проверено --walk-test=stairs).
 	var steps := 8
 	var sh := rise / float(steps)
 	var sd := run / float(steps)
@@ -896,21 +901,17 @@ func _flight(f: int, start: Vector3, dz: float, rise: float, run: float, width: 
 				start.z + dz * sd * (i + 0.5)), _m_stair, f)
 		mi.name = "Step_%d" % f
 
-	var hw := width * 0.5
-	var ze := run * dz
-	var th := 0.25
-	var wedge := ConvexPolygonShape3D.new()
-	wedge.points = PackedVector3Array([
-		Vector3(-hw, 0, 0), Vector3(hw, 0, 0),
-		Vector3(-hw, -th, 0), Vector3(hw, -th, 0),
-		Vector3(-hw, rise, ze), Vector3(hw, rise, ze),
-		Vector3(-hw, rise - th, ze), Vector3(hw, rise - th, ze),
-	])
+	var hyp := sqrt(run * run + rise * rise)
+	var angle := atan2(rise, run)
+	var box := BoxShape3D.new()
+	box.size = Vector3(width, 0.25, hyp)
 	var body := StaticBody3D.new()
 	var shape := CollisionShape3D.new()
-	shape.shape = wedge
+	shape.shape = box
 	body.add_child(shape)
-	body.position = start
+	body.position = start + Vector3(0.0, rise * 0.5 - 0.125 / cos(angle),
+			dz * run * 0.5)
+	body.rotation.x = -angle * dz
 	add_child(body)
 	body.set_meta("floor", f)
 	(by_floor[f] as Array).append(body)
