@@ -15,7 +15,8 @@ SCAN = r"C:/Users/Papa/AppData/Local/Temp/claude/shots/woolykh-tower-017.jpg"
 RAW  = r"C:/Users/Papa/Documents/godot_skilled/game/plan_rooms_raw.txt"
 SRC  = r"C:/Users/Papa/Documents/godot_skilled/game/tower.gd"
 S, CX, CZ = 23.94, 607.0, 610.5
-SEARCH = 9          # px, ±0,38 м
+SEARCH = 5          # px, ±0,21 м — дальше стены уезжают и площади плывут
+WELD_MOVE = 0.16    # насколько сварка вправе сдвинуть координату, м
 OVERLAP = 0.05      # допустимое наложение, м
 
 rows = []
@@ -96,7 +97,19 @@ for axis in (0, 1):
         if j - i > 1:
             grp = keys[i:j]
             old = [value[k] for k in grp]
-            mean = round(sum(old) / len(old), 3)
+            # сводим не к середине, а к той координате, под которой на скане
+            # больше всего линии: иначе стены уезжают с чертежа
+            def support(v):
+                h = t = 0.0
+                for k in grp:
+                    for a0, a1 in groups[k]:
+                        a, b = hit(k[0], (CX if k[0] == 1 else CZ) + v * S, a0, a1)
+                        h += a; t += b
+                return h / t if t else 0.0
+            mean = max(old, key=support)
+            if max(abs(v - mean) for v in old) > WELD_MOVE:
+                i = j
+                continue
             for k in grp:
                 value[k] = mean
             if clashes():

@@ -113,7 +113,7 @@ def trace(axis, fixed, a0, a1):
             w = (g1 - g0) / S
             if not (wmin <= w <= wmax):
                 continue
-            if kind == 0.0 and (core2[g0:g1] > 0).mean() > 0.55:
+            if kind == 0.0 and (core2[g0:g1] > 0).mean() > 0.85:
                 continue
             found.append([round(((g0 + g1) / 2.0 - total / 2.0) / S, 3), round(w, 3), kind])
     found.sort(key=lambda f: (f[0], -f[2]))
@@ -134,6 +134,12 @@ for r in ROOMS:
 walls = []
 stats = {"segments": 0, "traced": 0, "rule": 0, "doors": 0, "wins": 0, "parapets": 0}
 for (axis, fixed), segs in sorted(groups.items()):
+    # проёмы читаем по всей оси разом: если резать сначала на участки,
+    # дверь на стыке двух участков не находится ни в одном из них
+    line_a = min(s0 for s0, _ in segs)
+    line_b = max(s1 for _, s1 in segs)
+    line_holes = trace(axis, fixed, line_a, line_b)
+    line_mid = (line_a + line_b) / 2.0
     pts = sorted({p for s in segs for p in s})
     cut = [pts[0]]
     for p in pts[1:]:
@@ -164,15 +170,29 @@ for (axis, fixed), segs in sorted(groups.items()):
         facade = (abs(fixed) > 16.9) if axis == 1 else (abs(fixed) > 7.9)
         if outer >= 0:
             facade = False
-        holes = trace(axis, fixed, a, b)
-        if holes is None:
+        seg_holes = trace(axis, fixed, a, b)
+        if seg_holes is None and line_holes is None:
             stats["rule"] += 1
             holes = []
             mode = 0            # проёмы поставит правило в Tower
         else:
             stats["traced"] += 1
             mode = 1
-            for h in holes:
+            seg_mid = (a + b) / 2.0
+            found = list(seg_holes or [])
+            for h in (line_holes or []):
+                c = line_mid + h[0]
+                if a + 0.05 <= c <= b - 0.05:
+                    found.append([round(c - seg_mid, 3),
+                                  round(min(h[1], b - a - 0.10), 3), h[2]])
+            found.sort(key=lambda f: (f[0], -f[2]))
+            holes = []
+            for h in found:
+                if h[1] < 0.5:
+                    continue
+                if holes and abs(h[0] - holes[-1][0]) < 0.35:
+                    continue
+                holes.append(h)
                 stats["wins" if h[2] else "doors"] += 1
         walls.append([axis, fixed, a, b, inner, outer, 1 if facade else 0, holes, mode])
         stats["segments"] += 1
