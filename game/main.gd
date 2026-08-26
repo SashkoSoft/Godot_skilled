@@ -455,6 +455,7 @@ func _report_reach() -> void:
 		_build_tower()
 	if _audit:
 		_audit_rooms()
+		_audit_flats()
 	for r in bad:
 		print("   НЕТ ХОДА: помещение %d, квартира %d, назначение %d"
 				% [r["room"], r["flat"], r["kind"]])
@@ -538,3 +539,52 @@ func _audit_rooms() -> void:
 				% [i, bti.get(int(r[4]), "?"), names[kind], doors, free, got, mark])
 	print("[сверка] помещений %d, без двери %d, недостижимо %d, слишком тесных %d"
 			% [counted, no_door, unreached, tiny])
+
+
+## Строгая сверка по квартирам: волна пускается от лестничной клетки, но
+## ходить разрешено только по местам общего пользования и по одной квартире.
+## Так проверяется именно её вход и её внутренние двери, а не обход кругом.
+func _audit_flats() -> void:
+	var space := get_viewport().world_3d.direct_space_state
+	var g := ReachCheck.grid(space, _start_floor * Tower.FLOOR_H)
+	var nx: int = g["nx"]
+	var nz: int = g["nz"]
+	var names := ["жилая", "кухня", "санузел", "прихожая", "ядро", "лоджия", "шахта"]
+	var bti := {0: "46", 1: "44", 2: "45", 3: "43", 4: "42", 5: "41", 6: "48", 7: "47"}
+	# сеем в лестничной клетке и в коридоре: это места общего пользования,
+	# из них и должен быть вход в каждую квартиру
+	var seeds: Array[Vector2] = [
+		Vector2((Tower.STAIR_X0 + Tower.STAIR_X1) * 0.5, Tower.STAIR_Z0 + 0.8),
+		Vector2(-8.0, 0.15), Vector2(-4.0, 0.15), Vector2(4.0, 0.15),
+		Vector2(8.0, 0.15), Vector2(0.0, 0.15),
+	]
+	var bad_flats := 0
+	var bad_rooms := 0
+	print("[квартиры] из подъезда внутрь квартиры, не проходя через соседей:")
+	for flat in 8:
+		var mask := ReachCheck.flat_mask([flat, 8], nx, nz)
+		var seen := ReachCheck.flood_masked(g, mask, seeds)
+		var miss: Array[String] = []
+		var got_any := false
+		for i in Tower.ROOMS.size():
+			if int(Tower.ROOMS[i][4]) != flat or int(Tower.ROOMS[i][5]) == Tower.SHF:
+				continue
+			var st := ReachCheck.share_in(g, seen, i)
+			var f: int = st[0]
+			if f < 6:
+				continue
+			if float(st[1]) / float(f) >= 0.15:
+				got_any = true
+			else:
+				miss.append("%s (%d)" % [names[int(Tower.ROOMS[i][5])], i])
+		if not got_any:
+			print("   кв %s — ВХОДА НЕТ" % bti[flat])
+			bad_flats += 1
+		elif miss.is_empty():
+			print("   кв %s — вход есть, все помещения достижимы" % bti[flat])
+		else:
+			print("   кв %s — вход есть, НЕ ДОСТАЁТСЯ: %s" % [bti[flat], ", ".join(miss)])
+			bad_flats += 1
+			bad_rooms += miss.size()
+	print("[квартиры] с проблемами %d, недостижимых помещений внутри квартир %d"
+			% [bad_flats, bad_rooms])

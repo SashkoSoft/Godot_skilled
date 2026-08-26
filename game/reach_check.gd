@@ -118,6 +118,121 @@ static func run(space: PhysicsDirectSpaceState3D, y: float) -> Dictionary:
 			"nx": nx, "nz": nz, "map_free": free, "map_seen": seen}
 
 
+## Сетка проходимости без волны: нужна, чтобы пускать волну не от лестницы,
+## а от входной двери конкретной квартиры.
+static func grid(space: PhysicsDirectSpaceState3D, y: float) -> Dictionary:
+	var shape := CapsuleShape3D.new()
+	shape.height = Player.HEIGHT
+	shape.radius = Player.RADIUS - 0.02
+	var q := PhysicsShapeQueryParameters3D.new()
+	q.shape = shape
+	var nx := int((Tower.W_HALF * 2.0) / STEP) + 1
+	var nz := int((Tower.D_HALF * 2.0) / STEP) + 1
+	var free := PackedByteArray()
+	var ground := PackedFloat32Array()
+	free.resize(nx * nz)
+	ground.resize(nx * nz)
+	for ix in nx:
+		var x := -Tower.W_HALF + ix * STEP
+		for iz in nz:
+			var z := -Tower.D_HALF + iz * STEP
+			var ray := PhysicsRayQueryParameters3D.create(
+					Vector3(x, y + 2.0, z), Vector3(x, y - 0.4, z))
+			var hit := space.intersect_ray(ray)
+			var i := ix * nz + iz
+			if hit.is_empty():
+				continue
+			var gy: float = (hit["position"] as Vector3).y
+			if gy > y + 1.7:
+				continue
+			ground[i] = gy
+			q.transform = Transform3D(Basis.IDENTITY,
+					Vector3(x, gy + Player.HEIGHT * 0.5 + 0.03, z))
+			free[i] = 1 if space.intersect_shape(q, 1).is_empty() else 0
+	return {"free": free, "ground": ground, "nx": nx, "nz": nz}
+
+
+## Волна по сетке, ограниченная маской (клетки чужих квартир исключены).
+static func flood_masked(g: Dictionary, mask: PackedByteArray,
+		seeds: Array[Vector2]) -> PackedByteArray:
+	var nx: int = g["nx"]
+	var nz: int = g["nz"]
+	var free: PackedByteArray = g["free"]
+	var ground: PackedFloat32Array = g["ground"]
+	var seen := PackedByteArray()
+	seen.resize(nx * nz)
+	var queue: Array[int] = []
+	for s in seeds:
+		var sx := clampi(int((s.x + Tower.W_HALF) / STEP), 0, nx - 1)
+		var sz := clampi(int((s.y + Tower.D_HALF) / STEP), 0, nz - 1)
+		for dx in range(-6, 7):
+			for dz in range(-6, 7):
+				var ax := sx + dx
+				var az := sz + dz
+				if ax < 0 or az < 0 or ax >= nx or az >= nz:
+					continue
+				var i := ax * nz + az
+				if free[i] == 1 and mask[i] == 1 and seen[i] == 0:
+					seen[i] = 1
+					queue.append(i)
+	while not queue.is_empty():
+		var cur: int = queue.pop_back()
+		var cx := cur / nz
+		var cz := cur % nz
+		for d in [[1, 0], [-1, 0], [0, 1], [0, -1]]:
+			var ax: int = cx + d[0]
+			var az: int = cz + d[1]
+			if ax < 0 or az < 0 or ax >= nx or az >= nz:
+				continue
+			var i := ax * nz + az
+			if free[i] == 0 or mask[i] == 0 or seen[i] == 1:
+				continue
+			if absf(ground[i] - ground[cur]) > CLIMB:
+				continue
+			seen[i] = 1
+			queue.append(i)
+	return seen
+
+
+## Маска клеток квартиры: её помещения, раздутые на толщину стены,
+## чтобы в маску попадали и дверные проёмы.
+static func flat_mask(flats: Array, nx: int, nz: int) -> PackedByteArray:
+	var m := PackedByteArray()
+	m.resize(nx * nz)
+	for r in Tower.ROOMS:
+		if not flats.has(int(r[4])):
+			continue
+		var ix0 := maxi(int((r[0] - 0.35 + Tower.W_HALF) / STEP), 0)
+		var ix1 := mini(int((r[2] + 0.35 + Tower.W_HALF) / STEP), nx - 1)
+		var iz0 := maxi(int((r[1] - 0.35 + Tower.D_HALF) / STEP), 0)
+		var iz1 := mini(int((r[3] + 0.35 + Tower.D_HALF) / STEP), nz - 1)
+		for ix in range(ix0, ix1 + 1):
+			for iz in range(iz0, iz1 + 1):
+				m[ix * nz + iz] = 1
+	return m
+
+
+## Доля залитых клеток помещения при заданной волне.
+static func share_in(g: Dictionary, seen: PackedByteArray, ri: int) -> Array:
+	var nz: int = g["nz"]
+	var free: PackedByteArray = g["free"]
+	var r = Tower.ROOMS[ri]
+	var f := 0
+	var got := 0
+	var ix0 := maxi(int((r[0] + Tower.W_HALF) / STEP), 0)
+	var ix1 := mini(int((r[2] + Tower.W_HALF) / STEP), int(g["nx"]) - 1)
+	var iz0 := maxi(int((r[1] + Tower.D_HALF) / STEP), 0)
+	var iz1 := mini(int((r[3] + Tower.D_HALF) / STEP), nz - 1)
+	for ix in range(ix0, ix1 + 1):
+		for iz in range(iz0, iz1 + 1):
+			var i := ix * nz + iz
+			if free[i] == 1:
+				f += 1
+				if seen[i] == 1:
+					got += 1
+	return [f, got]
+
+
 ## Карта для глаз: # непроходимо, . проходимо но не достигнуто, + достигнуто.
 static func ascii_map(res: Dictionary, step: int = 3) -> Array[String]:
 	var nx: int = res["nx"]

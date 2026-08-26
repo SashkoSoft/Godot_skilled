@@ -50,12 +50,12 @@ const ROOMS := [
 	[ -3.06,  -9.24,   2.92,  -8.06, 1, LOG],  # лоджия 3а
 	[ -9.40,  -7.52,  -6.03,  -1.33, 1, LIV],  # 20,7 = 3,37 x 6,10
 	[ -6.03,  -7.52,  -3.42,  -2.89, 1, LIV],  # 12,2 = 2,57 x 4,71
-	[ -3.44,  -7.52,  -0.05,  -2.88, 1, LIV],  # 15,1 = 3,24 x 4,72
-	[ -6.03,  -2.80,  -0.05,  -1.33, 1, HAL],  # холл 7
+	[ -3.44,  -7.52,  -0.12,  -2.88, 1, LIV],  # 15,1 = 3,24 x 4,72
+	[ -6.03,  -2.80,  -0.12,  -1.33, 1, HAL],  # холл 7
 	[  0.43,  -7.51,   3.02,  -4.97, 1, KIT],
 	[  0.70,  -3.43,   1.90,  -2.73, 1, BAT],
 	[  0.70,  -2.46,   3.02,  -0.97, 1, BAT],
-	[  0.16,  -4.97,   0.70,  -0.39, 1, HAL],
+	[ -0.12,  -4.97,   0.70,  -0.39, 1, HAL],
 	# --- 45, север справа от центра, однокомнатная -------------------------
 	[  3.38,  -9.17,   9.40,  -8.04, 2, LOG],  # лоджия 1а
 	[  3.68,  -7.46,   5.93,  -4.45, 2, KIT],  # кухня 2
@@ -64,6 +64,7 @@ const ROOMS := [
 	[  3.22,  -3.40,   5.01,  -2.65, 2, BAT],  # уборная 3
 	[  3.22,  -2.49,   5.01,  -0.85, 2, BAT],  # ванная 4
 	[  5.10,  -2.65,   7.31,  -0.85, 2, HAL],  # прихожая 5
+	[  5.10,  -4.45,   6.02,  -2.65, 2, HAL],  # проход из прихожей в кухню
 	# --- 43, северо-восток (зеркало 46) -----------------------------------
 	[ 16.19,  -8.06,  17.88,  -3.73, 3, LOG],
 	[ 13.30,  -8.73,  16.11,  -3.95, 3, LIV],  # 13,9
@@ -352,6 +353,7 @@ func _opening(a: int, b: int, length: float, on_facade: bool) -> int:
 
 func _emit_walls(f: int, y: float) -> void:
 	var recs := _collect_walls()
+	_ensure_entrances(recs)
 	_ensure_room_doors(recs)
 	_link_rooms(recs)
 	walls_built = recs
@@ -399,6 +401,8 @@ func _collect_walls() -> Array:
 					if not _may_open(inner, outer) and outer >= 0:
 						continue      # «дверь» сквозь межквартирную стену — промах чтения
 					h.y = maxf(h.y, 0.70)
+				elif outer >= 0 and typ != 1:
+					continue          # «окно» во внутренней стене — тоже промах
 				holes.append(h)
 		else:
 			rule_count += 1
@@ -520,6 +524,51 @@ func _fit_holes(holes: Array[Vector3], length: float) -> Array[Vector3]:
 ## Двери, добавленные проверкой проходимости (tools: main.gd --fix-reach).
 ## Ключ — "ось|координата|начало|конец", значение — Vector3(смещение, ширина, 0).
 static var extra_doors: Dictionary = {}
+
+## В каждую квартиру должна вести дверь из мест общего пользования — и ровно
+## оттуда, а не через дыру в стене соседа. Если чертёж её не дал, ставим сами.
+func _ensure_entrances(recs: Array) -> void:
+	for flat in 8:
+		var has := false
+		var best: Dictionary = {}
+		var best_rank := -1.0
+		var best_off := 0.0
+		var best_w := 0.0
+		for w in recs:
+			if w["parapet"]:
+				continue
+			var a: int = w["inner"]
+			var b: int = w["outer"]
+			if b < 0:
+				continue
+			var fa := int(ROOMS[a][4])
+			var fb := int(ROOMS[b][4])
+			if not ((fa == flat and fb == 8) or (fb == flat and fa == 8)):
+				continue
+			for h: Vector3 in (w["holes"] as Array[Vector3]):
+				if h.z < 0.5:
+					has = true
+			var inside: int = a if fa == flat else b
+			var width := minf(DOOR_FLAT, w["len"] - 0.20)
+			if width < DOOR_ROOM and w["len"] >= 0.70 and w["len"] <= 1.60:
+				width = w["len"]
+			if width < 0.70:
+				continue
+			var off := _door_pos(recs, w, width)
+			var rank := _clearance(recs, w["axis"], w["fixed"], w["mid"] + off, width) * 10.0
+			rank += minf(w["len"], 4.0)
+			if int(ROOMS[inside][5]) == HAL:
+				rank += 20.0        # входим в прихожую, а не в комнату
+			if rank > best_rank:
+				best_rank = rank
+				best = w
+				best_off = off
+				best_w = width
+		if has or best.is_empty():
+			continue
+		_cut(recs, best, best_off, best_w)
+		rule_count += 1
+
 
 ## Санузел, кухня и комната открываются в прихожую своей квартиры — других
 ## вариантов планировка не даёт. Где чертёж двери не дал (на скане 24 px/м,
@@ -650,6 +699,9 @@ func _open_one(recs: Array, stuck: Array[int], seen: Dictionary) -> bool:
 		var off := _door_pos(recs, w, width)
 		var rank := _clearance(recs, w["axis"], w["fixed"], w["mid"] + off, width) * 10.0
 		rank += minf(w["len"], 4.0)
+		# лишний вход с лестницы — хуже любой двери внутри квартиры
+		if int(ROOMS[a][4]) != int(ROOMS[b][4]):
+			rank -= 500.0
 		if rank > best_rank:
 			best_rank = rank
 			best = w
@@ -668,6 +720,8 @@ func _cut(recs: Array, w: Dictionary, off: float, width: float) -> void:
 	var abs_c: float = w["mid"] + off
 	for w2 in recs:
 		if w2 == w or w2["parapet"] or w2["axis"] != w["axis"]:
+			continue
+		if not _may_open(w2["inner"], w2["outer"]):
 			continue
 		if absf(w2["fixed"] - w["fixed"]) > 0.85:
 			continue
@@ -689,6 +743,8 @@ func _twin(w: Dictionary, off: float, width: float) -> void:
 	for w2 in walls_built:
 		if w2 == w or w2["parapet"] or w2["axis"] != w["axis"]:
 			continue
+		if not _may_open(w2["inner"], w2["outer"]):
+			continue        # парная стена может оказаться межквартирной
 		if absf(w2["fixed"] - w["fixed"]) > 0.85:
 			continue
 		if abs_c < w2["a0"] + width * 0.5 or abs_c > w2["a1"] - width * 0.5:
