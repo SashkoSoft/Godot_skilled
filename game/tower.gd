@@ -158,10 +158,22 @@ var _m_stair: ShaderMaterial
 var _m_shaft: ShaderMaterial
 var _m_glass: StandardMaterial3D
 var _m_frame: ShaderMaterial
+var _m_wall_worn: ShaderMaterial
+var _m_facade: ShaderMaterial
+var _m_core_floor: ShaderMaterial
 
 const FADE_SHADER := """
 shader_type spatial;
 render_mode cull_back, diffuse_burley;
+
+// Текстуры кладутся трипланарно по мировым координатам: стены и полы —
+// это боксы разных размеров, развёртки у них нет, а тайл должен быть
+// одинаковым в метрах на всех поверхностях.
+uniform sampler2D tex_albedo : source_color, filter_linear_mipmap, repeat_enable;
+uniform sampler2D tex_normal : hint_normal, filter_linear_mipmap, repeat_enable;
+uniform sampler2D tex_orm : hint_default_white, filter_linear_mipmap, repeat_enable;
+uniform bool textured = false;
+uniform float tile = 2.0;              // сколько метров на один повтор
 
 uniform vec3 base_color : source_color = vec3(0.60, 0.60, 0.58);
 uniform float rough = 0.92;
@@ -174,15 +186,38 @@ instance uniform float fade = 1.0;
 instance uniform float hole_mode = 1.0;
 
 varying vec3 world_pos;
+varying vec3 world_normal;
 
 void vertex() {
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	world_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
+}
+
+vec4 triplanar(sampler2D t, vec3 p, vec3 n) {
+	vec3 w = pow(abs(n), vec3(4.0));
+	w /= (w.x + w.y + w.z);
+	return texture(t, p.zy) * w.x + texture(t, p.xz) * w.y + texture(t, p.xy) * w.z;
 }
 
 void fragment() {
-	ALBEDO = base_color * mix(vec3(0.82), tint_top, clamp(NORMAL.y, 0.0, 1.0));
-	ROUGHNESS = rough;
+	vec3 col = base_color * mix(vec3(0.82), tint_top, clamp(NORMAL.y, 0.0, 1.0));
+	float r = rough;
+	float ao = 1.0;
+	if (textured) {
+		vec3 p = world_pos / tile;
+		vec3 n = normalize(world_normal);
+		col = triplanar(tex_albedo, p, n).rgb;
+		vec3 orm = triplanar(tex_orm, p, n).rgb;
+		ao = orm.r;
+		r = orm.g;
+		NORMAL_MAP = triplanar(tex_normal, p, n).rgb;
+		NORMAL_MAP_DEPTH = 0.8;
+	}
+	ALBEDO = col;
+	ROUGHNESS = r;
 	METALLIC = 0.0;
+	AO = ao;
+	AO_LIGHT_AFFECT = 0.6;
 	float d = length(world_pos.xz - focus_pos.xz);
 	float in_hole = 1.0 - smoothstep(focus_radius - focus_soft, focus_radius, d);
 	float a = mix(fade, mix(1.0, fade, in_hole), hole_mode);
@@ -190,7 +225,6 @@ void fragment() {
 	ALPHA_HASH_SCALE = 1.0;
 }
 """
-
 
 # ---------------------------------------------------------------------------
 #  Разметка
@@ -285,10 +319,13 @@ func _plate(f: int, r: Rect2, col: Color, alpha: float, y: float) -> void:
 
 func build(floors: int = 3) -> void:
 	_load_extra_doors()
-	_m_wall = _mat(Color(0.62, 0.61, 0.58))
-	_m_floor = _mat(Color(0.33, 0.34, 0.33))
-	_m_stair = _mat(Color(0.46, 0.42, 0.37))
-	_m_shaft = _mat(Color(0.38, 0.40, 0.42))
+	_m_wall = _mat(Color(0.62, 0.61, 0.58), "wall-paint")
+	_m_wall_worn = _mat(Color(0.60, 0.58, 0.54), "wall-paint-worn")
+	_m_facade = _mat(Color(0.55, 0.55, 0.54), "concrete-facade")
+	_m_floor = _mat(Color(0.45, 0.45, 0.44), "concrete-facade", 2.4)
+	_m_core_floor = _mat(Color(0.33, 0.34, 0.33), "landing-floor", 1.2)
+	_m_stair = _mat(Color(0.46, 0.42, 0.37), "stair-tread", 0.6)
+	_m_shaft = _mat(Color(0.42, 0.43, 0.44), "concrete-facade", 1.6)
 	_m_frame = _mat(Color(0.80, 0.79, 0.75))
 	_m_glass = StandardMaterial3D.new()
 	_m_glass.albedo_color = Color(0.60, 0.74, 0.80, 0.28)
@@ -339,6 +376,7 @@ func _floor(f: int, with_stairs: bool) -> void:
 	var y := f * FLOOR_H
 	_slab(f, false)
 	_emit_walls(f, y)
+	_core_floor(f, y)
 	_shafts(f, y)
 	if with_stairs:
 		_stairs(f)
@@ -947,6 +985,18 @@ func _parapet(f: int, y: float, axis: int, fixed: float, a0: float, a1: float) -
 const LIFT_DOOR := 1.10
 
 
+## Крошка — только в лестнично-лифтовом узле: в квартирах пол другой.
+func _core_floor(f: int, y: float) -> void:
+	for r in ROOMS:
+		if int(r[5]) != COR:
+			continue
+		var mesh := BoxMesh.new()
+		mesh.size = Vector3(r[2] - r[0] - 0.02, 0.04, r[3] - r[1] - 0.02)
+		var mi := _spawn_visual(mesh, Vector3((r[0] + r[2]) * 0.5, y + 0.02,
+				(r[1] + r[3]) * 0.5), _m_core_floor, f)
+		mi.name = "CoreFloor_%d" % f
+
+
 func _shafts(f: int, y: float) -> void:
 	var idx := 0
 	for r in ROOMS:
@@ -1075,7 +1125,7 @@ func _landing(f: int, y: float, z: float) -> void:
 	var mesh := BoxMesh.new()
 	mesh.size = Vector3(STAIR_X1 - STAIR_X0 - 0.2, WALL, 1.05)
 	var mi := _spawn(mesh, Vector3((STAIR_X0 + STAIR_X1) * 0.5, y - WALL * 0.5, z + 0.5),
-			_m_floor, f)
+			_m_core_floor, f)
 	mi.name = "Landing_%d" % f
 
 
@@ -1084,7 +1134,9 @@ func _landing(f: int, y: float, z: float) -> void:
 # ---------------------------------------------------------------------------
 
 func _wall(f: int, center: Vector3, dir: Vector3, length: float,
-		holes: Array[Vector3], thick: float = WALL) -> void:
+		holes: Array[Vector3], thick: float = WALL, mat: ShaderMaterial = null) -> void:
+	if mat == null:
+		mat = _m_wall
 	var cuts: Array[Vector3] = holes.duplicate()
 	cuts.sort_custom(func(a, b): return a.x < b.x)
 
@@ -1110,7 +1162,7 @@ func _wall(f: int, center: Vector3, dir: Vector3, length: float,
 			mesh.size = Vector3(sl, hw, thick)
 		var pos := center + dir * ((s.x + s.y) * 0.5)
 		pos.y = center.y + hw * 0.5
-		var mi := _spawn(mesh, pos, _m_wall, f)
+		var mi := _spawn(mesh, pos, mat, f)
 		mi.name = "Wall_%d" % f
 
 	for h: Vector3 in cuts:
@@ -1123,7 +1175,7 @@ func _wall(f: int, center: Vector3, dir: Vector3, length: float,
 			mesh.size = Vector3(h.y, above, thick)
 		var pos := center + dir * h.x
 		pos.y = center.y + hw - above * 0.5
-		var mi := _spawn(mesh, pos, _m_wall, f)
+		var mi := _spawn(mesh, pos, mat, f)
 		mi.name = "Lintel_%d" % f
 		if h.z >= 0.5:
 			var sill := BoxMesh.new()
@@ -1133,7 +1185,7 @@ func _wall(f: int, center: Vector3, dir: Vector3, length: float,
 				sill.size = Vector3(h.y, 0.85, thick)
 			var sp := center + dir * h.x
 			sp.y = center.y + 0.425
-			var ms := _spawn(sill, sp, _m_wall, f)
+			var ms := _spawn(sill, sp, mat, f)
 			ms.name = "Sill_%d" % f
 			_glaze(f, center + dir * h.x, dir, h.y, center.y, hw - above)
 		_mark(f, center + dir * h.x, dir, h.y, h.z, center.y)
@@ -1198,13 +1250,28 @@ func _mark(f: int, pos: Vector3, dir: Vector3, width: float, kind: float, base_y
 	mi.set_meta("is_mark", true)
 
 
-func _mat(c: Color) -> ShaderMaterial:
-	var sh := Shader.new()
-	sh.code = FADE_SHADER
+## Один шейдер на всё, экземпляры материалов различаются текстурами.
+static var _shader: Shader = null
+
+
+func _mat(c: Color, set_name := "", tile := 2.0) -> ShaderMaterial:
+	if _shader == null:
+		_shader = Shader.new()
+		_shader.code = FADE_SHADER
 	var m := ShaderMaterial.new()
-	m.shader = sh
+	m.shader = _shader
 	m.set_shader_parameter("base_color", c)
 	m.set_shader_parameter("tint_top", Color(1.04, 1.03, 1.0))
+	if set_name != "":
+		var dir := "res://assets/textures/%s/" % set_name
+		var stem: String = set_name.replace("-", "_")
+		var alb := "%s%s_albedo_1k.png" % [dir, stem]
+		if ResourceLoader.exists(alb):
+			m.set_shader_parameter("tex_albedo", load(alb))
+			m.set_shader_parameter("tex_normal", load("%s%s_normal_1k.png" % [dir, stem]))
+			m.set_shader_parameter("tex_orm", load("%s%s_orm_1k.png" % [dir, stem]))
+			m.set_shader_parameter("textured", true)
+			m.set_shader_parameter("tile", tile)
 	return m
 
 
