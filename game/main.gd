@@ -31,6 +31,7 @@ var _fix_reach := false
 var _prune := false
 var _audit := false
 var _no_fade := false
+var _only_flat := -1
 var _bots := 4          ## сколько жителей ходит по дому
 var _bot_log := false
 var _bot_audit := false
@@ -320,6 +321,8 @@ func _parse_args() -> void:
 			_no_fade = true
 		elif a == "--plan":
 			_plan_view = true
+		elif a.begins_with("--only-flat="):
+			_only_flat = int(a.split("=")[1])
 		elif a == "--marks":
 			_marks = true
 		elif a == "--no-marks":
@@ -387,6 +390,7 @@ func _build_tower() -> void:
 	building = Tower.new()
 	building.name = "Building"
 	building.marks_visible = _marks
+	building.only_flat = _only_flat
 	add_child(building)
 	building.build(_floors)
 	print("[план] проёмов с чертежа: стен %d, по правилу %d, дверей добавлено ради прохода %d"

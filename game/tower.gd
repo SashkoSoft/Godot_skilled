@@ -137,6 +137,7 @@ const STAIR_Z1 := 7.49
 var fadeable: Array[MeshInstance3D] = []
 var by_floor: Dictionary = {}
 var marks_visible := true
+var only_flat := -1        ## подсветить одну квартиру, остальные приглушить
 
 var traced_count := 0     ## стен с проёмами, снятыми с чертежа
 var rule_count := 0       ## стен, где оси на скане нет и проёмы выведены правилом
@@ -233,6 +234,9 @@ func paint_plan(f: int) -> void:
 	# Принадлежность к квартире показывают подписи, а цвет — назначение.
 	for r in rooms():
 		var col: Color
+		if only_flat >= 0 and int(r["flat"]) != only_flat:
+			_plate(f, r["rect"] as Rect2, Color(0.42, 0.42, 0.44), 0.55, y + 0.06)
+			continue
 		match int(r["kind"]):
 			Room.KITCHEN: col = Color(0.97, 0.58, 0.16)
 			Room.BATH:    col = Color(0.16, 0.76, 0.82)
@@ -1011,20 +1015,21 @@ func _mark(f: int, pos: Vector3, dir: Vector3, width: float, kind: float, base_y
 	if not marks_visible:
 		return
 	var is_win := kind >= 0.5
-	var h := 1.0 if is_win else 2.1
+	var h := 0.9 if is_win else 2.0
 	var mesh := BoxMesh.new()
+	# метка чуть тоньше стены, чтобы не заслоняла соседние помещения
 	if dir.z > 0.5:
-		mesh.size = Vector3(WALL + 0.12, h, width)
+		mesh.size = Vector3(WALL + 0.05, h, width * 0.96)
 	else:
-		mesh.size = Vector3(width, h, WALL + 0.12)
+		mesh.size = Vector3(width * 0.96, h, WALL + 0.05)
 
 	var mat := StandardMaterial3D.new()
-	var col := Color(0.35, 0.70, 0.95) if is_win else Color(0.35, 0.85, 0.45)
-	mat.albedo_color = Color(col.r, col.g, col.b, 0.45)
+	var col := Color(0.20, 0.55, 0.95) if is_win else Color(0.15, 0.75, 0.30)
+	mat.albedo_color = Color(col.r, col.g, col.b, 0.70)
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.emission_enabled = true
 	mat.emission = col
-	mat.emission_energy_multiplier = 0.9
+	mat.emission_energy_multiplier = 0.55
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 
 	var mi := MeshInstance3D.new()
