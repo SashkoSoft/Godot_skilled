@@ -3,12 +3,12 @@ id: task-0002
 title: Бетонная панель: стены и перекрытия
 assignee: comfyui
 type: texture
-status: open
+status: done
 revision: 2
 priority: normal
 created: 2026-08-27
 started: 2026-08-27
-finished:
+finished: 2026-08-27
 ---
 
 # task-0002 — Бетонная панель: стены и перекрытия
