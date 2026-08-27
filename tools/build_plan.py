@@ -100,6 +100,102 @@ def runs_across(strip):
         prev = col
     return n
 
+def leaf_doors(axis, fixed, a0, a1, off, src):
+    """Двери по штриху дверного полотна.
+
+    На плане БТИ дверь рисуют разрывом стены плюс коротким отрезком ПОПЕРЁК
+    неё — это само полотно. Штрих искать надёжнее, чем разрыв: он не зависит
+    от того, слиплись ли линии стены, и сразу даёт ширину проёма.
+    """
+    d = src["dark"]
+    sc, cx, cz = src["s"], src["cx"], src["cz"]
+    lo_m, hi_m = a0, a1
+    if axis == 1:
+        c = int(round(cx + fixed * sc)) + off
+        lo, hi = int(round(cz + lo_m * sc)), int(round(cz + hi_m * sc))
+        H, W = d.shape
+        if c - 2 < 0 or c + 3 > W:
+            return []
+        lo, hi = max(lo, 0), min(hi, H)
+    else:
+        c = int(round(cz + fixed * sc)) + off
+        lo, hi = int(round(cx + lo_m * sc), ), int(round(cx + hi_m * sc))
+        H, W = d.shape
+        if c - 2 < 0 or c + 3 > H:
+            return []
+        lo, hi = max(lo, 0), min(hi, W)
+    if hi - lo < 8:
+        return []
+
+    near = int(round(0.10 * sc)) + 2      # от оси стены до начала штриха
+    far = int(round(1.15 * sc))           # дальше полотна не бывает
+    wmin, wmax = 0.55 * sc, 1.15 * sc
+    hits = []
+    for t in range(lo, hi):
+        for side in (-1, 1):
+            run = 0
+            best = 0
+            for k in range(near, far):
+                p = c + side * k
+                if axis == 1:
+                    v = d[t, p] if 0 <= p < W else False
+                else:
+                    v = d[p, t] if 0 <= p < H else False
+                if v:
+                    run += 1
+                    best = max(best, run)
+                else:
+                    if run >= 3:
+                        break
+                    run = 0
+            if wmin <= best <= wmax:
+                hits.append((t, side, best))
+                break
+    if not hits:
+        return []
+    # штрих толщиной в 1-3 пикселя — группируем подряд идущие t
+    groups = []
+    cur = [hits[0]]
+    for h in hits[1:]:
+        if h[0] - cur[-1][0] <= 2:
+            cur.append(h)
+        else:
+            groups.append(cur); cur = [h]
+    groups.append(cur)
+
+    out = []
+    for g in groups:
+        if len(g) > int(0.25 * sc):        # это уже не штрих, а стена
+            continue
+        base = sum(x[0] for x in g) / len(g)
+        length = sum(x[2] for x in g) / len(g)
+        # полотно навешено на один косяк; проём уходит в ту сторону,
+        # где вдоль стены меньше тёмного
+        def wall_darkness(fr, to):
+            n = 0
+            for t in range(int(fr), int(to)):
+                for p in range(c - 1, c + 2):
+                    if axis == 1:
+                        if 0 <= t < d.shape[0] and 0 <= p < d.shape[1] and d[t, p]:
+                            n += 1
+                    else:
+                        if 0 <= p < d.shape[0] and 0 <= t < d.shape[1] and d[p, t]:
+                            n += 1
+            return n
+        left = wall_darkness(base - length, base)
+        right = wall_darkness(base, base + length)
+        centre_px = base - length / 2.0 if left < right else base + length / 2.0
+        # Штрихов, похожих на полотно, на чертеже много: выносные линии
+        # размеров, мебель, штриховка. Настоящая дверь — та, где стена под
+        # полотном ПУСТАЯ. Требуем и разрыв, и штрих одновременно.
+        gap = min(left, right)
+        if gap > 0.25 * length:
+            continue
+        centre_m = (centre_px - (cz if axis == 1 else cx)) / sc
+        out.append([round(centre_m, 3), round(length / sc, 3), 0.0])
+    return out
+
+
 def spans(flags):
     out, s = [], None
     for i, v in enumerate(flags):
@@ -232,6 +328,12 @@ for (axis, fixed), segs in sorted(groups.items()):
             mode = 1
             seg_mid = (a + b) / 2.0
             found = list(seg_holes or [])
+            # на фасаде полотен не бывает: там окна, и их «створки»
+            # детектор принимает за двери
+            for lf in ([] if facade else leaf_doors(axis, fixed, a, b, 0, src)):
+                c_abs = lf[0]
+                if a + 0.05 <= c_abs <= b - 0.05:
+                    found.append([round(c_abs - seg_mid, 3), lf[1], 0.0])
             for h in (line_holes or []):
                 c = line_mid + h[0]
                 if a + 0.05 <= c <= b - 0.05:

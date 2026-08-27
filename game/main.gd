@@ -468,6 +468,17 @@ func _report_reach() -> void:
 			reached[r["room"]] = share >= 0.15
 			if f >= 6 and share < 0.15 and int(r["kind"]) != Tower.SHF:
 				bad.append(r)
+		# Помещение, недостижимое ИЗ СВОЕЙ квартиры, тоже надо чинить: общая
+		# волна его достаёт в обход, через коридор и соседей.
+		if _fix_reach:
+			for r in _flat_bad_rooms():
+				var dup := false
+				for b in bad:
+					if int(b["room"]) == int(r["room"]):
+						dup = true
+				if not dup:
+					bad.append(r)
+					reached[r["room"]] = false
 		print("[проход] проход %d: свободно %d, достигнуто %d, недостижимо %d"
 				% [step, res["free"], res["reached"], bad.size()])
 		if bad.is_empty() or not _fix_reach:
@@ -569,6 +580,33 @@ func _audit_rooms() -> void:
 				% [i, bti.get(int(r[4]), "?"), names[kind], doors, free, got, mark])
 	print("[сверка] помещений %d, без двери %d, недостижимо %d, слишком тесных %d"
 			% [counted, no_door, unreached, tiny])
+
+
+## Помещения, недостижимые от входа собственной квартиры.
+func _flat_bad_rooms() -> Array:
+	var space := get_viewport().world_3d.direct_space_state
+	var g := ReachCheck.grid(space, _start_floor * Tower.FLOOR_H)
+	var nx: int = g["nx"]
+	var nz: int = g["nz"]
+	var seeds: Array[Vector2] = [
+		Vector2((Tower.STAIR_X0 + Tower.STAIR_X1) * 0.5, Tower.STAIR_Z0 + 0.8),
+		Vector2(-8.0, 0.15), Vector2(-4.0, 0.15), Vector2(4.0, 0.15),
+		Vector2(8.0, 0.15), Vector2(0.0, 0.15),
+	]
+	var out: Array = []
+	for flat in 8:
+		var mask := ReachCheck.flat_mask([flat, 8], nx, nz)
+		var seen := ReachCheck.flood_masked(g, mask, seeds)
+		for i in Tower.ROOMS.size():
+			if int(Tower.ROOMS[i][4]) != flat or int(Tower.ROOMS[i][5]) == Tower.SHF:
+				continue
+			var st := ReachCheck.share_in(g, seen, i)
+			if int(st[0]) < 6:
+				continue
+			if float(st[1]) / float(st[0]) < 0.15:
+				out.append({"room": i, "flat": flat, "kind": int(Tower.ROOMS[i][5]),
+						"free": st[0], "reached": st[1]})
+	return out
 
 
 ## Сколько квартир сейчас с проблемами — без печати, для отсева.
