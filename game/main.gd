@@ -32,6 +32,11 @@ var _prune := false
 var _audit := false
 var _no_fade := false
 var _only_flat := -1
+var _paint := false          ## бот закрашивает за собой пол
+var _cover: PackedByteArray = PackedByteArray()
+var _cover_nx := 0
+var _cover_nz := 0
+const COVER := 0.25          ## клетка закраски, м
 var _bots := 4          ## сколько жителей ходит по дому
 var _bot_log := false
 var _bot_audit := false
@@ -255,6 +260,8 @@ func _build_hud() -> void:
 ## Аудит охвата запускаем внутри шага физики: снаружи сервер навигации
 ## возвращает пустой путь, хотя агенты по той же карте ходят.
 func _physics_process(_delta: float) -> void:
+	if _paint:
+		_paint_step()
 	if _walk_all:
 		_walk_all_step()
 	if _audit_countdown > 0:
@@ -321,6 +328,9 @@ func _parse_args() -> void:
 			_no_fade = true
 		elif a == "--plan":
 			_plan_view = true
+		elif a == "--paint-walk":
+			_paint = true
+			_walk_all = true
 		elif a.begins_with("--only-flat="):
 			_only_flat = int(a.split("=")[1])
 		elif a == "--marks":
@@ -729,6 +739,17 @@ func _spawn_bots() -> void:
 			if minf(w, d) < min_side or w * d < 0.75:
 				dropped += 1
 				continue
+			if _paint:
+				# В режиме закраски цели ставим сеткой внутри помещения,
+				# иначе бот ходит от центра к центру и подметает только тропы.
+				var step := 1.3
+				var mx := float(r[0]) + 0.55
+				while mx < float(r[2]) - 0.4:
+					var mz := float(r[1]) + 0.55
+					while mz < float(r[3]) - 0.4:
+						rooms.append(Vector3(mx, f * Tower.FLOOR_H + 0.15, mz))
+						mz += step
+					mx += step
 			rooms.append(Vector3((float(r[0]) + float(r[2])) * 0.5,
 					f * Tower.FLOOR_H + 0.15, (float(r[1]) + float(r[3])) * 0.5))
 	print("[навигация] целей: %d, отброшено тесных: %d" % [rooms.size(), dropped])
@@ -893,4 +914,99 @@ func _walk_all_step() -> void:
 				print("   не дошёл: (%.1f, %.1f, %.1f), этаж %d"
 						% [p.x, p.y, p.z, int(floor((p.y + 0.4) / Tower.FLOOR_H))])
 	print("[обход] дошёл до %d помещений из %d" % [ok, ok + bad])
+	if _paint:
+		_paint_show()
+		if _shot_path != "":
+			_shot_frames = _frame + 6      # даём кадр на отрисовку следа
+			return
 	get_tree().quit()
+
+
+# ---------------------------------------------------------------------------
+#  След бота: где прошёл — там закрашено
+# ---------------------------------------------------------------------------
+
+## Отмечаем клетки под каждым жителем. Это и есть честный ответ на вопрос
+## «везде ли он попадает»: закрашено ровно то, куда он дошёл ногами.
+func _paint_step() -> void:
+	if _cover.is_empty():
+		_cover_nx = int(Tower.W_HALF * 2.0 / COVER) + 1
+		_cover_nz = int(Tower.D_HALF * 2.0 / COVER) + 1
+		_cover.resize(_cover_nx * _cover_nz)
+	for c in get_children():
+		if not (c is Bot):
+			continue
+		var b := c as Bot
+		if b.floor_index != _start_floor:
+			continue
+		var p := b.global_position
+		var ix := int((p.x + Tower.W_HALF) / COVER)
+		var iz := int((p.z + Tower.D_HALF) / COVER)
+		for dx in range(-1, 2):
+			for dz in range(-1, 2):
+				var ax := ix + dx
+				var az := iz + dz
+				if ax < 0 or az < 0 or ax >= _cover_nx or az >= _cover_nz:
+					continue
+				_cover[ax * _cover_nz + az] = 1
+
+
+## Рисуем след одной сеткой: 10 тысяч клеток отдельными узлами не потянуть.
+func _paint_show() -> void:
+	var cells := 0
+	for i in _cover.size():
+		cells += _cover[i]
+	if cells == 0:
+		return
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(COVER * 0.92, 0.02, COVER * 0.92)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.20, 0.85, 0.45, 0.85)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.emission_enabled = true
+	mat.emission = Color(0.20, 0.85, 0.45)
+	mat.emission_energy_multiplier = 0.7
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mesh.material = mat
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.mesh = mesh
+	mm.instance_count = cells
+	var k := 0
+	var y := _start_floor * Tower.FLOOR_H + 0.08
+	for ix in _cover_nx:
+		for iz in _cover_nz:
+			if _cover[ix * _cover_nz + iz] == 0:
+				continue
+			var pos := Vector3(-Tower.W_HALF + ix * COVER, y, -Tower.D_HALF + iz * COVER)
+			mm.set_instance_transform(k, Transform3D(Basis.IDENTITY, pos))
+			k += 1
+	var mi := MultiMeshInstance3D.new()
+	mi.multimesh = mm
+	mi.name = "BotTrail"
+	add_child(mi)
+	print("[след] закрашено клеток: %d (%.0f м²)" % [cells, cells * COVER * COVER])
+	# Помещение засчитано, только если бот реально оставил в нём след.
+	var names := ["жилая", "кухня", "санузел", "прихожая", "ядро", "лоджия",
+			"шахта", "кладовая"]
+	var bti := {0: "46", 1: "44", 2: "45", 3: "43", 4: "42", 5: "41",
+			6: "48", 7: "47", 8: "общее"}
+	var empty := 0
+	var total := 0
+	for i in Tower.ROOMS.size():
+		var r = Tower.ROOMS[i]
+		if int(r[5]) == Tower.SHF:
+			continue
+		total += 1
+		var hit := 0
+		var ix0 := maxi(int((float(r[0]) + Tower.W_HALF) / COVER), 0)
+		var ix1 := mini(int((float(r[2]) + Tower.W_HALF) / COVER), _cover_nx - 1)
+		var iz0 := maxi(int((float(r[1]) + Tower.D_HALF) / COVER), 0)
+		var iz1 := mini(int((float(r[3]) + Tower.D_HALF) / COVER), _cover_nz - 1)
+		for ix in range(ix0, ix1 + 1):
+			for iz in range(iz0, iz1 + 1):
+				hit += _cover[ix * _cover_nz + iz]
+		if hit == 0:
+			empty += 1
+			print("   без следа: %s, кв %s" % [names[int(r[5])], bti.get(int(r[4]), "?")])
+	print("[след] помещений со следом: %d из %d" % [total - empty, total])
