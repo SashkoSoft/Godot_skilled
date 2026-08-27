@@ -32,6 +32,7 @@ var _prune := false
 var _audit := false
 var _no_fade := false
 var _only_flat := -1
+var lifts: Array = []
 var _paint := false          ## бот закрашивает за собой пол
 var _cover: PackedByteArray = PackedByteArray()
 var _cover_nx := 0
@@ -233,6 +234,7 @@ func _build_world() -> void:
 				]
 		player.auto_target = _route[0]
 
+	_spawn_lifts()
 	_spawn_bots.call_deferred()
 
 	occ = Occlusion.new()
@@ -510,6 +512,7 @@ func _report_reach() -> void:
 		_build_tower()
 	if _audit:
 		_audit_rooms()
+		_audit_windows()
 		_audit_flats()
 	for r in bad:
 		print("   НЕТ ХОДА: помещение %d, квартира %d, назначение %d"
@@ -704,6 +707,21 @@ func _audit_flats() -> void:
 			% [bad_flats, bad_rooms])
 
 
+## Кабины лифтов. Шахты у нас полые, поэтому кабина в них и ездит.
+func _spawn_lifts() -> void:
+	for r in Tower.ROOMS:
+		if int(r[5]) != Tower.SHF:
+			continue
+		var lift := Lift.new()
+		lift.name = "Lift%d" % lifts.size()
+		add_child(lift)
+		lift.setup(Rect2(Vector2(float(r[0]), float(r[1])),
+				Vector2(float(r[2]) - float(r[0]), float(r[3]) - float(r[1]))),
+				_floors)
+		lifts.append(lift)
+	print("[лифт] кабин: %d" % lifts.size())
+
+
 ## Навигационная сетка и жители. Печём сетку по уже построенным коллизиям,
 ## цели берём из таблицы помещений — бот обходит комнаты, а не случайные точки.
 func _spawn_bots() -> void:
@@ -752,7 +770,12 @@ func _spawn_bots() -> void:
 					mx += step
 			rooms.append(Vector3((float(r[0]) + float(r[2])) * 0.5,
 					f * Tower.FLOOR_H + 0.15, (float(r[1]) + float(r[3])) * 0.5))
-	print("[навигация] целей: %d, отброшено тесных: %d" % [rooms.size(), dropped])
+	# несколько точек снаружи: если бот до них доходит, значит выход работает
+	for pt in [Vector2(-1.65, 11.5), Vector2(6.0, 11.5), Vector2(-9.0, 11.5),
+			Vector2(-20.5, 4.0), Vector2(20.5, 4.0), Vector2(0.0, 12.5)]:
+		rooms.append(Vector3(pt.x, 0.05, pt.y))
+	print("[навигация] целей: %d (в т.ч. 6 снаружи), отброшено тесных: %d"
+			% [rooms.size(), dropped])
 	if rooms.is_empty():
 		return
 
@@ -777,6 +800,7 @@ func _spawn_bots() -> void:
 		add_child(b)
 		b.cycle = not _walk_all
 		b.watcher = player
+		b.lifts = lifts
 		b.setup(route[0] + Vector3(0, 0.1, 0), route, colours[i % colours.size()],
 				_bot_log, "№%d" % (i + 1))
 		b.start()
@@ -1010,3 +1034,32 @@ func _paint_show() -> void:
 			empty += 1
 			print("   без следа: %s, кв %s" % [names[int(r[5])], bti.get(int(r[4]), "?")])
 	print("[след] помещений со следом: %d из %d" % [total - empty, total])
+
+
+## Окна: у жилой комнаты и кухни оно обязано быть.
+func _audit_windows() -> void:
+	var names := ["жилая", "кухня", "санузел", "прихожая", "ядро", "лоджия",
+			"шахта", "кладовая"]
+	var bti := {0: "46", 1: "44", 2: "45", 3: "43", 4: "42", 5: "41",
+			6: "48", 7: "47", 8: "общее"}
+	var win: Dictionary = {}
+	for w in building.walls_built:
+		if w["parapet"]:
+			continue
+		for h: Vector3 in (w["holes"] as Array[Vector3]):
+			if h.z >= 0.5:
+				for i in [w["inner"], w["outer"]]:
+					if int(i) >= 0:
+						win[int(i)] = int(win.get(int(i), 0)) + 1
+	var bad := 0
+	var total := 0
+	for i in Tower.ROOMS.size():
+		var kind := int(Tower.ROOMS[i][5])
+		if kind != Tower.LIV and kind != Tower.KIT:
+			continue
+		total += 1
+		if int(win.get(i, 0)) == 0:
+			bad += 1
+			print("   без окна: %s, кв %s" % [names[kind],
+					bti.get(int(Tower.ROOMS[i][4]), "?")])
+	print("[окна] жилых и кухонь %d, без окна %d" % [total, bad])

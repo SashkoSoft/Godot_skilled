@@ -13,7 +13,9 @@ const STUCK_TIME := 1.5         ## столько стоим на месте, п
 const NUDGES := 6               ## сколько раз качнуться вбок, прежде чем сдаться
 
 var agent: NavigationAgent3D
-var watcher: Player          ## чей этаж показываем: жителей с других этажей не рисуем
+var watcher: Player
+var lifts: Array = []        ## кабины, которыми житель умеет пользоваться
+var use_lift := true          ## чей этаж показываем: жителей с других этажей не рисуем
 var floor_index: int = 0
 
 var _targets: Array[Vector3] = []
@@ -23,6 +25,14 @@ var _check := 0.0
 var _retried := 0
 var _since_target := 0.0
 var _cur := Vector3.INF
+
+enum LiftState { NONE, GOTO, WAIT, ENTER, RIDE, LEAVE }
+var _lift: Lift = null
+var _ls: LiftState = LiftState.NONE
+var _ls_time := 0.0
+var _ride_to := 0
+var rides := 0
+var _cool := 0.0             ## пауза после поездки, чтобы не кататься по кругу               ## сколько раз проехал на лифте
 var cycle := true            ## false — обойти список один раз и остановиться
 var done := false
 var visited: Array = []      ## [цель, дошёл ли]
@@ -104,11 +114,16 @@ func _next_target(ok := true) -> void:
 func _physics_process(delta: float) -> void:
 	if agent == null or done:
 		return
+	if _ls != LiftState.NONE:
+		_lift_step(delta)
+		return
+	_maybe_take_lift()
 	if not is_on_floor():
 		velocity.y -= GRAVITY * delta
 	else:
 		velocity.y = 0.0
 
+	_cool = maxf(_cool - delta, 0.0)
 	_since_target += delta
 	if _since_target > 0.3 and agent.is_navigation_finished():
 		_reached += 1
@@ -176,6 +191,134 @@ func _physics_process(delta: float) -> void:
 			_stuck = 0.0
 		_last_pos = global_position
 		_check = 0.0
+
+
+## Ждать кабину у двери, зайти, доехать, выйти. Пока житель занят лифтом,
+## обычная навигация не работает — иначе он уедет из кабины на полпути.
+func _lift_step(delta: float) -> void:
+	_ls_time += delta
+	if _ls_time > 16.0:                     # лифт не дождались — идём пешком
+		_ls = LiftState.NONE
+		_lift = null
+		_cool = 20.0
+		agent.target_position = _cur
+		return
+	if not is_on_floor():
+		velocity.y -= GRAVITY * delta
+	else:
+		velocity.y = 0.0
+	var here := int(floor((global_position.y + 0.4) / Tower.FLOOR_H))
+	var door := Vector3(_lift.rect.position.x + _lift.rect.size.x + 0.55,
+			global_position.y,
+			_lift.rect.position.y + _lift.rect.size.y * 0.5)
+	var cabin := Vector3(_lift.rect.position.x + _lift.rect.size.x * 0.5,
+			global_position.y,
+			_lift.rect.position.y + _lift.rect.size.y * 0.5)
+
+	match _ls:
+		LiftState.GOTO:
+			# к двери лифта идём НАВИГАЦИЕЙ: напрямую он упрётся в стену
+			if agent.target_position.distance_to(door) > 0.3:
+				agent.target_position = door
+			var flat := Vector2(door.x - global_position.x, door.z - global_position.z)
+			if flat.length() < 1.1:
+				_ls = LiftState.WAIT
+			else:
+				_walk_path(delta)
+		LiftState.WAIT:
+			velocity.x = 0.0
+			velocity.z = 0.0
+			move_and_slide()
+			if _lift.at_floor() == here:
+				_ls = LiftState.ENTER
+				_ls_time = 0.0
+		LiftState.ENTER:
+			if _lift.at_floor() != here and not _lift.inside(global_position):
+				_ls = LiftState.WAIT          # уехал без нас, ждём снова
+			elif _step_to(cabin, delta, 0.30):
+				_ls = LiftState.RIDE
+				_ls_time = 0.0
+		LiftState.RIDE:
+			velocity.x = 0.0
+			velocity.z = 0.0
+			move_and_slide()
+			if _lift.at_floor() == _ride_to:
+				_ls = LiftState.LEAVE
+				_ls_time = 0.0
+				rides += 1
+				if _log:
+					print("[бот] %s приехал на лифте на этаж %d" % [_name, _ride_to])
+		LiftState.LEAVE:
+			var out := Vector3(door.x + 0.7, global_position.y, door.z)
+			if _step_to(out, delta, 0.4) and not _lift.inside(global_position):
+				_ls = LiftState.NONE
+				_lift = null
+				_cool = 5.0
+				agent.target_position = _cur
+	floor_index = int(floor((global_position.y + 0.4) / Tower.FLOOR_H))
+	if watcher != null:
+		visible = floor_index == watcher.floor_index
+
+
+## Обычный шаг по маршруту навигации.
+func _walk_path(delta: float) -> void:
+	var next := agent.get_next_path_position()
+	var dir := next - global_position
+	dir.y = 0.0
+	if dir.length() > 0.05:
+		dir = dir.normalized()
+		velocity.x = dir.x * SPEED
+		velocity.z = dir.z * SPEED
+		rotation.y = lerp_angle(rotation.y, atan2(dir.x, dir.z), TURN * delta)
+	else:
+		velocity.x = 0.0
+		velocity.z = 0.0
+	move_and_slide()
+
+
+## Шаг к точке напрямую, без навигации: внутри шахты сетки нет.
+func _step_to(p: Vector3, delta: float, near: float) -> bool:
+	var dir := p - global_position
+	dir.y = 0.0
+	if dir.length() < near:
+		velocity.x = 0.0
+		velocity.z = 0.0
+		move_and_slide()
+		return true
+	dir = dir.normalized()
+	velocity.x = dir.x * SPEED * 0.8
+	velocity.z = dir.z * SPEED * 0.8
+	rotation.y = lerp_angle(rotation.y, atan2(dir.x, dir.z), TURN * delta)
+	move_and_slide()
+	return false
+
+
+## Стоит ли ехать лифтом: цель на другом этаже и кабина ближе лестницы.
+func _maybe_take_lift() -> void:
+	if _cool > 0.0:
+		return
+	if not use_lift or lifts.is_empty() or _cur == Vector3.INF:
+		return
+	var here := int(floor((global_position.y + 0.4) / Tower.FLOOR_H))
+	var want := int(floor((_cur.y + 0.4) / Tower.FLOOR_H))
+	if want == here:
+		return
+	var best: Lift = null
+	var best_d := 14.0
+	for l in lifts:
+		var lift := l as Lift
+		var door := Vector3(lift.rect.position.x + lift.rect.size.x + 0.55,
+				global_position.y, lift.rect.position.y + lift.rect.size.y * 0.5)
+		var d := Vector2(door.x - global_position.x, door.z - global_position.z).length()
+		if d < best_d:
+			best_d = d
+			best = lift
+	if best == null:
+		return
+	_lift = best
+	_ride_to = want
+	_ls = LiftState.GOTO
+	_ls_time = 0.0
 
 
 func stats() -> Array:

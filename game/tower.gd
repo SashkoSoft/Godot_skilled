@@ -128,6 +128,13 @@ const ROOMS := [
 	[ -2.83,   7.62,  -0.61,   9.20, 8, LOG],
 ]
 
+## Выход из подъезда: на первом этаже парапет лоджии «г» у лестничной клетки
+## разрывается на ширину двери, а снаружи кладётся площадка, иначе выйти
+## некуда — за порогом обрыв и навигации там нет.
+const EXIT_X := -1.65        ## середина выхода по X
+const EXIT_W := 1.40
+const APRON := 5.0           ## насколько площадка выступает за габарит дома
+
 ## Лестничная клетка — левая часть ядра.
 const STAIR_X0 := -2.70
 const STAIR_X1 := -0.61
@@ -280,6 +287,7 @@ func build(floors: int = 3) -> void:
 	_m_floor = _mat(Color(0.33, 0.34, 0.33))
 	_m_stair = _mat(Color(0.46, 0.42, 0.37))
 	_m_shaft = _mat(Color(0.38, 0.40, 0.42))
+	_apron()
 	for f in floors:
 		by_floor[f] = []
 		_floor(f, f < floors - 1)
@@ -297,6 +305,18 @@ func _load_extra_doors() -> void:
 	var map := scr.get_script_constant_map()
 	if map.has("DOORS"):
 		extra_doors = (map["DOORS"] as Dictionary).duplicate(true)
+
+
+## Площадка вокруг дома: по ней бот выходит наружу. Кладём её в само здание,
+## иначе она не попадёт в навигационную сетку — её печём только по зданию.
+func _apron() -> void:
+	if not by_floor.has(0):
+		by_floor[0] = []
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(W_HALF * 2.0 + APRON * 2.0, 0.20, D_HALF * 2.0 + APRON * 2.0)
+	var mi := _spawn(mesh, Vector3(0, -0.15, 0), _m_floor, 0)
+	mi.name = "Apron"
+	mi.set_meta("is_ceiling", false)
 
 
 func set_focus(p: Vector3) -> void:
@@ -378,6 +398,7 @@ func _emit_walls(f: int, y: float) -> void:
 	var recs := _collect_walls()
 	_ensure_entrances(recs)
 	_ensure_room_doors(recs)
+	_ensure_windows(recs)
 	_link_rooms(recs)
 	walls_built = recs
 	for w in recs:
@@ -648,6 +669,59 @@ func _ensure_room_doors(recs: Array) -> void:
 		rule_count += 1
 
 
+## Жилая комната и кухня без окна не бывают. Где чертёж окна не дал —
+## ставим сами: в наружную стену, а если её нет, то в стену к лоджии.
+func _ensure_windows(recs: Array) -> void:
+	for i in ROOMS.size():
+		var kind := int(ROOMS[i][5])
+		if kind != LIV and kind != KIT:
+			continue
+		var has := false
+		var facade_wall: Dictionary = {}
+		var loggia_wall: Dictionary = {}
+		for w in recs:
+			if w["parapet"]:
+				continue
+			var a: int = w["inner"]
+			var b: int = w["outer"]
+			if a != i and b != i:
+				continue
+			for h: Vector3 in (w["holes"] as Array[Vector3]):
+				if h.z >= 0.5:
+					has = true
+			if w["len"] < 1.4:
+				continue
+			if b < 0 and w["thick"] > WALL + 0.01:
+				if facade_wall.is_empty() or w["len"] > float(facade_wall["len"]):
+					facade_wall = w
+			elif b >= 0:
+				var other: int = b if a == i else a
+				if int(ROOMS[other][5]) == LOG:
+					if loggia_wall.is_empty() or w["len"] > float(loggia_wall["len"]):
+						loggia_wall = w
+		if has:
+			continue
+		var w2: Dictionary = facade_wall if not facade_wall.is_empty() else loggia_wall
+		if w2.is_empty():
+			continue
+		# окно не должно выдавить уже прорезанную дверь: у стены с балконной
+		# дверью на два проёма может просто не хватить длины
+		var used := 0.0
+		for h: Vector3 in (w2["holes"] as Array[Vector3]):
+			used += h.y
+		var width := minf(WIN, float(w2["len"]) - used - 0.6)
+		if width < 0.9:
+			continue
+		# отодвигаем окно от уже прорезанной двери
+		var off := 0.0
+		for h: Vector3 in (w2["holes"] as Array[Vector3]):
+			if h.z < 0.5 and absf(h.x - off) < (h.y + width) * 0.5 + 0.1:
+				var lim: float = (float(w2["len"]) - width) * 0.5 - 0.1
+				off = clampf(h.x + (h.y + width) * 0.5 + 0.15, -lim, lim)
+		(w2["holes"] as Array[Vector3]).append(Vector3(off, width, KIND_WIN))
+		rule_count += 1
+
+
 ## Черновая связка по графу дверей: из лестничной клетки должно быть достижимо
 ## каждое помещение. Настоящая проверка — физическая, см. ReachCheck.
 func _link_rooms(recs: Array) -> void:
@@ -834,6 +908,16 @@ func open_into(room: int, reached: Dictionary) -> String:
 
 
 func _parapet(f: int, y: float, axis: int, fixed: float, a0: float, a1: float) -> void:
+	# На первом этаже в южном парапете у лестницы — проём наружу.
+	if f == 0 and axis == 0 and fixed > 8.9:
+		var lo := EXIT_X - EXIT_W * 0.5
+		var hi := EXIT_X + EXIT_W * 0.5
+		if a0 < hi and a1 > lo:
+			if a0 < lo:
+				_parapet(f, y, axis, fixed, a0, lo)
+			if a1 > hi:
+				_parapet(f, y, axis, fixed, hi, a1)
+			return
 	var length := a1 - a0
 	if length < 0.3:
 		return
@@ -848,15 +932,47 @@ func _parapet(f: int, y: float, axis: int, fixed: float, a0: float, a1: float) -
 	mi.name = "Parapet_%d" % f
 
 
+## Шахта лифта — не глухой куб, а четыре стенки с дверным проёмом на каждом
+## этаже. Пола внутри нет: полом служит кабина.
+const LIFT_DOOR := 1.10
+
+
 func _shafts(f: int, y: float) -> void:
+	var idx := 0
 	for r in ROOMS:
 		if int(r[5]) != SHF:
 			continue
-		var mesh := BoxMesh.new()
-		mesh.size = Vector3(r[2] - r[0], FLOOR_H - WALL, r[3] - r[1])
-		var mi := _spawn(mesh, Vector3((r[0] + r[2]) * 0.5, y + (FLOOR_H - WALL) * 0.5,
-				(r[1] + r[3]) * 0.5), _m_shaft, f)
-		mi.name = "Shaft_%d" % f
+		idx += 1
+		var x0: float = r[0]
+		var z0: float = r[1]
+		var x1: float = r[2]
+		var z1: float = r[3]
+		var h := FLOOR_H - WALL
+		# три глухие стенки и одна с проёмом в лифтовой холл (восточная)
+		_shaft_wall(f, Vector3((x0 + x1) * 0.5, y + h * 0.5, z0),
+				Vector3(x1 - x0, h, WALL))
+		_shaft_wall(f, Vector3((x0 + x1) * 0.5, y + h * 0.5, z1),
+				Vector3(x1 - x0, h, WALL))
+		_shaft_wall(f, Vector3(x0, y + h * 0.5, (z0 + z1) * 0.5),
+				Vector3(WALL, h, z1 - z0))
+		var mid := (z0 + z1) * 0.5
+		var half := (z1 - z0) * 0.5
+		var d := LIFT_DOOR * 0.5
+		_shaft_wall(f, Vector3(x1, y + h * 0.5, mid - (half + d) * 0.5),
+				Vector3(WALL, h, half - d))
+		_shaft_wall(f, Vector3(x1, y + h * 0.5, mid + (half + d) * 0.5),
+				Vector3(WALL, h, half - d))
+		_shaft_wall(f, Vector3(x1, y + h - 0.35, mid), Vector3(WALL, 0.70, LIFT_DOOR))
+		_mark(f, Vector3(x1, y, mid), Vector3(0, 0, 1), LIFT_DOOR, KIND_DOOR, y)
+
+
+func _shaft_wall(f: int, pos: Vector3, size: Vector3) -> void:
+	if size.x <= 0.02 or size.z <= 0.02:
+		return
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	var mi := _spawn(mesh, pos, _m_shaft, f)
+	mi.name = "Shaft_%d" % f
 
 
 # ---------------------------------------------------------------------------

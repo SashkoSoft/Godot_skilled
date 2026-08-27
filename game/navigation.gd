@@ -28,6 +28,11 @@ func bake_from(building: Node3D) -> void:
 	var src := NavigationMeshSourceGeometryData3D.new()
 	NavigationServer3D.parse_source_geometry_data(nav, src, building)
 	NavigationServer3D.bake_from_source_geometry_data(nav, src)
+	# карта навигации должна жить в тех же клетках, что и сетка, иначе
+	# движок ругается на рассинхрон и края полигонов рвутся
+	var map := get_world_3d().navigation_map
+	NavigationServer3D.map_set_cell_size(map, CELL)
+	NavigationServer3D.map_set_cell_height(map, CELL)
 	navigation_mesh = nav
 
 
