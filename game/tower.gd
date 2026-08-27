@@ -156,6 +156,8 @@ var _m_wall: ShaderMaterial
 var _m_floor: ShaderMaterial
 var _m_stair: ShaderMaterial
 var _m_shaft: ShaderMaterial
+var _m_glass: StandardMaterial3D
+var _m_frame: ShaderMaterial
 
 const FADE_SHADER := """
 shader_type spatial;
@@ -287,6 +289,14 @@ func build(floors: int = 3) -> void:
 	_m_floor = _mat(Color(0.33, 0.34, 0.33))
 	_m_stair = _mat(Color(0.46, 0.42, 0.37))
 	_m_shaft = _mat(Color(0.38, 0.40, 0.42))
+	_m_frame = _mat(Color(0.80, 0.79, 0.75))
+	_m_glass = StandardMaterial3D.new()
+	_m_glass.albedo_color = Color(0.60, 0.74, 0.80, 0.28)
+	_m_glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_m_glass.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_m_glass.roughness = 0.06
+	_m_glass.metallic = 0.25
+	_m_glass.metallic_specular = 0.9
 	_apron()
 	for f in floors:
 		by_floor[f] = []
@@ -1104,7 +1114,8 @@ func _wall(f: int, center: Vector3, dir: Vector3, length: float,
 		mi.name = "Wall_%d" % f
 
 	for h: Vector3 in cuts:
-		var above := 0.6 if h.z < 0.5 else 0.9
+		# над окном перемычка ниже: иначе просвет всего метр, а окно 1,5
+		var above := 0.6 if h.z < 0.5 else 0.45
 		var mesh := BoxMesh.new()
 		if dir.z > 0.5:
 			mesh.size = Vector3(thick, above, h.y)
@@ -1124,7 +1135,36 @@ func _wall(f: int, center: Vector3, dir: Vector3, length: float,
 			sp.y = center.y + 0.425
 			var ms := _spawn(sill, sp, _m_wall, f)
 			ms.name = "Sill_%d" % f
+			_glaze(f, center + dir * h.x, dir, h.y, center.y, hw - above)
 		_mark(f, center + dir * h.x, dir, h.y, h.z, center.y)
+
+
+## Стекло в оконный проём: только вид, коллизии не надо — проём и так
+## перекрыт подоконником снизу и перемычкой сверху.
+func _glaze(f: int, pos: Vector3, dir: Vector3, width: float, base_y: float,
+		top: float) -> void:
+	var y0 := 0.85
+	var h := top - y0
+	if h < 0.3 or width < 0.3:
+		return
+	var glass := BoxMesh.new()
+	if dir.z > 0.5:
+		glass.size = Vector3(0.05, h, width - 0.10)
+	else:
+		glass.size = Vector3(width - 0.10, h, 0.05)
+	var mi := _spawn_visual(glass, Vector3(pos.x, base_y + y0 + h * 0.5, pos.z),
+			_m_glass, f)
+	mi.name = "Glass_%d" % f
+
+	# импост: одна вертикальная стойка, чтобы окно читалось окном
+	var bar := BoxMesh.new()
+	if dir.z > 0.5:
+		bar.size = Vector3(0.09, h, 0.07)
+	else:
+		bar.size = Vector3(0.07, h, 0.09)
+	var mb := _spawn_visual(bar, Vector3(pos.x, base_y + y0 + h * 0.5, pos.z),
+			_m_frame, f)
+	mb.name = "Mullion_%d" % f
 
 
 func _mark(f: int, pos: Vector3, dir: Vector3, width: float, kind: float, base_y: float) -> void:
@@ -1191,7 +1231,7 @@ func _spawn(mesh: Mesh, pos: Vector3, mat: ShaderMaterial, f: int) -> MeshInstan
 	return mi
 
 
-func _spawn_visual(mesh: Mesh, pos: Vector3, mat: ShaderMaterial, f: int) -> MeshInstance3D:
+func _spawn_visual(mesh: Mesh, pos: Vector3, mat: Material, f: int) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
 	mi.material_override = mat
