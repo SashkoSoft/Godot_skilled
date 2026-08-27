@@ -3,12 +3,12 @@ id: task-0003
 title: Плитка и бетон лестничной клетки
 assignee: comfyui
 type: texture
-status: open
+status: done
 revision: 1
 priority: normal
 created: 2026-08-27
-started:
-finished:
+started: 2026-08-27
+finished: 2026-08-27
 ---
 
 # task-0003 — Плитка и бетон лестничной клетки

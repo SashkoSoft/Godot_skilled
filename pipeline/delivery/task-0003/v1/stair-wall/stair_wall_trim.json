@@ -1,0 +1,39 @@
+{
+ "sheet": "stair_wall",
+ "px": [
+  2048,
+  2048
+ ],
+ "width_m": 2.0,
+ "height_m": 2.0,
+ "px_per_m": 1024.0,
+ "tiles_x": true,
+ "seam_x": 0.04,
+ "tiles_y": false,
+ "bands": [
+  {
+   "band": "whitewash",
+   "height_m": 0.6,
+   "px_y0": 0,
+   "px_y1": 614,
+   "uv_v0": 0.700195,
+   "uv_v1": 1.0
+  },
+  {
+   "band": "dado_line",
+   "height_m": 0.04,
+   "px_y0": 614,
+   "px_y1": 655,
+   "uv_v0": 0.680176,
+   "uv_v1": 0.700195
+  },
+  {
+   "band": "dado_field",
+   "height_m": 1.36,
+   "px_y0": 655,
+   "px_y1": 2048,
+   "uv_v0": 0.0,
+   "uv_v1": 0.680176
+  }
+ ]
+}
