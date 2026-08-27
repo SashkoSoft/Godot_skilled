@@ -18,6 +18,7 @@ S, CX, CZ = 23.94, 607.0, 610.5
 SEARCH = 5          # px, ±0,21 м — дальше стены уезжают и площади плывут
 WELD_MOVE = 0.16    # насколько сварка вправе сдвинуть координату, м
 OVERLAP = 0.05      # допустимое наложение, м
+MIN_SIDE = 0.75     # уже этого помещение стать не может
 
 rows = []
 for line in io.open(RAW, encoding="utf-8").read().splitlines():
@@ -71,7 +72,9 @@ def clashes():
     boxes = [rect(r) for r in recs]
     for i in range(len(boxes)):
         a = boxes[i]
-        if a[2] - a[0] < 0.4 or a[3] - a[1] < 0.4:
+        # Подгонка не вправе сузить помещение: 70-сантиметровая уборная
+        # получается не с чертежа, а от сдвига стены на 12 см.
+        if a[2] - a[0] < MIN_SIDE or a[3] - a[1] < MIN_SIDE:
             return True
         for j in range(i + 1, len(boxes)):
             b = boxes[j]

@@ -650,7 +650,7 @@ func _spawn_bots() -> void:
 				continue
 			var w: float = float(r[2]) - float(r[0])
 			var d: float = float(r[3]) - float(r[1])
-			if minf(w, d) < min_side or w * d < 1.0:
+			if minf(w, d) < min_side or w * d < 0.75:
 				dropped += 1
 				continue
 			rooms.append(Vector3((float(r[0]) + float(r[2])) * 0.5,
