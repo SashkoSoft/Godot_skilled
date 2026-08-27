@@ -9,10 +9,11 @@ CX_PX, CZ_PX, PPM = 700.0, 394.0, 35.02      # центр кадра и масш
 
 KINDS = {"LIV": ("жилая", "Ж"), "KIT": ("кухня", "К"), "BAT": ("санузел", "С"),
          "HAL": ("прихожая", "П"), "COR": ("лестница и лифты", "Л"),
-         "LOG": ("лоджия", "лдж"), "SHF": ("шахта лифта", "ш")}
+         "LOG": ("лоджия", "лдж"), "SHF": ("шахта лифта", "ш"),
+         "STO": ("кладовая", "клд")}
 COLORS = {"LIV": (235, 214, 148), "KIT": (247, 148, 41), "BAT": (41, 194, 209),
           "HAL": (168, 168, 179), "COR": (92, 122, 245), "LOG": (117, 209, 92),
-          "SHF": (140, 51, 140)}
+          "SHF": (140, 51, 140), "STO": (204, 184, 77)}
 BTI = {0: "46", 1: "44", 2: "45", 3: "43", 4: "42", 5: "41", 6: "48", 7: "47", 8: "общее"}
 
 txt = io.open("game/tower.gd", encoding="utf-8").read()
@@ -90,7 +91,7 @@ for flat, b in box.items():
 # легенда
 x = 18
 y = img.height + 22
-for key in ("LIV", "KIT", "BAT", "HAL", "COR", "LOG", "SHF"):
+for key in ("LIV", "KIT", "BAT", "HAL", "STO", "COR", "LOG", "SHF"):
     d.rectangle([x, y, x + 26, y + 26], fill=COLORS[key])
     d.text((x + 34, y + 4), KINDS[key][0], font=f_leg, fill=(232, 232, 236))
     x += 34 + int(d.textlength(KINDS[key][0], font=f_leg)) + 26

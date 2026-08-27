@@ -20,8 +20,8 @@ HALF   = 7          # полуширина поперечного среза, px
 Q      = 0.05       # шаг привязки осей, м
 MINSEG = 0.12       # короче — не участок, а щель
 
-LIV, KIT, BAT, HAL, COR, LOG, SHF = range(7)
-KIND = {"LIV":LIV,"KIT":KIT,"BAT":BAT,"HAL":HAL,"COR":COR,"LOG":LOG,"SHF":SHF}
+LIV, KIT, BAT, HAL, COR, LOG, SHF, STO = range(8)
+KIND = {"LIV":LIV,"KIT":KIT,"BAT":BAT,"HAL":HAL,"COR":COR,"LOG":LOG,"SHF":SHF,"STO":STO}
 
 txt = io.open(SRC, encoding="utf-8").read()
 tbl = txt.split("const ROOMS := [", 1)[1].split("\n]", 1)[0]
