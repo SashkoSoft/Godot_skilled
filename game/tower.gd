@@ -332,7 +332,16 @@ func _may_open(a: int, b: int) -> bool:
 		return false
 	var fa := int(ROOMS[a][4])
 	var fb := int(ROOMS[b][4])
-	return fa == fb or fa == 8 or fb == 8
+	if fa == fb:
+		return true
+	if fa != 8 and fb != 8:
+		return false
+	# из мест общего пользования входят в прихожую, а не в комнату или санузел
+	var ka := int(ROOMS[a][5])
+	var kb := int(ROOMS[b][5])
+	var hall_a := ka == HAL or ka == COR
+	var hall_b := kb == HAL or kb == COR
+	return hall_a and hall_b
 
 
 ## Что за проём между двумя помещениями: -1 глухая стена, 0 дверь, 1 окно.

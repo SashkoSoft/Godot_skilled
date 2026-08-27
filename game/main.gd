@@ -427,7 +427,9 @@ func _prune_reach() -> void:
 		await get_tree().process_frame
 		_build_tower()
 		var bad: Array = await _reach_bad()
-		if bad.is_empty():
+		# Проём лишний, только если без него и дом проходим, И каждая квартира
+		# по-прежнему доступна изнутри: общая проходимость этого не ловит.
+		if bad.is_empty() and _flats_bad() == 0:
 			dropped += 1
 		else:
 			Tower.extra_doors[k] = saved
@@ -567,6 +569,38 @@ func _audit_rooms() -> void:
 				% [i, bti.get(int(r[4]), "?"), names[kind], doors, free, got, mark])
 	print("[сверка] помещений %d, без двери %d, недостижимо %d, слишком тесных %d"
 			% [counted, no_door, unreached, tiny])
+
+
+## Сколько квартир сейчас с проблемами — без печати, для отсева.
+func _flats_bad() -> int:
+	var space := get_viewport().world_3d.direct_space_state
+	var g := ReachCheck.grid(space, _start_floor * Tower.FLOOR_H)
+	var nx: int = g["nx"]
+	var nz: int = g["nz"]
+	var seeds: Array[Vector2] = [
+		Vector2((Tower.STAIR_X0 + Tower.STAIR_X1) * 0.5, Tower.STAIR_Z0 + 0.8),
+		Vector2(-8.0, 0.15), Vector2(-4.0, 0.15), Vector2(4.0, 0.15),
+		Vector2(8.0, 0.15), Vector2(0.0, 0.15),
+	]
+	var bad := 0
+	for flat in 8:
+		var mask := ReachCheck.flat_mask([flat, 8], nx, nz)
+		var seen := ReachCheck.flood_masked(g, mask, seeds)
+		var got := false
+		var miss := false
+		for i in Tower.ROOMS.size():
+			if int(Tower.ROOMS[i][4]) != flat or int(Tower.ROOMS[i][5]) == Tower.SHF:
+				continue
+			var st := ReachCheck.share_in(g, seen, i)
+			if int(st[0]) < 6:
+				continue
+			if float(st[1]) / float(st[0]) >= 0.15:
+				got = true
+			else:
+				miss = true
+		if not got or miss:
+			bad += 1
+	return bad
 
 
 ## Строгая сверка по квартирам: волна пускается от лестничной клетки, но

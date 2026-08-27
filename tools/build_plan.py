@@ -34,8 +34,30 @@ for line in tbl.splitlines():
     p = [x.strip() for x in m.group(1).split(",")]
     ROOMS.append([float(p[0]), float(p[1]), float(p[2]), float(p[3]), int(p[4]), KIND[p[5]]])
 
+def _load(path, thr=140):
+    return np.array(Image.open(path).convert("L")).astype(int) < thr
+
+## Источники чертежей. Общий поэтажный план — 23,94 px/м, его хватает на
+## габариты, но узкие проёмы на нём не читаются. Планы отдельных квартир
+## втрое крупнее; где они покрывают участок стены, читаем по ним.
+## (маска, px/м, X центра корпуса в пикселях, Z центра, зона покрытия)
+SOURCES = [
+    {"dark": _load(r"C:/Users/Papa/AppData/Local/Temp/claude/shots/bti006.jpg"),
+     "s": 58.1, "cx": 643.1, "cz": 598.9,
+     "box": (-9.7, -9.4, 3.2, -0.3), "name": "трёшка 44"},
+    {"dark": _load(SCAN), "s": 23.94, "cx": 607.0, "cz": 610.5,
+     "box": (-99.0, -99.0, 99.0, 99.0), "name": "поэтажный"},
+]
 img  = np.array(Image.open(SCAN).convert("L")).astype(int)
-dark = img < 140
+dark = SOURCES[-1]["dark"]
+
+
+def pick_source(x, z):
+    for src in SOURCES:
+        b = src["box"]
+        if b[0] <= x <= b[2] and b[1] <= z <= b[3]:
+            return src
+    return SOURCES[-1]
 
 def q(v):
     return round(round(v / Q) * Q, 2)
@@ -46,24 +68,28 @@ def room_at(x, z):
             return i
     return -1
 
-def slab(axis, fixed, a0, a1, off, half):
+def slab(axis, fixed, a0, a1, off, half, src=None):
+    if src is None:
+        src = SOURCES[-1]
+    d = src["dark"]
+    sc, cx, cz = src["s"], src["cx"], src["cz"]
     if axis == 1:
-        c = int(round(CX + fixed * S)) + off
-        lo, hi = int(round(CZ + a0 * S)), int(round(CZ + a1 * S))
-        if c - half < 0 or c + half + 1 > img.shape[1]:
+        c = int(round(cx + fixed * sc)) + off
+        lo, hi = int(round(cz + a0 * sc)), int(round(cz + a1 * sc))
+        if c - half < 0 or c + half + 1 > d.shape[1]:
             return None
-        lo, hi = max(lo, 0), min(hi, img.shape[0])
+        lo, hi = max(lo, 0), min(hi, d.shape[0])
         if hi - lo < 8:
             return None
-        return dark[lo:hi, c - half:c + half + 1]
-    c = int(round(CZ + fixed * S)) + off
-    lo, hi = int(round(CX + a0 * S)), int(round(CX + a1 * S))
-    if c - half < 0 or c + half + 1 > img.shape[0]:
+        return d[lo:hi, c - half:c + half + 1]
+    c = int(round(cz + fixed * sc)) + off
+    lo, hi = int(round(cx + a0 * sc)), int(round(cx + a1 * sc))
+    if c - half < 0 or c + half + 1 > d.shape[0]:
         return None
-    lo, hi = max(lo, 0), min(hi, img.shape[1])
+    lo, hi = max(lo, 0), min(hi, d.shape[1])
     if hi - lo < 8:
         return None
-    return dark[c - half:c + half + 1, lo:hi].T
+    return d[c - half:c + half + 1, lo:hi].T
 
 def runs_across(strip):
     prev = np.zeros(strip.shape[0], bool)
@@ -85,11 +111,14 @@ def spans(flags):
         out.append((s, len(flags)))
     return out
 
-def trace(axis, fixed, a0, a1):
+def trace(axis, fixed, a0, a1, src=None):
+    if src is None:
+        src = SOURCES[-1]
+    S = src["s"]
     """Проёмы на участке: None — оси на скане нет."""
     cands = []
     for off in range(-6, 7):
-        core = slab(axis, fixed, a0, a1, off, 2)
+        core = slab(axis, fixed, a0, a1, off, 2, src)
         if core is None:
             continue
         cands.append(((core.sum(axis=1) > 0).mean(), abs(off), off))
@@ -99,8 +128,8 @@ def trace(axis, fixed, a0, a1):
     if top < 0.60:
         return None
     off = min((c for c in cands if c[0] >= top - 0.02), key=lambda c: c[1])[2]
-    core = slab(axis, fixed, a0, a1, off, 1).sum(axis=1)
-    core2 = slab(axis, fixed, a0, a1, off, 2).sum(axis=1)
+    core = slab(axis, fixed, a0, a1, off, 1, src).sum(axis=1)
+    core2 = slab(axis, fixed, a0, a1, off, 2, src).sum(axis=1)
     # На плане БТИ дверь — это разрыв стены плюс короткий штрих полотна
     # ПОПЕРЁК стены. Штрих пересекает ось в одной точке и режет разрыв надвое,
     # после чего обе половины короче порога. Заклеиваем такие пересечения.
@@ -117,7 +146,7 @@ def trace(axis, fixed, a0, a1):
         if j - i <= LEAF and i > 0 and j < len(empty) and empty[i - 1] and empty[j]:
             empty[i:j] = True
         i = j
-    wide = runs_across(slab(axis, fixed, a0, a1, off, HALF))
+    wide = runs_across(slab(axis, fixed, a0, a1, off, HALF, src))
     total = len(core)
     edge = max(2, int(round(0.10 * S)))
     found = []
@@ -154,7 +183,12 @@ for (axis, fixed), segs in sorted(groups.items()):
     # дверь на стыке двух участков не находится ни в одном из них
     line_a = min(s0 for s0, _ in segs)
     line_b = max(s1 for _, s1 in segs)
-    line_holes = trace(axis, fixed, line_a, line_b)
+    src = pick_source(fixed if axis == 1 else (line_a + line_b) / 2.0,
+                      (line_a + line_b) / 2.0 if axis == 1 else fixed)
+    line_holes = trace(axis, fixed, line_a, line_b, src)
+    if line_holes is None and src is not SOURCES[-1]:
+        src = SOURCES[-1]                      # план квартиры не покрыл — читаем общий
+        line_holes = trace(axis, fixed, line_a, line_b, src)
     line_mid = (line_a + line_b) / 2.0
     pts = sorted({p for s in segs for p in s})
     cut = [pts[0]]
@@ -186,7 +220,9 @@ for (axis, fixed), segs in sorted(groups.items()):
         facade = (abs(fixed) > 16.9) if axis == 1 else (abs(fixed) > 7.9)
         if outer >= 0:
             facade = False
-        seg_holes = trace(axis, fixed, a, b)
+        seg_holes = trace(axis, fixed, a, b, src)
+        if seg_holes is None and src is not SOURCES[-1]:
+            seg_holes = trace(axis, fixed, a, b, SOURCES[-1])
         if seg_holes is None and line_holes is None:
             stats["rule"] += 1
             holes = []
