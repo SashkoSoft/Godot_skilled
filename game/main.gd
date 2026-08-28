@@ -511,6 +511,7 @@ func _report_reach() -> void:
 		await get_tree().process_frame
 		_build_tower()
 	if _audit:
+		_audit_doors()
 		_audit_rooms()
 		_audit_windows()
 		_audit_flats()
@@ -1063,3 +1064,29 @@ func _audit_windows() -> void:
 			print("   без окна: %s, кв %s" % [names[kind],
 					bti.get(int(Tower.ROOMS[i][4]), "?")])
 	print("[окна] жилых и кухонь %d, без окна %d" % [total, bad])
+
+
+## Дверные блоки: где они стоят и не висят ли в пустоте.
+func _audit_doors() -> void:
+	var wide := 0
+	var on_facade := 0
+	var no_wall := 0
+	var total := 0
+	for w in building.walls_built:
+		if w["parapet"]:
+			continue
+		var used := 0.0
+		for h: Vector3 in (w["holes"] as Array[Vector3]):
+			used += h.y
+		for h: Vector3 in (w["holes"] as Array[Vector3]):
+			if h.z >= 0.5:
+				continue
+			total += 1
+			if h.y > 1.15:
+				wide += 1
+			if int(w["thick"] * 100) > 20:
+				on_facade += 1
+			if used >= float(w["len"]) - 0.06:
+				no_wall += 1
+	print("[двери] проёмов %d; блоков поставлено %d, пропущено %d (в стене без остатка %d, шире 1,25 м %d, наружная стена %d)"
+			% [total, building.placed_doors, building.skipped_doors, no_wall, wide, on_facade])

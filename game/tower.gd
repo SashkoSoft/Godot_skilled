@@ -150,7 +150,9 @@ var traced_count := 0     ## стен с проёмами, снятыми с ч�
 var rule_count := 0       ## стен, где оси на скане нет и проёмы выведены правилом
 var walls_built: Array = []
 var unreachable: Array[int] = []
-var added_count := 0      ## дверей, добавленных ради проходимости
+var added_count := 0
+var placed_doors := 0     ## поставлено дверных блоков
+var skipped_doors := 0    ## пропущено: некуда ставить      ## дверей, добавленных ради проходимости
 
 var _m_wall: ShaderMaterial
 var _m_floor: ShaderMaterial
@@ -1189,7 +1191,11 @@ func _wall(f: int, center: Vector3, dir: Vector3, length: float,
 			ms.name = "Sill_%d" % f
 			_glaze(f, center + dir * h.x, dir, h.y, center.y, hw - above)
 		if h.z < 0.5:
-			_door_block(f, center + dir * h.x, dir, h.y, center.y)
+			var used := 0.0
+			for hh: Vector3 in cuts:
+				used += hh.y
+			_door_block(f, center + dir * h.x, dir, h.y, center.y,
+					used < length - 0.10, thick)
 		_mark(f, center + dir * h.x, dir, h.y, h.z, center.y)
 
 
@@ -1207,7 +1213,18 @@ const DOOR_MODEL_W := {"room": 0.80, "flat": 0.90, "frame": 0.80, "broken": 0.80
 static var _door_cache: Dictionary = {}
 
 
-func _door_block(f: int, pos: Vector3, dir: Vector3, width: float, base_y: float) -> void:
+func _door_block(f: int, pos: Vector3, dir: Vector3, width: float, base_y: float,
+		has_wall: bool, thick: float) -> void:
+	# Три случая, когда блок ставить нельзя.
+	if not has_wall:
+		skipped_doors += 1
+		return          # от стены после проёма ничего не осталось — рама повиснет
+	if width > 1.25:
+		skipped_doors += 1
+		return          # это уже не дверь, а сквозной проём; наличник растянулся бы вдвое
+	if thick > WALL + 0.01:
+		skipped_doors += 1
+		return          # наружная стена: там балконный блок, а не межкомнатная дверь
 	# В брошенном доме часть дверей стоит без полотна или сорвана: выбор
 	# детерминированный, по координате, иначе дом будет меняться между запусками.
 	var seed_v := int(absf(pos.x) * 71.0 + absf(pos.z) * 131.0) % 100
@@ -1227,6 +1244,7 @@ func _door_block(f: int, pos: Vector3, dir: Vector3, width: float, base_y: float
 	node.scale = Vector3(k, 1.0, 1.0)
 	node.rotation.y = PI * 0.5 if dir.z > 0.5 else 0.0
 	add_child(node)
+	placed_doors += 1
 	node.set_meta("floor", f)
 	for c in node.find_children("*", "MeshInstance3D", true, false):
 		var mi := c as MeshInstance3D
