@@ -1188,7 +1188,50 @@ func _wall(f: int, center: Vector3, dir: Vector3, length: float,
 			var ms := _spawn(sill, sp, mat, f)
 			ms.name = "Sill_%d" % f
 			_glaze(f, center + dir * h.x, dir, h.y, center.y, hw - above)
+		if h.z < 0.5:
+			_door_block(f, center + dir * h.x, dir, h.y, center.y)
 		_mark(f, center + dir * h.x, dir, h.y, h.z, center.y)
+
+
+## Дверной блок в проём. Модели от houdini-assets: пивот в середине низа
+## проёма, ось Z наружу от полотна, полотно отдельным узлом `leaf`.
+## Коллизии у них нет — проходимость считается по проёму в стене, как и раньше.
+const DOOR_MODELS := {
+	"room": "res://assets/models/doors/door_room.glb",
+	"flat": "res://assets/models/doors/door_flat.glb",
+	"frame": "res://assets/models/doors/door_frame_only.glb",
+	"broken": "res://assets/models/doors/door_broken.glb",
+}
+const DOOR_MODEL_W := {"room": 0.80, "flat": 0.90, "frame": 0.80, "broken": 0.80}
+
+static var _door_cache: Dictionary = {}
+
+
+func _door_block(f: int, pos: Vector3, dir: Vector3, width: float, base_y: float) -> void:
+	# В брошенном доме часть дверей стоит без полотна или сорвана: выбор
+	# детерминированный, по координате, иначе дом будет меняться между запусками.
+	var seed_v := int(absf(pos.x) * 71.0 + absf(pos.z) * 131.0) % 100
+	var kind := "flat" if width >= 0.88 else "room"
+	if seed_v < 18:
+		kind = "frame"
+	elif seed_v < 26:
+		kind = "broken"
+	if not _door_cache.has(kind):
+		if not ResourceLoader.exists(DOOR_MODELS[kind]):
+			return
+		_door_cache[kind] = load(DOOR_MODELS[kind])
+	var node: Node3D = (_door_cache[kind] as PackedScene).instantiate()
+	node.position = Vector3(pos.x, base_y, pos.z)
+	# блок сделан под проём своей ширины; лишнее растягиваем по X
+	var k: float = width / float(DOOR_MODEL_W[kind])
+	node.scale = Vector3(k, 1.0, 1.0)
+	node.rotation.y = PI * 0.5 if dir.z > 0.5 else 0.0
+	add_child(node)
+	node.set_meta("floor", f)
+	for c in node.find_children("*", "MeshInstance3D", true, false):
+		var mi := c as MeshInstance3D
+		mi.set_meta("floor", f)
+		fadeable.append(mi)
 
 
 ## Стекло в оконный проём: только вид, коллизии не надо — проём и так
