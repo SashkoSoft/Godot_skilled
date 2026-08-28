@@ -9,6 +9,9 @@
 | task-0006 | Оконные и балконные блоки | **houdini-assets** | model | v1 | open | open/ | 2026-08-28 | — |
 | task-0007 | Перила и ограждения лестницы | **houdini-assets** | model | v1 | open | open/ | 2026-08-28 | — |
 | task-0008 | Двери лифта и обрамление шахты | **houdini-assets** | model | v1 | open | open/ | 2026-08-28 | — |
+| task-0009 | Полы в квартирах: линолеум и паркет | **comfyui** | texture | v1 | open | open/ | 2026-08-28 | — |
+| task-0010 | Обои и потолок в квартирах | **comfyui** | texture | v1 | open | open/ | 2026-08-28 | — |
+| task-0011 | Зелень: плети, мох, трава | **comfyui** | texture | v1 | open | open/ | 2026-08-28 | — |
 | task-0002 | Бетонная панель: стены и перекрытия | **comfyui** | texture | v2 | accepted | done/ | 2026-08-27 | 2026-08-27 |
 | task-0003 | Плитка и бетон лестничной клетки | **comfyui** | texture | v1 | accepted | done/ | 2026-08-27 | 2026-08-27 |
 | task-0004 | Грязь и разводы на стекло | **comfyui** | texture | v1 | accepted | done/ | 2026-08-27 | 2026-08-27 |
@@ -16,4 +19,4 @@
 
 ## Следующий свободный номер
 
-**task-0009**
+**task-0012**
