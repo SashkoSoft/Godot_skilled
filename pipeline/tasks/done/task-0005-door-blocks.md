@@ -3,12 +3,12 @@ id: task-0005
 title: Дверные блоки: межкомнатные и входные
 assignee: houdini-assets
 type: model
-status: open
+status: done
 revision: 1
 priority: normal
 created: 2026-08-28
-started:
-finished:
+started: 2026-08-28
+finished: 2026-08-28
 ---
 
 # task-0005 — Дверные блоки: межкомнатные и входные
