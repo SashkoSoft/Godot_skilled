@@ -19,6 +19,7 @@ const D_HALF := 9.27
 const DOOR_FLAT := 0.90
 const DOOR_ROOM := 0.80
 const WIN := 1.7
+const BALCONY_W := 1.85    ## блок balcony_door: дверь 0,80 + глухое окно 0,90
 
 const KIND_DOOR := 0.0
 const KIND_WIN := 1.0
@@ -150,9 +151,11 @@ var traced_count := 0     ## стен с проёмами, снятыми с ч�
 var rule_count := 0       ## стен, где оси на скане нет и проёмы выведены правилом
 var walls_built: Array = []
 var unreachable: Array[int] = []
-var added_count := 0
+var added_count := 0      ## дверей, добавленных ради проходимости
 var placed_doors := 0     ## поставлено дверных блоков
-var skipped_doors := 0    ## пропущено: некуда ставить      ## дверей, добавленных ради проходимости
+var skipped_doors := 0    ## пропущено: некуда ставить
+var placed_windows := 0   ## поставлено оконных блоков
+var placed_balconies := 0 ## поставлено балконных блоков
 
 var _m_wall: ShaderMaterial
 var _m_floor: ShaderMaterial
@@ -418,6 +421,33 @@ func _may_open(a: int, b: int) -> bool:
 	return hall_a and hall_b
 
 
+## Стена «жильё — лоджия». Она наружная: в неё идёт балконный блок,
+## а не межкомнатная дверь, и толщина у неё как у фасада.
+func _is_loggia_wall(a: int, b: int) -> bool:
+	if a < 0 or b < 0:
+		return false
+	return (int(ROOMS[a][5]) == LOG) != (int(ROOMS[b][5]) == LOG)
+
+
+## Из какого помещения смотрят на оконный блок: не лоджия и не улица.
+func _room_side(inner: int, outer: int) -> int:
+	if outer >= 0 and int(ROOMS[outer][5]) != LOG:
+		if inner < 0 or int(ROOMS[inner][5]) == LOG:
+			return outer
+	return inner
+
+
+## Поворот блока так, чтобы подоконник смотрел в комнату, а отлив — наружу:
+## у моделей окон «комнатная» сторона это местный -Z.
+func _inward_yaw(center: Vector3, dir: Vector3, room: int) -> float:
+	if room < 0:
+		return PI * 0.5 if dir.z > 0.5 else 0.0
+	var r = ROOMS[room]
+	if dir.z > 0.5:                       # стена вдоль Z, нормаль по X
+		return PI * 0.5 if (float(r[0]) + float(r[2])) * 0.5 < center.x else -PI * 0.5
+	return 0.0 if (float(r[1]) + float(r[3])) * 0.5 < center.z else PI
+
+
 ## Что за проём между двумя помещениями: -1 глухая стена, 0 дверь, 1 окно.
 func _opening(a: int, b: int, length: float, on_facade: bool) -> int:
 	if a < 0:
@@ -460,7 +490,8 @@ func _emit_walls(f: int, y: float) -> void:
 			_parapet(f, y, axis, fixed, w["a0"], w["a1"])
 			continue
 		var center := Vector3(fixed, y, mid) if axis == 1 else Vector3(mid, y, fixed)
-		_wall(f, center, dir, w["len"], w["holes"] as Array[Vector3], w["thick"])
+		_wall(f, center, dir, w["len"], w["holes"] as Array[Vector3], w["thick"],
+				null, w["inner"], w["outer"])
 
 
 ## Стены и проёмы берутся из PlanWalls — он собран по таблице ROOMS и скану
@@ -515,8 +546,9 @@ func _collect_walls() -> Array:
 				holes.append(v)
 		recs.append({"axis": axis, "fixed": fixed, "a0": a0, "a1": a1, "mid": mid,
 				"len": length, "inner": inner, "outer": outer,
-				"holes": _fit_holes(holes, length),
-				"thick": WALL_EXT if typ == 1 else WALL, "parapet": false})
+				"holes": _widen_for_balcony(_fit_holes(holes, length), length, inner, outer),
+				"thick": WALL_EXT if typ == 1 or _is_loggia_wall(inner, outer) else WALL,
+				"parapet": false})
 	return recs
 
 
@@ -613,6 +645,18 @@ func _fit_holes(holes: Array[Vector3], length: float) -> Array[Vector3]:
 				continue
 		out.append(h)
 	return out
+
+
+## Балконный блок шире двери. Где стена к лоджии это позволяет, расширяем
+## проём под него; где нет — остаётся обычная дверь, блок туда не встанет.
+func _widen_for_balcony(holes: Array[Vector3], length: float, a: int, b: int) -> Array[Vector3]:
+	if holes.size() != 1 or not _is_loggia_wall(a, b):
+		return holes
+	var h: Vector3 = holes[0]
+	if h.z >= 0.5 or length < BALCONY_W + 0.30:
+		return holes
+	var lim := (length - BALCONY_W) * 0.5 - 0.08
+	return [Vector3(clampf(h.x, -lim, lim), BALCONY_W, h.z)] as Array[Vector3]
 
 
 ## Двери, добавленные проверкой проходимости (tools: main.gd --fix-reach).
@@ -736,9 +780,12 @@ func _ensure_windows(recs: Array) -> void:
 			var b: int = w["outer"]
 			if a != i and b != i:
 				continue
+			var loggia := _is_loggia_wall(a, b)
 			for h: Vector3 in (w["holes"] as Array[Vector3]):
 				if h.z >= 0.5:
 					has = true
+				elif loggia and h.y >= BALCONY_W - 0.05:
+					has = true    # балконный блок: глухое окно в нём уже есть
 			if w["len"] < 1.4:
 				continue
 			if b < 0 and w["thick"] > WALL + 0.01:
@@ -1136,7 +1183,8 @@ func _landing(f: int, y: float, z: float) -> void:
 # ---------------------------------------------------------------------------
 
 func _wall(f: int, center: Vector3, dir: Vector3, length: float,
-		holes: Array[Vector3], thick: float = WALL, mat: ShaderMaterial = null) -> void:
+		holes: Array[Vector3], thick: float = WALL, mat: ShaderMaterial = null,
+		inner: int = -1, outer: int = -1) -> void:
 	if mat == null:
 		mat = _m_wall
 	var cuts: Array[Vector3] = holes.duplicate()
@@ -1189,13 +1237,19 @@ func _wall(f: int, center: Vector3, dir: Vector3, length: float,
 			sp.y = center.y + 0.425
 			var ms := _spawn(sill, sp, mat, f)
 			ms.name = "Sill_%d" % f
-			_glaze(f, center + dir * h.x, dir, h.y, center.y, hw - above)
+			var yaw := _inward_yaw(center, dir, _room_side(inner, outer))
+			if not _window_block(f, center + dir * h.x, dir, h.y, center.y, yaw):
+				_glaze(f, center + dir * h.x, dir, h.y, center.y, hw - above)
 		if h.z < 0.5:
-			var used := 0.0
-			for hh: Vector3 in cuts:
-				used += hh.y
-			_door_block(f, center + dir * h.x, dir, h.y, center.y,
-					used < length - 0.10, thick)
+			if _is_loggia_wall(inner, outer) and h.y >= BALCONY_W - 0.05:
+				_balcony_block(f, center + dir * h.x, dir, h.y, center.y,
+						_inward_yaw(center, dir, _room_side(inner, outer)))
+			else:
+				var used := 0.0
+				for hh: Vector3 in cuts:
+					used += hh.y
+				_door_block(f, center + dir * h.x, dir, h.y, center.y,
+						used < length - 0.10, thick)
 		_mark(f, center + dir * h.x, dir, h.y, h.z, center.y)
 
 
@@ -1248,6 +1302,73 @@ func _door_block(f: int, pos: Vector3, dir: Vector3, width: float, base_y: float
 	node.set_meta("floor", f)
 	for c in node.find_children("*", "MeshInstance3D", true, false):
 		var mi := c as MeshInstance3D
+		mi.set_meta("floor", f)
+		fadeable.append(mi)
+
+
+## Оконный блок в проём. Модель от houdini-assets: пивот в середине низа
+## проёма, стёкла отдельными узлами `glass-*` — им подставляю свой материал,
+## чтобы работала прозрачность и потом легла грязь.
+const WIN_MODELS := {
+	"double": "res://assets/models/windows/window_double.glb",
+	"broken": "res://assets/models/windows/window_broken.glb",
+}
+const WIN_MODEL_W := 1.70
+
+static var _win_cache: Dictionary = {}
+
+
+func _window_block(f: int, pos: Vector3, dir: Vector3, width: float,
+		base_y: float, yaw: float) -> bool:
+	if width < 1.0 or width > 2.3:
+		return false                     # не под этот блок, оставляем своё стекло
+	var seed_v := int(absf(pos.x) * 53.0 + absf(pos.z) * 97.0) % 100
+	var kind := "broken" if seed_v < 30 else "double"
+	if not _win_cache.has(kind):
+		if not ResourceLoader.exists(WIN_MODELS[kind]):
+			return false
+		_win_cache[kind] = load(WIN_MODELS[kind])
+	var node: Node3D = (_win_cache[kind] as PackedScene).instantiate()
+	node.position = Vector3(pos.x, base_y + 0.85, pos.z)
+	node.scale = Vector3(width / WIN_MODEL_W, 1.0, 1.0)
+	node.rotation.y = yaw
+	add_child(node)
+	node.set_meta("floor", f)
+	_take_glass(node, f)
+	placed_windows += 1
+	return true
+
+
+## Балконный блок в проём к лоджии: дверь со стеклом плюс глухое окно рядом,
+## общая коробка. Стёкла — узлы `glass-*`, им подставляю свой материал.
+const BALCONY_MODEL := "res://assets/models/windows/balcony_door.glb"
+
+static var _balcony_cache: PackedScene = null
+
+
+func _balcony_block(f: int, pos: Vector3, dir: Vector3, width: float,
+		base_y: float, yaw: float) -> void:
+	if _balcony_cache == null:
+		if not ResourceLoader.exists(BALCONY_MODEL):
+			return
+		_balcony_cache = load(BALCONY_MODEL)
+	var node: Node3D = _balcony_cache.instantiate()
+	node.position = Vector3(pos.x, base_y, pos.z)
+	node.scale = Vector3(width / BALCONY_W, 1.0, 1.0)
+	node.rotation.y = yaw
+	add_child(node)
+	node.set_meta("floor", f)
+	_take_glass(node, f)
+	placed_balconies += 1
+
+
+## Общее для оконных и балконных блоков: стёклам подставить прозрачный
+## материал, всю геометрию отдать затуханию верхних этажей.
+func _take_glass(node: Node3D, f: int) -> void:
+	for c in node.find_children("*", "MeshInstance3D", true, false):
+		var mi := c as MeshInstance3D
+		if mi.name.begins_with("glass"):
+			mi.material_override = _m_glass
 		mi.set_meta("floor", f)
 		fadeable.append(mi)
 

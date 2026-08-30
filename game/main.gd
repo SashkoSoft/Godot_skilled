@@ -407,6 +407,9 @@ func _build_tower() -> void:
 	building.build(_floors)
 	print("[план] проёмов с чертежа: стен %d, по правилу %d, дверей добавлено ради прохода %d"
 			% [building.traced_count, building.rule_count, building.added_count])
+	print("[блоки] двери %d (пропущено %d), окна %d, балконные %d"
+			% [building.placed_doors, building.skipped_doors,
+			building.placed_windows, building.placed_balconies])
 	if not building.unreachable.is_empty():
 		print("[план] по графу не открылось: ", building.unreachable)
 	if _plan_view:
@@ -1047,8 +1050,10 @@ func _audit_windows() -> void:
 	for w in building.walls_built:
 		if w["parapet"]:
 			continue
+		# широкий проём к лоджии — это балконный блок, глухое окно в нём есть
+		var loggia: bool = building._is_loggia_wall(w["inner"], w["outer"])
 		for h: Vector3 in (w["holes"] as Array[Vector3]):
-			if h.z >= 0.5:
+			if h.z >= 0.5 or (loggia and h.y >= Tower.BALCONY_W - 0.05):
 				for i in [w["inner"], w["outer"]]:
 					if int(i) >= 0:
 						win[int(i)] = int(win.get(int(i), 0)) + 1
