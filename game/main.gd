@@ -364,6 +364,13 @@ func _take_shot() -> void:
 		Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
 		Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),
 	])
+	# Привязка кадра к миру: две точки на уровне пола, чтобы наложить скан
+	# чертежа поверх рендера без подгонки на глаз (tools/plan_overlay.py).
+	var cam := rig.get_camera()
+	if cam != null:
+		var a := cam.unproject_position(Vector3(-10.0, player.floor_index * Tower.FLOOR_H, -5.0))
+		var b := cam.unproject_position(Vector3(10.0, player.floor_index * Tower.FLOOR_H, 5.0))
+		print("[привязка] (-10,-5)->%.1f,%.1f  (10,5)->%.1f,%.1f" % [a.x, a.y, b.x, b.y])
 	get_tree().quit()
 
 
