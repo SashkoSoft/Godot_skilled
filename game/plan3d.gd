@@ -36,6 +36,37 @@ func _ready() -> void:
 	_camera()
 
 
+## Материал по набору текстур из assets: albedo + normal + ORM.
+## Развёртка трипланарная и в метрах, чтобы масштаб не зависел от размера
+## коробки: у стены 5 м и у откоса 0.2 м рисунок одинаковый.
+func _tex(dir_: String, base: String, scale: float,
+		tint: Color = Color(1, 1, 1)) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	var root := "res://assets/textures/%s/%s" % [dir_, base]
+	var alb := root + "_albedo_1k.png"
+	if not ResourceLoader.exists(alb):
+		return _mat(tint)
+	m.albedo_texture = load(alb)
+	m.albedo_color = tint
+	var nrm := root + "_normal_1k.png"
+	if ResourceLoader.exists(nrm):
+		m.normal_enabled = true
+		m.normal_texture = load(nrm)
+	var orm := root + "_orm_1k.png"
+	if ResourceLoader.exists(orm):
+		m.ao_enabled = true
+		m.ao_texture = load(orm)
+		m.ao_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
+		m.roughness_texture = load(orm)
+		m.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_GREEN
+		m.metallic_texture = load(orm)
+		m.metallic_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_BLUE
+	m.roughness = 1.0
+	m.uv1_triplanar = true
+	m.uv1_scale = Vector3.ONE * scale
+	return m
+
+
 func _mat(c: Color, rough: float = 0.9) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = c
@@ -60,11 +91,16 @@ func _build() -> void:
 	var lintel: float = _plan["lintel"]
 	var door_h: float = _plan["door_h"]
 
-	var m_wall := _mat(Color(0.74, 0.72, 0.68))
-	var m_floor := _mat(Color(0.42, 0.41, 0.40), 1.0)
-	var m_frame := _mat(Color(0.86, 0.84, 0.79), 0.7)
+	# Каждому виду блока свой материал. Пол квартир, обои и плитка санузла
+	# ещё в работе (task-0009, 0010, 0013) — до сдачи стоят ближайшие из
+	# принятых, чтобы масштаб и тон уже читались.
+	var m_wall := _tex("wall-paint", "wall_paint", 0.32)
+	var m_wall_out := _tex("concrete-facade", "concrete_facade", 0.22)
+	var m_floor := _tex("concrete-facade", "concrete_facade", 0.25,
+			Color(0.78, 0.76, 0.73))
+	var m_frame := _mat(Color(0.86, 0.84, 0.79), 0.55)
 	var m_leaf := _mat(Color(0.55, 0.42, 0.30), 0.75)
-	var m_closet := _mat(Color(0.81, 0.81, 0.81))
+	var m_closet := _tex("wall-paint-worn", "wall_paint_worn", 0.30)
 	var m_fix := _mat(Color(0.00, 0.63, 0.84))
 	var m_glass := _mat(Color(0.62, 0.84, 0.92), 0.12)
 	m_glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -76,10 +112,14 @@ func _build() -> void:
 
 	# пол помещений цветом по назначению
 	var m_kind := {
-		"кухня": _mat(Color(0.98, 0.85, 0.89), 1.0),
-		"прихожая": _mat(Color(0.98, 0.86, 0.70), 1.0),
-		"лоджия": _mat(Color(0.78, 0.93, 0.75), 1.0),
-		"санузел": _mat(Color(0.72, 0.88, 0.95), 1.0),
+		"кухня": _tex("concrete-facade", "concrete_facade", 0.25,
+				Color(0.95, 0.84, 0.80)),
+		"прихожая": _tex("concrete-facade", "concrete_facade", 0.25,
+				Color(0.95, 0.87, 0.72)),
+		"лоджия": _tex("landing-floor", "landing_floor", 0.22,
+				Color(0.86, 0.94, 0.84)),
+		"санузел": _tex("stair-tread", "stair_tread", 0.30,
+				Color(0.84, 0.92, 1.0)),
 	}
 	for room in _plan["rooms"]:
 		var mk: StandardMaterial3D = m_kind.get(room["kind"], m_floor)
@@ -95,8 +135,14 @@ func _build() -> void:
 		var d: float = float(r[3]) - float(r[1])
 		if w < 0.02 or d < 0.02:
 			continue
+		var b2: Array = _plan["bounds"]
+		var outer := (float(r[0]) - float(b2[0]) < 0.45
+				or float(b2[2]) - float(r[2]) < 0.45
+				or float(r[1]) - float(b2[1]) < 0.45
+				or float(b2[3]) - float(r[3]) < 0.45)
 		_box(Vector3(w, h, d), Vector3((float(r[0]) + float(r[2])) * 0.5, h * 0.5,
-				(float(r[1]) + float(r[3])) * 0.5), m_wall, "Wall")
+				(float(r[1]) + float(r[3])) * 0.5),
+				m_wall_out if outer else m_wall, "Wall")
 
 	# Окно сидит в середине толщины стены: снизу и сверху бетон, между ними
 	# рама со стеклом, и по бокам остаются откосы.
@@ -246,18 +292,46 @@ func _glazing(size: Vector3, cx: float, cz: float, y0: float, y1: float,
 
 
 func _light() -> void:
+	# Солнце низкое, как на закате: длинные тени лучше читают планировку.
 	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-52, -38, 0)
-	sun.light_energy = 1.15
+	sun.rotation_degrees = Vector3(-38, -52, 0)
+	sun.light_energy = 2.1
+	sun.light_color = Color(1.0, 0.94, 0.84)
 	sun.shadow_enabled = true
+	sun.directional_shadow_max_distance = 60.0
+	sun.directional_shadow_blend_splits = true
+	sun.shadow_normal_bias = 1.2
 	add_child(sun)
+
+	# Подсветка снизу-сбоку, чтобы в комнатах не было чёрных провалов.
+	var fill := DirectionalLight3D.new()
+	fill.rotation_degrees = Vector3(-22, 128, 0)
+	fill.light_energy = 0.35
+	fill.light_color = Color(0.78, 0.85, 1.0)
+	add_child(fill)
+
 	var env := WorldEnvironment.new()
 	var e := Environment.new()
-	e.background_mode = Environment.BG_COLOR
-	e.background_color = Color(0.22, 0.24, 0.28)
-	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	e.ambient_light_color = Color(0.55, 0.58, 0.64)
-	e.ambient_light_energy = 0.9
+	e.background_mode = Environment.BG_SKY
+	var sky := Sky.new()
+	var mat := ProceduralSkyMaterial.new()
+	mat.sky_top_color = Color(0.42, 0.52, 0.68)
+	mat.sky_horizon_color = Color(0.72, 0.74, 0.76)
+	mat.ground_bottom_color = Color(0.24, 0.23, 0.22)
+	mat.ground_horizon_color = Color(0.55, 0.53, 0.50)
+	sky.sky_material = mat
+	e.sky = sky
+	e.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+	e.ambient_light_energy = 0.85
+	e.ssao_enabled = true            # контакт стен с полом
+	e.ssao_intensity = 1.6
+	e.ssao_radius = 0.6
+	e.ssil_enabled = true            # подкрашивание отражённым светом
+	e.ssil_intensity = 0.35
+	e.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	e.tonemap_white = 3.0
+	e.glow_enabled = true
+	e.glow_intensity = 0.25
 	env.environment = e
 	add_child(env)
 
@@ -271,7 +345,11 @@ func _camera() -> void:
 	cam.size = 16.0
 	cam.current = true
 	add_child(cam)                      # look_at работает только внутри дерева
-	if OS.get_cmdline_user_args().has("--top"):
+	var back := OS.get_cmdline_user_args().has("--back")
+	if back:
+		cam.global_position = Vector3(cx - 6.5, 26.0, cz - 6.5)
+		cam.look_at(Vector3(cx, 1.0, cz), Vector3.UP)
+	elif OS.get_cmdline_user_args().has("--top"):
 		cam.global_position = Vector3(cx, 30.0, cz)
 		cam.rotation_degrees = Vector3(-90, 0, 0)
 		cam.size = 19.5
