@@ -1,0 +1,6 @@
+ceiling-white 1.50 pobelka potolka
+floor-lino 1.20 linoleum kuhni i prihozhey
+floor-parquet 1.60 shchitovoy parket komnat
+tile-bath 1.20 plitka sanuzla 15x15
+wall-paint-kitchen 3.00 krashenaya stena kuhni i prihozhey, panel do 1.10
+wall-paper 1.06 oboi komnat, dve polosy po 0.53 m
