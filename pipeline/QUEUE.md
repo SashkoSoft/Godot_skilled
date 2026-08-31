@@ -6,12 +6,12 @@
 | ID | Задание | Кому | Тип | Ревизия | Статус | Папка | Создано | Закрыто |
 |---|---|---|---|---|---|---|---|---|
 | task-0001 | Локомоция на эталонном риге | **houdini-anim** | animation | v1 | open | open/ | 2026-08-23 | — |
-| task-0011 | Зелень: плети, мох, трава | **comfyui** | texture | v1 | open | open/ | 2026-08-28 | — |
 | task-0012 | Сантехника и кухонная плита | **houdini-assets** | model | v1 | open | open/ | 2026-08-30 | — |
 | task-0015 | Мебель квартиры: кухня, шкафы, батареи | **houdini-assets** | model | v1 | open | open/ | 2026-08-30 | — |
 | task-0016 | Дверцы кладовок 1а, 2а, 6а | **houdini-assets** | model | v1 | open | open/ | 2026-08-31 | — |
 | task-0017 | Остекление лоджии: парапет и переплёт | **houdini-assets** | model | v1 | open | open/ | 2026-08-31 | — |
 | task-0018 | Декали износа: потёки, плесень, вытертые тропы | **houdini-assets** | texture | v1 | open | open/ | 2026-08-31 | — |
+| task-0011 | Зелень: плети, мох, трава | **comfyui** | texture | v1 | in_progress | in_progress/ | 2026-08-28 | — |
 | task-0002 | Бетонная панель: стены и перекрытия | **comfyui** | texture | v2 | accepted | done/ | 2026-08-27 | 2026-08-27 |
 | task-0003 | Плитка и бетон лестничной клетки | **comfyui** | texture | v1 | accepted | done/ | 2026-08-27 | 2026-08-27 |
 | task-0004 | Грязь и разводы на стекло | **comfyui** | texture | v1 | accepted | done/ | 2026-08-27 | 2026-08-27 |
