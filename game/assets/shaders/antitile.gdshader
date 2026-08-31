@@ -1,5 +1,6 @@
 shader_type spatial;
-render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_schlick_ggx;
+render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley,
+		specular_schlick_ggx, world_vertex_coords;
 
 // Тайл, который не читается тайлом.
 //
@@ -49,8 +50,29 @@ uniform bool use_id = false;
 uniform float id_value = 0.16;       // разброс светлоты между планками
 uniform float id_hue = 0.05;
 
+// Пятна выцветания: комбинирует по маске цветную и обесцвеченную версию ОДНОЙ
+// и той же текстуры — там, где солнце годами било в пол сильнее, паркет не
+// просто светлее, у него и цвет садится первым. Пятна резкие (smoothstep), не
+// градиент — так читается как два соседних куска пола, а не общая дымка.
+uniform float mono_patch = 0.0;      // 0 — выключено, иначе сила ухода в ч/б
+uniform float mono_scale_m = 2.6;    // размер пятна, метры, не кратно тайлу
+uniform float mono_sharp = 3.0;      // резкость границы пятна
+
 varying vec3 world_pos;
 varying vec3 world_nrm;
+
+
+// Дублировать treugolnuyu setku на каждый канал незачем: у альбедо, нормали,
+// ORM и id один и тот же uv, значит и решётка, и веса смешивания общие.
+// Раньше sample_stochastic пересчитывала её самостоятельно на каждый вызов —
+// до четырёх раз за фрагмент с одинаковым результатом.
+vec4 blend3(sampler2D t, vec2 uv, vec2 ddx, vec2 ddy,
+		vec2 o1, vec2 o2, vec2 o3, vec3 p) {
+	vec4 c1 = textureGrad(t, uv + o1, ddx, ddy);
+	vec4 c2 = textureGrad(t, uv + o2, ddx, ddy);
+	vec4 c3 = textureGrad(t, uv + o3, ddx, ddy);
+	return c1 * p.x + c2 * p.y + c3 * p.z;
+}
 
 
 vec2 hash2(vec2 p) {
@@ -87,34 +109,6 @@ void triangle_grid(vec2 uv, out vec3 w, out vec2 v1, out vec2 v2, out vec2 v3) {
 }
 
 
-// Выборка без видимой сетки. Веса возводятся в степень: линейное смешивание
-// трёх копий размывает контраст, а степень делает переход почти выбором —
-// контраст остаётся, а шва не видно.
-vec4 sample_stochastic(sampler2D t, vec2 uv, vec2 ddx, vec2 ddy) {
-	if (!use_stochastic) {
-		return textureGrad(t, uv, ddx, ddy);
-	}
-	vec3 w;
-	vec2 v1;
-	vec2 v2;
-	vec2 v3;
-	triangle_grid(uv, w, v1, v2, v3);
-	vec2 o1 = hash2(v1);
-	vec2 o2 = hash2(v2);
-	vec2 o3 = hash2(v3);
-	if (snap_cells > 0) {
-		float k = float(snap_cells);
-		o1 = floor(o1 * k) / k;
-		o2 = floor(o2 * k) / k;
-		o3 = floor(o3 * k) / k;
-	}
-	vec4 c1 = textureGrad(t, uv + o1, ddx, ddy);
-	vec4 c2 = textureGrad(t, uv + o2, ddx, ddy);
-	vec4 c3 = textureGrad(t, uv + o3, ddx, ddy);
-	vec3 p = pow(w, vec3(7.0));
-	p /= (p.x + p.y + p.z);
-	return c1 * p.x + c2 * p.y + c3 * p.z;
-}
 
 
 // Тот же треугольный разбор, но возвращает только номер ячейки — им красим
@@ -133,8 +127,10 @@ float cell_noise(vec2 uv) {
 
 
 void vertex() {
-	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
-	world_nrm = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
+	// world_vertex_coords переводит VERTEX/NORMAL в мировые координаты сам —
+	// раньше это делалось вручную через MODEL_MATRIX.
+	world_pos = VERTEX;
+	world_nrm = normalize(NORMAL);
 }
 
 
@@ -154,9 +150,41 @@ void fragment() {
 	vec2 ddx = dFdx(uv);
 	vec2 ddy = dFdy(uv);
 
-	vec4 alb = sample_stochastic(tex_albedo, uv, ddx, ddy);
-	vec3 nrm = sample_stochastic(tex_normal, uv, ddx, ddy).rgb;
-	vec3 orm = sample_stochastic(tex_orm, uv, ddx, ddy).rgb;
+	vec4 alb;
+	vec3 nrm;
+	vec3 orm;
+	// Смещения и веса решётки — на весь фрагмент один раз: у альбедо, нормали,
+	// ORM и id общий uv, значит общая решётка. Объявлены здесь, а не внутри
+	// if, чтобы карта id ниже могла их переиспользовать, а не считать заново.
+	vec2 o1 = vec2(0.0);
+	vec2 o2 = vec2(0.0);
+	vec2 o3 = vec2(0.0);
+	vec3 p = vec3(0.0);
+	if (use_stochastic) {
+		vec3 gw;
+		vec2 v1;
+		vec2 v2;
+		vec2 v3;
+		triangle_grid(uv, gw, v1, v2, v3);
+		o1 = hash2(v1);
+		o2 = hash2(v2);
+		o3 = hash2(v3);
+		if (snap_cells > 0) {
+			float k = float(snap_cells);
+			o1 = floor(o1 * k) / k;
+			o2 = floor(o2 * k) / k;
+			o3 = floor(o3 * k) / k;
+		}
+		p = pow(gw, vec3(7.0));
+		p /= (p.x + p.y + p.z);
+		alb = blend3(tex_albedo, uv, ddx, ddy, o1, o2, o3, p);
+		nrm = blend3(tex_normal, uv, ddx, ddy, o1, o2, o3, p).rgb;
+		orm = blend3(tex_orm, uv, ddx, ddy, o1, o2, o3, p).rgb;
+	} else {
+		alb = textureGrad(tex_albedo, uv, ddx, ddy);
+		nrm = textureGrad(tex_normal, uv, ddx, ddy).rgb;
+		orm = textureGrad(tex_orm, uv, ddx, ddy).rgb;
+	}
 
 	vec3 col = alb.rgb;
 	if (contrast < 0.999) {
@@ -170,13 +198,23 @@ void fragment() {
 	col.r *= 1.0 + (m - 0.5) * 2.0 * macro_hue;
 	col.b *= 1.0 - (m - 0.5) * 2.0 * macro_hue;
 
-	// своя окраска каждой паркетине
+	// своя окраска каждой паркетине — та же решётка, что у альбедо выше
 	if (use_id) {
-		float id = sample_stochastic(tex_id, uv, ddx, ddy).r;
+		float id = use_stochastic
+				? blend3(tex_id, uv, ddx, ddy, o1, o2, o3, p).r
+				: textureGrad(tex_id, uv, ddx, ddy).r;
 		float h = hash1(floor(id * 255.0) + 0.5);
 		col *= 1.0 + (h - 0.5) * 2.0 * id_value;
 		col.r *= 1.0 + (h - 0.5) * 2.0 * id_hue;
 		col.g *= 1.0 + (h - 0.5) * id_hue;
+	}
+
+	// пятна выцветания: цветная и обесцвеченная версия одной текстуры
+	if (mono_patch > 0.001) {
+		float pm = cell_noise(uv * tile_m / mono_scale_m + vec2(37.0, 91.0));
+		float t = smoothstep(0.5 - 0.5 / mono_sharp, 0.5 + 0.5 / mono_sharp, pm);
+		float luma = dot(col, vec3(0.299, 0.587, 0.114));
+		col = mix(col, vec3(luma), t * mono_patch);
 	}
 
 	ALBEDO = col;

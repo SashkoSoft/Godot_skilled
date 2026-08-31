@@ -109,6 +109,19 @@ def main():
     for _, _, x0, z0, x1, z1 in blocks:
         free[iz(z0):iz(z1), ix(x0):ix(x1)] = True
 
+    # Кладовка — ниша в стене, и там, где её прямоугольник перекрывает block
+    # соседнего помещения (кладовка 6a залезала в прихожую на 0.30 м), это
+    # перекрытие когда-то резалось только из ЭКСПОРТА комнаты (rooms_out),
+    # а маска free оставалась старой. Пол переставал доходить до этой полосы
+    # (комната обрезана), а стена там не строилась (free всё ещё считал её
+    # проходимой) — получалась настоящая дыра до самого неба, ту самую,
+    # что нашли по navy-прогалу в прихожей у стены санузла. Вычитать нужно
+    # из free, а не только из wall: тогда дыру затянет обычная стена.
+    closet_in = np.zeros((H, W), bool)
+    for _, x0, z0, x1, z1, _side in closets:
+        closet_in[iz(z0):iz(z1), ix(x0):ix(x1)] = True
+    free &= ~closet_in
+
     grown = ndimage.binary_dilation(free, np.ones((3, 3), bool),
                                     iterations=int(PAD / GRID))
     grown[:iz(CLIP[1])] = False
@@ -117,11 +130,6 @@ def main():
     grown[:, ix(CLIP[2]):] = False
     foot = ndimage.binary_fill_holes(grown)
     wall = foot & ~free
-
-    # кладовка — ниша в стене: внутренность вычитается, стенки остаются
-    closet_in = np.zeros((H, W), bool)
-    for _, x0, z0, x1, z1, _side in closets:
-        closet_in[iz(z0):iz(z1), ix(x0):ix(x1)] = True
     wall &= ~closet_in
 
     def cut(axis, wpos, c0, wdt, out):
@@ -246,40 +254,51 @@ def main():
     kindmap = {"кухня": "кухня", "прихожая": "прихожая", "лоджия": "лоджия",
                "ванная": "санузел", "уборная": "санузел",
                "комната1": "жилая", "комната2": "жилая"}
-    def clip_to_closets(r):
-        """Кладовка — ниша, и она не может быть частью помещения. Если
-        прямоугольник комнаты налезает на кладовку, отодвигаем его границу по
-        той оси, где перекрытие меньше: иначе кладовка вырастает в коридоре
-        полноростовой тумбой поперёк прохода."""
-        x0, z0, x1, z1 = r
+    def subtract_closets(r):
+        """Кладовка — ниша, и она не может быть частью помещения. Прежняя
+        версия сдвигала целую сторону прямоугольника комнаты, если кладовка
+        залезала в угол, — и срезала лишнее по ВСЕЙ длине этой стороны, а не
+        только там, где кладовка реально перекрывает комнату. У прихожей
+        кладовка 6a перекрывает только четверть её длины по Z, но сторона X
+        подрезалась для всей комнаты сразу: пол переставал доходить до стены
+        санузла там, где никакой кладовки рядом уже не было, а стена там не
+        строилась (её мера берётся из немодифицированных блоков) — получалась
+        дыра до неба.
+        Правильно — вычесть кладовку из прямоугольника комнаты как из
+        множества: результат может быть несколькими кусками (до четырёх на
+        одну кладовку), и каждый кусок остаётся ровно того размера, который
+        кладовка у него забрала, не больше."""
+        pieces = [tuple(r)]
         for _n, cx0, cz0, cx1, cz1, _side in closets:
-            if x1 <= cx0 or x0 >= cx1 or z1 <= cz0 or z0 >= cz1:
-                continue
-            dx = min(x1, cx1) - max(x0, cx0)
-            dz = min(z1, cz1) - max(z0, cz0)
-            # Отсекаем только мелкое залезание — когда кладовка чуть заходит
-            # за границу помещения. Если перекрытие глубокое, это не залезание,
-            # а ниша внутри самой комнаты: отсечение по ней откусило бы у
-            # комнаты полтора метра, что однажды и произошло.
-            if min(dx, dz) > 0.35:
-                continue
-            if dx <= dz:
-                if x0 < cx0:
-                    x1 = min(x1, cx0)
-                else:
-                    x0 = max(x0, cx1)
-            else:
-                if z0 < cz0:
-                    z1 = min(z1, cz0)
-                else:
-                    z0 = max(z0, cz1)
-        return [round(x0, 3), round(z0, 3), round(x1, 3), round(z1, 3)]
+            next_pieces = []
+            for (x0, z0, x1, z1) in pieces:
+                if x1 <= cx0 or x0 >= cx1 or z1 <= cz0 or z0 >= cz1:
+                    next_pieces.append((x0, z0, x1, z1))
+                    continue
+                ox0, oz0 = max(x0, cx0), max(z0, cz0)
+                ox1, oz1 = min(x1, cx1), min(z1, cz1)
+                # Перекрытие глубже 0.35 по обеим осям — не залезание кладовки
+                # в угол, а ниша внутри самой комнаты; трогать её нельзя,
+                # иначе от комнаты отрежется лишнее (уже было — минус 1.5 м).
+                if min(ox1 - ox0, oz1 - oz0) > 0.35:
+                    next_pieces.append((x0, z0, x1, z1))
+                    continue
+                if z0 < oz0:
+                    next_pieces.append((x0, z0, x1, oz0))
+                if oz1 < z1:
+                    next_pieces.append((x0, oz1, x1, z1))
+                if x0 < ox0:
+                    next_pieces.append((x0, oz0, ox0, oz1))
+                if ox1 < x1:
+                    next_pieces.append((ox1, oz0, x1, oz1))
+            pieces = next_pieces
+        return [[round(v, 3) for v in p] for p in pieces]
 
     rooms_out = {}
     for fl, kind, x0, z0, x1, z1 in blocks:
         k = kindmap.get(kind)
         if k:
-            rooms_out.setdefault(k, []).append(clip_to_closets([x0, z0, x1, z1]))
+            rooms_out.setdefault(k, []).extend(subtract_closets([x0, z0, x1, z1]))
 
     fixtures = list(FIXTURES) + [(f[0],) + zmirror(f[1:], 1, 3) for f in FIXTURES]
     sidemap = {"x+": [0, 1], "x-": [0, -1], "z+": [1, 0], "z-": [-1, 0]}

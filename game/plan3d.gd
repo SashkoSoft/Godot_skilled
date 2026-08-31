@@ -96,6 +96,12 @@ func _ready() -> void:
 	_ready_fly()
 	if OS.get_cmdline_user_args().has("--hall"):
 		_hall_report()
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--spot="):
+			var nums := a.substr(7).split(",")
+			if nums.size() == 4:
+				_spot_debug([nums[0].to_float(), nums[1].to_float(),
+						nums[2].to_float(), nums[3].to_float()])
 	if OS.get_cmdline_user_args().has("--walk"):
 		_walk_check()
 
@@ -201,8 +207,8 @@ func _box(size: Vector3, pos: Vector3, mat: Material, name_: String) -> void:
 	mi.mesh = mesh
 	mi.material_override = mat
 	mi.position = pos
-	mi.name = name_
 	add_child(mi)
+	mi.name = name_
 	if not SOLID.has(name_):
 		return
 	var body := StaticBody3D.new()
@@ -267,7 +273,8 @@ func _build() -> void:
 				_tile_m("tile-floor", 1.60), Color(1.06, 1.00, 0.90), 0.05, 8,
 				0.62, 0.78, Color(0.42, 0.40, 0.37)),
 		"жилая": _tex_st("floor-parquet", "floor_parquet",
-				_tile_m("floor-parquet", 1.60) * 1.35, wood, 0.09, 4, 0.85),
+				_tile_m("floor-parquet", 1.60) * 1.35, wood, 0.09, 4, 0.85,
+				1.0, Color(0.5, 0.5, 0.5), true, 0.30),
 	}
 	# В большой комнате паркет уложен ёлочкой, в маленькой — щитовой.
 	var m_herring: Material = m_kind["жилая"]
@@ -279,7 +286,7 @@ func _build() -> void:
 		# глаз и так не ловит.
 		m_herring = _tex_st("floor-parquet-2", "floor_parquet_2",
 				_tile_m("floor-parquet-2", 1.70) * 1.35, wood, 0.13, 0, 0.85,
-				1.0, Color(0.5, 0.5, 0.5), false)
+				1.0, Color(0.5, 0.5, 0.5), false, 0.30)
 	for room in _plan["rooms"]:
 		var mk: Material = m_kind.get(room["kind"], m_floor)
 		for r in room["rects"]:
@@ -1087,17 +1094,26 @@ func _furniture() -> void:
 	if sink != Vector3.ZERO and stove != Vector3.ZERO:
 		var wd := _wall_dir(sink.x, sink.z, 0.45)
 		var yaw := atan2(wd.x, wd.z)
-		# между мойкой и плитой один модуль 0.60, и ещё один за мойкой
-		var along := (stove - sink).normalized()
-		for k in [0.5, -1.0, -1.6]:
-			var pos: Vector3 = sink + along * (float(k) * 0.62)
-			if _kind_at(pos.x, pos.z) != "кухня":
-				continue
-			if absf(pos.x - stove.x) < 0.3 and absf(pos.z - stove.z) < 0.3:
-				continue
+		# Между мойкой и плитой зазор всего 0.16 м — модулю 0.60 там не встать.
+		# Свободная стена — за плитой, в глухом углу кухни: продолжаем ряд в ту
+		# же сторону, куда «along» уже смотрит от мойки к плите, и идём дальше
+		# за неё, пока следующий модуль целиком помещается в кухню.
+		var along := (stove - sink)
+		along.y = 0.0
+		if along.length() > 0.01:
+			along = along.normalized()
+		else:
+			along = Vector3(0, 0, -1)
+		var placed := 0
+		while placed < 4:
+			var pos: Vector3 = stove + along * (0.31 + 0.62 * float(placed))
+			var far: Vector3 = pos + along * 0.31
+			if _kind_at(pos.x, pos.z) != "кухня" or _kind_at(far.x, far.z) != "кухня":
+				break
 			_solidify(_place(FURN + "kitchen_counter.glb",
 					Vector3(pos.x, 0.0, pos.z), yaw))
 			_place(FURN + "kitchen_upper.glb", Vector3(pos.x, 1.45, pos.z), yaw)
+			placed += 1
 
 	# Шкаф — в каждой жилой комнате, у той короткой стены, что подальше
 	# от окна. 0.8 м запаса от проёма было слишком много для комнаты 3.4 м
@@ -1300,7 +1316,8 @@ static var _antitile_shader: Shader = null
 func _tex_st(dir_: String, base: String, tile_m: float,
 		tint: Color = Color(1, 1, 1), macro := 0.09,
 		snap := 0, rough_mul := 1.0, contrast := 1.0,
-		base_col := Color(0.5, 0.5, 0.5), stoch := true) -> ShaderMaterial:
+		base_col := Color(0.5, 0.5, 0.5), stoch := true,
+		mono := 0.0) -> ShaderMaterial:
 	if _antitile_shader == null:
 		_antitile_shader = load(ANTITILE)
 	var root := "res://assets/textures/%s/%s" % [dir_, base]
@@ -1325,6 +1342,7 @@ func _tex_st(dir_: String, base: String, tile_m: float,
 	m.set_shader_parameter("roughness_mul", rough_mul)
 	m.set_shader_parameter("use_stochastic", stoch)
 	m.set_shader_parameter("contrast", contrast)
+	m.set_shader_parameter("mono_patch", mono)
 	m.set_shader_parameter("base_col", base_col)
 	return m
 
@@ -1508,7 +1526,11 @@ func _light() -> void:
 	e.background_mode = Environment.BG_SKY
 	var sky := Sky.new()
 	var mat := ProceduralSkyMaterial.new()
-	mat.sky_top_color = Color(0.40, 0.50, 0.66)
+	# Тон неба менее синий: в узких нишах (например, боковая стенка кладовки
+	# у прихожей, толщиной 6 см) солнце не достаёт совсем, и цвет там даёт
+	# только небо. При старом sky_top_color (0.40, 0.50, 0.66) такие щели
+	# читались явно синими на фоне тёплого прямого света вокруг.
+	mat.sky_top_color = Color(0.46, 0.50, 0.58)
 	mat.sky_horizon_color = Color(0.74, 0.75, 0.76)
 	mat.ground_bottom_color = Color(0.22, 0.21, 0.20)
 	mat.ground_horizon_color = Color(0.52, 0.50, 0.48)
@@ -1516,8 +1538,8 @@ func _light() -> void:
 	e.sky = sky
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
 	# Небо вполсилы, иначе затенённые места отдают синевой и «плывут»
-	e.ambient_light_sky_contribution = 0.55
-	e.ambient_light_energy = 1.4
+	e.ambient_light_sky_contribution = 0.42
+	e.ambient_light_energy = 1.65
 	# Затемнение в углах и под предметами. Демо ставят интенсивность 1.0, но
 	# там открытые сцены; в комнате 3 x 5 углов много и они должны читаться.
 	e.ssao_enabled = true
@@ -2042,6 +2064,22 @@ func _turn_step() -> void:
 
 
 ## Отладка: что стоит в прихожей выше метра. Флаг --hall.
+## Что стоит в произвольной мировой точке — для разбора конкретных жалоб
+## по кадру, а не всей прихожей целиком. Флаг --spot=x0,z0,x1,z1.
+func _spot_debug(rect: Array) -> void:
+	for c in get_children():
+		var list: Array = []
+		if c is MeshInstance3D:
+			list = [c]
+		elif c is Node3D:
+			list = (c as Node3D).find_children("*", "MeshInstance3D", true, false)
+		for n in list:
+			var mi := n as MeshInstance3D
+			var box := mi.global_transform * mi.get_aabb()
+			if box.position.x < rect[2] and box.end.x > rect[0] 					and box.position.z < rect[3] and box.end.z > rect[1]:
+				print("[spot] %s box %v..%v" % [c.name, box.position, box.end])
+
+
 func _hall_report() -> void:
 	var halls: Array = []
 	for room in _plan["rooms"]:
