@@ -456,9 +456,9 @@ func _build() -> void:
 			# Рисунок крупнее вдвое: на стене 2.8 x 2.84 мелкий орнамент
 			# сливается в фактуру и перестаёт читаться рисунком.
 			papers.append(_tex(dir_, "wall_paper_%d" % i,
-					1.0 / (_tile_m(dir_, 1.06) * 2.0)))
+					1.0 / (_tile_m(dir_, 1.06) * 3.0)))
 	if papers.is_empty():
-		papers.append(_tex("wall-paper", "wall_paper", 1.0 / 2.12))
+		papers.append(_tex("wall-paper", "wall_paper", 1.0 / 3.18))
 	var room_i := 0
 
 	var m_skin := {
@@ -787,13 +787,19 @@ func _wear_texture() -> ImageTexture:
 			var a := img.get_pixel(x, y).a
 			var c := Color(0.62, 0.60, 0.57)
 			if lino != null:
-				# декаль 0.4 x 0.8 м при тайле пола 0.48 — берём тот же масштаб
-				var lx := int(fposmod(float(x) * 1.7, float(lino.get_width())))
-				var ly := int(fposmod(float(y) * 1.7, float(lino.get_height())))
+				# Декаль на полу занимает примерно 0.42 x 0.84 м, а тайл пола —
+				# 0.48 м. Значит по ширине укладывается 0.88 тайла, по длине
+				# 1.75: масштаб разный по осям, одинаковый множитель растягивал
+				# рисунок вдвое и пятно читалось другим материалом.
+				var kx := 0.88 * float(lino.get_width()) / float(w)
+				var ky := 1.75 * float(lino.get_height()) / float(h)
+				var lx := int(fposmod(float(x) * kx, float(lino.get_width())))
+				var ly := int(fposmod(float(y) * ky, float(lino.get_height())))
 				c = lino.get_pixel(lx, ly)
 				var g := (c.r + c.g + c.b) / 3.0
-				c = Color(lerpf(g, c.r, 0.45), lerpf(g, c.g, 0.45),
-						lerpf(g, c.b, 0.45)) * 1.06
+				# насыщенность режем сильнее — иначе разницы не видно
+				c = Color(lerpf(g, c.r, 0.30), lerpf(g, c.g, 0.30),
+						lerpf(g, c.b, 0.30)) * 1.18
 			img.set_pixel(x, y, Color(c.r, c.g, c.b, a))
 	_wear_tex = ImageTexture.create_from_image(img)
 	return _wear_tex
@@ -812,7 +818,7 @@ func _decal_wear(pos: Vector3, spin: float, scale_: float) -> void:
 			if tex != null:
 				d.texture_albedo = tex
 				d.texture_normal = null
-			d.albedo_mix = 0.5
+			d.albedo_mix = 0.75
 			d.modulate = Color(1, 1, 1)
 			d.upper_fade = 2.0
 			d.lower_fade = 2.0
@@ -981,13 +987,15 @@ func _curtains() -> void:
 		# Модель собрана от внутренней грани стены: карниз и ткань целиком лежат
 		# в комнате, в стену ничего не заходит. Мой прежний сдвиг 0.14 отрывал
 		# карниз от стены, а ткань уезжала ещё дальше.
-		var sill_out := 0.02
+		var sill_out := -0.04
 		var pos := Vector3(cx + inside.x * (thick * 0.5 + sill_out), lintel,
 				cz + inside.z * (thick * 0.5 + sill_out))
 		# В моделях штор карниз уже есть внутри. Отдельный ставился сверху,
 		# и получалось два карниза: полотно висело на своём, а над ним торчал
 		# лишний — из-за этого казалось, что шторы не на карнизе.
-		var k := width / CURTAIN_W
+		# чуть шире проёма: полотнище должно перекрывать откосы, иначе по краям
+		# видны щели и штора кажется отставшей от окна
+		var k := width / CURTAIN_W * 1.08
 		_place(CURTAIN_DIR + kind + ".glb", pos, yaw, k)
 
 
