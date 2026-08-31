@@ -23,6 +23,11 @@ uniform sampler2D tex_id : hint_default_black, filter_linear_mipmap_anisotropic;
 
 uniform float tile_m = 1.6;          // сколько метров занимает один тайл
 uniform vec4 tint : source_color = vec4(1.0);
+// Контраст рисунка: 1.0 — как в наборе, меньше — рисунок глуше. Считается
+// относительно среднего цвета набора, он передаётся отдельно, иначе тянуть
+// его пришлось бы из текстуры каждый кадр.
+uniform float contrast = 1.0;
+uniform vec4 base_col : source_color = vec4(0.5, 0.5, 0.5, 1.0);
 // Шероховатость берётся из ORM и множится на этот коэффициент: так плитка
 // блестит, линолеум почти нет, а бетон совсем матовый. Раньше здесь стояла
 // константа 0.92 — тогда все поверхности выглядели одинаково матовыми.
@@ -153,7 +158,11 @@ void fragment() {
 	vec3 nrm = sample_stochastic(tex_normal, uv, ddx, ddy).rgb;
 	vec3 orm = sample_stochastic(tex_orm, uv, ddx, ddy).rgb;
 
-	vec3 col = alb.rgb * tint.rgb;
+	vec3 col = alb.rgb;
+	if (contrast < 0.999) {
+		col = base_col.rgb + (col - base_col.rgb) * contrast;
+	}
+	col *= tint.rgb;
 
 	// макро-вариация: крупные пятна, шаг задан в метрах и не кратен тайлу
 	float m = cell_noise(uv * tile_m / macro_scale_m);

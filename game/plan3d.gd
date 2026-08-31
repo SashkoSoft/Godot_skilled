@@ -217,13 +217,15 @@ func _build() -> void:
 	# давая примерно +0.15 — тон выцветшего дуба, порода видна.
 	var wood := Color(1.10, 1.00, 0.86)
 	var m_kind := {
-		# Линолеум из игры убран целиком: оба набора пока не годятся. На кухне
-		# плитка (так и клали), в прихожей щитовой паркет в битом состоянии —
-		# обе замены честнее серого пятна.
-		"кухня": _tex_st("tile-floor", "tile_floor",
-				_tile_m("tile-floor", 1.60), Color(1.02, 1.0, 0.97), 0.06, 8, 0.7),
-		"прихожая": _tex_st("floor-parquet-3", "floor_parquet_3",
-				_tile_m("floor-parquet-3", 1.60) * 1.35, wood, 0.10, 4, 0.88),
+		# Линолеум вернулся под доску: тайл 0.48 вместо 1.20 — на 60 % мельче,
+		# и рисунок приглушён на 30 % относительно среднего цвета набора.
+		# Средний цвет замерен по albedo, поэтому глушение не уводит в серое.
+		"кухня": _tex_st("floor-lino-2", "floor_lino_2",
+				_tile_m("floor-lino-2", 1.20) * 0.4, Color(1, 1, 1), 0.09, 0,
+				0.95, 0.7, LINO_BASE),
+		"прихожая": _tex_st("floor-lino-2", "floor_lino_2",
+				_tile_m("floor-lino-2", 1.20) * 0.4, Color(0.98, 0.97, 0.96),
+				0.11, 0, 0.95, 0.7, LINO_BASE),
 		"лоджия": _tex_st("landing-floor", "landing_floor", 4.55,
 				Color(1, 1, 1), 0.07, 0, 1.0),
 		"санузел": _tex_st("tile-floor", "tile_floor",
@@ -1083,6 +1085,9 @@ func _tile_m(name: String, fallback: float) -> float:
 # бьёт все три: стохастическая выборка по треугольной решётке убирает сетку,
 # макро-вариация с шагом 7.3 м (не кратным тайлу) ломает поле, карта id —
 # если она есть в наборе — красит каждую планку в свой оттенок.
+## Средний цвет линолеума, замерен по albedo: относительно него глушится
+## рисунок, иначе понижение контраста утащило бы всё в серый.
+const LINO_BASE := Color(0.466, 0.445, 0.413)
 const ANTITILE := "res://assets/shaders/antitile.gdshader"
 
 static var _antitile_shader: Shader = null
@@ -1090,7 +1095,8 @@ static var _antitile_shader: Shader = null
 
 func _tex_st(dir_: String, base: String, tile_m: float,
 		tint: Color = Color(1, 1, 1), macro := 0.09,
-		snap := 0, rough_mul := 1.0) -> ShaderMaterial:
+		snap := 0, rough_mul := 1.0, contrast := 1.0,
+		base_col := Color(0.5, 0.5, 0.5)) -> ShaderMaterial:
 	if _antitile_shader == null:
 		_antitile_shader = load(ANTITILE)
 	var root := "res://assets/textures/%s/%s" % [dir_, base]
@@ -1113,6 +1119,8 @@ func _tex_st(dir_: String, base: String, tile_m: float,
 	m.set_shader_parameter("macro_value", macro)
 	m.set_shader_parameter("snap_cells", snap)
 	m.set_shader_parameter("roughness_mul", rough_mul)
+	m.set_shader_parameter("contrast", contrast)
+	m.set_shader_parameter("base_col", base_col)
 	return m
 
 
