@@ -210,8 +210,10 @@ func _build() -> void:
 	var m_kind := {
 		"кухня": _tex_st("floor-lino", "floor_lino", _tile_m("floor-lino", 1.20)),
 		"прихожая": _tex_st("floor-lino", "floor_lino", _tile_m("floor-lino", 1.20), Color(1, 1, 1), 0.11),
-		"лоджия": _texf("landing-floor", "landing_floor", 0.22,
-				Color(0.86, 0.94, 0.84)),
+		# Лоджия — та же крошка, что на лестничной клетке, без подкраски:
+		# зелёный оттенок остался с тех пор, когда помещения красились по типу.
+		"лоджия": _tex_st("landing-floor", "landing_floor", 4.55,
+				Color(1, 1, 1), 0.07),
 		"санузел": _tex_st("tile-bath", "tile_bath", _tile_m("tile-bath", 1.20), Color(1, 1, 1), 0.05, 8),
 		"жилая": _tex_st("floor-parquet", "floor_parquet", _tile_m("floor-parquet", 1.60), Color(1, 1, 1), 0.09, 4),
 	}
