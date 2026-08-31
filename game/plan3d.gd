@@ -83,6 +83,8 @@ func _ready() -> void:
 	_ready_fly()
 	if OS.get_cmdline_user_args().has("--hall"):
 		_hall_report()
+	if OS.get_cmdline_user_args().has("--walk"):
+		_walk_check()
 
 
 ## Оставить в разборе только верхнюю квартиру. Половины зеркальны относительно
@@ -570,6 +572,7 @@ func _door_asset(cx: float, cz: float, width: float, along_z: bool) -> bool:
 	if ps == null:
 		return false
 	var node: Node3D = ps.instantiate()
+	node.set_meta("opening", true)
 	node.position = Vector3(cx, 0.0, cz)
 	node.scale = Vector3(width / float(DOOR_MODEL_W[kind]), 1.0, 1.0)
 	node.rotation.y = PI * 0.5 if along_z else 0.0
@@ -629,6 +632,7 @@ func _window_asset(cx: float, cz: float, width: float, along_z: bool,
 	if ps == null:
 		return false
 	var node: Node3D = ps.instantiate()
+	node.set_meta("opening", true)
 	node.position = Vector3(cx, sill, cz)
 	node.scale = Vector3(width / WIN_MODEL_W, 1.0, 1.0)
 	node.rotation.y = _inward_yaw(cx, cz, along_z)
@@ -1175,7 +1179,11 @@ func _room_skin(r: Array, mat: Material, h: float, door_h: float,
 			var oa1: float = float(o[2]) if along_x else float(o[3])
 			var ob0: float = float(o[1]) if along_x else float(o[0])
 			var ob1: float = float(o[3]) if along_x else float(o[2])
-			if face < ob0 - 0.01 or face > ob1 + 0.01:
+			# Ось проёма снята со скана и может не совпадать с зазором между
+			# блоками на несколько сантиметров: у двери кухни расхождение 0.07,
+			# и с жёстким допуском отделка вставала прямо в проходе. Допуск
+			# берём с запасом на толщину стены.
+			if face < ob0 - 0.15 or face > ob1 + 0.15:
 				continue
 			var c0 := maxf(oa0, a0)
 			var c1 := minf(oa1, a1)
@@ -1663,9 +1671,150 @@ func _closet_doors() -> void:
 				width / (0.46 if model == "closet_door_46" else 0.71))
 		if node == null:
 			continue
+		node.set_meta("opening", true)
 		var leaf := node.find_child("leaf", true, false) as Node3D
 		if leaf != null and model != "closet_door_broken":
 			leaf.rotation.y += deg_to_rad(18.0 + float(seed_v % 11) * 1.5)
+
+
+# --- проверка проходимости ---------------------------------------------------
+# Флаг --walk. Строит сетку 5 см по всей квартире, отмечает занятым всё, что
+# стоит на высоте пояса, и заливкой проверяет, что из каждого помещения можно
+# дойти в каждое. Это ответ на историю с «стеной в прихожей»: перегородка
+# ловится числом, а не разглядыванием кадра.
+func _walk_check() -> void:
+	var b: Array = _plan["bounds"]
+	var x0: float = float(b[0])
+	var z0: float = float(b[1])
+	var x1: float = float(b[2])
+	var z1: float = float(b[3])
+	var step := 0.05
+	var w := int((x1 - x0) / step) + 1
+	var h := int((z1 - z0) / step) + 1
+	var blocked := PackedByteArray()
+	blocked.resize(w * h)
+
+	# занято всё, что пересекает высоту 0.35…1.20 — то есть мешает пройти
+	var boxes := 0
+	for c in get_children():
+		# блок, вставленный в проём, считать стеной нельзя: его габаритная
+		# коробка накрывает весь проём, хотя внутри неё дыра. Именно это
+		# однажды показало «не дойти никуда» на совершенно проходимой квартире.
+		if c.has_meta("opening"):
+			continue
+		var list: Array = []
+		if c is MeshInstance3D:
+			list = [c]
+		elif c is Node3D:
+			list = (c as Node3D).find_children("*", "MeshInstance3D", true, false)
+		for n in list:
+			var mi := n as MeshInstance3D
+			var box := mi.global_transform * mi.get_aabb()
+			if box.end.y < 0.35 or box.position.y > 1.20:
+				continue
+			# створки и ткань не считаем: дверь открывают, штору отодвигают
+			var nm := String(mi.name)
+			if nm.begins_with("leaf") or nm.begins_with("curtain") 					or nm.begins_with("sheer") or nm.begins_with("door-") 					or nm.begins_with("Door") or nm.begins_with("DF") 					or nm.begins_with("ClosetDoor") or nm.begins_with("Glass") 					or nm.begins_with("Frame"):
+				continue
+			boxes += 1
+			var i0 := maxi(int((box.position.x - x0) / step), 0)
+			var i1 := mini(int((box.end.x - x0) / step), w - 1)
+			var j0 := maxi(int((box.position.z - z0) / step), 0)
+			var j1 := mini(int((box.end.z - z0) / step), h - 1)
+			for j in range(j0, j1 + 1):
+				for i in range(i0, i1 + 1):
+					blocked[j * w + i] = 1
+
+	# точки, из которых надо ходить: середины прямоугольников помещений
+	var spots: Array = []
+	for room in _plan["rooms"]:
+		for r in room["rects"]:
+			spots.append([String(room["kind"]),
+					(float(r[0]) + float(r[2])) * 0.5,
+					(float(r[1]) + float(r[3])) * 0.5])
+	if spots.is_empty():
+		return
+
+	# заливка от прихожей: из неё в жизни и попадают во все помещения
+	var from_i := 0
+	for k in spots.size():
+		if String(spots[k][0]) == "прихожая":
+			from_i = k
+			break
+	var tmp = spots[0]
+	spots[0] = spots[from_i]
+	spots[from_i] = tmp
+	var seen := PackedByteArray()
+	seen.resize(w * h)
+	var start := int((float(spots[0][2]) - z0) / step) * w 			+ int((float(spots[0][1]) - x0) / step)
+	var queue: Array[int] = [start]
+	seen[start] = 1
+	while not queue.is_empty():
+		var cur: int = queue.pop_back()
+		var ci := cur % w
+		var cj := cur / w
+		for d in [[1, 0], [-1, 0], [0, 1], [0, -1]]:
+			var ni: int = ci + int(d[0])
+			var nj: int = cj + int(d[1])
+			if ni < 0 or nj < 0 or ni >= w or nj >= h:
+				continue
+			var idx := nj * w + ni
+			if seen[idx] == 1 or blocked[idx] == 1:
+				continue
+			seen[idx] = 1
+			queue.append(idx)
+
+	var bad: Array = []
+	for sp in spots:
+		var i := int((float(sp[1]) - x0) / step)
+		var j := int((float(sp[2]) - z0) / step)
+		# центр помещения может попасть в ванну или в тумбу — ищем ближайшую
+		# свободную клетку, иначе проверка ругается на мебель, а не на стены
+		var found := false
+		for rad in range(0, 14):
+			for dj in range(-rad, rad + 1):
+				for di in range(-rad, rad + 1):
+					var qi := clampi(i + di, 0, w - 1)
+					var qj := clampi(j + dj, 0, h - 1)
+					if blocked[qj * w + qi] == 0:
+						i = qi
+						j = qj
+						found = true
+						break
+				if found:
+					break
+			if found:
+				break
+		if seen[j * w + i] != 1:
+			bad.append("%s (%.2f, %.2f)" % [sp[0], sp[1], sp[2]])
+	# карта проходимости: чёрное — занято, зелёное — куда дошли, серое — пусто
+	var img := Image.create(w, h, false, Image.FORMAT_RGB8)
+	for j in h:
+		for i in w:
+			var idx := j * w + i
+			var col := Color(0.25, 0.25, 0.28)
+			if blocked[idx] == 1:
+				col = Color(0.05, 0.05, 0.05)
+			elif seen[idx] == 1:
+				col = Color(0.2, 0.8, 0.35)
+			img.set_pixel(i, j, col)
+	for sp in spots:
+		var si := clampi(int((float(sp[1]) - x0) / step), 0, w - 1)
+		var sj := clampi(int((float(sp[2]) - z0) / step), 0, h - 1)
+		for dj in range(-2, 3):
+			for di in range(-2, 3):
+				var qi := clampi(si + di, 0, w - 1)
+				var qj := clampi(sj + dj, 0, h - 1)
+				img.set_pixel(qi, qj, Color(1, 0.3, 0.2))
+	img.save_png("user://walk.png")
+	print("[проходимость] карта: ", ProjectSettings.globalize_path("user://walk.png"))
+
+	if bad.is_empty():
+		print("[проходимость] ок: все %d помещений связаны, препятствий учтено %d"
+				% [spots.size(), boxes])
+	else:
+		print("[проходимость] НЕ ДОЙТИ до %d из %d: %s"
+				% [bad.size(), spots.size(), ", ".join(bad)])
 
 
 ## Отладка: что стоит в прихожей выше метра. Флаг --hall.
