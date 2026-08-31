@@ -84,6 +84,7 @@ Main.gd     # весь мир: свет, камера, меши, материа�
 | `references/visuals-3d.md` | меши из кода, материалы, шейдеры, пост-эффекты, небо, частицы |
 | `references/performance.md` | MultiMesh, LOD, draw calls — когда просело FPS |
 | `references/audio.md` | звук: пул плееров, процедурные WAV, 3D-панорама, зацикливание |
+| `references/asset-review.md` | приёмка ассетов числами и ошибки самих замеров |
 | `references/asset-variety.md` | разнообразие из немногих ассетов: поворот, слои, выбор модели по смыслу |
 | `references/gdscript-gotchas.md` | грабли GDScript 4 и переименования из Godot 3 |
 

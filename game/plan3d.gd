@@ -386,8 +386,9 @@ func _build() -> void:
 	var m_paint := _tex("wall-paint-kitchen", "wall_paint_kitchen",
 			1.0 / _tile_m("wall-paint-kitchen", 3.00), Color(1, 1, 1), true, 0.80)
 	m_paint.uv1_scale.y = -m_paint.uv1_scale.y
-	# Второе состояние краски — в прихожую: по коридору ходят больше, чем по
-	# кухне, и одинаковые стены в двух смежных помещениях сразу выдают тайл.
+	# Второе состояние краски — битое — держим для разорённых квартир. В этой
+	# оно стояло в прихожей и делало коридор избитым: помещение маленькое,
+	# стены близко, и каждая выбоина читается в упор.
 	var m_paint_worn := m_paint
 	if ResourceLoader.exists(
 			"res://assets/textures/wall-paint-kitchen-2/wall_paint_kitchen_2_albedo_1k.png"):
@@ -417,7 +418,7 @@ func _build() -> void:
 	var m_skin := {
 		"жилая": papers[0],
 		"кухня": m_paint,
-		"прихожая": m_paint_worn,
+		"прихожая": m_paint,
 		# Стены санузла: плитка крупнее (20 см вместо 15) и светлее — глазурь
 		# на стене всегда белее напольной, иначе помещение читается погребом.
 		"санузел": _tex_st("tile-bath", "tile_bath",
@@ -570,7 +571,24 @@ func _door_asset(cx: float, cz: float, width: float, along_z: bool) -> bool:
 	if leaf != null:
 		var side := 1.0 if seed_v % 2 == 0 else -1.0
 		var deg := 28.0 + float(seed_v % 17) * 1.6
-		leaf.rotation.y += deg_to_rad(deg) * side
+		# Дверь санузла открывается наружу, в коридор: внутри ванной 1.34 x 1.63
+		# и уборной 0.71 x 1.63 полотну просто некуда распахнуться.
+		var probe := 0.40
+		var a := _kind_at(cx - probe, cz) if along_z else _kind_at(cx, cz - probe)
+		var b := _kind_at(cx + probe, cz) if along_z else _kind_at(cx, cz + probe)
+		if a == "санузел" or b == "санузел":
+			var out_dir: Vector3
+			if along_z:
+				out_dir = Vector3(1, 0, 0) if a == "санузел" else Vector3(-1, 0, 0)
+			else:
+				out_dir = Vector3(0, 0, 1) if a == "санузел" else Vector3(0, 0, -1)
+			leaf.rotation.y += deg_to_rad(deg) * side
+			# куда уехал кончик полотна — туда и открылась дверь
+			var tip := leaf.global_transform * Vector3(0.7, 1.0, 0.0)
+			if (tip - Vector3(cx, 1.0, cz)).dot(out_dir) < 0.0:
+				leaf.rotation.y -= deg_to_rad(deg) * side * 2.0
+		else:
+			leaf.rotation.y += deg_to_rad(deg) * side
 	return true
 
 
@@ -629,6 +647,11 @@ func _decal(kind: String, pos: Vector3, normal: Vector3, scale_: float = 1.0,
 	d.albedo_mix = 1.0
 	d.modulate = tint
 	d.normal_fade = 0.4
+	# Кромка декали не должна читаться штампом: гасим её к краю проекции и по
+	# наклону поверхности. У вытертостей смешивание слабее — это грязь в порах,
+	# а не наклейка.
+	d.upper_fade = 1.2
+	d.lower_fade = 1.2
 	var yv := -normal.normalized()
 	var xv := Vector3.UP.cross(yv)
 	if xv.length() < 0.01:
@@ -660,7 +683,21 @@ func _decal(kind: String, pos: Vector3, normal: Vector3, scale_: float = 1.0,
 ## лучше мало и в осмысленных местах, чем много и всюду.
 ## Затёртое место темнее пола, а не светлее: лак сходит, в поры набивается
 ## грязь. Светлое пятно на буром паркете просто не читается.
-const WEAR_TINT := Color(0.70, 0.67, 0.63)
+const WEAR_TINT := Color(0.86, 0.84, 0.81)
+
+
+## Вытертость: та же декаль, но слабее и мягче по краю. Резкая маска читается
+## штампом, а разница с полом не должна бросаться в глаза — это затёртый лак,
+## а не пятно краски.
+func _decal_wear(pos: Vector3, spin: float, scale_: float) -> void:
+	var before := get_child_count()
+	_decal("path_worn", pos, Vector3(0, -1, 0), scale_, spin, WEAR_TINT)
+	if get_child_count() > before:
+		var d := get_child(get_child_count() - 1) as Decal
+		if d != null:
+			d.albedo_mix = 0.55
+			d.upper_fade = 2.0
+			d.lower_fade = 2.0
 
 
 func _wear_spots() -> void:
@@ -675,8 +712,7 @@ func _wear_spots() -> void:
 		if _kind_at(cx, cz) == "" and _kind_at(cx + (0.0 if along_x else 0.35),
 				cz + (0.35 if along_x else 0.0)) == "":
 			continue
-		_decal("path_worn", Vector3(cx, 0.05, cz), Vector3(0, -1, 0), 0.42,
-				0.0 if along_x else PI * 0.5, WEAR_TINT)
+		_decal_wear(Vector3(cx, 0.05, cz), 0.0 if along_x else PI * 0.5, 0.48)
 
 	# перед плитой и мойкой стоят, а не ходят: пятно круглее и мельче
 	for fx in _plan.get("fixtures", []):
@@ -693,8 +729,8 @@ func _wear_spots() -> void:
 		var dir := Vector3(0, 0, 1) if fw > fd else Vector3(1, 0, 0)
 		if _kind_at(px + dir.x * off, pz + dir.z * off) == "":
 			dir = -dir
-		_decal("path_worn", Vector3(px + dir.x * off, 0.05, pz + dir.z * off),
-				Vector3(0, -1, 0), 0.34, PI * 0.5 if fw > fd else 0.0, WEAR_TINT)
+		_decal_wear(Vector3(px + dir.x * off, 0.05, pz + dir.z * off),
+				PI * 0.5 if fw > fd else 0.0, 0.38)
 
 
 # --- предметы: сантехника, шторы, мебель ------------------------------------
