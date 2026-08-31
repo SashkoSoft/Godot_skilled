@@ -1,0 +1,14 @@
+ceiling-white 1.50
+floor-lino 1.20
+floor-lino-2 1.20
+floor-parquet 1.60
+floor-parquet-2 1.70
+floor-parquet-3 1.60
+tile-bath 1.20
+wall-paint-kitchen 3.00
+wall-paint-kitchen-2 3.00
+wall-paper 1.06
+wall-paper-2 1.06
+wall-paper-3 1.06
+wall-paper-4 1.06
+wall-paper-5 1.06

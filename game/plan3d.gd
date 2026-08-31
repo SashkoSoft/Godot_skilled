@@ -15,6 +15,7 @@ const DATA := "res://plan_left.json"
 var _shot := ""
 var _frames := 90
 var _size := Vector2i(2560, 2200)
+var _ss := 2                          # кратность суперсэмплинга
 var _vp: SubViewport = null
 var _plan: Dictionary = {}
 
@@ -25,6 +26,8 @@ func _ready() -> void:
 			_shot = a.substr(7)
 		elif a.begins_with("--frames="):
 			_frames = int(a.substr(9))
+		elif a.begins_with("--ss="):
+			_ss = clampi(int(a.substr(5)), 1, 3)
 		elif a.begins_with("--size="):
 			var wh := a.substr(7).split("x")
 			if wh.size() == 2:
@@ -51,7 +54,11 @@ func _ready() -> void:
 	# можно взять любой высоты. Мир общий, поэтому свет и среда те же.
 	if _shot != "":
 		_vp = SubViewport.new()
-		_vp.size = _size
+		# Суперсэмплинг: рисуем вдвое крупнее и уменьшаем на сохранении.
+		# MSAA сглаживает только кромки геометрии, а на превью лезет ещё и
+		# рябь текстуры под скользящим углом — её убирает только выборка
+		# нескольких пикселей на один. Флаг --ss=N меняет кратность.
+		_vp.size = _size * _ss
 		_vp.own_world_3d = false
 		_vp.world_3d = get_viewport().find_world_3d()
 		_vp.msaa_3d = Viewport.MSAA_8X
@@ -159,7 +166,7 @@ func _mat(c: Color, rough: float = 0.9) -> StandardMaterial3D:
 	return m
 
 
-func _box(size: Vector3, pos: Vector3, mat: StandardMaterial3D, name_: String) -> void:
+func _box(size: Vector3, pos: Vector3, mat: Material, name_: String) -> void:
 	var mesh := BoxMesh.new()
 	mesh.size = size
 	var mi := MeshInstance3D.new()
@@ -198,21 +205,24 @@ func _build() -> void:
 
 	# пол помещений цветом по назначению
 	# Масштаб — из tiles.txt доставки: 1 / (размер тайла в метрах).
+	# Полы — самая большая непрерывная поверхность в кадре, повторяемость на
+	# них заметнее всего. Поэтому они идут через шейдер без видимого тайла.
 	var m_kind := {
-		"кухня": _texf("floor-lino", "floor_lino", 1.0 / 1.20),
-		"прихожая": _texf("floor-lino", "floor_lino", 1.0 / 1.20),
+		"кухня": _tex_st("floor-lino", "floor_lino", _tile_m("floor-lino", 1.20)),
+		"прихожая": _tex_st("floor-lino", "floor_lino", _tile_m("floor-lino", 1.20), Color(1, 1, 1), 0.11),
 		"лоджия": _texf("landing-floor", "landing_floor", 0.22,
 				Color(0.86, 0.94, 0.84)),
-		"санузел": _texf("tile-bath", "tile_bath", 1.0 / 1.20),
-		"жилая": _texf("floor-parquet", "floor_parquet", 1.0 / 1.60),
+		"санузел": _tex_st("tile-bath", "tile_bath", _tile_m("tile-bath", 1.20), Color(1, 1, 1), 0.05, 8),
+		"жилая": _tex_st("floor-parquet", "floor_parquet", _tile_m("floor-parquet", 1.60), Color(1, 1, 1), 0.09, 4),
 	}
 	# В большой комнате паркет уложен ёлочкой, в маленькой — щитовой.
-	var m_herring: StandardMaterial3D = m_kind["жилая"]
+	var m_herring: Material = m_kind["жилая"]
 	if ResourceLoader.exists(
 			"res://assets/textures/floor-parquet-2/floor_parquet_2_albedo_1k.png"):
-		m_herring = _texf("floor-parquet-2", "floor_parquet_2", 1.0 / 1.60)
+		m_herring = _tex_st("floor-parquet-2", "floor_parquet_2",
+				_tile_m("floor-parquet-2", 1.70))
 	for room in _plan["rooms"]:
-		var mk: StandardMaterial3D = m_kind.get(room["kind"], m_floor)
+		var mk: Material = m_kind.get(room["kind"], m_floor)
 		for r in room["rects"]:
 			if String(room["kind"]) == "жилая":
 				var area := (float(r[2]) - float(r[0])) * (float(r[3]) - float(r[1]))
@@ -355,17 +365,31 @@ func _build() -> void:
 	# У краски кухни рисунок привязан к высоте: тёмная панель на нижних 1.10 м
 	# трёхметрового тайла. Трипланар кладёт его от мировой Y перевёрнутым,
 	# поэтому вертикаль зеркалю — иначе панель уезжает под потолок.
-	var m_paint := _tex("wall-paint-kitchen", "wall_paint_kitchen", 1.0 / 3.00)
+	# У краски вертикаль вшита (панель до 1.10 при тайле 3.00), поэтому
+	# стохастическая выборка ей противопоказана — она сдвигает копии и панель
+	# поедет. Остаётся обычный трипланар с зеркальной вертикалью.
+	var m_paint := _tex("wall-paint-kitchen", "wall_paint_kitchen",
+			1.0 / _tile_m("wall-paint-kitchen", 3.00))
 	m_paint.uv1_scale.y = -m_paint.uv1_scale.y
+	# Второе состояние краски — в прихожую: по коридору ходят больше, чем по
+	# кухне, и одинаковые стены в двух смежных помещениях сразу выдают тайл.
+	var m_paint_worn := m_paint
+	if ResourceLoader.exists(
+			"res://assets/textures/wall-paint-kitchen-2/wall_paint_kitchen_2_albedo_1k.png"):
+		m_paint_worn = _tex("wall-paint-kitchen-2", "wall_paint_kitchen_2",
+				1.0 / _tile_m("wall-paint-kitchen-2", 3.00))
+		m_paint_worn.uv1_scale.y = -m_paint_worn.uv1_scale.y
 	# Обои в комнатах разные. Пока набор один (task-0014), поэтому комнаты
 	# разводятся оттенком и шагом рисунка; как приедут варианты рисунка
 	# (task-0021), сюда встанут они, а перебор по комнатам останется тот же.
-	var papers: Array[StandardMaterial3D] = []
+	# Обои: вертикаль полотнища вшита, поэтому стохастика тоже не годится.
+	var papers: Array[Material] = []
 	for i in range(2, 6):
 		var dir_ := "wall-paper-%d" % i
 		if ResourceLoader.exists("res://assets/textures/%s/wall_paper_%d_albedo_1k.png"
 				% [dir_, i]):
-			papers.append(_tex(dir_, "wall_paper_%d" % i, 1.0 / 1.06))
+			papers.append(_tex(dir_, "wall_paper_%d" % i,
+					1.0 / _tile_m(dir_, 1.06)))
 	if papers.is_empty():
 		papers.append(_tex("wall-paper", "wall_paper", 1.0 / 1.06))
 	var room_i := 0
@@ -373,15 +397,15 @@ func _build() -> void:
 	var m_skin := {
 		"жилая": papers[0],
 		"кухня": m_paint,
-		"прихожая": m_paint,
-		"санузел": _tex("tile-bath", "tile_bath", 1.0 / 1.20),
+		"прихожая": m_paint_worn,
+		"санузел": _tex_st("tile-bath", "tile_bath", _tile_m("tile-bath", 1.20), Color(1, 1, 1), 0.05, 8),
 	}
 	var holes: Array = []
 	holes.append_array(_plan.get("door_openings", []))
 	holes.append_array(_plan.get("windows", []))
 	holes.append_array(_plan.get("parapets", []))
 	for room in _plan["rooms"]:
-		var ms: StandardMaterial3D = m_skin.get(room["kind"])
+		var ms: Material = m_skin.get(room["kind"])
 		if ms == null:
 			continue
 		if String(room["kind"]) == "жилая":
@@ -567,7 +591,20 @@ func _decal(kind: String, pos: Vector3, normal: Vector3, scale_: float = 1.0) ->
 		xv = Vector3.RIGHT
 	xv = xv.normalized()
 	var zv := yv.cross(xv).normalized()
-	d.transform = Transform3D(Basis(xv, yv, zv), pos)
+	# Одна и та же декаль в двух местах не должна читаться копией. Пятну на
+	# полу и на потолке можно крутить как угодно, потёку и плесени — нет:
+	# у них есть верх. Поэтому на стенах только зеркалю и слегка меняю размер,
+	# а полные обороты оставляю горизонтальным.
+	var seed_v := absf(pos.x) * 37.0 + absf(pos.z) * 91.0 + absf(pos.y) * 13.0
+	var r1 := fposmod(sin(seed_v) * 43758.5453, 1.0)
+	var r2 := fposmod(sin(seed_v + 1.7) * 43758.5453, 1.0)
+	var b := Basis(xv, yv, zv)
+	if absf(normal.y) > 0.5:
+		b = b.rotated(yv, r1 * TAU)
+	elif r1 < 0.5:
+		b = Basis(-xv, yv, -zv)          # зеркально, верх на месте
+	d.transform = Transform3D(b, pos)
+	d.size *= 1.0 + (r2 - 0.5) * 0.24
 	add_child(d)
 
 
@@ -620,10 +657,67 @@ func _decals() -> void:
 							z1 - 0.25), Vector3(0, -1, 0), 1.0)
 
 
+## Размер тайла берётся из tiles.txt доставки, а не из кода: исполнитель
+## сдаёт его вместе с набором, и число не должно жить в двух местах.
+const TILES_TXT := "res://assets/textures/tiles.txt"
+
+static var _tiles: Dictionary = {}
+
+
+func _tile_m(name: String, fallback: float) -> float:
+	if _tiles.is_empty():
+		var f := FileAccess.open(TILES_TXT, FileAccess.READ)
+		if f != null:
+			while not f.eof_reached():
+				var parts := f.get_line().strip_edges().split(" ", false)
+				if parts.size() >= 2 and parts[1].is_valid_float():
+					_tiles[parts[0]] = parts[1].to_float()
+			f.close()
+	return float(_tiles.get(name, fallback))
+
+
+# --- материал без видимой повторяемости --------------------------------------
+# Тайл читается тайлом по трём причинам сразу: видна сетка стыков, видно
+# «поле» одинаковой светлоты и видно, что все паркетины одного цвета. Шейдер
+# бьёт все три: стохастическая выборка по треугольной решётке убирает сетку,
+# макро-вариация с шагом 7.3 м (не кратным тайлу) ломает поле, карта id —
+# если она есть в наборе — красит каждую планку в свой оттенок.
+const ANTITILE := "res://assets/shaders/antitile.gdshader"
+
+static var _antitile_shader: Shader = null
+
+
+func _tex_st(dir_: String, base: String, tile_m: float,
+		tint: Color = Color(1, 1, 1), macro := 0.09,
+		snap := 0) -> ShaderMaterial:
+	if _antitile_shader == null:
+		_antitile_shader = load(ANTITILE)
+	var root := "res://assets/textures/%s/%s" % [dir_, base]
+	var m := ShaderMaterial.new()
+	m.shader = _antitile_shader
+	m.set_shader_parameter("tex_albedo", load(root + "_albedo_1k.png"))
+	var nrm := root + "_normal_1k.png"
+	if ResourceLoader.exists(nrm):
+		m.set_shader_parameter("tex_normal", load(nrm))
+	var orm := root + "_orm_1k.png"
+	if ResourceLoader.exists(orm):
+		m.set_shader_parameter("tex_orm", load(orm))
+	# карта id: у набора её может не быть — тогда пере-окраска выключена
+	var idm := root + "_id_1k.png"
+	if ResourceLoader.exists(idm):
+		m.set_shader_parameter("tex_id", load(idm))
+		m.set_shader_parameter("use_id", true)
+	m.set_shader_parameter("tile_m", tile_m)
+	m.set_shader_parameter("tint", tint)
+	m.set_shader_parameter("macro_value", macro)
+	m.set_shader_parameter("snap_cells", snap)
+	return m
+
+
 ## Отделка одной комнаты: по тонкой панели на каждую из четырёх внутренних
 ## граней, разрезанной проёмами. Над дверью панель есть — там бетон остаётся
 ## только снаружи; в самом проёме её нет, иначе она перекроет дверной блок.
-func _room_skin(r: Array, mat: StandardMaterial3D, h: float, door_h: float,
+func _room_skin(r: Array, mat: Material, h: float, door_h: float,
 		holes: Array) -> void:
 	var t := 0.02
 	var x0: float = float(r[0])
@@ -668,7 +762,7 @@ func _room_skin(r: Array, mat: StandardMaterial3D, h: float, door_h: float,
 
 func _skin_piece(along_x: bool, face: float, inward: float, a0: float,
 		a1: float, y0: float, y1: float, t: float,
-		mat: StandardMaterial3D) -> void:
+		mat: Material) -> void:
 	if a1 - a0 < 0.04 or y1 - y0 < 0.04:
 		return
 	var pos := Vector3()
@@ -1012,6 +1106,8 @@ func _process(_d: float) -> void:
 		return
 	await RenderingServer.frame_post_draw
 	var img := (_vp if _vp != null else get_viewport()).get_texture().get_image()
+	if _vp != null and _ss > 1:
+		img.resize(_size.x, _size.y, Image.INTERPOLATE_LANCZOS)
 	var err := img.save_png(_shot)
 	print("[plan3d] %s -> %s  (узлов %d)"
 			% ["ok" if err == OK else "ошибка %d" % err, _shot, get_child_count()])
