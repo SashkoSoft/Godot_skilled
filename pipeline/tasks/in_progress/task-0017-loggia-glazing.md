@@ -3,11 +3,11 @@ id: task-0017
 title: Остекление лоджии: парапет и переплёт
 assignee: houdini-assets
 type: model
-status: open
+status: in_progress
 revision: 1
 priority: normal
 created: 2026-08-31
-started:
+started: 2026-08-31
 finished:
 ---
 
