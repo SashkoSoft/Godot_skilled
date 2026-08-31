@@ -246,11 +246,34 @@ def main():
     kindmap = {"кухня": "кухня", "прихожая": "прихожая", "лоджия": "лоджия",
                "ванная": "санузел", "уборная": "санузел",
                "комната1": "жилая", "комната2": "жилая"}
+    def clip_to_closets(r):
+        """Кладовка — ниша, и она не может быть частью помещения. Если
+        прямоугольник комнаты налезает на кладовку, отодвигаем его границу по
+        той оси, где перекрытие меньше: иначе кладовка вырастает в коридоре
+        полноростовой тумбой поперёк прохода."""
+        x0, z0, x1, z1 = r
+        for _n, cx0, cz0, cx1, cz1, _side in closets:
+            if x1 <= cx0 or x0 >= cx1 or z1 <= cz0 or z0 >= cz1:
+                continue
+            dx = min(x1, cx1) - max(x0, cx0)
+            dz = min(z1, cz1) - max(z0, cz0)
+            if dx <= dz:
+                if x0 < cx0:
+                    x1 = min(x1, cx0)
+                else:
+                    x0 = max(x0, cx1)
+            else:
+                if z0 < cz0:
+                    z1 = min(z1, cz0)
+                else:
+                    z0 = max(z0, cz1)
+        return [round(x0, 3), round(z0, 3), round(x1, 3), round(z1, 3)]
+
     rooms_out = {}
     for fl, kind, x0, z0, x1, z1 in blocks:
         k = kindmap.get(kind)
         if k:
-            rooms_out.setdefault(k, []).append([x0, z0, x1, z1])
+            rooms_out.setdefault(k, []).append(clip_to_closets([x0, z0, x1, z1]))
 
     fixtures = list(FIXTURES) + [(f[0],) + zmirror(f[1:], 1, 3) for f in FIXTURES]
     sidemap = {"x+": [0, 1], "x-": [0, -1], "z+": [1, 0], "z-": [-1, 0]}
