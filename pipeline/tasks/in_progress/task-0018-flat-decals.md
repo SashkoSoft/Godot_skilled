@@ -3,11 +3,11 @@ id: task-0018
 title: Декали износа: потёки, плесень, вытертые тропы
 assignee: houdini-assets
 type: texture
-status: open
+status: in_progress
 revision: 1
 priority: normal
 created: 2026-08-31
-started:
+started: 2026-08-31
 finished:
 ---
 
