@@ -5,6 +5,8 @@ floor-parquet 1.60
 floor-parquet-2 1.70
 floor-parquet-3 1.60
 tile-bath 1.20
+tile-floor 1.60
+tile-kitchen 1.20
 wall-paint-kitchen 3.00
 wall-paint-kitchen-2 3.00
 wall-paper 1.06

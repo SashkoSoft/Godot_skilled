@@ -213,7 +213,7 @@ func _build() -> void:
 	var m_kind := {
 		"кухня": _tex_st("floor-lino", "floor_lino", _tile_m("floor-lino", 1.20),
 				Color(1, 1, 1), 0.09, 0, 0.95),
-		"прихожая": _tex_st("floor-lino", "floor_lino", _tile_m("floor-lino", 1.20),
+		"прихожая": _tex_st("floor-lino-2", "floor_lino_2", _tile_m("floor-lino-2", 1.20),
 				Color(1, 1, 1), 0.11, 0, 0.95),
 		# Лоджия — та же крошка, что на лестничной клетке, без подкраски:
 		# зелёный оттенок остался с тех пор, когда помещения красились по типу.
@@ -222,8 +222,8 @@ func _build() -> void:
 		# Плитка пола не может быть той же, что на стене. Пока набор один,
 		# беру его крупнее — как напольная 20 x 20 против стеновой 15 x 15;
 		# отдельный набор запрошен заданием.
-		"санузел": _tex_st("tile-bath", "tile_bath",
-				_tile_m("tile-bath", 1.20) * 1.6, Color(0.94, 0.92, 0.88), 0.05, 8, 0.62),
+		"санузел": _tex_st("tile-floor", "tile_floor",
+				_tile_m("tile-floor", 1.60), Color(1, 1, 1), 0.05, 8, 0.62),
 		"жилая": _tex_st("floor-parquet", "floor_parquet", _tile_m("floor-parquet", 1.60),
 				Color(1, 1, 1), 0.09, 4, 0.85),
 	}
@@ -437,6 +437,9 @@ func _build() -> void:
 			_room_skin(r, ms, h, door_h, holes)
 
 	# Приборы: высоты как в жизни, стоят на полу.
+	if _fixtures():
+		_curtains()
+		return
 	var m_fh := {"ванна": 0.58, "унитаз": 0.40, "мойка": 0.85,
 			"раковина": 0.80, "плита": 0.85}
 	for fx in _plan["fixtures"]:
@@ -686,6 +689,99 @@ func _wear_spots() -> void:
 			dir = -dir
 		_decal("path_worn", Vector3(px + dir.x * off, 0.05, pz + dir.z * off),
 				Vector3(0, -1, 0), 0.34, PI * 0.5 if fw > fd else 0.0, WEAR_TINT)
+
+
+# --- предметы: сантехника, шторы, мебель ------------------------------------
+# У всех моделей от houdini-assets ноль в середине низа, лицо смотрит в −Z.
+# Поэтому «поставить к стене» — это развернуть модель так, чтобы её +Z
+# указывал на стену, а «поставить в проём» — довернуть на комнату.
+const FIXTURE_MODELS := {
+	"ванна": "res://assets/models/fixtures/bathtub.glb",
+	"унитаз": "res://assets/models/fixtures/toilet.glb",
+	"раковина": "res://assets/models/fixtures/washbasin.glb",
+	"мойка": "res://assets/models/fixtures/kitchen_sink.glb",
+	"плита": "res://assets/models/fixtures/stove.glb",
+}
+
+
+## Куда смотрит ближайшая стена от точки: пробуем четыре стороны и берём ту,
+## где помещения уже нет.
+func _wall_dir(x: float, z: float, reach: float) -> Vector3:
+	for dir_ in [Vector3(0, 0, 1), Vector3(0, 0, -1),
+			Vector3(1, 0, 0), Vector3(-1, 0, 0)]:
+		if _kind_at(x + dir_.x * reach, z + dir_.z * reach) == "":
+			return dir_
+	return Vector3(0, 0, 1)
+
+
+func _place(path: String, pos: Vector3, yaw: float,
+		scale_x := 1.0) -> Node3D:
+	if not ResourceLoader.exists(path):
+		return null
+	var node: Node3D = (load(path) as PackedScene).instantiate()
+	node.position = pos
+	node.rotation.y = yaw
+	if not is_equal_approx(scale_x, 1.0):
+		node.scale.x = scale_x
+	add_child(node)
+	return node
+
+
+## Сантехника и плита по своим местам из разбора плана.
+func _fixtures() -> bool:
+	var any := false
+	for fx in _plan.get("fixtures", []):
+		var kind := String(fx["kind"])
+		var path: String = FIXTURE_MODELS.get(kind, "")
+		if path == "" or not ResourceLoader.exists(path):
+			continue
+		var r: Array = fx["r"]
+		var cx: float = (float(r[0]) + float(r[2])) * 0.5
+		var cz: float = (float(r[1]) + float(r[3])) * 0.5
+		var half: float = maxf(float(r[2]) - float(r[0]),
+				float(r[3]) - float(r[1])) * 0.5 + 0.12
+		var wd := _wall_dir(cx, cz, half)
+		# модель смотрит лицом в −Z, значит спиной к стене — это +Z на стену
+		if _place(path, Vector3(cx, 0.0, cz), atan2(wd.x, wd.z)) != null:
+			any = true
+	return any
+
+
+## Шторы в оконные проёмы. Пивот модели — середина верха проёма, комната со
+## стороны −Z, поэтому доворачиваем на ту сторону, где помещение.
+const CURTAIN_DIR := "res://assets/models/curtains/"
+const CURTAIN_W := 1.70
+
+
+func _curtains() -> void:
+	var lintel: float = _plan["lintel"]
+	for r in _plan.get("windows", []):
+		var w: float = float(r[2]) - float(r[0])
+		var d: float = float(r[3]) - float(r[1])
+		var width := maxf(w, d)
+		var thick := minf(w, d)
+		var cx: float = (float(r[0]) + float(r[2])) * 0.5
+		var cz: float = (float(r[1]) + float(r[3])) * 0.5
+		var along_z := w <= d
+		# в какую сторону комната
+		var probe := thick * 0.5 + 0.3
+		var inside := Vector3(-1, 0, 0) if along_z else Vector3(0, 0, -1)
+		if _kind_at(cx - inside.x * probe, cz - inside.z * probe) != "":
+			inside = -inside
+		var seed_v := int(absf(cx) * 41.0 + absf(cz) * 89.0) % 100
+		var kind := "curtain_pair"
+		if _kind_at(cx + inside.x * probe, cz + inside.z * probe) == "кухня":
+			kind = "curtain_half"
+		elif seed_v < 22:
+			kind = "curtain_torn"
+		elif seed_v < 44:
+			kind = "curtain_tulle"
+		var yaw := atan2(-inside.x, -inside.z)
+		var pos := Vector3(cx + inside.x * thick * 0.5, lintel,
+				cz + inside.z * thick * 0.5)
+		var k := width / CURTAIN_W
+		_place(CURTAIN_DIR + "curtain_rail.glb", pos, yaw, k)
+		_place(CURTAIN_DIR + kind + ".glb", pos, yaw, k)
 
 
 ## Где что лежит. Расстановка считается от прямоугольников помещений, а не
