@@ -780,8 +780,12 @@ func _curtains() -> void:
 		elif seed_v < 44:
 			kind = "curtain_tulle"
 		var yaw := atan2(-inside.x, -inside.z)
-		var pos := Vector3(cx + inside.x * thick * 0.5, lintel,
-				cz + inside.z * thick * 0.5)
+		# Подоконник выступает в комнату: у оконного блока габарит по толщине
+		# 0.48 при стене 0.34, то есть примерно 0.07 наружу и 0.07 внутрь.
+		# Штора вешается перед ним, иначе полотнище проходит сквозь доску.
+		var sill_out := 0.14
+		var pos := Vector3(cx + inside.x * (thick * 0.5 + sill_out), lintel,
+				cz + inside.z * (thick * 0.5 + sill_out))
 		var k := width / CURTAIN_W
 		_place(CURTAIN_DIR + "curtain_rail.glb", pos, yaw, k)
 		_place(CURTAIN_DIR + kind + ".glb", pos, yaw, k)
