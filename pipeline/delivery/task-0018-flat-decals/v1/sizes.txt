@@ -1,0 +1,8 @@
+debris-floor 0.80 0.40 512 nasyp musora i shtukaturki u steny
+furniture-ghost 1.00 1.80 512 svetlyy pryamougolnik ne vygorevshih oboev
+leak-ceiling 1.20 1.20 1024 potyok s potolka, rzhavo-buryy oreol
+leak-wall 0.60 1.60 512 sled potyoka po stene sverhu vniz
+mold-corner 0.50 0.50 512 plesen iz ugla sanuzla, ryostyot vverh ot pola
+mold-seam 0.80 0.10 512 tyomnaya polosa po shvu plitki
+paper-peel 0.60 0.90 512 otstavshiy ugol oboev s tenyu podlozhki
+path-worn 1.00 2.00 1024 vytertaya do osnovy tropa na linoleume
