@@ -206,9 +206,17 @@ func _build() -> void:
 		"санузел": _texf("tile-bath", "tile_bath", 1.0 / 1.20),
 		"жилая": _texf("floor-parquet", "floor_parquet", 1.0 / 1.60),
 	}
+	# В большой комнате паркет уложен ёлочкой, в маленькой — щитовой.
+	var m_herring: StandardMaterial3D = m_kind["жилая"]
+	if ResourceLoader.exists(
+			"res://assets/textures/floor-parquet-2/floor_parquet_2_albedo_1k.png"):
+		m_herring = _texf("floor-parquet-2", "floor_parquet_2", 1.0 / 1.60)
 	for room in _plan["rooms"]:
 		var mk: StandardMaterial3D = m_kind.get(room["kind"], m_floor)
 		for r in room["rects"]:
+			if String(room["kind"]) == "жилая":
+				var area := (float(r[2]) - float(r[0])) * (float(r[3]) - float(r[1]))
+				mk = m_herring if area > 17.0 else m_kind["жилая"]
 			if float(r[2]) - float(r[0]) < 0.08 or float(r[3]) - float(r[1]) < 0.08:
 				continue
 			_box(Vector3(float(r[2]) - float(r[0]), 0.04, float(r[3]) - float(r[1])),
@@ -353,16 +361,13 @@ func _build() -> void:
 	# разводятся оттенком и шагом рисунка; как приедут варианты рисунка
 	# (task-0021), сюда встанут они, а перебор по комнатам останется тот же.
 	var papers: Array[StandardMaterial3D] = []
-	for v in [["wall-paper-2", "wall_paper_2", 1.0 / 1.06, Color(1, 1, 1)],
-			["wall-paper-3", "wall_paper_3", 1.0 / 1.06, Color(1, 1, 1)]]:
-		if ResourceLoader.exists("res://assets/textures/%s/%s_albedo_1k.png"
-				% [v[0], v[1]]):
-			papers.append(_tex(String(v[0]), String(v[1]), float(v[2])))
+	for i in range(2, 6):
+		var dir_ := "wall-paper-%d" % i
+		if ResourceLoader.exists("res://assets/textures/%s/wall_paper_%d_albedo_1k.png"
+				% [dir_, i]):
+			papers.append(_tex(dir_, "wall_paper_%d" % i, 1.0 / 1.06))
 	if papers.is_empty():
-		papers.append(_tex("wall-paper", "wall_paper", 1.0 / 1.06,
-				Color(1.00, 0.97, 0.92)))
-		papers.append(_tex("wall-paper", "wall_paper", 1.0 / 1.34,
-				Color(0.88, 0.92, 0.90)))
+		papers.append(_tex("wall-paper", "wall_paper", 1.0 / 1.06))
 	var room_i := 0
 
 	var m_skin := {
@@ -455,12 +460,43 @@ func _take_glass(node: Node3D) -> void:
 			mi.material_override = _m_glass_shared
 
 
+## Что за дверь стоит в этом проёме — решается по соседям, а не по ширине.
+## Ширина врёт: проём между комнатами 0.94 шире входного 0.88, и по ширине
+## внутрь квартиры вставало входное полотно, обитое дерматином.
+enum DoorRole { ROOM, ENTRANCE, BALCONY }
+
+
+func _door_role(cx: float, cz: float, along_z: bool) -> DoorRole:
+	var probe := 0.40
+	var a := Vector2(cx - probe, cz) if along_z else Vector2(cx, cz - probe)
+	var b := Vector2(cx + probe, cz) if along_z else Vector2(cx, cz + probe)
+	if _kind_at(a.x, a.y) == "лоджия" or _kind_at(b.x, b.y) == "лоджия":
+		return DoorRole.BALCONY
+	# снаружи квартиры помещения нет — значит это выход на лестничную клетку
+	if _kind_at(a.x, a.y) == "" or _kind_at(b.x, b.y) == "":
+		return DoorRole.ENTRANCE
+	return DoorRole.ROOM
+
+
+func _kind_at(x: float, z: float) -> String:
+	for room in _plan["rooms"]:
+		for r in room["rects"]:
+			if x > float(r[0]) and x < float(r[2]) 					and z > float(r[1]) and z < float(r[3]):
+				return String(room["kind"])
+	return ""
+
+
 ## Дверной блок в проём. Часть дверей в брошенном доме без полотна или сорвана;
 ## выбор детерминированный, по координате, иначе дом меняется между запусками.
 func _door_asset(cx: float, cz: float, width: float, along_z: bool) -> bool:
-	var kind := "flat" if width >= 0.86 else "room"
+	var role := _door_role(cx, cz, along_z)
+	if role == DoorRole.BALCONY:
+		return false                     # балконную рисую своим блоком со стеклом
+	var kind := "flat" if role == DoorRole.ENTRANCE else "room"
 	var seed_v := int(absf(cx) * 71.0 + absf(cz) * 131.0) % 100
-	if seed_v < 16:
+	if role == DoorRole.ENTRANCE:
+		pass                             # входную не срываем: она и держит квартиру
+	elif seed_v < 16:
 		kind = "frame"
 	elif seed_v < 24:
 		kind = "broken"
