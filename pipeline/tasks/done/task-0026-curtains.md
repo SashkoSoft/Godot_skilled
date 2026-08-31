@@ -3,12 +3,12 @@ id: task-0026
 title: Шторы, занавески и карнизы
 assignee: houdini-assets
 type: model
-status: open
+status: done
 revision: 2
 priority: normal
 created: 2026-08-31
-started:
-finished:
+started: 2026-08-31
+finished: 2026-08-31
 ---
 
 # task-0026 — Шторы, занавески и карнизы
