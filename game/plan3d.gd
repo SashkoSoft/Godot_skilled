@@ -14,7 +14,7 @@ const DATA := "res://plan_left.json"
 
 var _shot := ""
 var _frames := 90
-var _size := Vector2i(1600, 1600)
+var _size := Vector2i(2560, 2200)
 var _vp: SubViewport = null
 var _plan: Dictionary = {}
 
@@ -29,6 +29,12 @@ func _ready() -> void:
 			var wh := a.substr(7).split("x")
 			if wh.size() == 2:
 				_size = Vector2i(int(wh[0]), int(wh[1]))
+	# Превью меньше 2К не отдаём: на кадре разбирают стык обоев и профиль рамы,
+	# а окно всё равно упирается в экран, поэтому кадр снимается в SubViewport.
+	var lo := mini(_size.x, _size.y)
+	if lo < 2048:
+		var k := 2048.0 / float(maxi(lo, 1))
+		_size = Vector2i(int(_size.x * k), int(_size.y * k))
 
 	var f := FileAccess.open(DATA, FileAccess.READ)
 	if f == null:
