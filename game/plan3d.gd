@@ -88,8 +88,9 @@ func _ready() -> void:
 	# собранной программно. Но на нашей камере он проигрывает: перекрытие
 	# закрывает верх, комнаты уходят в темноту, а по полу идёт воксельная
 	# рябь. Поэтому по умолчанию выключен, включается флагом --gi.
-	if OS.get_cmdline_user_args().has("--lights"):
-		_show_lights()
+	# Лампочку показываем всегда: патрон без неё выглядит перегоревшим, а так
+	# видно и сам источник, и его цвет.
+	_show_lights()
 	if OS.get_cmdline_user_args().has("--gi"):
 		_bake_gi()
 	_ready_fly()
@@ -272,8 +273,13 @@ func _build() -> void:
 	var m_herring: Material = m_kind["жилая"]
 	if ResourceLoader.exists(
 			"res://assets/textures/floor-parquet-2/floor_parquet_2_albedo_1k.png"):
+		# Ёлочка идёт без стохастической выборки: её сдвиги режут планки
+		# поперёк, и доски выглядят пересекающимися. Повторяемость снимается
+		# макро-вариацией и картой id, а сетку тайла у диагонального рисунка
+		# глаз и так не ловит.
 		m_herring = _tex_st("floor-parquet-2", "floor_parquet_2",
-				_tile_m("floor-parquet-2", 1.70) * 1.35, wood, 0.09, 0, 0.85)
+				_tile_m("floor-parquet-2", 1.70) * 1.35, wood, 0.13, 0, 0.85,
+				1.0, Color(0.5, 0.5, 0.5), false)
 	for room in _plan["rooms"]:
 		var mk: Material = m_kind.get(room["kind"], m_floor)
 		for r in room["rects"]:
@@ -1226,7 +1232,7 @@ static var _antitile_shader: Shader = null
 func _tex_st(dir_: String, base: String, tile_m: float,
 		tint: Color = Color(1, 1, 1), macro := 0.09,
 		snap := 0, rough_mul := 1.0, contrast := 1.0,
-		base_col := Color(0.5, 0.5, 0.5)) -> ShaderMaterial:
+		base_col := Color(0.5, 0.5, 0.5), stoch := true) -> ShaderMaterial:
 	if _antitile_shader == null:
 		_antitile_shader = load(ANTITILE)
 	var root := "res://assets/textures/%s/%s" % [dir_, base]
@@ -1249,6 +1255,7 @@ func _tex_st(dir_: String, base: String, tile_m: float,
 	m.set_shader_parameter("macro_value", macro)
 	m.set_shader_parameter("snap_cells", snap)
 	m.set_shader_parameter("roughness_mul", rough_mul)
+	m.set_shader_parameter("use_stochastic", stoch)
 	m.set_shader_parameter("contrast", contrast)
 	m.set_shader_parameter("base_col", base_col)
 	return m
@@ -1512,7 +1519,7 @@ func _room_lights() -> void:
 			# Яркость по площади: одна и та же лампа в комнате 3 x 5 читается
 			# ровно, а в уборной 0.7 x 1.6 выбивает стены в белое. Опорная
 			# точка — комната около 15 м², от неё вниз до трети.
-			lamp.light_energy = clampf(4.2 * sqrt(w * d / 15.0), 1.3, 4.6)
+			lamp.light_energy = clampf(5.0 * sqrt(w * d / 15.0), 1.6, 5.5)
 			lamp.omni_range = maxf(w, d) * 1.6 + 4.0
 			# Затухание круче единицы: пятно под лампой не выбивается, свет
 			# спадает к углам мягче и не растекается в соседнюю комнату.
@@ -1550,15 +1557,15 @@ func _show_lights() -> void:
 			continue
 		var l := n as OmniLight3D
 		var mesh := SphereMesh.new()
-		mesh.radius = 0.11
-		mesh.height = 0.22
+		mesh.radius = 0.045
+		mesh.height = 0.09
 		var mi := MeshInstance3D.new()
 		mi.mesh = mesh
 		var m := StandardMaterial3D.new()
 		m.albedo_color = l.light_color
 		m.emission_enabled = true
 		m.emission = l.light_color
-		m.emission_energy_multiplier = 4.0
+		m.emission_energy_multiplier = 8.0
 		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		mi.material_override = m
 		mi.position = l.position
