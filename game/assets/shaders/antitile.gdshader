@@ -23,8 +23,13 @@ uniform sampler2D tex_id : hint_default_black, filter_linear_mipmap_anisotropic;
 
 uniform float tile_m = 1.6;          // сколько метров занимает один тайл
 uniform vec4 tint : source_color = vec4(1.0);
-uniform float roughness_floor = 0.62;
-uniform float normal_depth = 0.6;
+// Шероховатость берётся из ORM и множится на этот коэффициент: так плитка
+// блестит, линолеум почти нет, а бетон совсем матовый. Раньше здесь стояла
+// константа 0.92 — тогда все поверхности выглядели одинаково матовыми.
+uniform float roughness_mul = 1.0;
+uniform float roughness_min = 0.18;
+uniform float specular_amount = 0.5;
+uniform float normal_depth = 1.0;
 
 uniform bool use_stochastic = true;
 // Если у набора внутри регулярная сетка (плитка, щитовой паркет), сдвиг копий
@@ -168,9 +173,9 @@ void fragment() {
 	ALBEDO = col;
 	NORMAL_MAP = nrm;
 	NORMAL_MAP_DEPTH = normal_depth;
-	ROUGHNESS = max(orm.g, roughness_floor);
+	ROUGHNESS = clamp(orm.g * roughness_mul, roughness_min, 1.0);
 	METALLIC = 0.0;
-	SPECULAR = 0.15;
+	SPECULAR = specular_amount;
 	AO = orm.r;
 	AO_LIGHT_AFFECT = 0.7;
 }

@@ -125,7 +125,8 @@ func _keep_one_flat() -> void:
 ## Развёртка трипланарная и в метрах, чтобы масштаб не зависел от размера
 ## коробки: у стены 5 м и у откоса 0.2 м рисунок одинаковый.
 func _tex(dir_: String, base: String, scale: float,
-		tint: Color = Color(1, 1, 1), use_normal: bool = true) -> StandardMaterial3D:
+		tint: Color = Color(1, 1, 1), use_normal: bool = true,
+		rough_mul: float = 1.0) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	var root := "res://assets/textures/%s/%s" % [dir_, base]
 	var alb := root + "_albedo_1k.png"
@@ -142,11 +143,13 @@ func _tex(dir_: String, base: String, scale: float,
 		m.ao_enabled = true
 		m.ao_texture = load(orm)
 		m.ao_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
-		# Шероховатость и металличность из ORM не берём: в этих наборах
-		# зелёный канал местами тёмный, поверхность начинает бликовать
-		# точками по карте нормалей. Держим матовость постоянной.
-	m.roughness = 0.92
-	m.metallic_specular = 0.15
+		# Шероховатость берём из зелёного канала ORM: в принятых наборах шум
+		# по нему 0.0001…0.003, искрить нечему, а разница материалов без неё
+		# пропадает — всё выглядит одинаково матовым.
+		m.roughness_texture = m.ao_texture
+		m.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_GREEN
+	m.roughness = rough_mul
+	m.metallic_specular = 0.5
 	m.uv1_triplanar = true
 	m.uv1_scale = Vector3.ONE * scale
 	return m
@@ -208,25 +211,28 @@ func _build() -> void:
 	# Полы — самая большая непрерывная поверхность в кадре, повторяемость на
 	# них заметнее всего. Поэтому они идут через шейдер без видимого тайла.
 	var m_kind := {
-		"кухня": _tex_st("floor-lino", "floor_lino", _tile_m("floor-lino", 1.20)),
-		"прихожая": _tex_st("floor-lino", "floor_lino", _tile_m("floor-lino", 1.20), Color(1, 1, 1), 0.11),
+		"кухня": _tex_st("floor-lino", "floor_lino", _tile_m("floor-lino", 1.20),
+				Color(1, 1, 1), 0.09, 0, 0.95),
+		"прихожая": _tex_st("floor-lino", "floor_lino", _tile_m("floor-lino", 1.20),
+				Color(1, 1, 1), 0.11, 0, 0.95),
 		# Лоджия — та же крошка, что на лестничной клетке, без подкраски:
 		# зелёный оттенок остался с тех пор, когда помещения красились по типу.
 		"лоджия": _tex_st("landing-floor", "landing_floor", 4.55,
-				Color(1, 1, 1), 0.07),
+				Color(1, 1, 1), 0.07, 0, 1.0),
 		# Плитка пола не может быть той же, что на стене. Пока набор один,
 		# беру его крупнее — как напольная 20 x 20 против стеновой 15 x 15;
 		# отдельный набор запрошен заданием.
 		"санузел": _tex_st("tile-bath", "tile_bath",
-				_tile_m("tile-bath", 1.20) * 1.6, Color(0.94, 0.92, 0.88), 0.05, 8),
-		"жилая": _tex_st("floor-parquet", "floor_parquet", _tile_m("floor-parquet", 1.60), Color(1, 1, 1), 0.09, 4),
+				_tile_m("tile-bath", 1.20) * 1.6, Color(0.94, 0.92, 0.88), 0.05, 8, 0.62),
+		"жилая": _tex_st("floor-parquet", "floor_parquet", _tile_m("floor-parquet", 1.60),
+				Color(1, 1, 1), 0.09, 4, 0.85),
 	}
 	# В большой комнате паркет уложен ёлочкой, в маленькой — щитовой.
 	var m_herring: Material = m_kind["жилая"]
 	if ResourceLoader.exists(
 			"res://assets/textures/floor-parquet-2/floor_parquet_2_albedo_1k.png"):
 		m_herring = _tex_st("floor-parquet-2", "floor_parquet_2",
-				_tile_m("floor-parquet-2", 1.70))
+				_tile_m("floor-parquet-2", 1.70), Color(1, 1, 1), 0.09, 0, 0.85)
 	for room in _plan["rooms"]:
 		var mk: Material = m_kind.get(room["kind"], m_floor)
 		for r in room["rects"]:
@@ -375,7 +381,7 @@ func _build() -> void:
 	# стохастическая выборка ей противопоказана — она сдвигает копии и панель
 	# поедет. Остаётся обычный трипланар с зеркальной вертикалью.
 	var m_paint := _tex("wall-paint-kitchen", "wall_paint_kitchen",
-			1.0 / _tile_m("wall-paint-kitchen", 3.00))
+			1.0 / _tile_m("wall-paint-kitchen", 3.00), Color(1, 1, 1), true, 0.80)
 	m_paint.uv1_scale.y = -m_paint.uv1_scale.y
 	# Второе состояние краски — в прихожую: по коридору ходят больше, чем по
 	# кухне, и одинаковые стены в двух смежных помещениях сразу выдают тайл.
@@ -407,7 +413,8 @@ func _build() -> void:
 		"жилая": papers[0],
 		"кухня": m_paint,
 		"прихожая": m_paint_worn,
-		"санузел": _tex_st("tile-bath", "tile_bath", _tile_m("tile-bath", 1.20), Color(1, 1, 1), 0.05, 8),
+		"санузел": _tex_st("tile-bath", "tile_bath", _tile_m("tile-bath", 1.20),
+				Color(1, 1, 1), 0.05, 8, 0.55),
 	}
 	var holes: Array = []
 	holes.append_array(_plan.get("door_openings", []))
@@ -762,7 +769,7 @@ static var _antitile_shader: Shader = null
 
 func _tex_st(dir_: String, base: String, tile_m: float,
 		tint: Color = Color(1, 1, 1), macro := 0.09,
-		snap := 0) -> ShaderMaterial:
+		snap := 0, rough_mul := 1.0) -> ShaderMaterial:
 	if _antitile_shader == null:
 		_antitile_shader = load(ANTITILE)
 	var root := "res://assets/textures/%s/%s" % [dir_, base]
@@ -784,6 +791,7 @@ func _tex_st(dir_: String, base: String, tile_m: float,
 	m.set_shader_parameter("tint", tint)
 	m.set_shader_parameter("macro_value", macro)
 	m.set_shader_parameter("snap_cells", snap)
+	m.set_shader_parameter("roughness_mul", rough_mul)
 	return m
 
 
