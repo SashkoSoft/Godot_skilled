@@ -1071,7 +1071,9 @@ func _shafts(f: int, y: float) -> void:
 				Vector3(WALL, h, half - d))
 		_shaft_wall(f, Vector3(x1, y + h * 0.5, mid + (half + d) * 0.5),
 				Vector3(WALL, h, half - d))
-		_shaft_wall(f, Vector3(x1, y + h - 0.35, mid), Vector3(WALL, 0.70, LIFT_DOOR))
+		# перемычка 0,60 — тогда проём лифта выходит 2,24 в свету, как все
+		# остальные в доме, и под него собран блок створок от houdini-assets
+		_shaft_wall(f, Vector3(x1, y + h - 0.30, mid), Vector3(WALL, 0.60, LIFT_DOOR))
 		_mark(f, Vector3(x1, y, mid), Vector3(0, 0, 1), LIFT_DOOR, KIND_DOOR, y)
 
 
