@@ -872,14 +872,19 @@ const FIXTURE_MODELS := {
 
 ## Куда смотрит ближайшая стена от точки: пробуем четыре стороны и берём ту,
 ## где помещения уже нет.
-func _wall_dir(x: float, z: float, reach: float) -> Vector3:
-	# Ищем БЛИЖАЙШУЮ стену, а не первую попавшуюся: в уборной 0.71 x 1.63
-	# перебор в фиксированном порядке ставил унитаз спиной к длинной стене,
-	# и он оказывался развёрнут поперёк помещения.
-	var best := Vector3(0, 0, 1)
+func _wall_dir(x: float, z: float, reach: float,
+		dirs: Array = []) -> Vector3:
+	# Ищем БЛИЖАЙШУЮ стену среди разрешённых направлений. Без ограничения
+	# по осям «ближайшая» может оказаться боковой стеной, в которую прибор
+	# физически не влезает глубиной, — так унитаз в уборной 0.71 x 1.63
+	# однажды развернуло на 90° и он торчал в ширину, а не в длину комнаты.
+	var candidates := dirs
+	if candidates.is_empty():
+		candidates = [Vector3(0, 0, 1), Vector3(0, 0, -1),
+				Vector3(1, 0, 0), Vector3(-1, 0, 0)]
+	var best: Vector3 = candidates[0]
 	var best_d := 1e9
-	for dir_ in [Vector3(0, 0, 1), Vector3(0, 0, -1),
-			Vector3(1, 0, 0), Vector3(-1, 0, 0)]:
+	for dir_ in candidates:
 		var t := 0.05
 		while t < reach + 1.2:
 			if _kind_at(x + dir_.x * t, z + dir_.z * t) == "":
@@ -942,7 +947,20 @@ func _fixtures() -> bool:
 		var cz: float = (float(r[1]) + float(r[3])) * 0.5
 		var half: float = maxf(float(r[2]) - float(r[0]),
 				float(r[3]) - float(r[1])) * 0.5 + 0.12
-		var wd := _wall_dir(cx, cz, half)
+		# Прибор глубже, чем короткая сторона узкого помещения (унитаз 0.78
+		# при уборной шириной 0.71), поэтому вставать он может только вдоль
+		# ДЛИННОЙ оси собственного пятна на плане — она и задаёт, какая
+		# пара стен вообще подходит. По площади искать нельзя: пятно почти
+		# квадратное (0.45 x 0.50), а разница осей всё равно верно указывает
+		# направление, потому что она снята с реальных размеров на скане.
+		var fw: float = float(r[2]) - float(r[0])
+		var fd: float = float(r[3]) - float(r[1])
+		var axis_dirs: Array = []
+		if fd > fw + 0.02:
+			axis_dirs = [Vector3(0, 0, 1), Vector3(0, 0, -1)]
+		elif fw > fd + 0.02:
+			axis_dirs = [Vector3(1, 0, 0), Vector3(-1, 0, 0)]
+		var wd := _wall_dir(cx, cz, half, axis_dirs)
 		# модель смотрит лицом в −Z, значит спиной к стене — это +Z на стену
 		var fx_node := _place(path, Vector3(cx, 0.0, cz), atan2(wd.x, wd.z))
 		if fx_node != null:
