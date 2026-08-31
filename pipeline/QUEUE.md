@@ -34,7 +34,7 @@
 | task-0023 | Краска кухни и прихожей: убавить выбоины, два состояния | **houdini-assets** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
 | task-0024 | Балконная дверь под проём 1.13 | **houdini-assets** | model | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
 | task-0025 | Плитка пола санузла и фартук кухни | **houdini-assets** | texture | v2 | accepted | done/ | 2026-08-31 | 2026-08-31 |
-| task-0026 | Шторы, занавески и карнизы | **houdini-assets** | model | v4 | accepted | done/ | 2026-08-31 | 2026-09-01 |
+| task-0026 | Шторы, занавески и карнизы | **houdini-assets** | model | v5 | accepted | done/ | 2026-08-31 | 2026-09-01 |
 | task-0027 | Обои с орнаментом: четыре рисунка | **houdini-assets** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
 | task-0028 | Плитка: шов тоньше на стене и на полу | **houdini-assets** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
 
