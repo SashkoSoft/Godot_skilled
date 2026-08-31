@@ -3,11 +3,11 @@ id: task-0014
 title: Материалы квартиры: полы, стены, потолок, плитка
 assignee: houdini-assets
 type: texture
-status: open
+status: in_progress
 revision: 2
 priority: high
 created: 2026-08-30
-started:
+started: 2026-08-31
 finished:
 ---
 
