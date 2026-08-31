@@ -12,7 +12,6 @@
 | task-0016 | Дверцы кладовок 1а, 2а, 6а | **houdini-assets** | model | v1 | open | open/ | 2026-08-31 | — |
 | task-0017 | Остекление лоджии: парапет и переплёт | **houdini-assets** | model | v1 | open | open/ | 2026-08-31 | — |
 | task-0018 | Декали износа: потёки, плесень, вытертые тропы | **houdini-assets** | texture | v1 | open | open/ | 2026-08-31 | — |
-| task-0014 | Материалы квартиры: полы, стены, потолок, плитка | **houdini-assets** | texture | v1 | in_progress | in_progress/ | 2026-08-30 | — |
 | task-0002 | Бетонная панель: стены и перекрытия | **comfyui** | texture | v2 | accepted | done/ | 2026-08-27 | 2026-08-27 |
 | task-0003 | Плитка и бетон лестничной клетки | **comfyui** | texture | v1 | accepted | done/ | 2026-08-27 | 2026-08-27 |
 | task-0004 | Грязь и разводы на стекло | **comfyui** | texture | v1 | accepted | done/ | 2026-08-27 | 2026-08-27 |
@@ -23,6 +22,7 @@
 | task-0009 | Полы в квартирах: линолеум и паркет | **comfyui** | texture | v1 | cancelled | done/ | 2026-08-28 | 2026-08-31 |
 | task-0010 | Обои и потолок в квартирах | **comfyui** | texture | v1 | cancelled | done/ | 2026-08-28 | 2026-08-31 |
 | task-0013 | Плитка санузла: стены и пол | **comfyui** | texture | v1 | cancelled | done/ | 2026-08-30 | 2026-08-31 |
+| task-0014 | Материалы квартиры: полы, стены, потолок, плитка | **houdini-assets** | texture | v1 | done | done/ | 2026-08-30 | 2026-08-31 |
 
 ## Следующий свободный номер
 
