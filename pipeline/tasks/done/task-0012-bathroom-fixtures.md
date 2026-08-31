@@ -3,12 +3,12 @@ id: task-0012
 title: Сантехника и кухонная плита
 assignee: houdini-assets
 type: model
-status: open
+status: done
 revision: 1
 priority: normal
 created: 2026-08-30
-started:
-finished:
+started: 2026-08-31
+finished: 2026-08-31
 ---
 
 # task-0012 — Сантехника и кухонная плита

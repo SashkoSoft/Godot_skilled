@@ -1,0 +1,5 @@
+bathtub 1.290 0.738 0.540 chugunnaya vanna na nozhkah
+toilet 0.392 0.818 0.781 unitaz-kompakt s bachkom
+washbasin 0.580 0.978 0.540 rakovina na pedestale
+kitchen_sink 0.670 0.973 0.632 moyka stalnaya s tumboy
+stove 0.600 1.005 0.625 plita gazovaya, chetyre konforki
