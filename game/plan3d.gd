@@ -450,6 +450,8 @@ func _build() -> void:
 			_room_skin(r, ms, h, door_h, holes)
 
 	# Приборы: высоты как в жизни, стоят на полу.
+	if OS.get_cmdline_user_args().has("--bare"):
+		return                      # только стены, полы и отделка
 	if _fixtures():
 		_curtains()
 		_furniture()
@@ -1030,6 +1032,8 @@ func _paper() -> void:
 ## Где что лежит. Расстановка считается от прямоугольников помещений, а не
 ## забита координатами: зеркальная квартира получает то же самое сама.
 func _decals() -> void:
+	if OS.get_cmdline_user_args().has("--bare"):
+		return
 	_wear_spots()
 	_paper()
 	var lintel: float = _plan["lintel"]
@@ -1180,23 +1184,39 @@ func _room_skin(r: Array, mat: Material, h: float, door_h: float,
 		# Открытые участки: за гранью тоже помещение, значит стены там нет.
 		# Г-образная прихожая — два прямоугольника, и по их общей границе
 		# отделка вырастала перегородкой поперёк коридора.
+		# Проба ставится СНАРУЖИ грани: inward смотрит внутрь помещения, поэтому
+		# для проверки «есть ли там стена» надо шагнуть в противоположную
+		# сторону. И признак «участок начался» — отдельный флаг, а не
+		# отрицательная координата: координаты здесь сами отрицательные, и
+		# сторожевое значение −1.0 совпадало с обычным X, из-за чего ни один
+		# открытый участок не вырезался и отделка вставала поперёк коридора.
 		var step := 0.10
-		var open0 := -1.0
+		var open_from := 0.0
+		var open_run := false
 		var a := a0
 		while a <= a1 + 0.001:
-			var px := (a if along_x else face + inward * 0.07)
-			var pz := (face + inward * 0.07 if along_x else a)
+			var px := (a if along_x else face - inward * 0.07)
+			var pz := (face - inward * 0.07 if along_x else a)
 			var is_open := _kind_at(px, pz) != ""
-			if is_open and open0 < 0.0:
-				open0 = a
-			elif not is_open and open0 >= 0.0:
-				cuts.append([open0 - step, a, false])
-				open0 = -1.0
+			if is_open and not open_run:
+				open_from = a
+				open_run = true
+			elif not is_open and open_run:
+				cuts.append([open_from - step, a, false])
+				open_run = false
 			a += step
-		if open0 >= 0.0:
-			cuts.append([open0 - step, a1, false])
+		if open_run:
+			cuts.append([open_from - step, a1, false])
 		cuts.sort_custom(func(p, q): return float(p[0]) < float(q[0]))
 
+		if OS.get_cmdline_user_args().has("--hall"):
+			var mid := (a0 + a1) * 0.5
+			var qx := mid if along_x else face + inward * 0.07
+			var qz := face + inward * 0.07 if along_x else mid
+			if _kind_at(qx, qz) == "прихожая":
+				print("[шкура] грань %.2f вдоль %s, %.2f..%.2f, проба (%.2f, %.2f) = %s, кусков %d"
+						% [face, "X" if along_x else "Z", a0, a1, qx, qz,
+								_kind_at(qx, qz), cuts.size()])
 		var cur := a0
 		for c in cuts:
 			_skin_piece(along_x, face, inward, cur, float(c[0]), 0.0, h, t, mat)
