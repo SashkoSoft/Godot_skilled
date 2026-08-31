@@ -14,7 +14,7 @@ const DATA := "res://plan_left.json"
 
 var _shot := ""
 var _frames := 90
-var _size := Vector2i(2560, 2200)
+var _size := Vector2i(3200, 2750)
 var _ss := 2                          # кратность суперсэмплинга
 var _turn := ""                       # папка для кадров оборота
 var _turn_n := 36
@@ -263,7 +263,8 @@ func _build() -> void:
 		"лоджия": _tex_st("landing-floor", "landing_floor", 4.55,
 				Color(1, 1, 1), 0.07, 0, 1.0),
 		"санузел": _tex_st("tile-floor", "tile_floor",
-				_tile_m("tile-floor", 1.60), Color(1, 1, 1), 0.05, 8, 0.62),
+				_tile_m("tile-floor", 1.60), Color(1.06, 1.00, 0.90), 0.05, 8,
+				0.62, 0.78, Color(0.42, 0.40, 0.37)),
 		"жилая": _tex_st("floor-parquet", "floor_parquet",
 				_tile_m("floor-parquet", 1.60) * 1.35, wood, 0.09, 4, 0.85),
 	}
@@ -461,8 +462,11 @@ func _build() -> void:
 		# ещё крупнее — выходило 8.8 мм, то есть кирпичная кладка. У tile-floor
 		# шов 3.6 мм при тайле 1.60, а на 1.20 это 2.7 мм — как в жизни.
 		# Плитка получается 15 см, подкрашена светлее и глянцевее напольной.
+		# Песочный оттенок и приглушённый рисунок: белая плитка с сильным
+		# контрастом швов и сколов читается кафелем из больницы.
 		"санузел": _tex_st("tile-bath", "tile_bath",
-				_tile_m("tile-bath", 1.60), Color(1.14, 1.13, 1.09), 0.04, 8, 0.52),
+				_tile_m("tile-bath", 1.60), Color(1.16, 1.09, 0.94), 0.04, 8,
+				0.52, 0.72, Color(0.60, 0.58, 0.54)),
 	}
 	var holes: Array = []
 	holes.append_array(_plan.get("door_openings", []))
@@ -746,6 +750,28 @@ func _decal(kind: String, pos: Vector3, normal: Vector3, scale_: float = 1.0,
 ## грязь. Светлое пятно на буром паркете просто не читается.
 const WEAR_TINT := Color(0.86, 0.84, 0.81)
 
+## Маска потёртости: форма берётся у декали `path_worn`, а цвет делается ровным
+## и нейтральным. Тогда пятно читается как тот же пол, только менее насыщенный
+## и менее контрастный, а не как наклеенная другая текстура.
+static var _wear_tex: ImageTexture = null
+
+
+func _wear_texture() -> ImageTexture:
+	if _wear_tex != null:
+		return _wear_tex
+	var src := "res://assets/decals/path_worn_albedo_1k.png"
+	if not ResourceLoader.exists(src):
+		return null
+	var img: Image = (load(src) as Texture2D).get_image()
+	img.convert(Image.FORMAT_RGBA8)
+	var flat := Color(0.62, 0.60, 0.57)
+	for y in img.get_height():
+		for x in img.get_width():
+			var a := img.get_pixel(x, y).a
+			img.set_pixel(x, y, Color(flat.r, flat.g, flat.b, a))
+	_wear_tex = ImageTexture.create_from_image(img)
+	return _wear_tex
+
 
 ## Вытертость: та же декаль, но слабее и мягче по краю. Резкая маска читается
 ## штампом, а разница с полом не должна бросаться в глаза — это затёртый лак,
@@ -756,7 +782,12 @@ func _decal_wear(pos: Vector3, spin: float, scale_: float) -> void:
 	if get_child_count() > before:
 		var d := get_child(get_child_count() - 1) as Decal
 		if d != null:
-			d.albedo_mix = 0.55
+			var tex := _wear_texture()
+			if tex != null:
+				d.texture_albedo = tex
+				d.texture_normal = null
+			d.albedo_mix = 0.5
+			d.modulate = Color(1, 1, 1)
 			d.upper_fade = 2.0
 			d.lower_fade = 2.0
 
@@ -810,11 +841,22 @@ const FIXTURE_MODELS := {
 ## Куда смотрит ближайшая стена от точки: пробуем четыре стороны и берём ту,
 ## где помещения уже нет.
 func _wall_dir(x: float, z: float, reach: float) -> Vector3:
+	# Ищем БЛИЖАЙШУЮ стену, а не первую попавшуюся: в уборной 0.71 x 1.63
+	# перебор в фиксированном порядке ставил унитаз спиной к длинной стене,
+	# и он оказывался развёрнут поперёк помещения.
+	var best := Vector3(0, 0, 1)
+	var best_d := 1e9
 	for dir_ in [Vector3(0, 0, 1), Vector3(0, 0, -1),
 			Vector3(1, 0, 0), Vector3(-1, 0, 0)]:
-		if _kind_at(x + dir_.x * reach, z + dir_.z * reach) == "":
-			return dir_
-	return Vector3(0, 0, 1)
+		var t := 0.05
+		while t < reach + 1.2:
+			if _kind_at(x + dir_.x * t, z + dir_.z * t) == "":
+				break
+			t += 0.05
+		if t < best_d:
+			best_d = t
+			best = dir_
+	return best
 
 
 func _place(path: String, pos: Vector3, yaw: float,
@@ -913,8 +955,10 @@ func _curtains() -> void:
 		var sill_out := 0.14
 		var pos := Vector3(cx + inside.x * (thick * 0.5 + sill_out), lintel,
 				cz + inside.z * (thick * 0.5 + sill_out))
+		# В моделях штор карниз уже есть внутри. Отдельный ставился сверху,
+		# и получалось два карниза: полотно висело на своём, а над ним торчал
+		# лишний — из-за этого казалось, что шторы не на карнизе.
 		var k := width / CURTAIN_W
-		_place(CURTAIN_DIR + "curtain_rail.glb", pos, yaw, k)
 		_place(CURTAIN_DIR + kind + ".glb", pos, yaw, k)
 
 
