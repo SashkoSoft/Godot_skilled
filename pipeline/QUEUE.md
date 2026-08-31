@@ -6,7 +6,6 @@
 | ID | Задание | Кому | Тип | Ревизия | Статус | Папка | Создано | Закрыто |
 |---|---|---|---|---|---|---|---|---|
 | task-0001 | Локомоция на эталонном риге | **houdini-anim** | animation | v1 | open | open/ | 2026-08-23 | — |
-| task-0008 | Двери лифта и обрамление шахты | **houdini-assets** | model | v2 | open | open/ | 2026-08-28 | — |
 | task-0011 | Зелень: плети, мох, трава | **comfyui** | texture | v1 | open | open/ | 2026-08-28 | — |
 | task-0012 | Сантехника и кухонная плита | **houdini-assets** | model | v1 | open | open/ | 2026-08-30 | — |
 | task-0014 | Материалы квартиры: полы, стены, потолок, плитка | **houdini-assets** | texture | v1 | open | open/ | 2026-08-30 | — |
@@ -20,6 +19,7 @@
 | task-0005 | Дверные блоки: межкомнатные и входные | **houdini-assets** | model | v1 | accepted | done/ | 2026-08-28 | 2026-08-28 |
 | task-0006 | Оконные и балконные блоки | **houdini-assets** | model | v1 | accepted | done/ | 2026-08-28 | 2026-08-28 |
 | task-0007 | Перила и ограждения лестницы | **houdini-assets** | model | v1 | done | done/ | 2026-08-28 | 2026-08-31 |
+| task-0008 | Двери лифта и обрамление шахты | **houdini-assets** | model | v2 | done | done/ | 2026-08-28 | 2026-08-31 |
 | task-0009 | Полы в квартирах: линолеум и паркет | **comfyui** | texture | v1 | cancelled | done/ | 2026-08-28 | 2026-08-31 |
 | task-0010 | Обои и потолок в квартирах | **comfyui** | texture | v1 | cancelled | done/ | 2026-08-28 | 2026-08-31 |
 | task-0013 | Плитка санузла: стены и пол | **comfyui** | texture | v1 | cancelled | done/ | 2026-08-30 | 2026-08-31 |
