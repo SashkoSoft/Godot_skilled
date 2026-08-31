@@ -210,12 +210,14 @@ void fragment() {
 	}
 
 	// пятна выцветания: цветная и обесцвеченная версия одной текстуры
+	float pm_debug = cell_noise(uv * tile_m / mono_scale_m + vec2(37.0, 91.0));
 	if (mono_patch > 0.001) {
-		float pm = cell_noise(uv * tile_m / mono_scale_m + vec2(37.0, 91.0));
+		float pm = pm_debug;
 		float t = smoothstep(0.5 - 0.5 / mono_sharp, 0.5 + 0.5 / mono_sharp, pm);
 		float luma = dot(col, vec3(0.299, 0.587, 0.114));
 		col = mix(col, vec3(luma), t * mono_patch);
 	}
+	if (mono_patch > 100.0) { col = vec3(pm_debug); }
 
 	ALBEDO = col;
 	NORMAL_MAP = nrm;
