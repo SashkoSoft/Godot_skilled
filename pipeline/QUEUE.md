@@ -8,7 +8,6 @@
 | task-0001 | Локомоция на эталонном риге | **houdini-anim** | animation | v1 | open | open/ | 2026-08-23 | — |
 | task-0020 | Звук пустой квартиры: шаги, двери, гул | **comfyui** | audio | v1 | open | open/ | 2026-08-31 | — |
 | task-0026 | Шторы, занавески и карнизы | **houdini-assets** | model | v2 | open | open/ | 2026-08-31 | — |
-| task-0019 | Бумага на стенах: плакаты, календарь, обрывки | **comfyui** | texture | v1 | in_progress | in_progress/ | 2026-08-31 | — |
 | task-0002 | Бетонная панель: стены и перекрытия | **comfyui** | texture | v2 | accepted | done/ | 2026-08-27 | 2026-08-27 |
 | task-0003 | Плитка и бетон лестничной клетки | **comfyui** | texture | v1 | accepted | done/ | 2026-08-27 | 2026-08-27 |
 | task-0004 | Грязь и разводы на стекло | **comfyui** | texture | v1 | accepted | done/ | 2026-08-27 | 2026-08-27 |
@@ -26,6 +25,7 @@
 | task-0016 | Дверцы кладовок 1а, 2а, 6а | **houdini-assets** | model | v1 | done | done/ | 2026-08-31 | 2026-08-31 |
 | task-0017 | Остекление лоджии: парапет и переплёт | **houdini-assets** | model | v1 | done | done/ | 2026-08-31 | 2026-08-31 |
 | task-0018 | Декали износа: потёки, плесень, вытертые тропы | **houdini-assets** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
+| task-0019 | Бумага на стенах: плакаты, календарь, обрывки | **comfyui** | texture | v1 | done | done/ | 2026-08-31 | 2026-08-31 |
 | task-0021 | Обои: четыре разных рисунка на выбор | **houdini-assets** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
 | task-0022 | Полы: паркет ёлочкой и второй линолеум | **houdini-assets** | texture | v2 | done | done/ | 2026-08-31 | 2026-08-31 |
 | task-0023 | Краска кухни и прихожей: убавить выбоины, два состояния | **houdini-assets** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |

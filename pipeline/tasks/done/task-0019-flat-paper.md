@@ -3,12 +3,12 @@ id: task-0019
 title: Бумага на стенах: плакаты, календарь, обрывки
 assignee: comfyui
 type: texture
-status: in_progress
+status: done
 revision: 1
 priority: normal
 created: 2026-08-31
 started: 2026-08-31
-finished:
+finished: 2026-08-31
 ---
 
 # task-0019 — Бумага на стенах: плакаты, календарь, обрывки
