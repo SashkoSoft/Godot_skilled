@@ -782,11 +782,17 @@ func _camera() -> void:
 		var fx := (mnx + mxx) * 0.5
 		var fz := (mnz + mxz) * 0.5
 		cam.size = maxf(mxx - mnx, mxz - mnz) * 1.15
-		# У перспективы угол ниже: с высоты изометрии широкий объектив только
-		# растягивает пол, а стены и проёмы теряются.
-		var eye := Vector3(6.5, 22.0, 6.5)
+		# Наклон камеры: --pitch=N градусов над горизонтом. Чем больше, тем
+		# ближе к взгляду сверху. У перспективы по умолчанию положе, чем у
+		# изометрии, иначе широкий объектив только растягивает пол.
+		var pitch := 66.0
 		if cam.projection == Camera3D.PROJECTION_PERSPECTIVE:
-			eye = Vector3(11.0, 13.0, 11.0)
+			pitch = 58.0
+		for a in OS.get_cmdline_user_args():
+			if a.begins_with("--pitch="):
+				pitch = clampf(float(a.substr(8)), 10.0, 89.0)
+		var rad := deg_to_rad(pitch)
+		var eye := Vector3(cos(rad) * 0.7071, sin(rad), cos(rad) * 0.7071) * 20.0
 		cam.global_position = Vector3(fx, 1.0, fz) + eye
 		cam.look_at(Vector3(fx, 1.0, fz), Vector3.UP)
 		_frame(cam, Vector3(mnx, 0.0, mnz),
