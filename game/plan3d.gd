@@ -109,8 +109,8 @@ func _build() -> void:
 	var door_h: float = _plan["door_h"]
 
 	# Каждому виду блока свой материал. Пол квартир, обои и плитка санузла
-	# ещё в работе (task-0009, 0010, 0013) — до сдачи стоят ближайшие из
-	# принятых, чтобы масштаб и тон уже читались.
+	# ещё в работе (task-0014 у houdini-assets) — до сдачи стоят ближайшие
+	# из принятых, чтобы масштаб и тон уже читались.
 	var m_wall := _tex("wall-paint", "wall_paint", 0.32)
 	var m_wall_out := _tex("concrete-facade", "concrete_facade", 0.22)
 	var m_floor := _texf("concrete-facade", "concrete_facade", 0.25,
