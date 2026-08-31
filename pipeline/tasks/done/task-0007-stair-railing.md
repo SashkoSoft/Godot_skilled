@@ -3,12 +3,12 @@ id: task-0007
 title: Перила и ограждения лестницы
 assignee: houdini-assets
 type: model
-status: open
+status: done
 revision: 1
 priority: normal
 created: 2026-08-28
-started:
-finished:
+started: 2026-08-28
+finished: 2026-08-31
 ---
 
 # task-0007 — Перила и ограждения лестницы
