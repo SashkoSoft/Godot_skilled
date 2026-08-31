@@ -1,0 +1,4 @@
+step 0.880
+loggia_frame_section gluhaya sekciya ostekleniya
+loggia_frame_vent sekciya s otkryvayushcheysya stvorkoy
+loggia_parapet modul parapeta 0.88 x 1.00
