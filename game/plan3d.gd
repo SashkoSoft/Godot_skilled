@@ -453,10 +453,12 @@ func _build() -> void:
 		var dir_ := "wall-paper-%d" % i
 		if ResourceLoader.exists("res://assets/textures/%s/wall_paper_%d_albedo_1k.png"
 				% [dir_, i]):
+			# Рисунок крупнее вдвое: на стене 2.8 x 2.84 мелкий орнамент
+			# сливается в фактуру и перестаёт читаться рисунком.
 			papers.append(_tex(dir_, "wall_paper_%d" % i,
-					1.0 / _tile_m(dir_, 1.06)))
+					1.0 / (_tile_m(dir_, 1.06) * 2.0)))
 	if papers.is_empty():
-		papers.append(_tex("wall-paper", "wall_paper", 1.0 / 1.06))
+		papers.append(_tex("wall-paper", "wall_paper", 1.0 / 2.12))
 	var room_i := 0
 
 	var m_skin := {
@@ -770,11 +772,29 @@ func _wear_texture() -> ImageTexture:
 		return null
 	var img: Image = (load(src) as Texture2D).get_image()
 	img.convert(Image.FORMAT_RGBA8)
-	var flat := Color(0.62, 0.60, 0.57)
-	for y in img.get_height():
-		for x in img.get_width():
+	# Цвет берём у самого пола, а не плоский: пятно должно быть тем же
+	# линолеумом, только выцветшим. Насыщенность режем вдвое, светлоту чуть
+	# поднимаем — так затёртое место отличается тоном, а не материалом.
+	var floor_src := "res://assets/textures/floor-lino-2/floor_lino_2_albedo_1k.png"
+	var lino: Image = null
+	if ResourceLoader.exists(floor_src):
+		lino = (load(floor_src) as Texture2D).get_image()
+		lino.convert(Image.FORMAT_RGBA8)
+	var w := img.get_width()
+	var h := img.get_height()
+	for y in h:
+		for x in w:
 			var a := img.get_pixel(x, y).a
-			img.set_pixel(x, y, Color(flat.r, flat.g, flat.b, a))
+			var c := Color(0.62, 0.60, 0.57)
+			if lino != null:
+				# декаль 0.4 x 0.8 м при тайле пола 0.48 — берём тот же масштаб
+				var lx := int(fposmod(float(x) * 1.7, float(lino.get_width())))
+				var ly := int(fposmod(float(y) * 1.7, float(lino.get_height())))
+				c = lino.get_pixel(lx, ly)
+				var g := (c.r + c.g + c.b) / 3.0
+				c = Color(lerpf(g, c.r, 0.45), lerpf(g, c.g, 0.45),
+						lerpf(g, c.b, 0.45)) * 1.06
+			img.set_pixel(x, y, Color(c.r, c.g, c.b, a))
 	_wear_tex = ImageTexture.create_from_image(img)
 	return _wear_tex
 
@@ -1091,15 +1111,24 @@ func _paper_decal(kind: String, pos: Vector3, normal: Vector3) -> void:
 	var m: Array = PAPER_M.get(kind, [])
 	if m.is_empty():
 		return
+	# не вешаем над проёмами: там и так перемычка, и лист читается заплаткой
+	for o in _plan.get("door_openings", []):
+		var ox: float = clampf(pos.x, float(o[0]) - 0.55, float(o[2]) + 0.55)
+		var oz: float = clampf(pos.z, float(o[1]) - 0.55, float(o[3]) + 0.55)
+		if absf(ox - pos.x) < 0.001 and absf(oz - pos.z) < 0.001:
+			return
 	var alb := "%s%s_albedo_%s.png" % [PAPER, kind, m[1]]
 	if not ResourceLoader.exists(alb):
 		return
 	var d := Decal.new()
 	d.texture_albedo = load(alb)
 	d.size = Vector3(float(m[0]), 0.25, float(m[0]))
-	d.albedo_mix = 1.0
-	d.upper_fade = 1.0
-	d.lower_fade = 1.0
+	# Бумага не должна читаться наклейкой: смешиваем не в полную силу и гасим
+	# к краю проекции. Особенно это про светлый след от снятого шкафа — у него
+	# ровная граница, и в полную силу он выглядит приклеенным листом.
+	d.albedo_mix = 0.62 if kind == "furniture_ghost" else 0.8
+	d.upper_fade = 2.2
+	d.lower_fade = 2.2
 	var yv := -normal.normalized()
 	var xv := Vector3.UP.cross(yv)
 	if xv.length() < 0.01:
