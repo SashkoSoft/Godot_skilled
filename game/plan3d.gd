@@ -190,17 +190,14 @@ func _build() -> void:
 			Vector3((b[0] + b[2]) * 0.5, -0.08, (b[1] + b[3]) * 0.5), m_floor, "Slab")
 
 	# пол помещений цветом по назначению
+	# Масштаб — из tiles.txt доставки: 1 / (размер тайла в метрах).
 	var m_kind := {
-		"кухня": _texf("concrete-facade", "concrete_facade", 0.25,
-				Color(0.95, 0.84, 0.80)),
-		"прихожая": _texf("concrete-facade", "concrete_facade", 0.25,
-				Color(0.95, 0.87, 0.72)),
+		"кухня": _texf("floor-lino", "floor_lino", 1.0 / 1.20),
+		"прихожая": _texf("floor-lino", "floor_lino", 1.0 / 1.20),
 		"лоджия": _texf("landing-floor", "landing_floor", 0.22,
 				Color(0.86, 0.94, 0.84)),
-		"санузел": _texf("stair-tread", "stair_tread", 0.30,
-				Color(0.84, 0.92, 1.0)),
-		"жилая": _texf("concrete-facade", "concrete_facade", 0.25,
-				Color(0.86, 0.80, 0.72)),
+		"санузел": _texf("tile-bath", "tile_bath", 1.0 / 1.20),
+		"жилая": _texf("floor-parquet", "floor_parquet", 1.0 / 1.60),
 	}
 	for room in _plan["rooms"]:
 		var mk: StandardMaterial3D = m_kind.get(room["kind"], m_floor)
@@ -337,6 +334,31 @@ func _build() -> void:
 			dpos.z = cz - d * 0.5
 		_box(dw, dpos, m_leaf, "ClosetDoor")
 
+	# Отделка стен по помещению. Стена — общий блок между двумя комнатами и
+	# материал у неё один, поэтому обои, краску и плитку кладу отдельной
+	# тонкой «шкурой» на внутреннюю грань каждого помещения.
+	# У краски кухни рисунок привязан к высоте: тёмная панель на нижних 1.10 м
+	# трёхметрового тайла. Трипланар кладёт его от мировой Y перевёрнутым,
+	# поэтому вертикаль зеркалю — иначе панель уезжает под потолок.
+	var m_paint := _tex("wall-paint-kitchen", "wall_paint_kitchen", 1.0 / 3.00)
+	m_paint.uv1_scale.y = -m_paint.uv1_scale.y
+	var m_skin := {
+		"жилая": _tex("wall-paper", "wall_paper", 1.0 / 1.06),
+		"кухня": m_paint,
+		"прихожая": m_paint,
+		"санузел": _tex("tile-bath", "tile_bath", 1.0 / 1.20),
+	}
+	var holes: Array = []
+	holes.append_array(_plan.get("door_openings", []))
+	holes.append_array(_plan.get("windows", []))
+	holes.append_array(_plan.get("parapets", []))
+	for room in _plan["rooms"]:
+		var ms: StandardMaterial3D = m_skin.get(room["kind"])
+		if ms == null:
+			continue
+		for r in room["rects"]:
+			_room_skin(r, ms, h, door_h, holes)
+
 	# Приборы: высоты как в жизни, стоят на полу.
 	var m_fh := {"ванна": 0.58, "унитаз": 0.40, "мойка": 0.85,
 			"раковина": 0.80, "плита": 0.85}
@@ -443,6 +465,68 @@ func _window_asset(cx: float, cz: float, width: float, along_z: bool,
 	add_child(node)
 	_take_glass(node)
 	return true
+
+
+## Отделка одной комнаты: по тонкой панели на каждую из четырёх внутренних
+## граней, разрезанной проёмами. Над дверью панель есть — там бетон остаётся
+## только снаружи; в самом проёме её нет, иначе она перекроет дверной блок.
+func _room_skin(r: Array, mat: StandardMaterial3D, h: float, door_h: float,
+		holes: Array) -> void:
+	var t := 0.02
+	var x0: float = float(r[0])
+	var z0: float = float(r[1])
+	var x1: float = float(r[2])
+	var z1: float = float(r[3])
+	# сторона: [вдоль X?, координата грани, знак внутрь]
+	var sides := [
+		[true, z0, 1.0], [true, z1, -1.0],
+		[false, x0, 1.0], [false, x1, -1.0],
+	]
+	for sd in sides:
+		var along_x: bool = sd[0]
+		var face: float = sd[1]
+		var inward: float = sd[2]
+		var a0 := x0 if along_x else z0
+		var a1 := x1 if along_x else z1
+		# интервалы проёмов вдоль этой грани
+		var cuts: Array = []
+		for o in holes:
+			var oa0: float = float(o[0]) if along_x else float(o[1])
+			var oa1: float = float(o[2]) if along_x else float(o[3])
+			var ob0: float = float(o[1]) if along_x else float(o[0])
+			var ob1: float = float(o[3]) if along_x else float(o[2])
+			if face < ob0 - 0.01 or face > ob1 + 0.01:
+				continue
+			var c0 := maxf(oa0, a0)
+			var c1 := minf(oa1, a1)
+			if c1 - c0 > 0.02:
+				cuts.append([c0, c1])
+		cuts.sort_custom(func(p, q): return float(p[0]) < float(q[0]))
+		# сплошные куски между проёмами
+		var cur := a0
+		for c in cuts:
+			_skin_piece(along_x, face, inward, cur, float(c[0]), 0.0, h, t, mat)
+			# над проёмом отделка есть: проём кончается на высоте двери
+			_skin_piece(along_x, face, inward, float(c[0]), float(c[1]),
+					door_h, h, t, mat)
+			cur = maxf(cur, float(c[1]))
+		_skin_piece(along_x, face, inward, cur, a1, 0.0, h, t, mat)
+
+
+func _skin_piece(along_x: bool, face: float, inward: float, a0: float,
+		a1: float, y0: float, y1: float, t: float,
+		mat: StandardMaterial3D) -> void:
+	if a1 - a0 < 0.04 or y1 - y0 < 0.04:
+		return
+	var pos := Vector3()
+	var size := Vector3()
+	if along_x:
+		size = Vector3(a1 - a0, y1 - y0, t)
+		pos = Vector3((a0 + a1) * 0.5, (y0 + y1) * 0.5, face + inward * t * 0.5)
+	else:
+		size = Vector3(t, y1 - y0, a1 - a0)
+		pos = Vector3(face + inward * t * 0.5, (y0 + y1) * 0.5, (a0 + a1) * 0.5)
+	_box(size, pos, mat, "Skin")
 
 
 ## Остекление проёма: рама по краю и стекло, всё по центру толщины стены.
@@ -594,7 +678,10 @@ func _room_lights() -> void:
 			lamp.position = Vector3((float(r[0]) + float(r[2])) * 0.5, h - 0.35,
 					(float(r[1]) + float(r[3])) * 0.5)
 			lamp.light_color = col
-			lamp.light_energy = 4.2
+			# Яркость по площади: одна и та же лампа в комнате 3 x 5 читается
+			# ровно, а в уборной 0.7 x 1.6 выбивает стены в белое. Опорная
+			# точка — комната около 15 м², от неё вниз до трети.
+			lamp.light_energy = clampf(4.2 * sqrt(w * d / 15.0), 1.3, 4.6)
 			lamp.omni_range = maxf(w, d) * 1.6 + 4.0
 			# Затухание круче единицы: пятно под лампой не выбивается, свет
 			# спадает к углам мягче и не растекается в соседнюю комнату.
@@ -659,7 +746,18 @@ func _camera() -> void:
 	var cx: float = (float(b[0]) + float(b[2])) * 0.5
 	var cz: float = (float(b[1]) + float(b[3])) * 0.5
 	var cam := Camera3D.new()
-	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
+	# --fov=N — перспектива вместо изометрии: для превью широкий угол читается
+	# лучше, стены расходятся от центра и видно глубину комнат.
+	var fov := 0.0
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--fov="):
+			fov = float(a.substr(6))
+	if fov > 0.0:
+		cam.projection = Camera3D.PROJECTION_PERSPECTIVE
+		cam.fov = fov
+		cam.near = 0.05
+	else:
+		cam.projection = Camera3D.PROJECTION_ORTHOGONAL
 	cam.size = 16.0
 	cam.current = true
 	# look_at работает только внутри дерева
@@ -684,7 +782,12 @@ func _camera() -> void:
 		var fx := (mnx + mxx) * 0.5
 		var fz := (mnz + mxz) * 0.5
 		cam.size = maxf(mxx - mnx, mxz - mnz) * 1.15
-		cam.global_position = Vector3(fx + 6.5, 22.0, fz + 6.5)
+		# У перспективы угол ниже: с высоты изометрии широкий объектив только
+		# растягивает пол, а стены и проёмы теряются.
+		var eye := Vector3(6.5, 22.0, 6.5)
+		if cam.projection == Camera3D.PROJECTION_PERSPECTIVE:
+			eye = Vector3(11.0, 13.0, 11.0)
+		cam.global_position = Vector3(fx, 1.0, fz) + eye
 		cam.look_at(Vector3(fx, 1.0, fz), Vector3.UP)
 		_frame(cam, Vector3(mnx, 0.0, mnz),
 				Vector3(mxx, float(_plan["wall_h"]), mxz))
@@ -718,10 +821,17 @@ func _frame(cam: Camera3D, mn: Vector3, mx: Vector3) -> void:
 			var sp := cam.unproject_position(p)
 			lo = Vector2(minf(lo.x, sp.x), minf(lo.y, sp.y))
 			hi = Vector2(maxf(hi.x, sp.x), maxf(hi.y, sp.y))
-		var off := ((lo + hi) * 0.5 - vp * 0.5) / vp.y * cam.size
+		var k := maxf((hi.x - lo.x) / vp.x, (hi.y - lo.y) / vp.y) * 1.02
 		var b := cam.global_transform.basis
-		cam.global_position += b.x * off.x - b.y * off.y
-		cam.size *= maxf((hi.x - lo.x) / vp.x, (hi.y - lo.y) / vp.y) * 1.02
+		if cam.projection == Camera3D.PROJECTION_ORTHOGONAL:
+			var off := ((lo + hi) * 0.5 - vp * 0.5) / vp.y * cam.size
+			cam.global_position += b.x * off.x - b.y * off.y
+			cam.size *= k
+		else:
+			# у перспективы масштаб задаётся удалением, а сдвиг — доворотом
+			var mid := (mn + mx) * 0.5
+			cam.global_position = mid + (cam.global_position - mid) * k
+			cam.look_at(mid, Vector3.UP)
 
 
 func _process(_d: float) -> void:
