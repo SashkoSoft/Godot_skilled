@@ -14,6 +14,8 @@ const DATA := "res://plan_left.json"
 
 var _shot := ""
 var _frames := 90
+var _size := Vector2i(1600, 1600)
+var _vp: SubViewport = null
 var _plan: Dictionary = {}
 
 
@@ -23,6 +25,10 @@ func _ready() -> void:
 			_shot = a.substr(7)
 		elif a.begins_with("--frames="):
 			_frames = int(a.substr(9))
+		elif a.begins_with("--size="):
+			var wh := a.substr(7).split("x")
+			if wh.size() == 2:
+				_size = Vector2i(int(wh[0]), int(wh[1]))
 
 	var f := FileAccess.open(DATA, FileAccess.READ)
 	if f == null:
@@ -30,6 +36,22 @@ func _ready() -> void:
 		return
 	_plan = JSON.parse_string(f.get_as_text())
 	f.close()
+
+	if OS.get_cmdline_user_args().has("--flat"):
+		_keep_one_flat()
+
+	# Снимок делаю в SubViewport, а не в окне: окно упирается в размер экрана
+	# (1800 x 1500 превращается в 1800 x 1012), а вьюпорту потолка нет и кадр
+	# можно взять любой высоты. Мир общий, поэтому свет и среда те же.
+	if _shot != "":
+		_vp = SubViewport.new()
+		_vp.size = _size
+		_vp.own_world_3d = false
+		_vp.world_3d = get_viewport().find_world_3d()
+		_vp.msaa_3d = Viewport.MSAA_8X
+		_vp.positional_shadow_atlas_size = 8192
+		_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		add_child(_vp)
 
 	_build()
 	_ceiling()
@@ -44,6 +66,45 @@ func _ready() -> void:
 		_show_lights()
 	if OS.get_cmdline_user_args().has("--gi"):
 		_bake_gi()
+
+
+## Оставить в разборе только верхнюю квартиру. Половины зеркальны относительно
+## z = 0, поэтому режу по центру прямоугольника: общая межквартирная стена
+## стоит ровно на нуле и остаётся, соседняя квартира уходит целиком.
+func _keep_one_flat() -> void:
+	var edge := 0.05
+
+	var rooms := []
+	for room in _plan["rooms"]:
+		var rects := []
+		for r in room["rects"]:
+			if (float(r[1]) + float(r[3])) * 0.5 < edge:
+				rects.append(r)
+		if not rects.is_empty():
+			rooms.append({"kind": room["kind"], "rects": rects})
+	_plan["rooms"] = rooms
+
+	for key in ["walls", "windows", "door_openings", "parapets"]:
+		var keep := []
+		for r in _plan.get(key, []):
+			if (float(r[1]) + float(r[3])) * 0.5 < edge:
+				keep.append(r)
+		_plan[key] = keep
+
+	for key in ["closets", "fixtures"]:
+		var keep2 := []
+		for it in _plan.get(key, []):
+			var r: Array = it["r"]
+			if (float(r[1]) + float(r[3])) * 0.5 < edge:
+				keep2.append(it)
+		_plan[key] = keep2
+
+	var b: Array = _plan["bounds"]
+	var mz := -1e9
+	for room in _plan["rooms"]:
+		for r in room["rects"]:
+			mz = maxf(mz, float(r[3]))
+	_plan["bounds"] = [b[0], b[1], b[2], mz + 0.34]
 
 
 ## Материал по набору текстур из assets: albedo + normal + ORM.
@@ -122,6 +183,7 @@ func _build() -> void:
 	var m_glass := _mat(Color(0.62, 0.84, 0.92), 0.12)
 	m_glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m_glass.albedo_color.a = 0.40
+	_m_glass_shared = m_glass
 
 	var b: Array = _plan["bounds"]
 	_box(Vector3(b[2] - b[0], 0.16, b[3] - b[1]),
@@ -175,7 +237,9 @@ func _build() -> void:
 		_box(Vector3(w, sill, d), Vector3(cx, sill * 0.5, cz), m_wall, "Sill")
 		_box(Vector3(w, h - lintel, d), Vector3(cx, (h + lintel) * 0.5, cz),
 				m_wall, "Lintel")
-		_glazing(Vector3(w, 0, d), cx, cz, sill, lintel, m_frame, m_glass)
+		# оконный блок от houdini-assets; если по ширине не подходит — своё стекло
+		if not _window_asset(cx, cz, maxf(w, d), w <= d, sill):
+			_glazing(Vector3(w, 0, d), cx, cz, sill, lintel, m_frame, m_glass)
 
 	# Дверь: над проёмом бетонная перемычка, в проёме полотно по центру стены.
 	for r in _plan.get("door_openings", []):
@@ -187,6 +251,9 @@ func _build() -> void:
 		var cz: float = (float(r[1]) + float(r[3])) * 0.5
 		_box(Vector3(w, h - door_h, d), Vector3(cx, (h + door_h) * 0.5, cz),
 				m_wall, "DoorLintel")
+		# дверной блок от houdini-assets вместо самодельного полотна с обвязкой
+		if _door_asset(cx, cz, maxf(w, d), w <= d):
+			continue
 		var leaf := Vector3(w, door_h - 0.04, d)
 		if w <= d:
 			leaf.x = 0.05
@@ -281,6 +348,103 @@ func _build() -> void:
 						(float(r[1]) + float(r[3])) * 0.5), m_fix, "Fx")
 
 
+# --- блоки от houdini-assets -------------------------------------------------
+# Пивот у всех — середина низа проёма, ширина модели по X, у окон «комнатная»
+# сторона это местный −Z. Проём в стене вырезан нами, модель только заполняет.
+const DOOR_MODELS := {
+	"room": "res://assets/models/doors/door_room.glb",
+	"flat": "res://assets/models/doors/door_flat.glb",
+	"frame": "res://assets/models/doors/door_frame_only.glb",
+	"broken": "res://assets/models/doors/door_broken.glb",
+}
+const DOOR_MODEL_W := {"room": 0.80, "flat": 0.90, "frame": 0.80, "broken": 0.80}
+const WIN_MODELS := {
+	"double": "res://assets/models/windows/window_double.glb",
+	"broken": "res://assets/models/windows/window_broken.glb",
+}
+const WIN_MODEL_W := 1.70
+
+var _asset_cache: Dictionary = {}
+var _m_glass_shared: StandardMaterial3D = null
+
+
+func _asset(path: String) -> PackedScene:
+	if not _asset_cache.has(path):
+		_asset_cache[path] = load(path) if ResourceLoader.exists(path) else null
+	return _asset_cache[path]
+
+
+## Есть ли жилое помещение в этой точке. Лоджия для окна — «улица», поэтому
+## считается отдельно: окно между комнатой и лоджией смотрит подоконником в
+## комнату.
+func _room_at(x: float, z: float, with_loggia: bool) -> bool:
+	for room in _plan["rooms"]:
+		if not with_loggia and String(room["kind"]) == "лоджия":
+			continue
+		for r in room["rects"]:
+			if x > float(r[0]) and x < float(r[2]) 					and z > float(r[1]) and z < float(r[3]):
+				return true
+	return false
+
+
+## Развернуть блок так, чтобы подоконник смотрел в помещение.
+func _inward_yaw(cx: float, cz: float, along_z: bool) -> float:
+	var probe := 0.45
+	if along_z:                       # проём вытянут по Z, нормаль стены по X
+		if _room_at(cx - probe, cz, false):
+			return PI * 0.5
+		return -PI * 0.5
+	if _room_at(cx, cz - probe, false):
+		return 0.0
+	return PI
+
+
+## Стёклам блока — свой прозрачный материал, иначе они непрозрачные.
+func _take_glass(node: Node3D) -> void:
+	for c in node.find_children("*", "MeshInstance3D", true, false):
+		var mi := c as MeshInstance3D
+		if mi.name.begins_with("glass"):
+			mi.material_override = _m_glass_shared
+
+
+## Дверной блок в проём. Часть дверей в брошенном доме без полотна или сорвана;
+## выбор детерминированный, по координате, иначе дом меняется между запусками.
+func _door_asset(cx: float, cz: float, width: float, along_z: bool) -> bool:
+	var kind := "flat" if width >= 0.86 else "room"
+	var seed_v := int(absf(cx) * 71.0 + absf(cz) * 131.0) % 100
+	if seed_v < 16:
+		kind = "frame"
+	elif seed_v < 24:
+		kind = "broken"
+	var ps := _asset(DOOR_MODELS[kind])
+	if ps == null:
+		return false
+	var node: Node3D = ps.instantiate()
+	node.position = Vector3(cx, 0.0, cz)
+	node.scale = Vector3(width / float(DOOR_MODEL_W[kind]), 1.0, 1.0)
+	node.rotation.y = PI * 0.5 if along_z else 0.0
+	add_child(node)
+	return true
+
+
+## Оконный блок в проём. Пивот у модели на уровне подоконника.
+func _window_asset(cx: float, cz: float, width: float, along_z: bool,
+		sill: float) -> bool:
+	if width < 0.9 or width > 2.3:
+		return false
+	var seed_v := int(absf(cx) * 53.0 + absf(cz) * 97.0) % 100
+	var ps := _asset(WIN_MODELS["broken" if seed_v < 30 else "double"])
+	if ps == null:
+		return false
+	var node: Node3D = ps.instantiate()
+	node.position = Vector3(cx, sill, cz)
+	node.scale = Vector3(width / WIN_MODEL_W, 1.0, 1.0)
+	node.rotation.y = _inward_yaw(cx, cz, along_z)
+	add_child(node)
+	_take_glass(node)
+	return true
+
+
 ## Остекление проёма: рама по краю и стекло, всё по центру толщины стены.
 func _glazing(size: Vector3, cx: float, cz: float, y0: float, y1: float,
 		m_frame: StandardMaterial3D, m_glass: StandardMaterial3D) -> void:
@@ -339,7 +503,12 @@ func _light() -> void:
 	sun.rotation_degrees = Vector3(-38, -52, 0)
 	sun.light_energy = 1.2
 	sun.light_color = Color(1.0, 0.94, 0.86)
-	sun.light_angular_distance = 0.5        # мягкая кромка тени
+	# Мягкая тень солнца (angular_distance > 0) на этой сцене даёт по всем
+	# поверхностям правильную точечную решётку: перекрытие в режиме «только
+	# тени» кладёт весь интерьер в тень, выборка мягкой тени дизерится в
+	# экранных координатах, а TAA, который её обычно размывает, у нас выключен.
+	# Проверено: при 0.0 решётка исчезает целиком, кромку смягчает shadow_blur.
+	sun.light_angular_distance = 0.0
 	sun.light_bake_mode = Light3D.BAKE_STATIC
 	sun.shadow_enabled = true
 	sun.shadow_bias = 0.01                  # таблица под атлас 8192
@@ -493,7 +662,33 @@ func _camera() -> void:
 	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
 	cam.size = 16.0
 	cam.current = true
-	add_child(cam)                      # look_at работает только внутри дерева
+	# look_at работает только внутри дерева
+	if _vp != null:
+		_vp.add_child(cam)
+	else:
+		add_child(cam)
+	# --flat: одна квартира крупно. Границы беру по её же помещениям, а не по
+	# всему блоку, иначе половина кадра уходит на соседнюю квартиру.
+	if OS.get_cmdline_user_args().has("--flat"):
+		var mnx := 1e9
+		var mnz := 1e9
+		var mxx := -1e9
+		var mxz := -1e9
+		for room in _plan["rooms"]:
+			for r in room["rects"]:
+				# соседняя квартира из разбора уже убрана (_keep_one_flat)
+				mnx = minf(mnx, float(r[0]))
+				mnz = minf(mnz, float(r[1]))
+				mxx = maxf(mxx, float(r[2]))
+				mxz = maxf(mxz, float(r[3]))
+		var fx := (mnx + mxx) * 0.5
+		var fz := (mnz + mxz) * 0.5
+		cam.size = maxf(mxx - mnx, mxz - mnz) * 1.15
+		cam.global_position = Vector3(fx + 6.5, 22.0, fz + 6.5)
+		cam.look_at(Vector3(fx, 1.0, fz), Vector3.UP)
+		_frame(cam, Vector3(mnx, 0.0, mnz),
+				Vector3(mxx, float(_plan["wall_h"]), mxz))
+		return
 	var back := OS.get_cmdline_user_args().has("--back")
 	if back:
 		cam.global_position = Vector3(cx - 6.5, 26.0, cz - 6.5)
@@ -507,6 +702,28 @@ func _camera() -> void:
 		cam.look_at(Vector3(cx, 1.0, cz), Vector3.UP)
 
 
+## Подогнать ортокамеру под коробку: считаю экранные координаты восьми углов,
+## по ним правлю размер и сдвигаю камеру так, чтобы коробка встала по центру.
+## Два прохода — после сдвига проекция меняется.
+func _frame(cam: Camera3D, mn: Vector3, mx: Vector3) -> void:
+	var vp := Vector2(_vp.size) if _vp != null else get_viewport().get_visible_rect().size
+	for _pass in 2:
+		var lo := Vector2(1e9, 1e9)
+		var hi := Vector2(-1e9, -1e9)
+		for i in 8:
+			var p := Vector3(
+					mx.x if i & 1 else mn.x,
+					mx.y if i & 2 else mn.y,
+					mx.z if i & 4 else mn.z)
+			var sp := cam.unproject_position(p)
+			lo = Vector2(minf(lo.x, sp.x), minf(lo.y, sp.y))
+			hi = Vector2(maxf(hi.x, sp.x), maxf(hi.y, sp.y))
+		var off := ((lo + hi) * 0.5 - vp * 0.5) / vp.y * cam.size
+		var b := cam.global_transform.basis
+		cam.global_position += b.x * off.x - b.y * off.y
+		cam.size *= maxf((hi.x - lo.x) / vp.x, (hi.y - lo.y) / vp.y) * 1.02
+
+
 func _process(_d: float) -> void:
 	if _shot == "":
 		return
@@ -514,7 +731,7 @@ func _process(_d: float) -> void:
 	if _frames > 0:
 		return
 	await RenderingServer.frame_post_draw
-	var img := get_viewport().get_texture().get_image()
+	var img := (_vp if _vp != null else get_viewport()).get_texture().get_image()
 	var err := img.save_png(_shot)
 	print("[plan3d] %s -> %s  (узлов %d)"
 			% ["ok" if err == OK else "ошибка %d" % err, _shot, get_child_count()])
