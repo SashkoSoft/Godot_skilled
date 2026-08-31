@@ -174,6 +174,13 @@ func _mat(c: Color, rough: float = 0.9) -> StandardMaterial3D:
 	return m
 
 
+## Коллизию получают только те коробки, о которые можно стукнуться: стены,
+## полы, парапеты, стенки кладовок. Отделка (2 см на стене), перемычки над
+## головой и стёкла её не получают — иначе игрок цепляется за декор.
+const SOLID := ["Wall", "Slab", "Floor", "Sill", "Parapet", "ClosetW",
+		"ClosetFloor", "Fx"]
+
+
 func _box(size: Vector3, pos: Vector3, mat: Material, name_: String) -> void:
 	var mesh := BoxMesh.new()
 	mesh.size = size
@@ -183,6 +190,17 @@ func _box(size: Vector3, pos: Vector3, mat: Material, name_: String) -> void:
 	mi.position = pos
 	mi.name = name_
 	add_child(mi)
+	if not SOLID.has(name_):
+		return
+	var body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = size
+	shape.shape = box
+	body.add_child(shape)
+	body.position = pos
+	body.name = name_ + "Body"
+	add_child(body)
 
 
 func _build() -> void:
@@ -800,6 +818,31 @@ func _place(path: String, pos: Vector3, yaw: float,
 	return node
 
 
+## Коробка столкновений по габариту модели. Для того, что вставлено в проём,
+## не вызывается: там габарит накрывает пустоту, и дверь стала бы стеной.
+func _solidify(node: Node3D, shrink := 0.04) -> void:
+	if node == null or node.has_meta("opening"):
+		return
+	var box := AABB()
+	var first := true
+	for c in node.find_children("*", "MeshInstance3D", true, false):
+		var mi := c as MeshInstance3D
+		var a := mi.global_transform * mi.get_aabb()
+		box = a if first else box.merge(a)
+		first = false
+	if first or box.size.x < 0.06 or box.size.z < 0.06:
+		return
+	var body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var bs := BoxShape3D.new()
+	bs.size = Vector3(maxf(box.size.x - shrink, 0.05), box.size.y,
+			maxf(box.size.z - shrink, 0.05))
+	shape.shape = bs
+	body.add_child(shape)
+	add_child(body)
+	body.global_position = box.position + box.size * 0.5
+
+
 ## Сантехника и плита по своим местам из разбора плана.
 func _fixtures() -> bool:
 	var any := false
@@ -815,8 +858,10 @@ func _fixtures() -> bool:
 				float(r[3]) - float(r[1])) * 0.5 + 0.12
 		var wd := _wall_dir(cx, cz, half)
 		# модель смотрит лицом в −Z, значит спиной к стене — это +Z на стену
-		if _place(path, Vector3(cx, 0.0, cz), atan2(wd.x, wd.z)) != null:
+		var fx_node := _place(path, Vector3(cx, 0.0, cz), atan2(wd.x, wd.z))
+		if fx_node != null:
 			any = true
+			_solidify(fx_node)
 	return any
 
 
@@ -896,7 +941,7 @@ func _furniture() -> void:
 			continue
 		var pos := Vector3(cx + inside.x * (minf(w, d) * 0.5 + 0.09), 0.12,
 				cz + inside.z * (minf(w, d) * 0.5 + 0.09))
-		_place(FURN + "radiator.glb", pos, atan2(-inside.x, -inside.z))
+		_solidify(_place(FURN + "radiator.glb", pos, atan2(-inside.x, -inside.z)))
 
 	# Патрон с проводом под потолком там же, где лампа.
 	for room in _plan["rooms"]:
@@ -939,7 +984,8 @@ func _furniture() -> void:
 				continue
 			if absf(pos.x - stove.x) < 0.3 and absf(pos.z - stove.z) < 0.3:
 				continue
-			_place(FURN + "kitchen_counter.glb", Vector3(pos.x, 0.0, pos.z), yaw)
+			_solidify(_place(FURN + "kitchen_counter.glb",
+					Vector3(pos.x, 0.0, pos.z), yaw))
 			_place(FURN + "kitchen_upper.glb", Vector3(pos.x, 1.45, pos.z), yaw)
 
 	# Шкаф в большой комнате: у глухой стены, подальше от окна и от проёмов.
@@ -963,7 +1009,7 @@ func _furniture() -> void:
 			var px: float = x0 + (x1 - x0) * float(t)
 			var pz := z1 - 0.45
 			if not _blocked(px, pz, 0.8):
-				_place(FURN + "wardrobe.glb", Vector3(px, 0.0, pz), PI)
+				_solidify(_place(FURN + "wardrobe.glb", Vector3(px, 0.0, pz), PI))
 				break
 
 
@@ -1544,28 +1590,50 @@ func _camera() -> void:
 		cam.look_at(Vector3(cx, 1.0, cz), Vector3.UP)
 
 
-# --- свободная камера для сборки ---------------------------------------------
-# Когда кадр не снимается, квартиру надо уметь обойти руками: WASD — движение,
-# Q/E — вниз и вверх, зажатая правая кнопка — осмотреться, колесо — скорость,
-# Shift — быстрее, Esc — выход.
+# --- игрок ------------------------------------------------------------------
+# В сборке по квартире ходят, а не летают: капсула с гравитацией, глаза на
+# 1.65, мышь по правой кнопке. F переключает на свободный полёт — им удобно
+# смотреть сверху и заглядывать в санузлы.
 var _fly := false
+var _walkman: CharacterBody3D = null
 var _fly_speed := 3.5
 
 
 func _ready_fly() -> void:
-	_fly = _shot == ""
-	if not _fly:
+	if _shot != "":
 		return
 	var cam := _find_cam()
 	if cam == null:
 		return
-	# ставим в прихожую на уровень глаз и смотрим вдоль коридора
-	var b: Array = _plan["bounds"]
 	cam.projection = Camera3D.PROJECTION_PERSPECTIVE
-	cam.fov = 70.0
+	cam.fov = 75.0
 	cam.near = 0.05
-	cam.global_position = Vector3((float(b[0]) + float(b[2])) * 0.5, 1.65,
-			(float(b[1]) + float(b[3])) * 0.5)
+
+	# ставим в прихожую: берём её прямоугольник из разбора, а не координату
+	var spot := Vector3(0, 1.65, 0)
+	for room in _plan["rooms"]:
+		if String(room["kind"]) != "прихожая":
+			continue
+		for r in room["rects"]:
+			var w := float(r[2]) - float(r[0])
+			var d := float(r[3]) - float(r[1])
+			if w * d > 2.0:
+				spot = Vector3((float(r[0]) + float(r[2])) * 0.5, 1.65,
+						(float(r[1]) + float(r[3])) * 0.5)
+
+	_walkman = CharacterBody3D.new()
+	var shape := CollisionShape3D.new()
+	var cap := CapsuleShape3D.new()
+	cap.radius = 0.28
+	cap.height = 1.70
+	shape.shape = cap
+	shape.position.y = 0.85
+	_walkman.add_child(shape)
+	_walkman.position = spot - Vector3(0, 1.65, 0) + Vector3(0, 0.15, 0)
+	add_child(_walkman)
+	cam.get_parent().remove_child(cam)
+	_walkman.add_child(cam)
+	cam.position = Vector3(0, 1.62, 0)
 	cam.rotation = Vector3.ZERO
 
 
@@ -1581,10 +1649,15 @@ func _find_cam() -> Camera3D:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not _fly:
+	if _shot != "":
 		return
-	if event is InputEventKey and event.pressed 			and (event as InputEventKey).keycode == KEY_ESCAPE:
-		get_tree().quit()
+	if event is InputEventKey and event.pressed:
+		var kc := (event as InputEventKey).keycode
+		if kc == KEY_ESCAPE:
+			get_tree().quit()
+		elif kc == KEY_F:
+			_fly = not _fly
+			print("[режим] ", "полёт" if _fly else "ходьба")
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_RIGHT:
@@ -1607,74 +1680,48 @@ func _fly_step(delta: float) -> void:
 	if cam == null:
 		return
 	var dir := Vector3.ZERO
+	var basis := cam.global_transform.basis
 	if Input.is_key_pressed(KEY_W):
-		dir -= cam.global_transform.basis.z
+		dir -= basis.z
 	if Input.is_key_pressed(KEY_S):
-		dir += cam.global_transform.basis.z
+		dir += basis.z
 	if Input.is_key_pressed(KEY_A):
-		dir -= cam.global_transform.basis.x
+		dir -= basis.x
 	if Input.is_key_pressed(KEY_D):
-		dir += cam.global_transform.basis.x
-	if Input.is_key_pressed(KEY_E):
-		dir += Vector3.UP
-	if Input.is_key_pressed(KEY_Q):
-		dir -= Vector3.UP
-	if dir == Vector3.ZERO:
+		dir += basis.x
+
+	if _fly or _walkman == null:
+		if Input.is_key_pressed(KEY_E):
+			dir += Vector3.UP
+		if Input.is_key_pressed(KEY_Q):
+			dir -= Vector3.UP
+		if dir == Vector3.ZERO:
+			return
+		var k := 3.0 if Input.is_key_pressed(KEY_SHIFT) else 1.0
+		var node: Node3D = _walkman if _walkman != null else cam
+		node.global_position += dir.normalized() * _fly_speed * k * delta
 		return
-	var k := 3.0 if Input.is_key_pressed(KEY_SHIFT) else 1.0
-	cam.global_position += dir.normalized() * _fly_speed * k * delta
 
-
-## Дверцы кладовок (task-0016). Ширина модели подбирается по проёму: 0.71 для
-## кладовок 1а и 2а, 0.46 для узкой 6а. Пивот коробки — середина низа проёма,
-## ось Z наружу от полотна, поэтому доворачиваем на сторону открывания.
-const CLOSET_DIR := "res://assets/models/closets/"
-
-
-func _closet_doors() -> void:
-	for c in _plan.get("closets", []):
-		var r: Array = c["r"]
-		var side: Array = c["side"]
-		var x0: float = float(r[0])
-		var z0: float = float(r[1])
-		var x1: float = float(r[2])
-		var z1: float = float(r[3])
-		var dz: float = float(side[0])
-		var dx: float = float(side[1])
-		# куда смотрит дверца — туда и середина проёма
-		var pos: Vector3
-		var yaw: float
-		var width: float
-		if dx > 0.0:
-			pos = Vector3(x1, 0.0, (z0 + z1) * 0.5)
-			yaw = PI * 0.5
-			width = z1 - z0
-		elif dx < 0.0:
-			pos = Vector3(x0, 0.0, (z0 + z1) * 0.5)
-			yaw = -PI * 0.5
-			width = z1 - z0
-		elif dz > 0.0:
-			pos = Vector3((x0 + x1) * 0.5, 0.0, z1)
-			yaw = 0.0
-			width = x1 - x0
+	# ходьба: горизонталь от взгляда, гравитация своя
+	dir.y = 0.0
+	var speed := 4.2 if Input.is_key_pressed(KEY_SHIFT) else 1.9
+	var v := _walkman.velocity
+	if dir != Vector3.ZERO:
+		var h := dir.normalized() * speed
+		v.x = h.x
+		v.z = h.z
+	else:
+		v.x = 0.0
+		v.z = 0.0
+	if _walkman.is_on_floor():
+		if Input.is_key_pressed(KEY_SPACE):
+			v.y = 3.4
 		else:
-			pos = Vector3((x0 + x1) * 0.5, 0.0, z0)
-			yaw = PI
-			width = x1 - x0
-		var seed_v := int(absf(pos.x) * 61.0 + absf(pos.z) * 113.0) % 100
-		var model := "closet_door_71"
-		if width < 0.58:
-			model = "closet_door_46"
-		elif seed_v < 25:
-			model = "closet_door_broken"
-		var node := _place(CLOSET_DIR + model + ".glb", pos, yaw,
-				width / (0.46 if model == "closet_door_46" else 0.71))
-		if node == null:
-			continue
-		node.set_meta("opening", true)
-		var leaf := node.find_child("leaf", true, false) as Node3D
-		if leaf != null and model != "closet_door_broken":
-			leaf.rotation.y += deg_to_rad(18.0 + float(seed_v % 11) * 1.5)
+			v.y = -0.1
+	else:
+		v.y -= 9.8 * delta
+	_walkman.velocity = v
+	_walkman.move_and_slide()
 
 
 # --- проверка проходимости ---------------------------------------------------
@@ -1882,9 +1929,64 @@ func _frame(cam: Camera3D, mn: Vector3, mx: Vector3) -> void:
 			cam.look_at(mid, Vector3.UP)
 
 
+## Дверцы кладовок (task-0016). Ширина модели подбирается по проёму: 0.71 для
+## кладовок 1а и 2а, 0.46 для узкой 6а. Пивот коробки — середина низа проёма,
+## ось Z наружу от полотна, поэтому доворачиваем на сторону открывания.
+const CLOSET_DIR := "res://assets/models/closets/"
+
+func _closet_doors() -> void:
+	for c in _plan.get("closets", []):
+		var r: Array = c["r"]
+		var side: Array = c["side"]
+		var x0: float = float(r[0])
+		var z0: float = float(r[1])
+		var x1: float = float(r[2])
+		var z1: float = float(r[3])
+		var dz: float = float(side[0])
+		var dx: float = float(side[1])
+		# куда смотрит дверца — туда и середина проёма
+		var pos: Vector3
+		var yaw: float
+		var width: float
+		if dx > 0.0:
+			pos = Vector3(x1, 0.0, (z0 + z1) * 0.5)
+			yaw = PI * 0.5
+			width = z1 - z0
+		elif dx < 0.0:
+			pos = Vector3(x0, 0.0, (z0 + z1) * 0.5)
+			yaw = -PI * 0.5
+			width = z1 - z0
+		elif dz > 0.0:
+			pos = Vector3((x0 + x1) * 0.5, 0.0, z1)
+			yaw = 0.0
+			width = x1 - x0
+		else:
+			pos = Vector3((x0 + x1) * 0.5, 0.0, z0)
+			yaw = PI
+			width = x1 - x0
+		var seed_v := int(absf(pos.x) * 61.0 + absf(pos.z) * 113.0) % 100
+		var model := "closet_door_71"
+		if width < 0.58:
+			model = "closet_door_46"
+		elif seed_v < 25:
+			model = "closet_door_broken"
+		var node := _place(CLOSET_DIR + model + ".glb", pos, yaw,
+				width / (0.46 if model == "closet_door_46" else 0.71))
+		if node == null:
+			continue
+		node.set_meta("opening", true)
+		var leaf := node.find_child("leaf", true, false) as Node3D
+		if leaf != null and model != "closet_door_broken":
+			leaf.rotation.y += deg_to_rad(18.0 + float(seed_v % 11) * 1.5)
+
+
+func _physics_process(delta: float) -> void:
+	if _shot == "":
+		_fly_step(delta)
+
+
 func _process(_d: float) -> void:
 	if _shot == "":
-		_fly_step(_d)
 		return
 	_frames -= 1
 	if _frames > 0:
