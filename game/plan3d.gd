@@ -214,7 +214,11 @@ func _build() -> void:
 		# зелёный оттенок остался с тех пор, когда помещения красились по типу.
 		"лоджия": _tex_st("landing-floor", "landing_floor", 4.55,
 				Color(1, 1, 1), 0.07),
-		"санузел": _tex_st("tile-bath", "tile_bath", _tile_m("tile-bath", 1.20), Color(1, 1, 1), 0.05, 8),
+		# Плитка пола не может быть той же, что на стене. Пока набор один,
+		# беру его крупнее — как напольная 20 x 20 против стеновой 15 x 15;
+		# отдельный набор запрошен заданием.
+		"санузел": _tex_st("tile-bath", "tile_bath",
+				_tile_m("tile-bath", 1.20) * 1.6, Color(0.94, 0.92, 0.88), 0.05, 8),
 		"жилая": _tex_st("floor-parquet", "floor_parquet", _tile_m("floor-parquet", 1.60), Color(1, 1, 1), 0.09, 4),
 	}
 	# В большой комнате паркет уложен ёлочкой, в маленькой — щитовой.
@@ -385,8 +389,11 @@ func _build() -> void:
 	# разводятся оттенком и шагом рисунка; как приедут варианты рисунка
 	# (task-0021), сюда встанут они, а перебор по комнатам останется тот же.
 	# Обои: вертикаль полотнища вшита, поэтому стохастика тоже не годится.
+	# Порядок не по номеру, а по заметности рисунка: сначала ромб и полоса,
+	# они читаются с расстояния, потом цветочек и однотонные. В квартире две
+	# комнаты, поэтому первые два номера и определяют, что видно.
 	var papers: Array[Material] = []
-	for i in range(2, 6):
+	for i in [2, 5, 3, 4]:
 		var dir_ := "wall-paper-%d" % i
 		if ResourceLoader.exists("res://assets/textures/%s/wall_paper_%d_albedo_1k.png"
 				% [dir_, i]):
@@ -410,10 +417,13 @@ func _build() -> void:
 		var ms: Material = m_skin.get(room["kind"])
 		if ms == null:
 			continue
-		if String(room["kind"]) == "жилая":
-			ms = papers[room_i % papers.size()]
-			room_i += 1
+		# Помещения в разборе сгруппированы по назначению, поэтому «жилая» —
+		# это один блок с несколькими прямоугольниками. Обои выбираются на
+		# каждый прямоугольник, иначе обе комнаты получают один рисунок.
 		for r in room["rects"]:
+			if String(room["kind"]) == "жилая":
+				ms = papers[room_i % papers.size()]
+				room_i += 1
 			_room_skin(r, ms, h, door_h, holes)
 
 	# Приборы: высоты как в жизни, стоят на полу.
@@ -534,6 +544,14 @@ func _door_asset(cx: float, cz: float, width: float, along_z: bool) -> bool:
 	node.scale = Vector3(width / float(DOOR_MODEL_W[kind]), 1.0, 1.0)
 	node.rotation.y = PI * 0.5 if along_z else 0.0
 	add_child(node)
+	# Двери приоткрыты: полотно — отдельный узел `leaf`, его начало координат
+	# на оси петель, поэтому достаточно повернуть его вокруг Y. Угол и сторона
+	# детерминированные, от координаты: иначе дом меняется между запусками.
+	var leaf := node.find_child("leaf", true, false) as Node3D
+	if leaf != null:
+		var side := 1.0 if seed_v % 2 == 0 else -1.0
+		var deg := 28.0 + float(seed_v % 17) * 1.6
+		leaf.rotation.y += deg_to_rad(deg) * side
 	return true
 
 
@@ -572,7 +590,8 @@ const DECAL_M := {
 }
 
 
-func _decal(kind: String, pos: Vector3, normal: Vector3, scale_: float = 1.0) -> void:
+func _decal(kind: String, pos: Vector3, normal: Vector3, scale_: float = 1.0,
+		free_spin := true) -> void:
 	var m: Array = DECAL_M.get(kind, [])
 	if m.is_empty():
 		return
@@ -601,8 +620,12 @@ func _decal(kind: String, pos: Vector3, normal: Vector3, scale_: float = 1.0) ->
 	var r1 := fposmod(sin(seed_v) * 43758.5453, 1.0)
 	var r2 := fposmod(sin(seed_v + 1.7) * 43758.5453, 1.0)
 	var b := Basis(xv, yv, zv)
-	if absf(normal.y) > 0.5:
+	if absf(normal.y) > 0.5 and free_spin:
 		b = b.rotated(yv, r1 * TAU)
+	elif absf(normal.y) > 0.5:
+		# Вытертая тропа идёт вдоль коридора, её крутить нельзя — иначе
+		# получается пятно поперёк прохода.
+		b = b.rotated(yv, PI * 0.5 if r1 < 0.5 else 0.0)
 	elif r1 < 0.5:
 		b = Basis(-xv, yv, -zv)          # зеркально, верх на месте
 	d.transform = Transform3D(b, pos)
@@ -645,13 +668,14 @@ func _decals() -> void:
 					_decal("debris_floor", Vector3(x0 + w * 0.7, 0.05,
 							z1 - 0.28), Vector3(0, -1, 0), 1.0)
 				"прихожая":
-					# вытертая тропа вдоль коридора
+					# Тропа кладётся вдоль длинной стороны коридора и сжимается
+					# по его ширине: декаль 1.0 x 2.0, а рукав прихожей 0.98 —
+					# иначе пятно вылезает на стены и читается кляксой.
 					var along_x := w > dp
+					var narrow := minf(w, dp)
 					_decal("path_worn", Vector3((x0 + x1) * 0.5, 0.05,
-							(z0 + z1) * 0.5), Vector3(0, -1, 0), 1.0)
-					if along_x:
-						_decal("debris_floor", Vector3(x0 + 0.5, 0.05,
-								z0 + dp * 0.5), Vector3(0, -1, 0), 0.8)
+							(z0 + z1) * 0.5), Vector3(0, -1, 0),
+							clampf(narrow / 1.1, 0.5, 1.0), false)
 				"кухня":
 					_decal("leak_wall", Vector3(x0 + 0.02, lintel - 0.75,
 							z0 + dp * 0.5), Vector3(1, 0, 0), 0.9)
@@ -726,7 +750,6 @@ func _room_skin(r: Array, mat: Material, h: float, door_h: float,
 	var z0: float = float(r[1])
 	var x1: float = float(r[2])
 	var z1: float = float(r[3])
-	# сторона: [вдоль X?, координата грани, знак внутрь]
 	var sides := [
 		[true, z0, 1.0], [true, z1, -1.0],
 		[false, x0, 1.0], [false, x1, -1.0],
@@ -737,7 +760,7 @@ func _room_skin(r: Array, mat: Material, h: float, door_h: float,
 		var inward: float = sd[2]
 		var a0 := x0 if along_x else z0
 		var a1 := x1 if along_x else z1
-		# интервалы проёмов вдоль этой грани
+		# Проёмы: там отделки нет, но над дверью есть.
 		var cuts: Array = []
 		for o in holes:
 			var oa0: float = float(o[0]) if along_x else float(o[1])
@@ -749,15 +772,33 @@ func _room_skin(r: Array, mat: Material, h: float, door_h: float,
 			var c0 := maxf(oa0, a0)
 			var c1 := minf(oa1, a1)
 			if c1 - c0 > 0.02:
-				cuts.append([c0, c1])
+				cuts.append([c0, c1, true])
+		# Открытые участки: за гранью тоже помещение, значит стены там нет.
+		# Г-образная прихожая — два прямоугольника, и по их общей границе
+		# отделка вырастала перегородкой поперёк коридора.
+		var step := 0.10
+		var open0 := -1.0
+		var a := a0
+		while a <= a1 + 0.001:
+			var px := (a if along_x else face + inward * 0.07)
+			var pz := (face + inward * 0.07 if along_x else a)
+			var is_open := _kind_at(px, pz) != ""
+			if is_open and open0 < 0.0:
+				open0 = a
+			elif not is_open and open0 >= 0.0:
+				cuts.append([open0 - step, a, false])
+				open0 = -1.0
+			a += step
+		if open0 >= 0.0:
+			cuts.append([open0 - step, a1, false])
 		cuts.sort_custom(func(p, q): return float(p[0]) < float(q[0]))
-		# сплошные куски между проёмами
+
 		var cur := a0
 		for c in cuts:
 			_skin_piece(along_x, face, inward, cur, float(c[0]), 0.0, h, t, mat)
-			# над проёмом отделка есть: проём кончается на высоте двери
-			_skin_piece(along_x, face, inward, float(c[0]), float(c[1]),
-					door_h, h, t, mat)
+			if bool(c[2]):
+				_skin_piece(along_x, face, inward, float(c[0]), float(c[1]),
+						door_h, h, t, mat)
 			cur = maxf(cur, float(c[1]))
 		_skin_piece(along_x, face, inward, cur, a1, 0.0, h, t, mat)
 
