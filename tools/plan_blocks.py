@@ -133,7 +133,15 @@ def main():
                   slice(ix(wpos - 0.28), ix(wpos + 0.28)))
         m = wall[sl].copy()
         wall[sl] = False
-        out.append((axis, wpos, c0, wdt))
+        # Резать надо с запасом — стены от 0.16 до 0.62, — но наружу отдавать
+        # настоящую толщину: по ней в движке строится перемычка и подоконник.
+        # Иначе над каждой дверью висит брус на 12 см толще стены.
+        line = m[:, m.shape[1] // 2] if axis == "z" else m[m.shape[0] // 2, :]
+        run = best = 0
+        for v in line:
+            run = run + 1 if v else 0
+            best = max(best, run)
+        out.append((axis, wpos, c0, wdt, round(best * GRID, 3) or 0.16))
 
     door_out, win_out = [], []
     for d in doors:
@@ -178,13 +186,13 @@ def main():
         else:
             q = rp(x0, z0 - 0.06, x1, z0 + 0.06)
         over[q[1]:q[3], q[0]:q[2]] = np.array([215, 20, 20])
-    for axis, wpos, c0, wdt in door_out:
+    for axis, wpos, c0, wdt, _t in door_out:
         if axis == "z":
             p = rp(c0 - wdt / 2, wpos - 0.09, c0 + wdt / 2, wpos + 0.09)
         else:
             p = rp(wpos - 0.09, c0 - wdt / 2, wpos + 0.09, c0 + wdt / 2)
         over[p[1]:p[3], p[0]:p[2]] = np.array([215, 20, 20])
-    for axis, wpos, c0, wdt in win_out:
+    for axis, wpos, c0, wdt, _t in win_out:
         if axis == "z":
             p = rp(c0 - wdt / 2, wpos - 0.09, c0 + wdt / 2, wpos + 0.09)
         else:
@@ -227,7 +235,8 @@ def main():
             m[b:d, a:c] = False
         return out
 
-    def band(axis, wpos, c0, wdt, half=0.28):
+    def band(axis, wpos, c0, wdt, thick=0.16):
+        half = thick / 2.0
         if axis == "z":
             return [round(c0 - wdt / 2, 3), round(wpos - half, 3),
                     round(c0 + wdt / 2, 3), round(wpos + half, 3)]
@@ -248,7 +257,7 @@ def main():
     data = {
         "walls": rects(wall),
         "windows": [band(*v) for v in win_out],
-        "door_openings": [band(*d, half=0.20) for d in door_out],
+        "door_openings": [band(*d) for d in door_out],
         "parapets": [list(p) for p in parap],
         "rooms": [{"kind": k, "rects": v} for k, v in rooms_out.items()],
         "fixtures": [{"kind": f[0], "r": list(f[1:])} for f in fixtures],
