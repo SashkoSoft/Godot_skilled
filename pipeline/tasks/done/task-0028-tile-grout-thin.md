@@ -3,12 +3,12 @@ id: task-0028
 title: Плитка: шов тоньше на стене и на полу
 assignee: houdini-assets
 type: texture
-status: open
+status: done
 revision: 1
 priority: high
 created: 2026-08-31
-started:
-finished:
+started: 2026-08-31
+finished: 2026-08-31
 ---
 
 # task-0028 — Плитка: шов тоньше на стене и на полу

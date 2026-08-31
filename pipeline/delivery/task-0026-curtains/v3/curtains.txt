@@ -1,0 +1,6 @@
+curtain_rail 1.972 0.072 0.105 karniz s shestyu kolcami
+curtain_pair 1.985 2.537 0.216 plotnye shtory, razdvinuty, do pola
+curtain_half 1.972 1.479 0.186 zanaveska do podokonnika, zadyornuta napolovinu
+curtain_tulle 1.972 2.467 0.199 tyul vo vsyu shirinu, poluprozrachnyy
+curtain_torn 1.972 2.536 0.224 sorvannaya shtora, visit na dvuh kolcah
+curtain_rail_bare 1.972 0.072 0.105 karniz bez tkani
