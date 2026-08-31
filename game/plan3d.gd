@@ -16,6 +16,12 @@ var _shot := ""
 var _frames := 90
 var _size := Vector2i(2560, 2200)
 var _ss := 2                          # кратность суперсэмплинга
+var _turn := ""                       # папка для кадров оборота
+var _turn_n := 36
+var _turn_i := 0
+var _turn_c := Vector3.ZERO
+var _turn_r := 20.0
+var _turn_pitch := 40.0
 var _vp: SubViewport = null
 var _plan: Dictionary = {}
 
@@ -26,6 +32,12 @@ func _ready() -> void:
 			_shot = a.substr(7)
 		elif a.begins_with("--frames="):
 			_frames = int(a.substr(9))
+		elif a.begins_with("--turn="):
+			_turn = a.substr(7)
+		elif a.begins_with("--turn-frames="):
+			_turn_n = clampi(int(a.substr(14)), 8, 180)
+		elif a.begins_with("--turn-pitch="):
+			_turn_pitch = clampf(float(a.substr(13)), 10.0, 85.0)
 		elif a.begins_with("--ss="):
 			_ss = clampi(int(a.substr(5)), 1, 3)
 		elif a.begins_with("--size="):
@@ -1576,6 +1588,10 @@ func _camera() -> void:
 		cam.look_at(Vector3(fx, 1.0, fz), Vector3.UP)
 		_frame(cam, Vector3(mnx, 0.0, mnz),
 				Vector3(mxx, float(_plan["wall_h"]), mxz))
+		if _turn != "":
+			# после подгонки известны и центр, и удаление — по ним и вращаем
+			_turn_c = Vector3(fx, 1.0, fz)
+			_turn_r = cam.global_position.distance_to(_turn_c)
 		return
 	var back := OS.get_cmdline_user_args().has("--back")
 	if back:
@@ -1864,6 +1880,32 @@ func _walk_check() -> void:
 				% [bad.size(), spots.size(), ", ".join(bad)])
 
 
+## Оборот вокруг квартиры: кадр за кадром, по одному на такт. Камера ходит по
+## окружности вокруг центра, наклон и радиус берутся от той же подгонки, что и
+## обычный кадр, — поэтому квартира не «дышит» в кадре.
+func _turn_step() -> void:
+	var cam := _find_cam()
+	if cam == null or _vp == null:
+		return
+	if _frames > 0:
+		_frames -= 1
+		return                      # дать сцене прогреться
+	var a := TAU * float(_turn_i) / float(_turn_n)
+	var rad := deg_to_rad(_turn_pitch)
+	cam.global_position = _turn_c + Vector3(cos(rad) * sin(a), sin(rad),
+			cos(rad) * cos(a)) * _turn_r
+	cam.look_at(_turn_c, Vector3.UP)
+	await RenderingServer.frame_post_draw
+	var img := _vp.get_texture().get_image()
+	if _ss > 1:
+		img.resize(_size.x, _size.y, Image.INTERPOLATE_LANCZOS)
+	img.save_png("%s/frame_%03d.png" % [_turn, _turn_i])
+	_turn_i += 1
+	if _turn_i >= _turn_n:
+		print("[оборот] кадров: %d -> %s" % [_turn_n, _turn])
+		get_tree().quit()
+
+
 ## Отладка: что стоит в прихожей выше метра. Флаг --hall.
 func _hall_report() -> void:
 	var halls: Array = []
@@ -1986,6 +2028,9 @@ func _physics_process(delta: float) -> void:
 
 
 func _process(_d: float) -> void:
+	if _turn != "":
+		_turn_step()
+		return
 	if _shot == "":
 		return
 	_frames -= 1
