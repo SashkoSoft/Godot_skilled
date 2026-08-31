@@ -3,12 +3,12 @@ id: task-0023
 title: Краска кухни и прихожей: убавить выбоины, два состояния
 assignee: houdini-assets
 type: texture
-status: in_progress
+status: done
 revision: 1
 priority: high
 created: 2026-08-31
 started: 2026-08-31
-finished:
+finished: 2026-08-31
 ---
 
 # task-0023 — Краска кухни и прихожей: убавить выбоины, два состояния
