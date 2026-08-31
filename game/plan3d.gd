@@ -81,6 +81,8 @@ func _ready() -> void:
 	if OS.get_cmdline_user_args().has("--gi"):
 		_bake_gi()
 	_ready_fly()
+	if OS.get_cmdline_user_args().has("--hall"):
+		_hall_report()
 
 
 ## Оставить в разборе только верхнюю квартиру. Половины зеркальны относительно
@@ -451,6 +453,7 @@ func _build() -> void:
 	if _fixtures():
 		_curtains()
 		_furniture()
+		_closet_doors()
 		return
 	var m_fh := {"ванна": 0.58, "унитаз": 0.40, "мойка": 0.85,
 			"раковина": 0.80, "плита": 0.85}
@@ -1575,6 +1578,88 @@ func _fly_step(delta: float) -> void:
 		return
 	var k := 3.0 if Input.is_key_pressed(KEY_SHIFT) else 1.0
 	cam.global_position += dir.normalized() * _fly_speed * k * delta
+
+
+## Дверцы кладовок (task-0016). Ширина модели подбирается по проёму: 0.71 для
+## кладовок 1а и 2а, 0.46 для узкой 6а. Пивот коробки — середина низа проёма,
+## ось Z наружу от полотна, поэтому доворачиваем на сторону открывания.
+const CLOSET_DIR := "res://assets/models/closets/"
+
+
+func _closet_doors() -> void:
+	for c in _plan.get("closets", []):
+		var r: Array = c["r"]
+		var side: Array = c["side"]
+		var x0: float = float(r[0])
+		var z0: float = float(r[1])
+		var x1: float = float(r[2])
+		var z1: float = float(r[3])
+		var dz: float = float(side[0])
+		var dx: float = float(side[1])
+		# куда смотрит дверца — туда и середина проёма
+		var pos: Vector3
+		var yaw: float
+		var width: float
+		if dx > 0.0:
+			pos = Vector3(x1, 0.0, (z0 + z1) * 0.5)
+			yaw = PI * 0.5
+			width = z1 - z0
+		elif dx < 0.0:
+			pos = Vector3(x0, 0.0, (z0 + z1) * 0.5)
+			yaw = -PI * 0.5
+			width = z1 - z0
+		elif dz > 0.0:
+			pos = Vector3((x0 + x1) * 0.5, 0.0, z1)
+			yaw = 0.0
+			width = x1 - x0
+		else:
+			pos = Vector3((x0 + x1) * 0.5, 0.0, z0)
+			yaw = PI
+			width = x1 - x0
+		var seed_v := int(absf(pos.x) * 61.0 + absf(pos.z) * 113.0) % 100
+		var model := "closet_door_71"
+		if width < 0.58:
+			model = "closet_door_46"
+		elif seed_v < 25:
+			model = "closet_door_broken"
+		var node := _place(CLOSET_DIR + model + ".glb", pos, yaw,
+				width / (0.46 if model == "closet_door_46" else 0.71))
+		if node == null:
+			continue
+		var leaf := node.find_child("leaf", true, false) as Node3D
+		if leaf != null and model != "closet_door_broken":
+			leaf.rotation.y += deg_to_rad(18.0 + float(seed_v % 11) * 1.5)
+
+
+## Отладка: что стоит в прихожей выше метра. Флаг --hall.
+func _hall_report() -> void:
+	var halls: Array = []
+	for room in _plan["rooms"]:
+		if String(room["kind"]) == "прихожая":
+			halls.append_array(room["rects"])
+	print("[прихожая] прямоугольники: ", halls)
+	for c in get_children():
+		var mi := c as MeshInstance3D
+		var nodes: Array = []
+		if mi != null:
+			nodes = [mi]
+		elif c is Node3D:
+			nodes = (c as Node3D).find_children("*", "MeshInstance3D", true, false)
+		for n in nodes:
+			var m := n as MeshInstance3D
+			var box := m.global_transform * m.get_aabb()
+			if box.size.y < 1.0:
+				continue
+			for r in halls:
+				var x0: float = float(r[0])
+				var z0: float = float(r[1])
+				var x1: float = float(r[2])
+				var z1: float = float(r[3])
+				var ox := minf(box.end.x, x1) - maxf(box.position.x, x0)
+				var oz := minf(box.end.z, z1) - maxf(box.position.z, z0)
+				if ox > 0.004 and oz > 0.004:
+					print("[прихожая] %s (%s) залезает на %.2f x %.2f, высота %.2f"
+							% [c.name, m.name, ox, oz, box.size.y])
 
 
 ## Подогнать ортокамеру под коробку: считаю экранные координаты восьми углов,

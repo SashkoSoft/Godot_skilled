@@ -22,7 +22,7 @@
 | task-0013 | Плитка санузла: стены и пол | **comfyui** | texture | v1 | cancelled | done/ | 2026-08-30 | 2026-08-31 |
 | task-0014 | Материалы квартиры: полы, стены, потолок, плитка | **houdini-assets** | texture | v2 | accepted | done/ | 2026-08-30 | 2026-08-31 |
 | task-0015 | Мебель квартиры: кухня, шкафы, батареи | **houdini-assets** | model | v1 | done | done/ | 2026-08-30 | 2026-08-31 |
-| task-0016 | Дверцы кладовок 1а, 2а, 6а | **houdini-assets** | model | v1 | done | done/ | 2026-08-31 | 2026-08-31 |
+| task-0016 | Дверцы кладовок 1а, 2а, 6а | **houdini-assets** | model | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
 | task-0017 | Остекление лоджии: парапет и переплёт | **houdini-assets** | model | v1 | done | done/ | 2026-08-31 | 2026-08-31 |
 | task-0018 | Декали износа: потёки, плесень, вытертые тропы | **houdini-assets** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
 | task-0019 | Бумага на стенах: плакаты, календарь, обрывки | **comfyui** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
