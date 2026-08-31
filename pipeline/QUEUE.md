@@ -13,6 +13,7 @@
 | task-0022 | Полы: паркет ёлочкой и второй линолеум | **houdini-assets** | texture | v2 | open | open/ | 2026-08-31 | — |
 | task-0025 | Плитка пола санузла и фартук кухни | **houdini-assets** | texture | v1 | open | open/ | 2026-08-31 | — |
 | task-0026 | Шторы, занавески и карнизы | **houdini-assets** | model | v1 | open | open/ | 2026-08-31 | — |
+| task-0027 | Обои с орнаментом: четыре рисунка | **houdini-assets** | texture | v1 | open | open/ | 2026-08-31 | — |
 | task-0002 | Бетонная панель: стены и перекрытия | **comfyui** | texture | v2 | accepted | done/ | 2026-08-27 | 2026-08-27 |
 | task-0003 | Плитка и бетон лестничной клетки | **comfyui** | texture | v1 | accepted | done/ | 2026-08-27 | 2026-08-27 |
 | task-0004 | Грязь и разводы на стекло | **comfyui** | texture | v1 | accepted | done/ | 2026-08-27 | 2026-08-27 |
@@ -34,4 +35,4 @@
 
 ## Следующий свободный номер
 
-**task-0027**
+**task-0028**

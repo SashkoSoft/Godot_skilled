@@ -413,8 +413,11 @@ func _build() -> void:
 		"жилая": papers[0],
 		"кухня": m_paint,
 		"прихожая": m_paint_worn,
-		"санузел": _tex_st("tile-bath", "tile_bath", _tile_m("tile-bath", 1.20),
-				Color(1, 1, 1), 0.05, 8, 0.55),
+		# Стены санузла: плитка крупнее (20 см вместо 15) и светлее — глазурь
+		# на стене всегда белее напольной, иначе помещение читается погребом.
+		"санузел": _tex_st("tile-bath", "tile_bath",
+				_tile_m("tile-bath", 1.20) * 1.33,
+				Color(1.12, 1.11, 1.08), 0.04, 8, 0.55),
 	}
 	var holes: Array = []
 	holes.append_array(_plan.get("door_openings", []))
