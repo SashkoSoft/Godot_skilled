@@ -3,11 +3,11 @@ id: task-0016
 title: Дверцы кладовок 1а, 2а, 6а
 assignee: houdini-assets
 type: model
-status: open
+status: in_progress
 revision: 1
 priority: normal
 created: 2026-08-31
-started:
+started: 2026-08-31
 finished:
 ---
 
