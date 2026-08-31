@@ -3,12 +3,12 @@ id: task-0008
 title: Двери лифта и обрамление шахты
 assignee: houdini-assets
 type: model
-status: open
+status: done
 revision: 1
 priority: low
 created: 2026-08-28
-started:
-finished:
+started: 2026-08-31
+finished: 2026-08-31
 ---
 
 # task-0008 — Двери лифта и обрамление шахты
