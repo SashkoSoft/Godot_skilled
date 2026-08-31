@@ -590,8 +590,11 @@ const DECAL_M := {
 }
 
 
+## spin: −1 — повернуть случайно (пятну всё равно), иначе угол в радианах
+## вокруг оси проекции. У декали длинная сторона идёт по локальному Z, что для
+## пола означает мировую Z; поворот на 90° кладёт её вдоль X.
 func _decal(kind: String, pos: Vector3, normal: Vector3, scale_: float = 1.0,
-		free_spin := true) -> void:
+		spin := -1.0, tint := Color(1, 1, 1)) -> void:
 	var m: Array = DECAL_M.get(kind, [])
 	if m.is_empty():
 		return
@@ -604,7 +607,8 @@ func _decal(kind: String, pos: Vector3, normal: Vector3, scale_: float = 1.0,
 	if ResourceLoader.exists(nrm):
 		d.texture_normal = load(nrm)
 	d.size = Vector3(float(m[0]) * scale_, 0.30, float(m[1]) * scale_)
-	d.albedo_mix = 0.9
+	d.albedo_mix = 1.0
+	d.modulate = tint
 	d.normal_fade = 0.4
 	var yv := -normal.normalized()
 	var xv := Vector3.UP.cross(yv)
@@ -620,12 +624,10 @@ func _decal(kind: String, pos: Vector3, normal: Vector3, scale_: float = 1.0,
 	var r1 := fposmod(sin(seed_v) * 43758.5453, 1.0)
 	var r2 := fposmod(sin(seed_v + 1.7) * 43758.5453, 1.0)
 	var b := Basis(xv, yv, zv)
-	if absf(normal.y) > 0.5 and free_spin:
-		b = b.rotated(yv, r1 * TAU)
+	if spin >= 0.0:
+		b = b.rotated(yv, spin)
 	elif absf(normal.y) > 0.5:
-		# Вытертая тропа идёт вдоль коридора, её крутить нельзя — иначе
-		# получается пятно поперёк прохода.
-		b = b.rotated(yv, PI * 0.5 if r1 < 0.5 else 0.0)
+		b = b.rotated(yv, r1 * TAU)
 	elif r1 < 0.5:
 		b = Basis(-xv, yv, -zv)          # зеркально, верх на месте
 	d.transform = Transform3D(b, pos)
@@ -633,9 +635,53 @@ func _decal(kind: String, pos: Vector3, normal: Vector3, scale_: float = 1.0,
 	add_child(d)
 
 
+## Вытертости там, где их протирают ногами: у каждого порога и перед плитой
+## с мойкой. Пятна маленькие (0.3–0.4 от размера декали) и вытянуты вдоль
+## прохода — так они читаются следом, а не кляксой. По одному на проём:
+## лучше мало и в осмысленных местах, чем много и всюду.
+## Затёртое место темнее пола, а не светлее: лак сходит, в поры набивается
+## грязь. Светлое пятно на буром паркете просто не читается.
+const WEAR_TINT := Color(0.70, 0.67, 0.63)
+
+
+func _wear_spots() -> void:
+	for r in _plan.get("door_openings", []):
+		var w: float = float(r[2]) - float(r[0])
+		var d: float = float(r[3]) - float(r[1])
+		var cx: float = (float(r[0]) + float(r[2])) * 0.5
+		var cz: float = (float(r[1]) + float(r[3])) * 0.5
+		# проходят поперёк стены: если проём вытянут по X, идут вдоль Z
+		var along_x := w > d
+		# у порога помещение есть не всегда с обеих сторон (вход в квартиру)
+		if _kind_at(cx, cz) == "" and _kind_at(cx + (0.0 if along_x else 0.35),
+				cz + (0.35 if along_x else 0.0)) == "":
+			continue
+		_decal("path_worn", Vector3(cx, 0.05, cz), Vector3(0, -1, 0), 0.42,
+				0.0 if along_x else PI * 0.5, WEAR_TINT)
+
+	# перед плитой и мойкой стоят, а не ходят: пятно круглее и мельче
+	for fx in _plan.get("fixtures", []):
+		var kind := String(fx["kind"])
+		if kind != "плита" and kind != "мойка":
+			continue
+		var r: Array = fx["r"]
+		var fw: float = float(r[2]) - float(r[0])
+		var fd: float = float(r[3]) - float(r[1])
+		var px: float = (float(r[0]) + float(r[2])) * 0.5
+		var pz: float = (float(r[1]) + float(r[3])) * 0.5
+		# сдвиг «от стены»: прибор стоит у стены, человек — перед ним
+		var off := 0.45
+		var dir := Vector3(0, 0, 1) if fw > fd else Vector3(1, 0, 0)
+		if _kind_at(px + dir.x * off, pz + dir.z * off) == "":
+			dir = -dir
+		_decal("path_worn", Vector3(px + dir.x * off, 0.05, pz + dir.z * off),
+				Vector3(0, -1, 0), 0.34, PI * 0.5 if fw > fd else 0.0, WEAR_TINT)
+
+
 ## Где что лежит. Расстановка считается от прямоугольников помещений, а не
 ## забита координатами: зеркальная квартира получает то же самое сама.
 func _decals() -> void:
+	_wear_spots()
 	var lintel: float = _plan["lintel"]
 	for room in _plan["rooms"]:
 		var kind := String(room["kind"])
@@ -675,7 +721,8 @@ func _decals() -> void:
 					var narrow := minf(w, dp)
 					_decal("path_worn", Vector3((x0 + x1) * 0.5, 0.05,
 							(z0 + z1) * 0.5), Vector3(0, -1, 0),
-							clampf(narrow / 1.1, 0.5, 1.0), false)
+							clampf(narrow / 1.4, 0.4, 0.8),
+							PI * 0.5 if along_x else 0.0)
 				"кухня":
 					_decal("leak_wall", Vector3(x0 + 0.02, lintel - 0.75,
 							z0 + dp * 0.5), Vector3(1, 0, 0), 0.9)
