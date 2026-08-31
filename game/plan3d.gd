@@ -54,6 +54,7 @@ func _ready() -> void:
 		add_child(_vp)
 
 	_build()
+	_decals()
 	_ceiling()
 	_light()
 	_room_lights()
@@ -342,8 +343,24 @@ func _build() -> void:
 	# поэтому вертикаль зеркалю — иначе панель уезжает под потолок.
 	var m_paint := _tex("wall-paint-kitchen", "wall_paint_kitchen", 1.0 / 3.00)
 	m_paint.uv1_scale.y = -m_paint.uv1_scale.y
+	# Обои в комнатах разные. Пока набор один (task-0014), поэтому комнаты
+	# разводятся оттенком и шагом рисунка; как приедут варианты рисунка
+	# (task-0021), сюда встанут они, а перебор по комнатам останется тот же.
+	var papers: Array[StandardMaterial3D] = []
+	for v in [["wall-paper-2", "wall_paper_2", 1.0 / 1.06, Color(1, 1, 1)],
+			["wall-paper-3", "wall_paper_3", 1.0 / 1.06, Color(1, 1, 1)]]:
+		if ResourceLoader.exists("res://assets/textures/%s/%s_albedo_1k.png"
+				% [v[0], v[1]]):
+			papers.append(_tex(String(v[0]), String(v[1]), float(v[2])))
+	if papers.is_empty():
+		papers.append(_tex("wall-paper", "wall_paper", 1.0 / 1.06,
+				Color(1.00, 0.97, 0.92)))
+		papers.append(_tex("wall-paper", "wall_paper", 1.0 / 1.34,
+				Color(0.88, 0.92, 0.90)))
+	var room_i := 0
+
 	var m_skin := {
-		"жилая": _tex("wall-paper", "wall_paper", 1.0 / 1.06),
+		"жилая": papers[0],
 		"кухня": m_paint,
 		"прихожая": m_paint,
 		"санузел": _tex("tile-bath", "tile_bath", 1.0 / 1.20),
@@ -356,6 +373,9 @@ func _build() -> void:
 		var ms: StandardMaterial3D = m_skin.get(room["kind"])
 		if ms == null:
 			continue
+		if String(room["kind"]) == "жилая":
+			ms = papers[room_i % papers.size()]
+			room_i += 1
 		for r in room["rects"]:
 			_room_skin(r, ms, h, door_h, holes)
 
@@ -465,6 +485,97 @@ func _window_asset(cx: float, cz: float, width: float, along_z: bool,
 	add_child(node)
 	_take_glass(node)
 	return true
+
+
+# --- декали износа от houdini-assets ----------------------------------------
+# Проекция задаётся в метрах (sizes.txt доставки), а не размером картинки.
+# Узел Decal проецирует вдоль своего локального −Y, поэтому для стены базис
+# строится от нормали, а «верх» картинки — от мирового верха.
+const DECAL_DIR := "res://assets/decals/"
+const DECAL_M := {
+	"leak_ceiling": [1.20, 1.20, "1k"],
+	"leak_wall": [0.60, 1.60, "512"],
+	"mold_corner": [0.50, 0.50, "512"],
+	"mold_seam": [0.80, 0.10, "512"],
+	"path_worn": [1.00, 2.00, "1k"],
+	"furniture_ghost": [1.00, 1.80, "512"],
+	"paper_peel": [0.60, 0.90, "512"],
+	"debris_floor": [0.80, 0.40, "512"],
+}
+
+
+func _decal(kind: String, pos: Vector3, normal: Vector3, scale_: float = 1.0) -> void:
+	var m: Array = DECAL_M.get(kind, [])
+	if m.is_empty():
+		return
+	var alb := "%s%s_albedo_%s.png" % [DECAL_DIR, kind, m[2]]
+	if not ResourceLoader.exists(alb):
+		return
+	var d := Decal.new()
+	d.texture_albedo = load(alb)
+	var nrm := "%s%s_normal_%s.png" % [DECAL_DIR, kind, m[2]]
+	if ResourceLoader.exists(nrm):
+		d.texture_normal = load(nrm)
+	d.size = Vector3(float(m[0]) * scale_, 0.30, float(m[1]) * scale_)
+	d.albedo_mix = 0.9
+	d.normal_fade = 0.4
+	var yv := -normal.normalized()
+	var xv := Vector3.UP.cross(yv)
+	if xv.length() < 0.01:
+		xv = Vector3.RIGHT
+	xv = xv.normalized()
+	var zv := yv.cross(xv).normalized()
+	d.transform = Transform3D(Basis(xv, yv, zv), pos)
+	add_child(d)
+
+
+## Где что лежит. Расстановка считается от прямоугольников помещений, а не
+## забита координатами: зеркальная квартира получает то же самое сама.
+func _decals() -> void:
+	var lintel: float = _plan["lintel"]
+	for room in _plan["rooms"]:
+		var kind := String(room["kind"])
+		for r in room["rects"]:
+			var x0: float = float(r[0])
+			var z0: float = float(r[1])
+			var x1: float = float(r[2])
+			var z1: float = float(r[3])
+			var w := x1 - x0
+			var dp := z1 - z0
+			if w < 0.6 or dp < 0.6:
+				continue
+			match kind:
+				"санузел":
+					# плесень из обоих нижних углов и полоса по шву плитки
+					_decal("mold_corner", Vector3(x0 + 0.02, 0.32, z0 + 0.30),
+							Vector3(1, 0, 0), 0.9)
+					_decal("mold_corner", Vector3(x1 - 0.02, 0.28, z1 - 0.30),
+							Vector3(-1, 0, 0), 0.9)
+					_decal("mold_seam", Vector3(x0 + 0.02, 0.95, (z0 + z1) * 0.5),
+							Vector3(1, 0, 0), 1.0)
+				"жилая":
+					# потёк по стене сверху и светлый след от снятого шкафа
+					_decal("leak_wall", Vector3(x1 - 0.02, lintel - 0.55,
+							z0 + dp * 0.28), Vector3(-1, 0, 0), 1.0)
+					_decal("furniture_ghost", Vector3(x0 + 0.02, 0.95,
+							z0 + dp * 0.62), Vector3(1, 0, 0), 1.0)
+					_decal("paper_peel", Vector3(x0 + w * 0.35, lintel - 0.35,
+							z1 - 0.02), Vector3(0, 0, -1), 1.0)
+					_decal("debris_floor", Vector3(x0 + w * 0.7, 0.05,
+							z1 - 0.28), Vector3(0, -1, 0), 1.0)
+				"прихожая":
+					# вытертая тропа вдоль коридора
+					var along_x := w > dp
+					_decal("path_worn", Vector3((x0 + x1) * 0.5, 0.05,
+							(z0 + z1) * 0.5), Vector3(0, -1, 0), 1.0)
+					if along_x:
+						_decal("debris_floor", Vector3(x0 + 0.5, 0.05,
+								z0 + dp * 0.5), Vector3(0, -1, 0), 0.8)
+				"кухня":
+					_decal("leak_wall", Vector3(x0 + 0.02, lintel - 0.75,
+							z0 + dp * 0.5), Vector3(1, 0, 0), 0.9)
+					_decal("debris_floor", Vector3(x0 + w * 0.5, 0.05,
+							z1 - 0.25), Vector3(0, -1, 0), 1.0)
 
 
 ## Отделка одной комнаты: по тонкой панели на каждую из четырёх внутренних
@@ -791,8 +902,15 @@ func _camera() -> void:
 		for a in OS.get_cmdline_user_args():
 			if a.begins_with("--pitch="):
 				pitch = clampf(float(a.substr(8)), 10.0, 89.0)
+		# --yaw=N — с какой стороны смотреть, градусы по часовой от +Z.
+		# 45 — угол «справа-снизу» (как было), 225 — противоположный.
+		var yaw := 45.0
+		for a in OS.get_cmdline_user_args():
+			if a.begins_with("--yaw="):
+				yaw = float(a.substr(6))
 		var rad := deg_to_rad(pitch)
-		var eye := Vector3(cos(rad) * 0.7071, sin(rad), cos(rad) * 0.7071) * 20.0
+		var yr := deg_to_rad(yaw)
+		var eye := Vector3(cos(rad) * sin(yr), sin(rad), cos(rad) * cos(yr)) * 20.0
 		cam.global_position = Vector3(fx, 1.0, fz) + eye
 		cam.look_at(Vector3(fx, 1.0, fz), Vector3.UP)
 		_frame(cam, Vector3(mnx, 0.0, mnz),
@@ -827,7 +945,11 @@ func _frame(cam: Camera3D, mn: Vector3, mx: Vector3) -> void:
 			var sp := cam.unproject_position(p)
 			lo = Vector2(minf(lo.x, sp.x), minf(lo.y, sp.y))
 			hi = Vector2(maxf(hi.x, sp.x), maxf(hi.y, sp.y))
-		var k := maxf((hi.x - lo.x) / vp.x, (hi.y - lo.y) / vp.y) * 1.02
+		var zoom := 1.0
+		for a in OS.get_cmdline_user_args():
+			if a.begins_with("--zoom="):
+				zoom = maxf(float(a.substr(7)), 0.2)
+		var k := maxf((hi.x - lo.x) / vp.x, (hi.y - lo.y) / vp.y) * 1.02 / zoom
 		var b := cam.global_transform.basis
 		if cam.projection == Camera3D.PROJECTION_ORTHOGONAL:
 			var off := ((lo + hi) * 0.5 - vp * 0.5) / vp.y * cam.size
