@@ -3,12 +3,12 @@ id: task-0024
 title: Балконная дверь под проём 1.13
 assignee: houdini-assets
 type: model
-status: in_progress
+status: done
 revision: 1
 priority: normal
 created: 2026-08-31
 started: 2026-08-31
-finished:
+finished: 2026-08-31
 ---
 
 # task-0024 — Балконная дверь под проём 1.13
