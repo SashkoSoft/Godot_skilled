@@ -424,8 +424,8 @@ func _build() -> void:
 		# ещё крупнее — выходило 8.8 мм, то есть кирпичная кладка. У tile-floor
 		# шов 3.6 мм при тайле 1.60, а на 1.20 это 2.7 мм — как в жизни.
 		# Плитка получается 15 см, подкрашена светлее и глянцевее напольной.
-		"санузел": _tex_st("tile-floor", "tile_floor", 1.20,
-				Color(1.26, 1.25, 1.20), 0.04, 8, 0.52),
+		"санузел": _tex_st("tile-bath", "tile_bath",
+				_tile_m("tile-bath", 1.60), Color(1.14, 1.13, 1.09), 0.04, 8, 0.52),
 	}
 	var holes: Array = []
 	holes.append_array(_plan.get("door_openings", []))
@@ -938,10 +938,77 @@ func _furniture() -> void:
 				break
 
 
+# --- бумага на стенах (task-0019 от comfyui) --------------------------------
+# Следы людей: то, что повесили и бросили. Кладётся декалью на стену, размер
+# проекции — из RESULT доставки, в метрах.
+const PAPER := "res://assets/decals/paper/"
+const PAPER_M := {
+	"poster_torn": [0.90, "1k"], "wallpaper_patch": [0.60, "1k"],
+	"calendar": [0.40, "512"], "child_drawing": [0.40, "512"],
+	"newspaper_scrap": [0.70, "512"], "photo_frame_mark": [0.35, "512"],
+	"switch_grime": [0.25, "512"], "door_number": [0.20, "512"],
+}
+
+
+func _paper_decal(kind: String, pos: Vector3, normal: Vector3) -> void:
+	var m: Array = PAPER_M.get(kind, [])
+	if m.is_empty():
+		return
+	var alb := "%s%s_albedo_%s.png" % [PAPER, kind, m[1]]
+	if not ResourceLoader.exists(alb):
+		return
+	var d := Decal.new()
+	d.texture_albedo = load(alb)
+	d.size = Vector3(float(m[0]), 0.25, float(m[0]))
+	d.albedo_mix = 1.0
+	d.upper_fade = 1.0
+	d.lower_fade = 1.0
+	var yv := -normal.normalized()
+	var xv := Vector3.UP.cross(yv)
+	if xv.length() < 0.01:
+		xv = Vector3.RIGHT
+	xv = xv.normalized()
+	d.transform = Transform3D(Basis(xv, yv, yv.cross(xv).normalized()), pos)
+	add_child(d)
+
+
+## По две-три бумажки на комнату, на разные стены и на разной высоте: пачкой в
+## одном месте они читаются коллажем, а не следом жизни.
+func _paper() -> void:
+	var lintel: float = _plan["lintel"]
+	var i := 0
+	var plan := ["poster_torn", "calendar", "child_drawing", "newspaper_scrap",
+			"photo_frame_mark", "wallpaper_patch"]
+	for room in _plan["rooms"]:
+		var kind := String(room["kind"])
+		if kind != "жилая" and kind != "кухня" and kind != "прихожая":
+			continue
+		for r in room["rects"]:
+			var x0: float = float(r[0])
+			var z0: float = float(r[1])
+			var x1: float = float(r[2])
+			var z1: float = float(r[3])
+			if x1 - x0 < 1.2 or z1 - z0 < 1.2:
+				continue
+			# на дальней стене повыше, на боковой пониже
+			_paper_decal(plan[i % plan.size()],
+					Vector3(x0 + (x1 - x0) * 0.35, lintel - 0.75, z0 + 0.02),
+					Vector3(0, 0, 1))
+			i += 1
+			_paper_decal(plan[i % plan.size()],
+					Vector3(x0 + 0.02, 1.45, z0 + (z1 - z0) * 0.62),
+					Vector3(1, 0, 0))
+			i += 1
+			# засаленное пятно у выключателя — всегда у входа, на 1.40
+			_paper_decal("switch_grime",
+					Vector3(x0 + 0.02, 1.40, z1 - 0.35), Vector3(1, 0, 0))
+
+
 ## Где что лежит. Расстановка считается от прямоугольников помещений, а не
 ## забита координатами: зеркальная квартира получает то же самое сама.
 func _decals() -> void:
 	_wear_spots()
+	_paper()
 	var lintel: float = _plan["lintel"]
 	for room in _plan["rooms"]:
 		var kind := String(room["kind"])
