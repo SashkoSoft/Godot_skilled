@@ -590,6 +590,23 @@ func _door_asset(cx: float, cz: float, width: float, along_z: bool) -> bool:
 				out_dir = Vector3(1, 0, 0) if a == "санузел" else Vector3(-1, 0, 0)
 			else:
 				out_dir = Vector3(0, 0, 1) if a == "санузел" else Vector3(0, 0, -1)
+			# Коридор узкий: прихожая всего 0.98 в чистоте, а полотно 0.63—0.71.
+			# Распахнутая на 40° дверь перекрывает половину прохода и сверху
+			# читается перегородкой — именно за неё её и принимали. Ограничиваю
+			# угол так, чтобы полотно занимало не больше трети ширины коридора.
+			var corridor := 0.98
+			for room in _plan["rooms"]:
+				if String(room["kind"]) != "прихожая":
+					continue
+				for rr in room["rects"]:
+					var px := cx + out_dir.x * 0.5
+					var pz := cz + out_dir.z * 0.5
+					if px > float(rr[0]) and px < float(rr[2]) 							and pz > float(rr[1]) and pz < float(rr[3]):
+						corridor = minf(float(rr[2]) - float(rr[0]),
+								float(rr[3]) - float(rr[1]))
+			var leaf_w := maxf(width, 0.5)
+			var max_deg := rad_to_deg(asin(clampf(corridor * 0.33 / leaf_w, 0.1, 1.0)))
+			deg = minf(deg, max_deg)
 			leaf.rotation.y += deg_to_rad(deg) * side
 			# куда уехал кончик полотна — туда и открылась дверь
 			var tip := leaf.global_transform * Vector3(0.7, 1.0, 0.0)
@@ -1658,8 +1675,9 @@ func _hall_report() -> void:
 				var ox := minf(box.end.x, x1) - maxf(box.position.x, x0)
 				var oz := minf(box.end.z, z1) - maxf(box.position.z, z0)
 				if ox > 0.004 and oz > 0.004:
-					print("[прихожая] %s (%s) залезает на %.2f x %.2f, высота %.2f"
-							% [c.name, m.name, ox, oz, box.size.y])
+					print("[прихожая] %s x %.2f..%.2f z %.2f..%.2f (залезает %.2f x %.2f, h %.2f)"
+							% [c.name, box.position.x, box.end.x,
+									box.position.z, box.end.z, ox, oz, box.size.y])
 
 
 ## Подогнать ортокамеру под коробку: считаю экранные координаты восьми углов,
