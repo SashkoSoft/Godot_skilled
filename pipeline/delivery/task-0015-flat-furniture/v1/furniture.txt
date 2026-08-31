@@ -1,0 +1,6 @@
+kitchen_counter 0.600 0.850 0.625 tumba kuhni, modul 0.60, stoleshnica oblezla
+kitchen_upper 0.600 0.700 0.551 navesnoy shkaf 0.30, odna dverca sorvana
+wardrobe 1.232 2.200 0.837 platyanoy shkaf 1.20 x 0.60, dverca priotkryta
+radiator 0.679 0.560 0.126 chugunnaya batareya, 7 sekciy
+door_frame 0.940 2.340 0.489 korobka s nalichnikom, proyom 0.80 x 2.27
+ceiling_lamp 0.096 0.559 0.091 patron s provodom, bez plafona
