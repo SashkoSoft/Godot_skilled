@@ -211,8 +211,8 @@ func _build() -> void:
 	# Полы — самая большая непрерывная поверхность в кадре, повторяемость на
 	# них заметнее всего. Поэтому они идут через шейдер без видимого тайла.
 	var m_kind := {
-		"кухня": _tex_st("floor-lino", "floor_lino", _tile_m("floor-lino", 1.20),
-				Color(1, 1, 1), 0.09, 0, 0.95),
+		"кухня": _tex_st("floor-lino-2", "floor_lino_2",
+				_tile_m("floor-lino-2", 1.20) * 1.25, Color(1, 1, 1), 0.09, 0, 0.95),
 		"прихожая": _tex_st("floor-lino-2", "floor_lino_2", _tile_m("floor-lino-2", 1.20),
 				Color(1, 1, 1), 0.11, 0, 0.95),
 		# Лоджия — та же крошка, что на лестничной клетке, без подкраски:
@@ -224,15 +224,18 @@ func _build() -> void:
 		# отдельный набор запрошен заданием.
 		"санузел": _tex_st("tile-floor", "tile_floor",
 				_tile_m("tile-floor", 1.60), Color(1, 1, 1), 0.05, 8, 0.62),
-		"жилая": _tex_st("floor-parquet", "floor_parquet", _tile_m("floor-parquet", 1.60),
-				Color(1, 1, 1), 0.09, 4, 0.85),
+		# Паркет кладём крупнее объявленного тайла: планка 5 см на полу
+		# комнаты 3.4 x 5.5 сыплется в рябь, при коэффициенте 1.35 она
+		# становится ближе к 7 см — обычный размер штучного паркета.
+		"жилая": _tex_st("floor-parquet", "floor_parquet",
+				_tile_m("floor-parquet", 1.60) * 1.35, Color(1, 1, 1), 0.09, 4, 0.85),
 	}
 	# В большой комнате паркет уложен ёлочкой, в маленькой — щитовой.
 	var m_herring: Material = m_kind["жилая"]
 	if ResourceLoader.exists(
 			"res://assets/textures/floor-parquet-2/floor_parquet_2_albedo_1k.png"):
 		m_herring = _tex_st("floor-parquet-2", "floor_parquet_2",
-				_tile_m("floor-parquet-2", 1.70), Color(1, 1, 1), 0.09, 0, 0.85)
+				_tile_m("floor-parquet-2", 1.70) * 1.35, Color(1, 1, 1), 0.09, 0, 0.85)
 	for room in _plan["rooms"]:
 		var mk: Material = m_kind.get(room["kind"], m_floor)
 		for r in room["rects"]:
