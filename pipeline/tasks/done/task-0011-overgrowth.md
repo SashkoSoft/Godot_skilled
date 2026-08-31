@@ -3,12 +3,12 @@ id: task-0011
 title: Зелень: плети, мох, трава
 assignee: comfyui
 type: texture
-status: in_progress
+status: done
 revision: 1
 priority: normal
 created: 2026-08-28
 started: 2026-08-31
-finished:
+finished: 2026-08-31
 ---
 
 # task-0011 — Зелень: плети, мох, трава
