@@ -14,3 +14,7 @@ wall-paper-2 1.06
 wall-paper-3 1.06
 wall-paper-4 1.06
 wall-paper-5 1.06
+wall-paper-6 1.06
+wall-paper-7 1.06
+wall-paper-8 1.06
+wall-paper-9 1.06
