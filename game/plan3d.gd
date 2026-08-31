@@ -444,6 +444,7 @@ func _build() -> void:
 	# Приборы: высоты как в жизни, стоят на полу.
 	if _fixtures():
 		_curtains()
+		_furniture()
 		return
 	var m_fh := {"ванна": 0.58, "унитаз": 0.40, "мойка": 0.85,
 			"раковина": 0.80, "плита": 0.85}
@@ -793,6 +794,112 @@ func _curtains() -> void:
 		_place(CURTAIN_DIR + kind + ".glb", pos, yaw, k)
 
 
+# --- мебель ------------------------------------------------------------------
+# Модели от houdini-assets (task-0015): ноль в середине низа, лицо в −Z.
+# Расстановка считается от плана, а не забита координатами: батарея под окном,
+# кухонный ряд вдоль стены с мойкой и плитой, шкаф в большой комнате у глухой
+# стены, патрон под лампу — там же, где стоит источник света.
+const FURN := "res://assets/models/furniture/"
+
+
+## Занят ли участок пола проёмом: под окном батарея нужна, а в дверь мебель
+## ставить нельзя.
+func _blocked(x: float, z: float, r: float) -> bool:
+	for o in _plan.get("door_openings", []):
+		if x > float(o[0]) - r and x < float(o[2]) + r 				and z > float(o[1]) - r and z < float(o[3]) + r:
+			return true
+	return false
+
+
+func _furniture() -> void:
+	var h: float = _plan["wall_h"]
+
+	# Батарея под каждым окном, спиной к стене, на высоте 0.12 от пола.
+	for r in _plan.get("windows", []):
+		var w: float = float(r[2]) - float(r[0])
+		var d: float = float(r[3]) - float(r[1])
+		var cx: float = (float(r[0]) + float(r[2])) * 0.5
+		var cz: float = (float(r[1]) + float(r[3])) * 0.5
+		var along_z := w <= d
+		var probe := minf(w, d) * 0.5 + 0.35
+		var inside := Vector3(-1, 0, 0) if along_z else Vector3(0, 0, -1)
+		if _kind_at(cx - inside.x * probe, cz - inside.z * probe) != "":
+			inside = -inside
+		if _kind_at(cx + inside.x * probe, cz + inside.z * probe) == "лоджия":
+			continue
+		var pos := Vector3(cx + inside.x * (minf(w, d) * 0.5 + 0.09), 0.12,
+				cz + inside.z * (minf(w, d) * 0.5 + 0.09))
+		_place(FURN + "radiator.glb", pos, atan2(-inside.x, -inside.z))
+
+	# Патрон с проводом под потолком там же, где лампа.
+	for room in _plan["rooms"]:
+		if String(room["kind"]) == "лоджия":
+			continue
+		for r in room["rects"]:
+			var w: float = float(r[2]) - float(r[0])
+			var d: float = float(r[3]) - float(r[1])
+			if w < 0.9 or d < 0.9:
+				continue
+			var lamp_node := _place(FURN + "ceiling_lamp.glb",
+					Vector3((float(r[0]) + float(r[2])) * 0.5, h - 0.56,
+							(float(r[1]) + float(r[3])) * 0.5), 0.0)
+			if lamp_node != null:
+				# Патрон висит ниже источника и закрывал его собой: по полу шёл
+				# тёмный круг во всю комнату. Голая лампочка такой тени не даёт.
+				for c in lamp_node.find_children("*", "MeshInstance3D", true, false):
+					(c as MeshInstance3D).cast_shadow = 							GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+	# Кухонный ряд: тумбы вдоль той же стены, у которой стоят мойка и плита,
+	# и навесные шкафы над ними на 1.45.
+	var sink := Vector3.ZERO
+	var stove := Vector3.ZERO
+	for fx in _plan.get("fixtures", []):
+		var rr: Array = fx["r"]
+		var c := Vector3((float(rr[0]) + float(rr[2])) * 0.5, 0.0,
+				(float(rr[1]) + float(rr[3])) * 0.5)
+		if String(fx["kind"]) == "мойка":
+			sink = c
+		elif String(fx["kind"]) == "плита":
+			stove = c
+	if sink != Vector3.ZERO and stove != Vector3.ZERO:
+		var wd := _wall_dir(sink.x, sink.z, 0.45)
+		var yaw := atan2(wd.x, wd.z)
+		# между мойкой и плитой один модуль 0.60, и ещё один за мойкой
+		var along := (stove - sink).normalized()
+		for k in [0.5, -1.0, -1.6]:
+			var pos: Vector3 = sink + along * (float(k) * 0.62)
+			if _kind_at(pos.x, pos.z) != "кухня":
+				continue
+			if absf(pos.x - stove.x) < 0.3 and absf(pos.z - stove.z) < 0.3:
+				continue
+			_place(FURN + "kitchen_counter.glb", Vector3(pos.x, 0.0, pos.z), yaw)
+			_place(FURN + "kitchen_upper.glb", Vector3(pos.x, 1.45, pos.z), yaw)
+
+	# Шкаф в большой комнате: у глухой стены, подальше от окна и от проёмов.
+	var best: Array = []
+	var best_area := 0.0
+	for room in _plan["rooms"]:
+		if String(room["kind"]) != "жилая":
+			continue
+		for r in room["rects"]:
+			var a := (float(r[2]) - float(r[0])) * (float(r[3]) - float(r[1]))
+			if a > best_area:
+				best_area = a
+				best = r
+	if not best.is_empty():
+		var x0: float = float(best[0])
+		var z0: float = float(best[1])
+		var x1: float = float(best[2])
+		var z1: float = float(best[3])
+		# ставим у короткой стены, у той её половины, где нет двери
+		for t in [0.72, 0.28]:
+			var px: float = x0 + (x1 - x0) * float(t)
+			var pz := z1 - 0.45
+			if not _blocked(px, pz, 0.8):
+				_place(FURN + "wardrobe.glb", Vector3(px, 0.0, pz), PI)
+				break
+
+
 ## Где что лежит. Расстановка считается от прямоугольников помещений, а не
 ## забита координатами: зеркальная квартира получает то же самое сама.
 func _decals() -> void:
@@ -1131,7 +1238,8 @@ func _room_lights() -> void:
 			if w < 0.5 or d < 0.5:
 				continue
 			var lamp := OmniLight3D.new()
-			lamp.position = Vector3((float(r[0]) + float(r[2])) * 0.5, h - 0.35,
+			# ниже патрона: сам светильник висит на 0.56 от потолка
+			lamp.position = Vector3((float(r[0]) + float(r[2])) * 0.5, h - 0.62,
 					(float(r[1]) + float(r[3])) * 0.5)
 			lamp.light_color = col
 			# Яркость по площади: одна и та же лампа в комнате 3 x 5 читается
