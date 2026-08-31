@@ -1397,7 +1397,7 @@ func _light() -> void:
 	e.sky = sky
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
 	# Небо вполсилы, иначе затенённые места отдают синевой и «плывут»
-	e.ambient_light_sky_contribution = 0.65
+	e.ambient_light_sky_contribution = 0.55
 	e.ambient_light_energy = 1.4
 	e.ssao_enabled = true
 	e.ssao_intensity = 1.0                  # демо ставит 1.0 вместо дефолтных 2.0
@@ -1444,14 +1444,17 @@ func _room_lights() -> void:
 	# Лампа накаливания, а не дневной свет: в брошенном доме электричества нет,
 	# но кадр читается как «вечер при лампочке», и холодный свет делает серым
 	# даже тёплое дерево.
+	# Лампа накаливания, а не дневной свет. Ориентир — 2400 К: у такой лампы
+	# синего примерно вдвое меньше красного. Прежние значения (0.87, 0.70)
+	# читались белыми, потому что глаз сравнивает их с холодным светом из окна.
 	var warm := {
-		"кухня": Color(1.00, 0.85, 0.66),
-		"прихожая": Color(1.00, 0.84, 0.64),
-		"санузел": Color(0.94, 0.94, 0.96),
+		"кухня": Color(1.00, 0.74, 0.46),
+		"прихожая": Color(1.00, 0.72, 0.44),
+		"санузел": Color(1.00, 0.82, 0.62),
 		"лоджия": Color(0.90, 0.95, 1.00),
 	}
 	for room in _plan["rooms"]:
-		var col: Color = warm.get(room["kind"], Color(1.00, 0.87, 0.70))
+		var col: Color = warm.get(room["kind"], Color(1.00, 0.77, 0.52))
 		for r in room["rects"]:
 			var w: float = float(r[2]) - float(r[0])
 			var d: float = float(r[3]) - float(r[1])
