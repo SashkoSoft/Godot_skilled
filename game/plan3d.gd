@@ -274,7 +274,7 @@ func _build() -> void:
 				0.62, 0.78, Color(0.42, 0.40, 0.37)),
 		"жилая": _tex_st("floor-parquet", "floor_parquet",
 				_tile_m("floor-parquet", 1.60) * 1.35, wood, 0.09, 4, 0.85,
-				1.0, Color(0.5, 0.5, 0.5), true, 0.30),
+				1.0, Color(0.5, 0.5, 0.5), true, 0.65),
 	}
 	# В большой комнате паркет уложен ёлочкой, в маленькой — щитовой.
 	var m_herring: Material = m_kind["жилая"]
@@ -286,7 +286,7 @@ func _build() -> void:
 		# глаз и так не ловит.
 		m_herring = _tex_st("floor-parquet-2", "floor_parquet_2",
 				_tile_m("floor-parquet-2", 1.70) * 1.35, wood, 0.13, 0, 0.85,
-				1.0, Color(0.5, 0.5, 0.5), false, 0.30)
+				1.0, Color(0.5, 0.5, 0.5), false, 0.65)
 	for room in _plan["rooms"]:
 		var mk: Material = m_kind.get(room["kind"], m_floor)
 		for r in room["rects"]:
