@@ -3,12 +3,12 @@ id: task-0025
 title: Плитка пола санузла и фартук кухни
 assignee: houdini-assets
 type: texture
-status: open
+status: done
 revision: 1
 priority: high
 created: 2026-08-31
-started:
-finished:
+started: 2026-08-31
+finished: 2026-08-31
 ---
 
 # task-0025 — Плитка пола санузла и фартук кухни
