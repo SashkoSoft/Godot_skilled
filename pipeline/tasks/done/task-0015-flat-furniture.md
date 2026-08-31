@@ -3,12 +3,12 @@ id: task-0015
 title: Мебель квартиры: кухня, шкафы, батареи
 assignee: houdini-assets
 type: model
-status: open
+status: done
 revision: 1
 priority: normal
 created: 2026-08-30
-started:
-finished:
+started: 2026-08-31
+finished: 2026-08-31
 ---
 
 # task-0015 — Мебель квартиры: кухня, шкафы, батареи

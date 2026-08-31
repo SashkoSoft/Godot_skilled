@@ -6,13 +6,8 @@
 | ID | Задание | Кому | Тип | Ревизия | Статус | Папка | Создано | Закрыто |
 |---|---|---|---|---|---|---|---|---|
 | task-0001 | Локомоция на эталонном риге | **houdini-anim** | animation | v1 | open | open/ | 2026-08-23 | — |
-| task-0012 | Сантехника и кухонная плита | **houdini-assets** | model | v1 | open | open/ | 2026-08-30 | — |
-| task-0015 | Мебель квартиры: кухня, шкафы, батареи | **houdini-assets** | model | v1 | open | open/ | 2026-08-30 | — |
 | task-0019 | Бумага на стенах: плакаты, календарь, обрывки | **comfyui** | texture | v1 | open | open/ | 2026-08-31 | — |
 | task-0020 | Звук пустой квартиры: шаги, двери, гул | **comfyui** | audio | v1 | open | open/ | 2026-08-31 | — |
-| task-0022 | Полы: паркет ёлочкой и второй линолеум | **houdini-assets** | texture | v2 | open | open/ | 2026-08-31 | — |
-| task-0025 | Плитка пола санузла и фартук кухни | **houdini-assets** | texture | v1 | open | open/ | 2026-08-31 | — |
-| task-0026 | Шторы, занавески и карнизы | **houdini-assets** | model | v1 | open | open/ | 2026-08-31 | — |
 | task-0027 | Обои с орнаментом: четыре рисунка | **houdini-assets** | texture | v1 | open | open/ | 2026-08-31 | — |
 | task-0002 | Бетонная панель: стены и перекрытия | **comfyui** | texture | v2 | accepted | done/ | 2026-08-27 | 2026-08-27 |
 | task-0003 | Плитка и бетон лестничной клетки | **comfyui** | texture | v1 | accepted | done/ | 2026-08-27 | 2026-08-27 |
@@ -24,14 +19,19 @@
 | task-0009 | Полы в квартирах: линолеум и паркет | **comfyui** | texture | v1 | cancelled | done/ | 2026-08-28 | 2026-08-31 |
 | task-0010 | Обои и потолок в квартирах | **comfyui** | texture | v1 | cancelled | done/ | 2026-08-28 | 2026-08-31 |
 | task-0011 | Зелень: плети, мох, трава | **comfyui** | texture | v2 | accepted | done/ | 2026-08-28 | 2026-08-31 |
+| task-0012 | Сантехника и кухонная плита | **houdini-assets** | model | v1 | done | done/ | 2026-08-30 | 2026-08-31 |
 | task-0013 | Плитка санузла: стены и пол | **comfyui** | texture | v1 | cancelled | done/ | 2026-08-30 | 2026-08-31 |
 | task-0014 | Материалы квартиры: полы, стены, потолок, плитка | **houdini-assets** | texture | v2 | accepted | done/ | 2026-08-30 | 2026-08-31 |
+| task-0015 | Мебель квартиры: кухня, шкафы, батареи | **houdini-assets** | model | v1 | done | done/ | 2026-08-30 | 2026-08-31 |
 | task-0016 | Дверцы кладовок 1а, 2а, 6а | **houdini-assets** | model | v1 | done | done/ | 2026-08-31 | 2026-08-31 |
 | task-0017 | Остекление лоджии: парапет и переплёт | **houdini-assets** | model | v1 | done | done/ | 2026-08-31 | 2026-08-31 |
 | task-0018 | Декали износа: потёки, плесень, вытертые тропы | **houdini-assets** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
 | task-0021 | Обои: четыре разных рисунка на выбор | **houdini-assets** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
+| task-0022 | Полы: паркет ёлочкой и второй линолеум | **houdini-assets** | texture | v2 | done | done/ | 2026-08-31 | 2026-08-31 |
 | task-0023 | Краска кухни и прихожей: убавить выбоины, два состояния | **houdini-assets** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
 | task-0024 | Балконная дверь под проём 1.13 | **houdini-assets** | model | v1 | done | done/ | 2026-08-31 | 2026-08-31 |
+| task-0025 | Плитка пола санузла и фартук кухни | **houdini-assets** | texture | v1 | done | done/ | 2026-08-31 | 2026-08-31 |
+| task-0026 | Шторы, занавески и карнизы | **houdini-assets** | model | v1 | done | done/ | 2026-08-31 | 2026-08-31 |
 
 ## Следующий свободный номер
 
