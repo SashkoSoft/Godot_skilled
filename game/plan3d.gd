@@ -80,6 +80,7 @@ func _ready() -> void:
 		_show_lights()
 	if OS.get_cmdline_user_args().has("--gi"):
 		_bake_gi()
+	_ready_fly()
 
 
 ## Оставить в разборе только верхнюю квартиру. Половины зеркальны относительно
@@ -1487,6 +1488,87 @@ func _camera() -> void:
 		cam.look_at(Vector3(cx, 1.0, cz), Vector3.UP)
 
 
+# --- свободная камера для сборки ---------------------------------------------
+# Когда кадр не снимается, квартиру надо уметь обойти руками: WASD — движение,
+# Q/E — вниз и вверх, зажатая правая кнопка — осмотреться, колесо — скорость,
+# Shift — быстрее, Esc — выход.
+var _fly := false
+var _fly_speed := 3.5
+
+
+func _ready_fly() -> void:
+	_fly = _shot == ""
+	if not _fly:
+		return
+	var cam := _find_cam()
+	if cam == null:
+		return
+	# ставим в прихожую на уровень глаз и смотрим вдоль коридора
+	var b: Array = _plan["bounds"]
+	cam.projection = Camera3D.PROJECTION_PERSPECTIVE
+	cam.fov = 70.0
+	cam.near = 0.05
+	cam.global_position = Vector3((float(b[0]) + float(b[2])) * 0.5, 1.65,
+			(float(b[1]) + float(b[3])) * 0.5)
+	cam.rotation = Vector3.ZERO
+
+
+func _find_cam() -> Camera3D:
+	for c in get_children():
+		if c is Camera3D:
+			return c
+	if _vp != null:
+		for c in _vp.get_children():
+			if c is Camera3D:
+				return c
+	return null
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not _fly:
+		return
+	if event is InputEventKey and event.pressed 			and (event as InputEventKey).keycode == KEY_ESCAPE:
+		get_tree().quit()
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_RIGHT:
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if mb.pressed 					else Input.MOUSE_MODE_VISIBLE
+		elif mb.pressed and mb.button_index == MOUSE_BUTTON_WHEEL_UP:
+			_fly_speed = minf(_fly_speed * 1.25, 30.0)
+		elif mb.pressed and mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			_fly_speed = maxf(_fly_speed * 0.8, 0.4)
+	if event is InputEventMouseMotion 			and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		var cam := _find_cam()
+		if cam != null:
+			var mm := event as InputEventMouseMotion
+			cam.rotation.y -= mm.relative.x * 0.003
+			cam.rotation.x = clampf(cam.rotation.x - mm.relative.y * 0.003,
+					-1.4, 1.4)
+
+
+func _fly_step(delta: float) -> void:
+	var cam := _find_cam()
+	if cam == null:
+		return
+	var dir := Vector3.ZERO
+	if Input.is_key_pressed(KEY_W):
+		dir -= cam.global_transform.basis.z
+	if Input.is_key_pressed(KEY_S):
+		dir += cam.global_transform.basis.z
+	if Input.is_key_pressed(KEY_A):
+		dir -= cam.global_transform.basis.x
+	if Input.is_key_pressed(KEY_D):
+		dir += cam.global_transform.basis.x
+	if Input.is_key_pressed(KEY_E):
+		dir += Vector3.UP
+	if Input.is_key_pressed(KEY_Q):
+		dir -= Vector3.UP
+	if dir == Vector3.ZERO:
+		return
+	var k := 3.0 if Input.is_key_pressed(KEY_SHIFT) else 1.0
+	cam.global_position += dir.normalized() * _fly_speed * k * delta
+
+
 ## Подогнать ортокамеру под коробку: считаю экранные координаты восьми углов,
 ## по ним правлю размер и сдвигаю камеру так, чтобы коробка встала по центру.
 ## Два прохода — после сдвига проекция меняется.
@@ -1522,6 +1604,7 @@ func _frame(cam: Camera3D, mn: Vector3, mx: Vector3) -> void:
 
 func _process(_d: float) -> void:
 	if _shot == "":
+		_fly_step(_d)
 		return
 	_frames -= 1
 	if _frames > 0:
