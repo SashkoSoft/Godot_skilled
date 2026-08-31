@@ -1074,7 +1074,33 @@ func _shafts(f: int, y: float) -> void:
 		# перемычка 0,60 — тогда проём лифта выходит 2,24 в свету, как все
 		# остальные в доме, и под него собран блок створок от houdini-assets
 		_shaft_wall(f, Vector3(x1, y + h - 0.30, mid), Vector3(WALL, 0.60, LIFT_DOOR))
+		_lift_block(f, Vector3(x1, y, mid))
 		_mark(f, Vector3(x1, y, mid), Vector3(0, 0, 1), LIFT_DOOR, KIND_DOOR, y)
+
+
+## Блок дверей шахты от houdini-assets: створки `door-l` / `door-r`,
+## обрамление и панель вызова одним файлом. Пивот — середина низа проёма,
+## лицевая сторона смотрит в −Z, поэтому в холл её разворачивает −90°.
+## Коллизии у блока нет: проход через шахту и так закрыт стенками.
+const LIFT_MODEL := "res://assets/models/lift/lift_shaft.glb"
+
+static var _lift_cache: PackedScene = null
+
+
+func _lift_block(f: int, pos: Vector3) -> void:
+	if _lift_cache == null:
+		if not ResourceLoader.exists(LIFT_MODEL):
+			return
+		_lift_cache = load(LIFT_MODEL)
+	var node: Node3D = _lift_cache.instantiate()
+	node.position = pos
+	node.rotation.y = -PI * 0.5
+	add_child(node)
+	node.set_meta("floor", f)
+	for c in node.find_children("*", "MeshInstance3D", true, false):
+		var mi := c as MeshInstance3D
+		mi.set_meta("floor", f)
+		fadeable.append(mi)
 
 
 func _shaft_wall(f: int, pos: Vector3, size: Vector3) -> void:

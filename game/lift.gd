@@ -7,6 +7,7 @@ extends AnimatableBody3D
 
 const SPEED := 2.4              ## м/с
 const DWELL := 1.6              ## сколько стоит с открытыми дверями, с
+const CABIN_MODEL := "res://assets/models/lift/lift_cabin.glb"
 
 var floors: int = 3
 var rect: Rect2 = Rect2()       ## габарит шахты в плане
@@ -22,15 +23,28 @@ func setup(shaft: Rect2, floor_count: int) -> void:
 	sync_to_physics = false
 
 	var size := Vector3(rect.size.x - 0.30, 0.20, rect.size.y - 0.30)
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.55, 0.50, 0.42)
-	var mi := MeshInstance3D.new()
-	mi.mesh = mesh
-	mi.material_override = mat
-	mi.position.y = -0.10
-	add_child(mi)
+	# Кабина от houdini-assets: пивот в середине низа её проёма, отделка уходит
+	# в +Z, лицом кабина смотрит в −Z. В шахте вход с востока, поэтому разворот
+	# на −90° и сдвиг к внутренней грани восточной стенки.
+	if ResourceLoader.exists(CABIN_MODEL):
+		var cabin: Node3D = (load(CABIN_MODEL) as PackedScene).instantiate()
+		cabin.position = Vector3(rect.size.x * 0.5 - Tower.WALL * 0.5, 0.0, 0.0)
+		cabin.rotation.y = -PI * 0.5
+		# Кабина сделана ровно по внутреннему размеру шахты (замер: 1.48 x 1.64,
+		# грань в грань с бетоном). Совпадающие плоскости мерцали бы, поэтому
+		# поджимаю на сантиметр с каждой стороны.
+		cabin.scale = Vector3(0.988, 1.0, 0.988)
+		add_child(cabin)
+	else:
+		var mesh := BoxMesh.new()
+		mesh.size = size
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = Color(0.55, 0.50, 0.42)
+		var mi := MeshInstance3D.new()
+		mi.mesh = mesh
+		mi.material_override = mat
+		mi.position.y = -0.10
+		add_child(mi)
 
 	var shape := CollisionShape3D.new()
 	var box := BoxShape3D.new()
