@@ -1099,29 +1099,39 @@ func _furniture() -> void:
 					Vector3(pos.x, 0.0, pos.z), yaw))
 			_place(FURN + "kitchen_upper.glb", Vector3(pos.x, 1.45, pos.z), yaw)
 
-	# Шкаф в большой комнате: у глухой стены, подальше от окна и от проёмов.
-	var best: Array = []
-	var best_area := 0.0
+	# Шкаф — в каждой жилой комнате, у той короткой стены, что подальше
+	# от окна. 0.8 м запаса от проёма было слишком много для комнаты 3.4 м
+	# шириной: он гасил обе кандидатные точки разом, хотя одна из них лежала
+	# в полутора метрах от двери. Запас сузили и точку ищем сканированием,
+	# а не двумя фиксированными местами.
 	for room in _plan["rooms"]:
 		if String(room["kind"]) != "жилая":
 			continue
 		for r in room["rects"]:
-			var a := (float(r[2]) - float(r[0])) * (float(r[3]) - float(r[1]))
-			if a > best_area:
-				best_area = a
-				best = r
-	if not best.is_empty():
-		var x0: float = float(best[0])
-		var z0: float = float(best[1])
-		var x1: float = float(best[2])
-		var z1: float = float(best[3])
-		# ставим у короткой стены, у той её половины, где нет двери
-		for t in [0.72, 0.28]:
-			var px: float = x0 + (x1 - x0) * float(t)
+			var x0: float = float(r[0])
+			var z0: float = float(r[1])
+			var x1: float = float(r[2])
+			var z1: float = float(r[3])
+			var w := x1 - x0
+			if w < 1.3:
+				continue                # шкаф 1.23 м не влезает в стену
 			var pz := z1 - 0.45
-			if not _blocked(px, pz, 0.8):
-				_solidify(_place(FURN + "wardrobe.glb", Vector3(px, 0.0, pz), PI))
-				break
+			var best_t := -1.0
+			var best_margin := -1.0
+			var t := 0.12
+			while t <= 0.881:
+				var px := x0 + w * t
+				if not _blocked(px, pz, 0.45):
+					# из двух свободных точек берём ту, что дальше от краёв
+					# половины стены — так шкаф не соседствует с проёмом
+					var margin := minf(t, 1.0 - t)
+					if margin > best_margin:
+						best_margin = margin
+						best_t = t
+				t += 0.04
+			if best_t >= 0.0:
+				_solidify(_place(FURN + "wardrobe.glb",
+						Vector3(x0 + w * best_t, 0.0, pz), PI))
 
 
 # --- бумага на стенах (task-0019 от comfyui) --------------------------------
