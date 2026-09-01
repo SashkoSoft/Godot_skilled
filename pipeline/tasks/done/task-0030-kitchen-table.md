@@ -3,12 +3,12 @@ id: task-0030
 title: Обеденный стол и стулья, холодильник
 assignee: houdini-assets
 type: model
-status: open
+status: done
 revision: 1
 priority: high
 created: 2026-09-01
-started:
-finished:
+started: 2026-09-01
+finished: 2026-09-01
 ---
 
 # task-0030 — Обеденный стол и стулья, холодильник
