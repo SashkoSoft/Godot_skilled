@@ -1084,6 +1084,42 @@ func _furniture() -> void:
 					Vector3(pos.x, 0.0, pos.z), yaw))
 			_place(FURN + "kitchen_upper.glb", Vector3(pos.x, 1.45, pos.z), yaw)
 			placed += 1
+		# Холодильник — у свободной стены, напротив рабочего ряда: сама
+		# сдача так и просила («обычно у свободной стены напротив рабочего
+		# ряда»), а не втиснут в тот же ряд с тумбами. wd — направление от
+		# мойки К её стене, значит от свободной стены — в обратную, -wd.
+		var opp := -wd
+		var side := Vector3(-opp.z, 0.0, opp.x)
+		var t := 0.05
+		while _kind_at(sink.x + opp.x * t, sink.z + opp.z * t) == "кухня":
+			t += 0.05
+		var fpos: Vector3 = Vector3(sink.x + opp.x * (t - 0.35),
+				0.0, sink.z + opp.z * (t - 0.35)) + side * 0.9
+		if _kind_at(fpos.x, fpos.z) == "кухня":
+			_solidify(_place(FURN + "fridge.glb", fpos, atan2(opp.x, opp.z)))
+
+	# Стол и стулья — в кухне, в стороне от кухонного ряда: середина
+	# помещения обычно свободна, ряд тумб идёт вдоль одной стены.
+	for room in _plan["rooms"]:
+		if String(room["kind"]) != "кухня":
+			continue
+		for r in room["rects"]:
+			var x0: float = float(r[0])
+			var z0: float = float(r[1])
+			var x1: float = float(r[2])
+			var z1: float = float(r[3])
+			if x1 - x0 < 1.6 or z1 - z0 < 1.6:
+				continue
+			var cx := (x0 + x1) * 0.5
+			var cz := (z0 + z1) * 0.5
+			_solidify(_place(FURN + "kitchen_table.glb", Vector3(cx, 0.0, cz), 0.0))
+			var half_d := 0.55
+			if _kind_at(cx, cz - half_d - 0.05) == "кухня":
+				_solidify(_place(FURN + "kitchen_chair.glb",
+						Vector3(cx, 0.0, cz - half_d - 0.05), PI))
+			if _kind_at(cx, cz + half_d + 0.05) == "кухня":
+				_solidify(_place(FURN + "kitchen_chair.glb",
+						Vector3(cx, 0.0, cz + half_d + 0.05), 0.0))
 
 	# Шкаф — в каждой жилой комнате, у той короткой стены, что подальше
 	# от окна. 0.8 м запаса от проёма было слишком много для комнаты 3.4 м
@@ -1118,6 +1154,32 @@ func _furniture() -> void:
 			if best_t >= 0.0:
 				_solidify(_place(FURN + "wardrobe.glb",
 						Vector3(x0 + w * best_t, 0.0, pz), PI))
+
+			# Кровать — изголовьем к длинной стене x0 (там нет окна, оно у
+			# короткой стены z0; у z1 стоит шкаф). Тумбочка — у изножья,
+			# со стороны прохода. Запас от z0 (окно/батарея) и z1 (шкаф)
+			# фиксированный, а не сканированием: шкаф сканирует X у другой
+			# стены, столкновение с кроватью там маловероятно, но запас
+			# по Z всё равно нужен, чтобы кровать не влезала в те же углы.
+			var d := z1 - z0
+			if d >= 2.7 and w >= 2.0:
+				var big := w * d > 17.0
+				var bed_path := FURN + ("bed_double.glb" if big else "bed_single.glb")
+				var bed_half := 0.95 if big else 0.75
+				var bz := z0 + 0.75 + bed_half
+				if bz + bed_half <= z1 - 1.0:
+					_solidify(_place(bed_path, Vector3(x0 + 1.0, 0.0, bz), -PI * 0.5))
+					var ns_z := bz + bed_half + 0.32
+					if ns_z <= z1 - 0.9:
+						_solidify(_place(FURN + "nightstand.glb",
+								Vector3(x0 + 0.4, 0.0, ns_z), -PI * 0.5))
+
+				# Комод — вдоль противоположной длинной стены (x1), тем же
+				# запасом от окна и шкафа, что и у кровати.
+				var dz := z0 + 0.9
+				if dz + 0.6 <= z1 - 1.0:
+					_solidify(_place(FURN + "dresser.glb",
+							Vector3(x1 - 0.26, 0.0, dz), PI * 0.5))
 
 
 # --- бумага на стенах (task-0019 от comfyui) --------------------------------
