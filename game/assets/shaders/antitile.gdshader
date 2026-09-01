@@ -21,6 +21,10 @@ uniform sampler2D tex_albedo : source_color, filter_linear_mipmap_anisotropic;
 uniform sampler2D tex_normal : hint_normal, filter_linear_mipmap_anisotropic;
 uniform sampler2D tex_orm : hint_default_white, filter_linear_mipmap_anisotropic;
 uniform sampler2D tex_id : hint_default_black, filter_linear_mipmap_anisotropic;
+// Маска шва: белое — шов, чёрное — плитка (task-0033). Если карты нет у
+// набора, sampler по умолчанию чёрный — use_seam остаётся выключенным, и
+// ветка ниже не заходит ни разу.
+uniform sampler2D tex_seam : hint_default_black, filter_linear_mipmap_anisotropic;
 
 uniform float tile_m = 1.6;          // сколько метров занимает один тайл
 uniform vec4 tint : source_color = vec4(1.0);
@@ -50,6 +54,14 @@ uniform bool use_id = false;
 uniform float id_value = 0.16;       // разброс светлоты между планками
 uniform float id_hue = 0.05;
 
+uniform bool use_seam = false;
+// Шум внутри шва: без него готовая затирка — идеально ровная полоса что
+// в геометрии, что по свету. Частота высокая, в отличие от макро-вариации —
+// шум должен ломать сантиметры, а не метры.
+uniform float seam_scale_m = 0.35;
+uniform float seam_dark = 0.35;      // насколько темнее плитки в среднем
+uniform float seam_noise = 0.28;     // разброс внутри самого шва
+
 // Пятна выцветания: комбинирует по маске цветную и обесцвеченную версию ОДНОЙ
 // и той же текстуры — там, где солнце годами било в пол сильнее, паркет не
 // просто светлее, у него и цвет садится первым. Пятна резкие (smoothstep), не
@@ -62,7 +74,7 @@ varying vec3 world_pos;
 varying vec3 world_nrm;
 
 
-// Дублировать treugolnuyu setku на каждый канал незачем: у альбедо, нормали,
+// Дублировать треугольную сетку на каждый канал незачем: у альбедо, нормали,
 // ORM и id один и тот же uv, значит и решётка, и веса смешивания общие.
 // Раньше sample_stochastic пересчитывала её самостоятельно на каждый вызов —
 // до четырёх раз за фрагмент с одинаковым результатом.
@@ -107,8 +119,6 @@ void triangle_grid(vec2 uv, out vec3 w, out vec2 v1, out vec2 v2, out vec2 v3) {
 		v3 = base + vec2(0.0, 1.0);
 	}
 }
-
-
 
 
 // Тот же треугольный разбор, но возвращает только номер ячейки — им красим
@@ -198,6 +208,18 @@ void fragment() {
 	col.r *= 1.0 + (m - 0.5) * 2.0 * macro_hue;
 	col.b *= 1.0 - (m - 0.5) * 2.0 * macro_hue;
 
+	// шов: неоднородная затирка, а не печатная линия
+	if (use_seam) {
+		float seam = use_stochastic
+				? blend3(tex_seam, uv, ddx, ddy, o1, o2, o3, p).r
+				: textureGrad(tex_seam, uv, ddx, ddy).r;
+		if (seam > 0.02) {
+			float sn = cell_noise(uv * tile_m / seam_scale_m);
+			col *= 1.0 - seam * seam_dark * (0.6 + 0.8 * sn);
+			orm.g = clamp(orm.g + seam * seam_noise * (sn - 0.5), 0.0, 1.0);
+		}
+	}
+
 	// своя окраска каждой паркетине — та же решётка, что у альбедо выше
 	if (use_id) {
 		float id = use_stochastic
@@ -209,15 +231,19 @@ void fragment() {
 		col.g *= 1.0 + (h - 0.5) * id_hue;
 	}
 
-	// пятна выцветания: цветная и обесцвеченная версия одной текстуры
-	float pm_debug = cell_noise(uv * tile_m / mono_scale_m + vec2(37.0, 91.0));
+	// пятна выцветания: цветная и обесцвеченная версия одной текстуры.
+	// Сдвиг увода от макро-пятен нужен маленький: хеш внутри cell_noise
+	// строится через sin() от координаты базовой ячейки, а она уже разгоняется
+	// множителем 3.4641 и множителем 57 в скалярном произведении — при сдвиге
+	// в десятки метров аргумент sin() уходил в миллионы, точность float терялась,
+	// и вся комната читала одно и то же «случайное» число: маска не пятнала,
+	// а красила пол ровным цветом целиком. Держим сдвиг в пределах долей метра.
 	if (mono_patch > 0.001) {
-		float pm = pm_debug;
+		float pm = cell_noise(uv * tile_m / mono_scale_m + vec2(0.31, 0.67));
 		float t = smoothstep(0.5 - 0.5 / mono_sharp, 0.5 + 0.5 / mono_sharp, pm);
 		float luma = dot(col, vec3(0.299, 0.587, 0.114));
 		col = mix(col, vec3(luma), t * mono_patch);
 	}
-	if (mono_patch > 100.0) { col = vec3(pm_debug); }
 
 	ALBEDO = col;
 	NORMAL_MAP = nrm;

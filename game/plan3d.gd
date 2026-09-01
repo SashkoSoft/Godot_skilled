@@ -272,9 +272,14 @@ func _build() -> void:
 		"санузел": _tex_st("tile-floor", "tile_floor",
 				_tile_m("tile-floor", 1.60), Color(1.06, 1.00, 0.90), 0.05, 8,
 				0.62, 0.78, Color(0.42, 0.40, 0.37)),
+		# Пятна выцветания: солнце годами било в пол сильнее у окна — там и
+		# цвет садится первым, не только светлота. 999.0 здесь стояло отладочным
+		# сторожевым значением (шейдер закрашивал пол сплошным шумом для
+		# проверки маски) и осталось в коммите по ошибке — щитовой паркет
+		# из-за этого стоял серым пятном вместо дерева.
 		"жилая": _tex_st("floor-parquet", "floor_parquet",
 				_tile_m("floor-parquet", 1.60) * 1.35, wood, 0.09, 4, 0.85,
-				1.0, Color(0.5, 0.5, 0.5), true, 999.0),
+				1.0, Color(0.5, 0.5, 0.5), true, 0.30),
 	}
 	# В большой комнате паркет уложен ёлочкой, в маленькой — щитовой.
 	var m_herring: Material = m_kind["жилая"]
@@ -804,9 +809,11 @@ func _wear_texture() -> ImageTexture:
 				var ly := int(fposmod(float(y) * ky, float(lino.get_height())))
 				c = lino.get_pixel(lx, ly)
 				var g := (c.r + c.g + c.b) / 3.0
-				# насыщенность режем сильнее — иначе разницы не видно
-				c = Color(lerpf(g, c.r, 0.30), lerpf(g, c.g, 0.30),
-						lerpf(g, c.b, 0.30)) * 1.18
+				# Еле видно: тот же линолеум, лишь слегка обесцвеченный и
+				# посветлевший — не отдельное пятно на полу, а его чуть
+				# затёртый продолжение.
+				c = Color(lerpf(g, c.r, 0.72), lerpf(g, c.g, 0.72),
+						lerpf(g, c.b, 0.72)) * 1.04
 			img.set_pixel(x, y, Color(c.r, c.g, c.b, a))
 	_wear_tex = ImageTexture.create_from_image(img)
 	return _wear_tex
@@ -825,7 +832,7 @@ func _decal_wear(pos: Vector3, spin: float, scale_: float) -> void:
 			if tex != null:
 				d.texture_albedo = tex
 				d.texture_normal = null
-			d.albedo_mix = 0.75
+			d.albedo_mix = 0.35
 			d.modulate = Color(1, 1, 1)
 			d.upper_fade = 2.0
 			d.lower_fade = 2.0
@@ -1344,6 +1351,12 @@ func _tex_st(dir_: String, base: String, tile_m: float,
 	m.set_shader_parameter("contrast", contrast)
 	m.set_shader_parameter("mono_patch", mono)
 	m.set_shader_parameter("base_col", base_col)
+	# Маска шва (task-0033): если исполнитель уже прислал <набор>_seam_1k.png —
+	# включаем сами, без правки вызовов на местах.
+	var seam := root + "_seam_1k.png"
+	if ResourceLoader.exists(seam):
+		m.set_shader_parameter("tex_seam", load(seam))
+		m.set_shader_parameter("use_seam", true)
 	return m
 
 
@@ -1514,7 +1527,7 @@ func _light() -> void:
 	sun.shadow_enabled = true
 	sun.shadow_bias = 0.01                  # таблица под атлас 8192
 	sun.shadow_normal_bias = 2.0            # поднимать раньше, чем bias
-	sun.shadow_blur = 1.8
+	sun.shadow_blur = 3.4
 	# Сцена умещается в 30 м, поэтому один сплит: PSSM тут только даёт швы.
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
 	sun.directional_shadow_fade_start = 1.0
@@ -1543,8 +1556,8 @@ func _light() -> void:
 	# Затемнение в углах и под предметами. Демо ставят интенсивность 1.0, но
 	# там открытые сцены; в комнате 3 x 5 углов много и они должны читаться.
 	e.ssao_enabled = true
-	e.ssao_intensity = 3.0
-	e.ssao_radius = 1.1
+	e.ssao_intensity = 4.6
+	e.ssao_radius = 1.3
 	e.ssao_detail = 0.6
 	e.ssao_power = 1.6
 	e.ssao_light_affect = 0.25              # гасит и прямой свет, не только среду
@@ -1622,7 +1635,7 @@ func _room_lights() -> void:
 			# Яркость по площади: одна и та же лампа в комнате 3 x 5 читается
 			# ровно, а в уборной 0.7 x 1.6 выбивает стены в белое. Опорная
 			# точка — комната около 15 м², от неё вниз до трети.
-			lamp.light_energy = clampf(7.5 * sqrt(w * d / 15.0), 2.4, 8.2)
+			lamp.light_energy = clampf(10.0 * sqrt(w * d / 15.0), 3.2, 11.0)
 			lamp.omni_range = maxf(w, d) * 1.6 + 4.0
 			# Затухание круче единицы: пятно под лампой не выбивается, свет
 			# спадает к углам мягче и не растекается в соседнюю комнату.
@@ -1632,6 +1645,8 @@ func _room_lights() -> void:
 			lamp.shadow_enabled = true
 			lamp.shadow_bias = 0.03
 			lamp.shadow_normal_bias = 4.0    # как во всех демо для точечных
+			lamp.shadow_blur = 3.0           # мягче край — резкая тень от точки
+			# на этом масштабе комнаты читается графично, а не бытово
 			add_child(lamp)
 
 	# у окон — холодный свет с улицы, чтобы читались откосы
