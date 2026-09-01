@@ -809,11 +809,13 @@ func _wear_texture() -> ImageTexture:
 				var ly := int(fposmod(float(y) * ky, float(lino.get_height())))
 				c = lino.get_pixel(lx, ly)
 				var g := (c.r + c.g + c.b) / 3.0
-				# Еле видно: тот же линолеум, лишь слегка обесцвеченный и
-				# посветлевший — не отдельное пятно на полу, а его чуть
-				# затёртый продолжение.
-				c = Color(lerpf(g, c.r, 0.72), lerpf(g, c.g, 0.72),
-						lerpf(g, c.b, 0.72)) * 1.04
+				# Тот же линолеум, чуть менее насыщенный и чуть темнее — как
+				# сошедший лак, а не другой материал. Прежние попытки грешили
+				# в обе стороны: 0.72 сатурации при mix 0.35 тонуло в шуме
+				# самого линолеума и не читалось вовсе, 0.15 — читалось
+				# заплаткой другого цвета. 0.55 — между ними.
+				c = Color(lerpf(g, c.r, 0.55), lerpf(g, c.g, 0.55),
+						lerpf(g, c.b, 0.55)) * 0.92
 			img.set_pixel(x, y, Color(c.r, c.g, c.b, a))
 	_wear_tex = ImageTexture.create_from_image(img)
 	return _wear_tex
@@ -832,10 +834,10 @@ func _decal_wear(pos: Vector3, spin: float, scale_: float) -> void:
 			if tex != null:
 				d.texture_albedo = tex
 				d.texture_normal = null
-			d.albedo_mix = 0.35
+			d.albedo_mix = 0.55
 			d.modulate = Color(1, 1, 1)
-			d.upper_fade = 2.0
-			d.lower_fade = 2.0
+			d.upper_fade = 0.6
+			d.lower_fade = 0.6
 
 
 func _wear_spots() -> void:
@@ -1721,20 +1723,36 @@ func _camera() -> void:
 		_vp.add_child(cam)
 	else:
 		add_child(cam)
+	# --focus=x0,z0,x1,z1 — тот же кадр, что и --flat, но границы заданы явно:
+	# для проверки одной детали (декаль, шов, стык) вблизи, без подгонки под
+	# всю квартиру.
+	var focus: Array = []
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--focus="):
+			var nums := a.substr(8).split(",")
+			if nums.size() == 4:
+				focus = [nums[0].to_float(), nums[1].to_float(),
+						nums[2].to_float(), nums[3].to_float()]
 	# --flat: одна квартира крупно. Границы беру по её же помещениям, а не по
 	# всему блоку, иначе половина кадра уходит на соседнюю квартиру.
-	if OS.get_cmdline_user_args().has("--flat"):
+	if OS.get_cmdline_user_args().has("--flat") or not focus.is_empty():
 		var mnx := 1e9
 		var mnz := 1e9
 		var mxx := -1e9
 		var mxz := -1e9
-		for room in _plan["rooms"]:
-			for r in room["rects"]:
-				# соседняя квартира из разбора уже убрана (_keep_one_flat)
-				mnx = minf(mnx, float(r[0]))
-				mnz = minf(mnz, float(r[1]))
-				mxx = maxf(mxx, float(r[2]))
-				mxz = maxf(mxz, float(r[3]))
+		if not focus.is_empty():
+			mnx = focus[0]
+			mnz = focus[1]
+			mxx = focus[2]
+			mxz = focus[3]
+		else:
+			for room in _plan["rooms"]:
+				for r in room["rects"]:
+					# соседняя квартира из разбора уже убрана (_keep_one_flat)
+					mnx = minf(mnx, float(r[0]))
+					mnz = minf(mnz, float(r[1]))
+					mxx = maxf(mxx, float(r[2]))
+					mxz = maxf(mxz, float(r[3]))
 		var fx := (mnx + mxx) * 0.5
 		var fz := (mnz + mxz) * 0.5
 		cam.size = maxf(mxx - mnx, mxz - mnz) * 1.15
