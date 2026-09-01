@@ -61,6 +61,15 @@ func _ready() -> void:
 	if OS.get_cmdline_user_args().has("--flat"):
 		_keep_one_flat()
 
+	# --probe=res://путь/к.glb — печатает AABB и узлы модели без рендера.
+	# Пивот и габарит по документации доставки не всегда совпадают с тем,
+	# что реально пришло импортом — дешевле замерить, чем гадать.
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--probe="):
+			_probe_asset(a.substr(8))
+			get_tree().quit()
+			return
+
 
 	# Снимок делаю в SubViewport, а не в окне: окно упирается в размер экрана
 	# (1800 x 1500 превращается в 1800 x 1012), а вьюпорту потолка нет и кадр
@@ -144,6 +153,33 @@ func _keep_one_flat() -> void:
 		for r in room["rects"]:
 			mz = maxf(mz, float(r[3]))
 	_plan["bounds"] = [b[0], b[1], b[2], mz + 0.34]
+
+
+## Замер модели без рендера: узлы и AABB, свой у каждого MeshInstance3D
+## и общий по всем сразу. --probe=res://путь/к.glb.
+func _probe_asset(path: String) -> void:
+	if not ResourceLoader.exists(path):
+		print("[probe] нет файла: ", path)
+		return
+	var node: Node3D = (load(path) as PackedScene).instantiate()
+	add_child(node)
+	print("[probe] %s root=%s children=%d" % [path, node.name, node.get_child_count()])
+	for c in node.get_children():
+		var p := (c as Node3D).position if c is Node3D else Vector3.ZERO
+		print("  узел=%s класс=%s позиция=%s" % [c.name, c.get_class(), p])
+	var whole := AABB()
+	var first := true
+	for mi in node.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		var a := m.global_transform * m.get_aabb()
+		whole = a if first else whole.merge(a)
+		first = false
+		print("  меш=%s локальный=%s мировой=%s" % [m.name, m.get_aabb(), a])
+	if not first:
+		print("[probe] общий AABB: низ=%.4f верх=%.4f высота=%.4f, x=%.4f..%.4f, z=%.4f..%.4f"
+				% [whole.position.y, whole.position.y + whole.size.y, whole.size.y,
+						whole.position.x, whole.position.x + whole.size.x,
+						whole.position.z, whole.position.z + whole.size.z])
 
 
 ## Материал по набору текстур из assets: albedo + normal + ORM.
@@ -458,6 +494,14 @@ func _build() -> void:
 	# Второе состояние краски — битое — держим для разорённых квартир. В этой
 	# оно стояло в прихожей и делало коридор избитым: помещение маленькое,
 	# стены близко, и каждая выбоина читается в упор.
+	# У прихожей стены рядом — узкий коридор, крупная текстура читается
+	# грубо и неаккуратно. Тайл мельче (2.4 м вместо 3.00), панель по
+	# высоте съезжает пропорционально — для коридора это не бросается
+	# в глаза так, как крупная фактура вблизи.
+	var m_paint_hall := _tex("wall-paint-kitchen", "wall_paint_kitchen",
+			1.0 / (_tile_m("wall-paint-kitchen", 3.00) * 0.6), Color(1, 1, 1),
+			true, 0.80)
+	m_paint_hall.uv1_scale.y = -m_paint_hall.uv1_scale.y
 	var m_paint_worn := m_paint
 	if ResourceLoader.exists(
 			"res://assets/textures/wall-paint-kitchen-2/wall_paint_kitchen_2_albedo_1k.png"):
@@ -489,7 +533,7 @@ func _build() -> void:
 	var m_skin := {
 		"жилая": papers[0],
 		"кухня": m_paint,
-		"прихожая": m_paint,
+		"прихожая": m_paint_hall,
 		# Стены санузла. Взял набор tile-floor, а не tile-bath, ради шва:
 		# у tile-bath он 6.6 мм в его собственном тайле 1.20, а мы клали его
 		# ещё крупнее — выходило 8.8 мм, то есть кирпичная кладка. У tile-floor
@@ -992,8 +1036,11 @@ func _furniture() -> void:
 			var d: float = float(r[3]) - float(r[1])
 			if w < 0.9 or d < 0.9:
 				continue
+			# Пивот модели — у потолка (верх AABB на Y=0, замерено --probe),
+			# патрон с проводом свисает вниз сам. h − 0.56 сажал пивот на
+			# 0.56 м НИЖЕ потолка — весь патрон повисал в воздухе с зазором.
 			var lamp_node := _place(FURN + "ceiling_lamp.glb",
-					Vector3((float(r[0]) + float(r[2])) * 0.5, h - 0.56,
+					Vector3((float(r[0]) + float(r[2])) * 0.5, h,
 							(float(r[1]) + float(r[3])) * 0.5), 0.0)
 			if lamp_node != null:
 				# Патрон висит ниже источника и закрывал его собой: по полу шёл
