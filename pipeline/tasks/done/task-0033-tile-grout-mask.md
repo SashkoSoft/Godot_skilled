@@ -3,12 +3,12 @@ id: task-0033
 title: Плитка — маска шва для процедурного нойза
 assignee: houdini-assets
 type: texture
-status: open
+status: done
 revision: 1
 priority: normal
 created: 2026-09-01
-started:
-finished:
+started: 2026-09-01
+finished: 2026-09-01
 ---
 
 # task-0033 — Плитка: маска шва для процедурного нойза
