@@ -312,7 +312,7 @@ func _build() -> void:
 		"прихожая": _tex_st("floor-lino-2", "floor_lino_2",
 				_tile_m("floor-lino-2", 1.20) * 0.4, Color(0.98, 0.97, 0.96),
 				0.11, 0, 0.95, 0.7, LINO_BASE, true, 0.0,
-				_wear_points("прихожая"), 0.6, 0.55),
+				_wear_points("прихожая"), 1.0, 0.8),
 		"лоджия": _tex_st("landing-floor", "landing_floor", 4.55,
 				Color(1, 1, 1), 0.07, 0, 1.0),
 		"санузел": _tex_st("tile-floor", "tile_floor",

@@ -271,7 +271,7 @@ void fragment() {
 			float wn = cell_noise(uv * tile_m / 0.55 + vec2(0.42, 0.18));
 			w = clamp(w * (0.6 + 0.7 * wn), 0.0, 1.0);
 			float luma = dot(col, vec3(0.299, 0.587, 0.114));
-			vec3 worn = mix(vec3(luma), col, 0.35) * 0.82;
+			vec3 worn = mix(vec3(luma), col, 0.25) * 0.72;
 			col = mix(col, worn, w * wear_strength);
 		}
 	}
