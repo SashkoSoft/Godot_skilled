@@ -762,117 +762,6 @@ func _decal(kind: String, pos: Vector3, normal: Vector3, scale_: float = 1.0,
 	add_child(d)
 
 
-## Вытертости там, где их протирают ногами: у каждого порога и перед плитой
-## с мойкой. Пятна маленькие (0.3–0.4 от размера декали) и вытянуты вдоль
-## прохода — так они читаются следом, а не кляксой. По одному на проём:
-## лучше мало и в осмысленных местах, чем много и всюду.
-## Затёртое место темнее пола, а не светлее: лак сходит, в поры набивается
-## грязь. Светлое пятно на буром паркете просто не читается.
-const WEAR_TINT := Color(0.86, 0.84, 0.81)
-
-## Маска потёртости: форма берётся у декали `path_worn`, а цвет делается ровным
-## и нейтральным. Тогда пятно читается как тот же пол, только менее насыщенный
-## и менее контрастный, а не как наклеенная другая текстура.
-static var _wear_tex: ImageTexture = null
-
-
-func _wear_texture() -> ImageTexture:
-	if _wear_tex != null:
-		return _wear_tex
-	var src := "res://assets/decals/path_worn_albedo_1k.png"
-	if not ResourceLoader.exists(src):
-		return null
-	var img: Image = (load(src) as Texture2D).get_image()
-	img.convert(Image.FORMAT_RGBA8)
-	# Цвет берём у самого пола, а не плоский: пятно должно быть тем же
-	# линолеумом, только выцветшим. Насыщенность режем вдвое, светлоту чуть
-	# поднимаем — так затёртое место отличается тоном, а не материалом.
-	var floor_src := "res://assets/textures/floor-lino-2/floor_lino_2_albedo_1k.png"
-	var lino: Image = null
-	if ResourceLoader.exists(floor_src):
-		lino = (load(floor_src) as Texture2D).get_image()
-		lino.convert(Image.FORMAT_RGBA8)
-	var w := img.get_width()
-	var h := img.get_height()
-	for y in h:
-		for x in w:
-			var a := img.get_pixel(x, y).a
-			var c := Color(0.62, 0.60, 0.57)
-			if lino != null:
-				# Декаль на полу занимает примерно 0.42 x 0.84 м, а тайл пола —
-				# 0.48 м. Значит по ширине укладывается 0.88 тайла, по длине
-				# 1.75: масштаб разный по осям, одинаковый множитель растягивал
-				# рисунок вдвое и пятно читалось другим материалом.
-				var kx := 0.88 * float(lino.get_width()) / float(w)
-				var ky := 1.75 * float(lino.get_height()) / float(h)
-				var lx := int(fposmod(float(x) * kx, float(lino.get_width())))
-				var ly := int(fposmod(float(y) * ky, float(lino.get_height())))
-				c = lino.get_pixel(lx, ly)
-				var g := (c.r + c.g + c.b) / 3.0
-				# Тот же линолеум, чуть менее насыщенный и чуть темнее — как
-				# сошедший лак, а не другой материал. Прежние попытки грешили
-				# в обе стороны: 0.72 сатурации при mix 0.35 тонуло в шуме
-				# самого линолеума и не читалось вовсе, 0.15 — читалось
-				# заплаткой другого цвета. 0.55 — между ними.
-				c = Color(lerpf(g, c.r, 0.55), lerpf(g, c.g, 0.55),
-						lerpf(g, c.b, 0.55)) * 0.92
-			img.set_pixel(x, y, Color(c.r, c.g, c.b, a))
-	_wear_tex = ImageTexture.create_from_image(img)
-	return _wear_tex
-
-
-## Вытертость: та же декаль, но слабее и мягче по краю. Резкая маска читается
-## штампом, а разница с полом не должна бросаться в глаза — это затёртый лак,
-## а не пятно краски.
-func _decal_wear(pos: Vector3, spin: float, scale_: float) -> void:
-	var before := get_child_count()
-	_decal("path_worn", pos, Vector3(0, -1, 0), scale_, spin, WEAR_TINT)
-	if get_child_count() > before:
-		var d := get_child(get_child_count() - 1) as Decal
-		if d != null:
-			var tex := _wear_texture()
-			if tex != null:
-				d.texture_albedo = tex
-				d.texture_normal = null
-			d.albedo_mix = 0.55
-			d.modulate = Color(1, 1, 1)
-			d.upper_fade = 0.6
-			d.lower_fade = 0.6
-
-
-func _wear_spots() -> void:
-	for r in _plan.get("door_openings", []):
-		var w: float = float(r[2]) - float(r[0])
-		var d: float = float(r[3]) - float(r[1])
-		var cx: float = (float(r[0]) + float(r[2])) * 0.5
-		var cz: float = (float(r[1]) + float(r[3])) * 0.5
-		# проходят поперёк стены: если проём вытянут по X, идут вдоль Z
-		var along_x := w > d
-		# у порога помещение есть не всегда с обеих сторон (вход в квартиру)
-		if _kind_at(cx, cz) == "" and _kind_at(cx + (0.0 if along_x else 0.35),
-				cz + (0.35 if along_x else 0.0)) == "":
-			continue
-		_decal_wear(Vector3(cx, 0.05, cz), 0.0 if along_x else PI * 0.5, 0.48)
-
-	# перед плитой и мойкой стоят, а не ходят: пятно круглее и мельче
-	for fx in _plan.get("fixtures", []):
-		var kind := String(fx["kind"])
-		if kind != "плита" and kind != "мойка":
-			continue
-		var r: Array = fx["r"]
-		var fw: float = float(r[2]) - float(r[0])
-		var fd: float = float(r[3]) - float(r[1])
-		var px: float = (float(r[0]) + float(r[2])) * 0.5
-		var pz: float = (float(r[1]) + float(r[3])) * 0.5
-		# сдвиг «от стены»: прибор стоит у стены, человек — перед ним
-		var off := 0.45
-		var dir := Vector3(0, 0, 1) if fw > fd else Vector3(1, 0, 0)
-		if _kind_at(px + dir.x * off, pz + dir.z * off) == "":
-			dir = -dir
-		_decal_wear(Vector3(px + dir.x * off, 0.05, pz + dir.z * off),
-				PI * 0.5 if fw > fd else 0.0, 0.38)
-
-
 # --- предметы: сантехника, шторы, мебель ------------------------------------
 # У всех моделей от houdini-assets ноль в середине низа, лицо смотрит в −Z.
 # Поэтому «поставить к стене» — это развернуть модель так, чтобы её +Z
@@ -1239,7 +1128,6 @@ func _paper() -> void:
 func _decals() -> void:
 	if OS.get_cmdline_user_args().has("--bare"):
 		return
-	_wear_spots()
 	_paper()
 	var lintel: float = _plan["lintel"]
 	for room in _plan["rooms"]:
