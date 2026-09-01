@@ -1005,6 +1005,94 @@ func _blocked(x: float, z: float, r: float) -> bool:
 	return false
 
 
+## Габарит модели по её AABB — не число, вписанное в код руками (шкаф один
+## раз разошёлся с реальностью на треть: в коде стояло 0.45, по факту 0.616,
+## и угол лез в проём). body_only исключает узлы door*/drawer* — открытая
+## дверца или выдвинутый ящик не в счёт для отступа от стены, только для
+## габарита вдоль стены (сам _place_at_wall берёт под каждое отдельно).
+static var _fp_cache: Dictionary = {}
+
+func _footprint(path: String, body_only: bool) -> Vector2:
+	var key := path + ("#body" if body_only else "#full")
+	if _fp_cache.has(key):
+		return _fp_cache[key]
+	var fp := Vector2.ZERO
+	if ResourceLoader.exists(path):
+		var node: Node3D = (load(path) as PackedScene).instantiate()
+		add_child(node)
+		var whole := AABB()
+		var first := true
+		for mi in node.find_children("*", "MeshInstance3D", true, false):
+			var nm := String(mi.name).to_lower()
+			if body_only and (nm.begins_with("door") or nm.begins_with("drawer")):
+				continue
+			var m := mi as MeshInstance3D
+			var a: AABB = m.global_transform * m.get_aabb()
+			whole = a if first else whole.merge(a)
+			first = false
+		if not first:
+			fp = Vector2(whole.size.x, whole.size.z)
+		node.queue_free()
+	_fp_cache[key] = fp
+	return fp
+
+
+## Ставит модель к одной из четырёх стен помещения — задом (узлы door*/
+## drawer* не в счёт), лицом в комнату, конвенция «низ в нуле, лицо в −Z»
+## для всех принятых моделей. Сама измеряет модель и сама сканирует стену
+## в поисках места, свободного от дверных проёмов — числа не вписываются
+## руками под конкретную комнату. room — [x0,z0,x1,z1], wall — "x0"/"x1"/
+## "z0"/"z1". margin0/margin1 — что оставить у краёв стены (под окно,
+## под соседний предмет), step — шаг сканирования.
+func _place_at_wall(path: String, room: Array, wall: String,
+		margin0 := 0.1, margin1 := 0.1, step := 0.05) -> Node3D:
+	var x0: float = float(room[0])
+	var z0: float = float(room[1])
+	var x1: float = float(room[2])
+	var z1: float = float(room[3])
+	var body := _footprint(path, true)
+	var full := _footprint(path, false)
+	if body == Vector2.ZERO:
+		return null
+	var along_x := wall == "z0" or wall == "z1"
+	var a0: float = x0 if along_x else z0
+	var a1: float = x1 if along_x else z1
+	var half_along: float = full.x * 0.5 if along_x else full.y * 0.5
+	var depth: float = body.y if along_x else body.x
+	var face: float
+	var inward: float
+	var yaw: float
+	match wall:
+		"x0": face = x0; inward = 1.0; yaw = -PI * 0.5
+		"x1": face = x1; inward = -1.0; yaw = PI * 0.5
+		"z0": face = z0; inward = 1.0; yaw = PI
+		"z1": face = z1; inward = -1.0; yaw = 0.0
+		_: return null
+	var lo := a0 + margin0 + half_along
+	var hi := a1 - margin1 - half_along
+	if lo > hi:
+		return null
+	var best_a := -1e9
+	var best_margin := -1.0
+	var a := lo
+	while a <= hi + 0.001:
+		var px := a if along_x else face + inward * depth
+		var pz := face + inward * depth if along_x else a
+		# +0.05 — общий зазор поверх точного измерения, не впритык: у шкафа
+		# ровно измеренная полуширина однажды оставила зазор в 5 мм.
+		if not _blocked(px, pz, half_along + 0.05):
+			var m := minf(a - lo, hi - a)
+			if m > best_margin:
+				best_margin = m
+				best_a = a
+		a += step
+	if best_a < -1e8:
+		return null
+	var pos := Vector3(best_a, 0.0, face + inward * depth * 0.5) if along_x \
+			else Vector3(face + inward * depth * 0.5, 0.0, best_a)
+	return _place(path, pos, yaw)
+
+
 func _furniture() -> void:
 	var h: float = _plan["wall_h"]
 
@@ -1084,22 +1172,11 @@ func _furniture() -> void:
 					Vector3(pos.x, 0.0, pos.z), yaw))
 			_place(FURN + "kitchen_upper.glb", Vector3(pos.x, 1.45, pos.z), yaw)
 			placed += 1
-		# Холодильник — у свободной стены, напротив рабочего ряда: сама
-		# сдача так и просила («обычно у свободной стены напротив рабочего
-		# ряда»), а не втиснут в тот же ряд с тумбами. wd — направление от
-		# мойки К её стене, значит от свободной стены — в обратную, -wd.
-		var opp := -wd
-		var side := Vector3(-opp.z, 0.0, opp.x)
-		var t := 0.05
-		while _kind_at(sink.x + opp.x * t, sink.z + opp.z * t) == "кухня":
-			t += 0.05
-		var fpos: Vector3 = Vector3(sink.x + opp.x * (t - 0.35),
-				0.0, sink.z + opp.z * (t - 0.35)) + side * 0.9
-		if _kind_at(fpos.x, fpos.z) == "кухня":
-			_solidify(_place(FURN + "fridge.glb", fpos, atan2(opp.x, opp.z)))
-
-	# Стол и стулья — в кухне, в стороне от кухонного ряда: середина
-	# помещения обычно свободна, ряд тумб идёт вдоль одной стены.
+	# Стол, стулья и холодильник — в кухне. Холодильник у свободной стены,
+	# напротив рабочего ряда (сама сдача так просила), стена определяется
+	# от направления к стене мойки (wd), а не подбором координат под эту
+	# квартиру. Мойку и плиту ищем в границах ИМЕННО этой комнаты — общий
+	# поиск по всем fixtures путал кухни двух квартир между собой.
 	for room in _plan["rooms"]:
 		if String(room["kind"]) != "кухня":
 			continue
@@ -1108,81 +1185,63 @@ func _furniture() -> void:
 			var z0: float = float(r[1])
 			var x1: float = float(r[2])
 			var z1: float = float(r[3])
+			var rsink := Vector3.ZERO
+			for fx in _plan.get("fixtures", []):
+				if String(fx["kind"]) != "мойка":
+					continue
+				var rr: Array = fx["r"]
+				var c := Vector3((float(rr[0]) + float(rr[2])) * 0.5, 0.0,
+						(float(rr[1]) + float(rr[3])) * 0.5)
+				if c.x > x0 and c.x < x1 and c.z > z0 and c.z < z1:
+					rsink = c
+					break
+			if rsink != Vector3.ZERO:
+				var rwd := _wall_dir(rsink.x, rsink.z, 0.45)
+				var free_wall := "x0"
+				if rwd.x > 0.5:
+					free_wall = "x0"
+				elif rwd.x < -0.5:
+					free_wall = "x1"
+				elif rwd.z > 0.5:
+					free_wall = "z0"
+				else:
+					free_wall = "z1"
+				_solidify(_place_at_wall(FURN + "fridge.glb", r, free_wall, 0.15, 0.15))
 			if x1 - x0 < 1.6 or z1 - z0 < 1.6:
 				continue
 			var cx := (x0 + x1) * 0.5
 			var cz := (z0 + z1) * 0.5
 			_solidify(_place(FURN + "kitchen_table.glb", Vector3(cx, 0.0, cz), 0.0))
-			var half_d := 0.55
-			if _kind_at(cx, cz - half_d - 0.05) == "кухня":
-				_solidify(_place(FURN + "kitchen_chair.glb",
-						Vector3(cx, 0.0, cz - half_d - 0.05), PI))
-			if _kind_at(cx, cz + half_d + 0.05) == "кухня":
-				_solidify(_place(FURN + "kitchen_chair.glb",
-						Vector3(cx, 0.0, cz + half_d + 0.05), 0.0))
+			var tfp := _footprint(FURN + "kitchen_table.glb", true)
+			var half_d: float = tfp.y * 0.5 + 0.05
+			if _kind_at(cx, cz - half_d) == "кухня":
+				_solidify(_place(FURN + "kitchen_chair.glb", Vector3(cx, 0.0, cz - half_d), PI))
+			if _kind_at(cx, cz + half_d) == "кухня":
+				_solidify(_place(FURN + "kitchen_chair.glb", Vector3(cx, 0.0, cz + half_d), 0.0))
 
-	# Шкаф — в каждой жилой комнате, у той короткой стены, что подальше
-	# от окна. 0.8 м запаса от проёма было слишком много для комнаты 3.4 м
-	# шириной: он гасил обе кандидатные точки разом, хотя одна из них лежала
-	# в полутора метрах от двери. Запас сузили и точку ищем сканированием,
-	# а не двумя фиксированными местами.
+	# Жилая: шкаф у короткой стены без окна (z1), кровать изголовьем к
+	# длинной стене без окна (x0), тумбочка у изножья, комод у
+	# противоположной длинной стены (x1). Всё — через общий поиск места
+	# у стены: он сам измеряет модель и сам избегает дверных проёмов,
+	# никаких чисел под конкретную комнату.
 	for room in _plan["rooms"]:
 		if String(room["kind"]) != "жилая":
 			continue
 		for r in room["rects"]:
 			var x0: float = float(r[0])
-			var z0: float = float(r[1])
 			var x1: float = float(r[2])
+			var z0: float = float(r[1])
 			var z1: float = float(r[3])
-			var w := x1 - x0
-			if w < 1.3:
-				continue                # шкаф 1.23 м не влезает в стену
-			var pz := z1 - 0.45
-			var best_t := -1.0
-			var best_margin := -1.0
-			var t := 0.12
-			while t <= 0.881:
-				var px := x0 + w * t
-				# 0.45 не совпадало с реальной полушириной шкафа (0.616,
-				# замерено --probe) — угол шкафа заезжал на проём, который
-				# считался уже свободным.
-				if not _blocked(px, pz, 0.68):
-					# из двух свободных точек берём ту, что дальше от краёв
-					# половины стены — так шкаф не соседствует с проёмом
-					var margin := minf(t, 1.0 - t)
-					if margin > best_margin:
-						best_margin = margin
-						best_t = t
-				t += 0.04
-			if best_t >= 0.0:
-				_solidify(_place(FURN + "wardrobe.glb",
-						Vector3(x0 + w * best_t, 0.0, pz), PI))
-
-			# Кровать — изголовьем к длинной стене x0 (там нет окна, оно у
-			# короткой стены z0; у z1 стоит шкаф). Тумбочка — у изножья,
-			# со стороны прохода. Запас от z0 (окно/батарея) и z1 (шкаф)
-			# фиксированный, а не сканированием: шкаф сканирует X у другой
-			# стены, столкновение с кроватью там маловероятно, но запас
-			# по Z всё равно нужен, чтобы кровать не влезала в те же углы.
-			var d := z1 - z0
-			if d >= 2.7 and w >= 2.0:
-				var big := w * d > 17.0
-				var bed_path := FURN + ("bed_double.glb" if big else "bed_single.glb")
-				var bed_half := 0.95 if big else 0.75
-				var bz := z0 + 0.75 + bed_half
-				if bz + bed_half <= z1 - 1.0:
-					_solidify(_place(bed_path, Vector3(x0 + 1.0, 0.0, bz), -PI * 0.5))
-					var ns_z := bz + bed_half + 0.32
-					if ns_z <= z1 - 0.9:
-						_solidify(_place(FURN + "nightstand.glb",
-								Vector3(x0 + 0.4, 0.0, ns_z), -PI * 0.5))
-
-				# Комод — вдоль противоположной длинной стены (x1), тем же
-				# запасом от окна и шкафа, что и у кровати.
-				var dz := z0 + 0.9
-				if dz + 0.6 <= z1 - 1.0:
-					_solidify(_place(FURN + "dresser.glb",
-							Vector3(x1 - 0.26, 0.0, dz), PI * 0.5))
+			_solidify(_place_at_wall(FURN + "wardrobe.glb", r, "z1", 0.1, 0.1))
+			var bed_path := FURN + (
+					"bed_double.glb" if (x1 - x0) * (z1 - z0) > 17.0 else "bed_single.glb")
+			var bed := _place_at_wall(bed_path, r, "x0", 0.1, 0.9)
+			_solidify(bed)
+			if bed != null:
+				var bed_far: float = bed.position.z - z0 \
+						+ _footprint(bed_path, false).y * 0.5 + 0.15
+				_solidify(_place_at_wall(FURN + "nightstand.glb", r, "x0", bed_far, 0.1))
+			_solidify(_place_at_wall(FURN + "dresser.glb", r, "x1", 0.1, 0.9))
 
 
 # --- бумага на стенах (task-0019 от comfyui) --------------------------------
