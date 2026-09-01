@@ -705,7 +705,6 @@ const DECAL_M := {
 	"leak_wall": [0.60, 1.60, "512"],
 	"mold_corner": [0.50, 0.50, "512"],
 	"mold_seam": [0.80, 0.10, "512"],
-	"path_worn": [1.00, 2.00, "1k"],
 	"furniture_ghost": [1.00, 1.80, "512"],
 	"paper_peel": [0.60, 0.90, "512"],
 	"debris_floor": [0.80, 0.40, "512"],
@@ -1160,16 +1159,6 @@ func _decals() -> void:
 							z1 - 0.02), Vector3(0, 0, -1), 1.0)
 					_decal("debris_floor", Vector3(x0 + w * 0.7, 0.05,
 							z1 - 0.28), Vector3(0, -1, 0), 1.0)
-				"прихожая":
-					# Тропа кладётся вдоль длинной стороны коридора и сжимается
-					# по его ширине: декаль 1.0 x 2.0, а рукав прихожей 0.98 —
-					# иначе пятно вылезает на стены и читается кляксой.
-					var along_x := w > dp
-					var narrow := minf(w, dp)
-					_decal("path_worn", Vector3((x0 + x1) * 0.5, 0.05,
-							(z0 + z1) * 0.5), Vector3(0, -1, 0),
-							clampf(narrow / 1.4, 0.4, 0.8),
-							PI * 0.5 if along_x else 0.0)
 				"кухня":
 					_decal("leak_wall", Vector3(x0 + 0.02, lintel - 0.75,
 							z0 + dp * 0.5), Vector3(1, 0, 0), 0.9)
