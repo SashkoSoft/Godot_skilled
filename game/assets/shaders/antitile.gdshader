@@ -70,6 +70,17 @@ uniform float mono_patch = 0.0;      // 0 — выключено, иначе с�
 uniform float mono_scale_m = 2.6;    // размер пятна, метры, не кратно тайлу
 uniform float mono_sharp = 3.0;      // резкость границы пятна
 
+// Потёртость: та же идея, что mono_patch (смешение по маске цветной и
+// обесцвеченной версии ОДНОЙ текстуры), но маска не случайная, а привязана
+// к местам, где реально ходят — порог, место перед плитой/мойкой. Точки в
+// мировых XZ передаются из GDScript по геометрии плана, а не рисуются
+// вручную.
+const int WEAR_MAX = 16;
+uniform int wear_count = 0;
+uniform vec2 wear_pos[WEAR_MAX];
+uniform float wear_radius = 1.0;     // метры, во сколько успевает погаснуть
+uniform float wear_strength = 0.0;   // 0 — выключено, иначе сила пятна
+
 varying vec3 world_pos;
 varying vec3 world_nrm;
 
@@ -243,6 +254,26 @@ void fragment() {
 		float t = smoothstep(0.5 - 0.5 / mono_sharp, 0.5 + 0.5 / mono_sharp, pm);
 		float luma = dot(col, vec3(0.299, 0.587, 0.114));
 		col = mix(col, vec3(luma), t * mono_patch);
+	}
+
+	// потёртость у порогов и рабочих мест: та же цветная/обесцвеченная
+	// смесь, что у mono_patch, но маска — затухание от известных точек, а
+	// не шум. Кромка не резкая (в отличие от mono_patch) — вытертость
+	// должна сходить на нет, а не обрываться линией.
+	if (wear_strength > 0.001 && wear_count > 0) {
+		float w = 0.0;
+		for (int i = 0; i < wear_count; i++) {
+			float dist = length(world_pos.xz - wear_pos[i]) / max(wear_radius, 0.05);
+			w = max(w, 1.0 - smoothstep(0.35, 1.0, dist));
+		}
+		if (w > 0.001) {
+			// лёгкий шум по краю: иначе пятно читается ровным кругом-штампом
+			float wn = cell_noise(uv * tile_m / 0.55 + vec2(0.42, 0.18));
+			w = clamp(w * (0.6 + 0.7 * wn), 0.0, 1.0);
+			float luma = dot(col, vec3(0.299, 0.587, 0.114));
+			vec3 worn = mix(vec3(luma), col, 0.35) * 0.82;
+			col = mix(col, worn, w * wear_strength);
+		}
 	}
 
 	ALBEDO = col;

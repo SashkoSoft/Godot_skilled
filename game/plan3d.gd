@@ -61,6 +61,7 @@ func _ready() -> void:
 	if OS.get_cmdline_user_args().has("--flat"):
 		_keep_one_flat()
 
+
 	# Снимок делаю в SubViewport, а не в окне: окно упирается в размер экрана
 	# (1800 x 1500 превращается в 1800 x 1012), а вьюпорту потолка нет и кадр
 	# можно взять любой высоты. Мир общий, поэтому свет и среда те же.
@@ -232,6 +233,10 @@ func _build() -> void:
 	# ещё в работе (task-0014 у houdini-assets) — до сдачи стоят ближайшие
 	# из принятых, чтобы масштаб и тон уже читались.
 	var m_wall := _tex("wall-paint", "wall_paint", 0.32)
+	# Побелка потолка и полоски стены под ним — советская квартира красилась
+	# так почти всегда, отдельного набора под это заводить незачем: это тот
+	# же wall-paint, что и база стены под отделкой.
+	_m_white_shared = m_wall
 	var m_wall_out := _tex("concrete-facade", "concrete_facade", 0.22)
 	var m_floor := _texf("concrete-facade", "concrete_facade", 0.25,
 			Color(0.78, 0.76, 0.73))
@@ -261,26 +266,34 @@ func _build() -> void:
 		# Линолеум вернулся под доску: тайл 0.48 вместо 1.20 — на 60 % мельче,
 		# и рисунок приглушён на 30 % относительно среднего цвета набора.
 		# Средний цвет замерен по albedo, поэтому глушение не уводит в серое.
+		# Потёртость: та же текстура линолеума, обесцвеченная по маске из точек
+		# у порогов/рабочего места — не декаль отдельным цветом (см. правку
+		# «Убрана вторая, настоящая потёртость...»). Прихожая — главный
+		# коридор, там сила выше, чем на пятачке у мойки и плиты.
 		"кухня": _tex_st("floor-lino-2", "floor_lino_2",
 				_tile_m("floor-lino-2", 1.20) * 0.4, Color(1, 1, 1), 0.09, 0,
-				0.95, 0.7, LINO_BASE),
+				0.95, 0.7, LINO_BASE, true, 0.0, _wear_points("кухня"), 0.45, 0.45),
 		"прихожая": _tex_st("floor-lino-2", "floor_lino_2",
 				_tile_m("floor-lino-2", 1.20) * 0.4, Color(0.98, 0.97, 0.96),
-				0.11, 0, 0.95, 0.7, LINO_BASE),
+				0.11, 0, 0.95, 0.7, LINO_BASE, true, 0.0,
+				_wear_points("прихожая"), 0.6, 0.55),
 		"лоджия": _tex_st("landing-floor", "landing_floor", 4.55,
 				Color(1, 1, 1), 0.07, 0, 1.0),
 		"санузел": _tex_st("tile-floor", "tile_floor",
 				_tile_m("tile-floor", 1.60), Color(1.06, 1.00, 0.90), 0.05, 8,
 				0.62, 0.78, Color(0.42, 0.40, 0.37)),
-		# Пятна выцветания: солнце годами било в пол сильнее у окна — там и
-		# цвет садится первым, не только светлота. 999.0 здесь стояло отладочным
-		# сторожевым значением (шейдер закрашивал пол сплошным шумом для
-		# проверки маски) и осталось в коммите по ошибке — щитовой паркет
-		# из-за этого стоял серым пятном вместо дерева.
-		"жилая": _tex_st("floor-parquet", "floor_parquet",
-				_tile_m("floor-parquet", 1.60) * 1.35, wood, 0.09, 4, 0.85,
-				1.0, Color(0.5, 0.5, 0.5), true, 0.30),
 	}
+	# Пятна выцветания: солнце годами било в пол сильнее у окна — там и
+	# цвет садится первым, не только светлота. 999.0 здесь стояло отладочным
+	# сторожевым значением (шейдер закрашивал пол сплошным шумом для
+	# проверки маски) и осталось в коммите по ошибке — щитовой паркет
+	# из-за этого стоял серым пятном вместо дерева.
+	# Потёртость у дверей в жилых — не по центру комнаты (она большая, следа
+	# от хождения по центру не бывает), а у каждого проёма, ведущего внутрь.
+	var wear_zhilaya := _wear_points_doors("жилая")
+	m_kind["жилая"] = _tex_st("floor-parquet", "floor_parquet",
+			_tile_m("floor-parquet", 1.60) * 1.35, wood, 0.09, 4, 0.85,
+			1.0, Color(0.5, 0.5, 0.5), true, 0.30, wear_zhilaya, 0.12, 0.5)
 	# В большой комнате паркет уложен ёлочкой, в маленькой — щитовой.
 	var m_herring: Material = m_kind["жилая"]
 	if ResourceLoader.exists(
@@ -291,7 +304,7 @@ func _build() -> void:
 		# глаз и так не ловит.
 		m_herring = _tex_st("floor-parquet-2", "floor_parquet_2",
 				_tile_m("floor-parquet-2", 1.70) * 1.35, wood, 0.13, 0, 0.85,
-				1.0, Color(0.5, 0.5, 0.5), false, 0.65)
+				1.0, Color(0.5, 0.5, 0.5), false, 0.65, wear_zhilaya, 0.12, 0.5)
 	for room in _plan["rooms"]:
 		var mk: Material = m_kind.get(room["kind"], m_floor)
 		for r in room["rects"]:
@@ -492,18 +505,29 @@ func _build() -> void:
 	holes.append_array(_plan.get("door_openings", []))
 	holes.append_array(_plan.get("windows", []))
 	holes.append_array(_plan.get("parapets", []))
+	# Обои и краска не доходят до потолка — над ними полоса штукатурки на
+	# побелке, как в реальной советской квартире. У плитки санузла своей
+	# полосы нет, она кладётся во всю высоту.
+	var paper_h: float = h - 0.35
 	for room in _plan["rooms"]:
 		var ms: Material = m_skin.get(room["kind"])
 		if ms == null:
 			continue
+		var kind := String(room["kind"])
+		var cap := _m_white_shared if kind != "санузел" else null
+		var cap_h := paper_h if kind != "санузел" else -1.0
 		# Помещения в разборе сгруппированы по назначению, поэтому «жилая» —
 		# это один блок с несколькими прямоугольниками. Обои выбираются на
 		# каждый прямоугольник, иначе обе комнаты получают один рисунок.
 		for r in room["rects"]:
-			if String(room["kind"]) == "жилая":
+			if kind == "жилая":
 				ms = papers[room_i % papers.size()]
 				room_i += 1
-			_room_skin(r, ms, h, door_h, holes)
+			_room_skin(r, ms, h, door_h, holes, cap, cap_h)
+			if kind == "жилая":
+				_wallpaper_border(r, paper_h)
+
+	_skirting()
 
 	# Приборы: высоты как в жизни, стоят на полу.
 	if OS.get_cmdline_user_args().has("--bare"):
@@ -541,6 +565,7 @@ const WIN_MODEL_W := 1.70
 
 var _asset_cache: Dictionary = {}
 var _m_glass_shared: StandardMaterial3D = null
+var _m_white_shared: StandardMaterial3D = null
 
 
 func _asset(path: String) -> PackedScene:
@@ -1203,7 +1228,8 @@ func _tex_st(dir_: String, base: String, tile_m: float,
 		tint: Color = Color(1, 1, 1), macro := 0.09,
 		snap := 0, rough_mul := 1.0, contrast := 1.0,
 		base_col := Color(0.5, 0.5, 0.5), stoch := true,
-		mono := 0.0) -> ShaderMaterial:
+		mono := 0.0, wear_pts: Array = [],
+		wear_strength := 0.0, wear_radius := 1.0) -> ShaderMaterial:
 	if _antitile_shader == null:
 		_antitile_shader = load(ANTITILE)
 	var root := "res://assets/textures/%s/%s" % [dir_, base]
@@ -1236,14 +1262,76 @@ func _tex_st(dir_: String, base: String, tile_m: float,
 	if ResourceLoader.exists(seam):
 		m.set_shader_parameter("tex_seam", load(seam))
 		m.set_shader_parameter("use_seam", true)
+	# Потёртость у порогов и рабочих мест: точки в мировых XZ, а не декаль —
+	# декаль без tint красит своим цветом (см. правку), а маска по мировой
+	# позиции всегда та же текстура, только обесцвеченная.
+	if wear_strength > 0.0 and not wear_pts.is_empty():
+		m.set_shader_parameter("wear_count", wear_pts.size())
+		m.set_shader_parameter("wear_pos", wear_pts)
+		m.set_shader_parameter("wear_radius", wear_radius)
+		m.set_shader_parameter("wear_strength", wear_strength)
 	return m
+
+
+## Точки износа по геометрии плана: порог/центр помещения данного вида.
+## Длинные отрезки (коридор прихожей) получают две точки вдоль длинной оси
+## вместо одной — иначе пятно накрывает только середину, а концы остаются
+## нетронутыми.
+func _wear_points(kind: String) -> Array:
+	var pts: Array = []
+	for room in _plan["rooms"]:
+		if String(room["kind"]) != kind:
+			continue
+		for r in room["rects"]:
+			var x0: float = float(r[0])
+			var z0: float = float(r[1])
+			var x1: float = float(r[2])
+			var z1: float = float(r[3])
+			var w := x1 - x0
+			var d := z1 - z0
+			if w < 0.6 or d < 0.6:
+				continue
+			if maxf(w, d) > 2.2:
+				var along_x := w > d
+				var a0 := x0 if along_x else z0
+				var a1 := x1 if along_x else z1
+				var other := (z0 + z1) * 0.5 if along_x else (x0 + x1) * 0.5
+				for f in [0.3, 0.7]:
+					var a := lerpf(a0, a1, f)
+					pts.append(Vector2(a, other) if along_x else Vector2(other, a))
+			else:
+				pts.append(Vector2((x0 + x1) * 0.5, (z0 + z1) * 0.5))
+	return pts
+
+
+## Точки износа у каждого дверного проёма, ведущего в помещение данного вида —
+## для больших комнат (жилая), где след от хождения у самой двери, а не
+## по центру всей комнаты, как в _wear_points().
+func _wear_points_doors(kind: String) -> Array:
+	var pts: Array = []
+	for r in _plan.get("door_openings", []):
+		var w: float = float(r[2]) - float(r[0])
+		var d: float = float(r[3]) - float(r[1])
+		var cx: float = (float(r[0]) + float(r[2])) * 0.5
+		var cz: float = (float(r[1]) + float(r[3])) * 0.5
+		var along_x := w > d
+		var off := 0.35
+		for sign_ in [1.0, -1.0]:
+			var ix: float = cx + (0.0 if along_x else off * sign_)
+			var iz: float = cz + (off * sign_ if along_x else 0.0)
+			if _kind_at(ix, iz) == kind:
+				pts.append(Vector2(ix, iz))
+	return pts
 
 
 ## Отделка одной комнаты: по тонкой панели на каждую из четырёх внутренних
 ## граней, разрезанной проёмами. Над дверью панель есть — там бетон остаётся
 ## только снаружи; в самом проёме её нет, иначе она перекроет дверной блок.
+## top_h > 0 — где отделка обрывается и дальше до потолка идёт побелка
+## (mat_top): в советской квартире и обои, и краска редко доходили до
+## потолка, наверху штукатурка на побелке.
 func _room_skin(r: Array, mat: Material, h: float, door_h: float,
-		holes: Array) -> void:
+		holes: Array, mat_top: Material = null, top_h := -1.0) -> void:
 	var t := 0.02
 	var x0: float = float(r[0])
 	var z0: float = float(r[1])
@@ -1314,12 +1402,25 @@ func _room_skin(r: Array, mat: Material, h: float, door_h: float,
 								_kind_at(qx, qz), cuts.size()])
 		var cur := a0
 		for c in cuts:
-			_skin_piece(along_x, face, inward, cur, float(c[0]), 0.0, h, t, mat)
+			_skin_band(along_x, face, inward, cur, float(c[0]), 0.0, h, t,
+					mat, mat_top, top_h)
 			if bool(c[2]):
-				_skin_piece(along_x, face, inward, float(c[0]), float(c[1]),
-						door_h, h, t, mat)
+				_skin_band(along_x, face, inward, float(c[0]), float(c[1]),
+						door_h, h, t, mat, mat_top, top_h)
 			cur = maxf(cur, float(c[1]))
-		_skin_piece(along_x, face, inward, cur, a1, 0.0, h, t, mat)
+		_skin_band(along_x, face, inward, cur, a1, 0.0, h, t, mat, mat_top, top_h)
+
+
+## Обёртка над _skin_piece: если top_h попадает внутрь y0..y1, режет панель
+## на две — обои/краску снизу и побелку сверху — вместо одной на всю высоту.
+func _skin_band(along_x: bool, face: float, inward: float, a0: float, a1: float,
+		y0: float, y1: float, t: float, mat: Material, mat_top: Material,
+		top_h: float) -> void:
+	if mat_top == null or top_h <= y0 or top_h >= y1:
+		_skin_piece(along_x, face, inward, a0, a1, y0, y1, t, mat)
+		return
+	_skin_piece(along_x, face, inward, a0, a1, y0, top_h, t, mat)
+	_skin_piece(along_x, face, inward, a0, a1, top_h, y1, t, mat_top)
 
 
 func _skin_piece(along_x: bool, face: float, inward: float, a0: float,
@@ -1336,6 +1437,137 @@ func _skin_piece(along_x: bool, face: float, inward: float, a0: float,
 		size = Vector3(t, y1 - y0, a1 - a0)
 		pos = Vector3(face + inward * t * 0.5, (y0 + y1) * 0.5, (a0 + a1) * 0.5)
 	_box(size, pos, mat, "Skin")
+
+
+## Бордюр по верху обоев, на стыке с побелкой — тонкая цветная полоса,
+## клеили не везде и не всегда, поэтому через комнату (по её координате,
+## детерминированно). Идёт по всем четырём граням без разрывов на проёмах:
+## над дверью и окном там всё равно уже побелка, а не обои.
+static var _m_border: StandardMaterial3D = null
+
+func _wallpaper_border(r: Array, paper_h: float) -> void:
+	var x0: float = float(r[0])
+	var z0: float = float(r[1])
+	var x1: float = float(r[2])
+	var z1: float = float(r[3])
+	var seed_v := int(absf(x0) * 53.0 + absf(z0) * 97.0) % 100
+	if seed_v < 45:
+		return
+	if _m_border == null:
+		_m_border = _mat(Color(0.62, 0.50, 0.28), 0.6)
+	var bh := 0.045
+	var t := 0.024
+	var sides := [
+		[true, z0, 1.0], [true, z1, -1.0],
+		[false, x0, 1.0], [false, x1, -1.0],
+	]
+	for sd in sides:
+		var along_x: bool = sd[0]
+		var face: float = sd[1]
+		var inward: float = sd[2]
+		var a0 := x0 if along_x else z0
+		var a1 := x1 if along_x else z1
+		_skin_piece(along_x, face, inward, a0, a1, paper_h - bh * 0.5,
+				paper_h + bh * 0.5, t, _m_border)
+
+
+## Плинтус (task-0031): деревянный в жилых, пластиковый везде на линолеуме
+## и плитке. Пивот модели — нижнее переднее ребро профиля, ось +X — длина,
+## лицо смотрит в −X (см. RESULT.md), поэтому позиция и разворот считаются
+## отдельно от _skin_piece — там центр грани, здесь угол пол/стена.
+const SKIRTING_WOOD := "res://assets/models/skirting/skirting_wood.glb"
+const SKIRTING_PVC := "res://assets/models/skirting/skirting_pvc.glb"
+
+
+## Глубина профиля от пивота (передняя грань) до задней, что ложится на
+## стену — см. секцию в RESULT.md task-0031, макс. отступ там 0.020.
+## Пивот на ПЕРЕДНЕЙ грани, а не у стены: без сдвига на эту глубину планка
+## наполовину тонет в стене, а не выступает от неё в комнату.
+const SKIRTING_DEPTH := 0.023
+
+func _skirting_piece(along_x: bool, face: float, inward: float, a0: float,
+		a1: float, path: String) -> void:
+	var len_ := a1 - a0
+	if len_ < 0.08:
+		return
+	var yaw: float
+	var anchor: float
+	if along_x:
+		yaw = PI if inward > 0.0 else 0.0
+		anchor = a1 if inward > 0.0 else a0
+	else:
+		yaw = -PI * 0.5 if inward > 0.0 else PI * 0.5
+		anchor = a0 if inward > 0.0 else a1
+	var off := face + inward * SKIRTING_DEPTH
+	var pos := Vector3(anchor, 0.0, off) if along_x else Vector3(off, 0.0, anchor)
+	_place(path, pos, yaw, len_)
+
+
+## По периметру каждого помещения, с разрывом на дверных проёмах и на
+## открытых границах между прямоугольниками одной комнаты (Г-образная
+## прихожая — соседние куски одной комнаты, там нет стены и плинтуса тоже
+## нет). Логика открытой границы — та же, что в _room_skin, продублирована
+## явно: это на редкость легко сломать правкой не в том месте.
+func _skirting() -> void:
+	for room in _plan["rooms"]:
+		var kind := String(room["kind"])
+		if kind == "лоджия":
+			continue
+		var path := SKIRTING_WOOD if kind == "жилая" else SKIRTING_PVC
+		for r in room["rects"]:
+			var x0: float = float(r[0])
+			var z0: float = float(r[1])
+			var x1: float = float(r[2])
+			var z1: float = float(r[3])
+			if x1 - x0 < 0.3 or z1 - z0 < 0.3:
+				continue
+			var sides := [
+				[true, z0, 1.0], [true, z1, -1.0],
+				[false, x0, 1.0], [false, x1, -1.0],
+			]
+			for sd in sides:
+				var along_x: bool = sd[0]
+				var face: float = sd[1]
+				var inward: float = sd[2]
+				var a0 := x0 if along_x else z0
+				var a1 := x1 if along_x else z1
+				var cuts: Array = []
+				for o in _plan.get("door_openings", []):
+					var oa0: float = float(o[0]) if along_x else float(o[1])
+					var oa1: float = float(o[2]) if along_x else float(o[3])
+					var ob0: float = float(o[1]) if along_x else float(o[0])
+					var ob1: float = float(o[3]) if along_x else float(o[2])
+					if face < ob0 - 0.15 or face > ob1 + 0.15:
+						continue
+					var c0 := maxf(oa0, a0)
+					var c1 := minf(oa1, a1)
+					if c1 - c0 > 0.02:
+						cuts.append([c0, c1])
+				# Открытая граница: снаружи грани (не внутрь) есть то же
+				# помещение, значит стены там нет.
+				var step := 0.10
+				var open_from := 0.0
+				var open_run := false
+				var a := a0
+				while a <= a1 + 0.001:
+					var px := (a if along_x else face - inward * 0.07)
+					var pz := (face - inward * 0.07 if along_x else a)
+					var is_open := _kind_at(px, pz) != ""
+					if is_open and not open_run:
+						open_from = a
+						open_run = true
+					elif not is_open and open_run:
+						cuts.append([open_from - step, a])
+						open_run = false
+					a += step
+				if open_run:
+					cuts.append([open_from - step, a1])
+				cuts.sort_custom(func(p, q): return float(p[0]) < float(q[0]))
+				var cur := a0
+				for c in cuts:
+					_skirting_piece(along_x, face, inward, cur, float(c[0]), path)
+					cur = maxf(cur, float(c[1]))
+				_skirting_piece(along_x, face, inward, cur, a1, path)
 
 
 ## Остекление проёма: рама по краю и стекло, всё по центру толщины стены.
@@ -1380,8 +1612,16 @@ func _ceiling() -> void:
 	mi.mesh = mesh
 	mi.position = Vector3((float(b[0]) + float(b[2])) * 0.5, h + 0.08,
 			(float(b[1]) + float(b[3])) * 0.5)
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
-	mi.name = "CeilingShadowOnly"
+	# --open-roof: снимок сверху смотрит сквозь перекрытие, как раньше —
+	# потолок остаётся только тенью. По умолчанию (игра) он сплошной и
+	# побелён — раньше был SHADOWS_ONLY всегда, изнутри квартиры потолка
+	# просто не было видно.
+	if OS.get_cmdline_user_args().has("--open-roof"):
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+		mi.name = "CeilingShadowOnly"
+	else:
+		mi.material_override = _m_white_shared
+		mi.name = "Ceiling"
 	add_child(mi)
 
 
