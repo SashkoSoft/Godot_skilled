@@ -3,11 +3,11 @@ id: task-0020
 title: Звук пустой квартиры: шаги, двери, гул
 assignee: comfyui
 type: audio
-status: open
+status: in_progress
 revision: 1
 priority: normal
 created: 2026-08-31
-started:
+started: 2026-09-01
 finished:
 ---
 
