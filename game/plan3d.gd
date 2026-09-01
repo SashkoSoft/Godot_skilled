@@ -70,6 +70,14 @@ func _ready() -> void:
 			get_tree().quit()
 			return
 
+	# --texcheck=res://путь/к.glb — числом, не рендером: привязан ли albedo,
+	# границы UV, разброс яркости в этой области атласа на каждую поверхность.
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--texcheck="):
+			_texcheck_asset(a.substr(11))
+			get_tree().quit()
+			return
+
 
 	# Снимок делаю в SubViewport, а не в окне: окно упирается в размер экрана
 	# (1800 x 1500 превращается в 1800 x 1012), а вьюпорту потолка нет и кадр
@@ -180,6 +188,82 @@ func _probe_asset(path: String) -> void:
 				% [whole.position.y, whole.position.y + whole.size.y, whole.size.y,
 						whole.position.x, whole.position.x + whole.size.x,
 						whole.position.z, whole.position.z + whole.size.z])
+
+
+## Проверка текстуры числом, а не рендером и глазом: по каждой поверхности —
+## привязан ли albedo, реальный размер текстуры, границы UV и разброс (σ)
+## яркости пикселей ИМЕННО в той области атласа, куда смотрит эта
+## поверхность. Плоский участок без фактуры даст σ около нуля, даже если
+## сам атлас пёстрый — так поймалось одеяло (task-0035): у него σ на плоской
+## части в разы меньше, чем у изголовья, при одном и том же файле текстуры.
+## --texcheck=res://путь/к.glb.
+func _texcheck_asset(path: String) -> void:
+	if not ResourceLoader.exists(path):
+		print("[texcheck] нет файла: ", path)
+		return
+	var node: Node3D = (load(path) as PackedScene).instantiate()
+	add_child(node)
+	for mi in node.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		var mesh := m.mesh
+		if mesh == null:
+			continue
+		for si in mesh.get_surface_count():
+			var mat := m.get_active_material(si)
+			var alb: Texture2D = null
+			var mat_class := "null"
+			if mat != null:
+				mat_class = mat.get_class()
+				if mat is BaseMaterial3D:
+					alb = (mat as BaseMaterial3D).albedo_texture
+			var arrays := mesh.surface_get_arrays(si)
+			var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV] \
+					if arrays[Mesh.ARRAY_TEX_UV] != null else PackedVector2Array()
+			var umin := 1e9
+			var umax := -1e9
+			var vmin := 1e9
+			var vmax := -1e9
+			for uv in uvs:
+				umin = minf(umin, uv.x)
+				umax = maxf(umax, uv.x)
+				vmin = minf(vmin, uv.y)
+				vmax = maxf(vmax, uv.y)
+			var stddev := -1.0
+			var tex_size := Vector2i.ZERO
+			if alb != null:
+				tex_size = Vector2i(alb.get_width(), alb.get_height())
+				var img := alb.get_image()
+				if img != null and uvs.size() > 0 and umax > umin and vmax > vmin:
+					img.convert(Image.FORMAT_RGB8)
+					var w := img.get_width()
+					var h := img.get_height()
+					var x0 := clampi(int(clampf(umin, 0.0, 1.0) * w), 0, w - 1)
+					var x1 := clampi(int(clampf(umax, 0.0, 1.0) * w), x0 + 1, w)
+					var y0 := clampi(int(clampf(vmin, 0.0, 1.0) * h), 0, h - 1)
+					var y1 := clampi(int(clampf(vmax, 0.0, 1.0) * h), y0 + 1, h)
+					var step_x := maxi((x1 - x0) / 80, 1)
+					var step_y := maxi((y1 - y0) / 80, 1)
+					var sum := 0.0
+					var sum2 := 0.0
+					var n := 0
+					var yy := y0
+					while yy < y1:
+						var xx := x0
+						while xx < x1:
+							var px := img.get_pixel(xx, yy)
+							var g := (px.r + px.g + px.b) / 3.0
+							sum += g
+							sum2 += g * g
+							n += 1
+							xx += step_x
+						yy += step_y
+					if n > 0:
+						var mean := sum / float(n)
+						stddev = sqrt(maxf(sum2 / float(n) - mean * mean, 0.0))
+			print(("[texcheck] меш=%s surf=%d материал=%s albedo=%s размер=%s " +
+					"UV=(%.3f..%.3f, %.3f..%.3f) разброс(σ)=%.4f")
+					% [m.name, si, mat_class, alb != null, tex_size,
+							umin, umax, vmin, vmax, stddev])
 
 
 ## Материал по набору текстур из assets: albedo + normal + ORM.
