@@ -1,0 +1,2 @@
+skirting_wood 1.000 0.062 0.023 38 derevyannyy plintus 0.062, pod parket
+skirting_pvc 1.000 0.062 0.019 38 plastikovyy plintus 0.062, pod linoleum

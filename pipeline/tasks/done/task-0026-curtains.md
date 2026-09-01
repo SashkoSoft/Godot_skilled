@@ -4,7 +4,7 @@ title: Шторы, занавески и карнизы
 assignee: houdini-assets
 type: model
 status: accepted
-revision: 4
+revision: 5
 priority: normal
 created: 2026-08-31
 started:

@@ -1,0 +1,3 @@
+shade_broken 0.191 0.175 0.183 y -0.603..-0.428 142 goliy karkas i dva oskolka
+shade_fabric 0.327 0.198 0.299 y -0.625..-0.427 264 tkanevyy abazhur, karkas pognut
+shade_glass 0.212 0.228 0.212 y -0.656..-0.428 256 steklyannyy plafon-shar, zakopchen

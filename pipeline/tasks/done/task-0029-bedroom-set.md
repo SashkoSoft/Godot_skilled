@@ -3,12 +3,12 @@ id: task-0029
 title: Кровать, тумбочка, комод для жилых комнат
 assignee: houdini-assets
 type: model
-status: open
+status: done
 revision: 1
 priority: high
 created: 2026-09-01
-started:
-finished:
+started: 2026-09-01
+finished: 2026-09-01
 ---
 
 # task-0029 — Кровать, тумбочка, комод для жилых комнат

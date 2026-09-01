@@ -1,0 +1,3 @@
+kitchen_table 0.650 0.786 0.950 stol 0.60 x 0.90, klyoenka, ugol zadran
+kitchen_chair 0.450 0.880 0.440 stul, siluet nesimmetrichnyy
+fridge 0.603 1.500 0.877 odnokamernyy 0.60 x 0.60 x 1.50, dverca priotkryta

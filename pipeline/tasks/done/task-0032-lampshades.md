@@ -3,12 +3,12 @@ id: task-0032
 title: Абажуры и битые плафоны для потолочных ламп
 assignee: houdini-assets
 type: model
-status: open
+status: done
 revision: 1
 priority: low
 created: 2026-09-01
-started:
-finished:
+started: 2026-09-01
+finished: 2026-09-01
 ---
 
 # task-0032 — Абажуры и битые плафоны для потолочных ламп

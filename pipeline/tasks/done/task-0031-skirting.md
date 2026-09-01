@@ -3,12 +3,12 @@ id: task-0031
 title: Плинтус вдоль пола во всех помещениях
 assignee: houdini-assets
 type: model
-status: open
+status: done
 revision: 1
 priority: normal
 created: 2026-09-01
-started:
-finished:
+started: 2026-09-01
+finished: 2026-09-01
 ---
 
 # task-0031 — Плинтус вдоль пола во всех помещениях
