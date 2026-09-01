@@ -1,0 +1,4 @@
+bed_single 1.387 0.700 2.000 odnospalnaya 0.9 x 2.0, setka provisla
+bed_double 1.835 0.700 2.000 dvuspalnaya 1.6 x 2.0, tot zhe iznos
+nightstand 0.424 0.550 0.603 tumbochka 0.4 x 0.4 x 0.55, dverca priotkryta
+dresser 1.028 0.850 0.745 komod 1.0 x 0.45, odin yashchik vydvinut
