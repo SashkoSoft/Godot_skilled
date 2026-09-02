@@ -2618,15 +2618,24 @@ func _ready_fly() -> void:
 	cam.fov = 75.0
 	cam.near = 0.05
 
-	# ставим в прихожую: берём её прямоугольник из разбора, а не координату
+	# ставим в прихожую: берём самый большой её прямоугольник из разбора, а
+	# не координату. Прихожая режется на много мелких rect'ов (ниши дверных
+	# проёмов, кладовки) — без --flat в сцене ещё и обе квартиры сразу, так
+	# что rect'ов с запасом. Раньше брали ПОСЛЕДНИЙ, что превысил площадь
+	# 2 м² — по факту им оказывалась узкая ниша у кладовки во второй
+	# квартире, игрок стартовал вплотную к дверце. Берём тот, что реально
+	# больше всех — открытое место, а не первую попавшуюся щель.
 	var spot := Vector3(0, 1.65, 0)
+	var best_area := 0.0
 	for room in _plan["rooms"]:
 		if String(room["kind"]) != "прихожая":
 			continue
 		for r in room["rects"]:
 			var w := float(r[2]) - float(r[0])
 			var d := float(r[3]) - float(r[1])
-			if w * d > 2.0:
+			var area := w * d
+			if area > best_area:
+				best_area = area
 				spot = Vector3((float(r[0]) + float(r[2])) * 0.5, 1.65,
 						(float(r[1]) + float(r[3])) * 0.5)
 
@@ -2643,7 +2652,23 @@ func _ready_fly() -> void:
 	cam.get_parent().remove_child(cam)
 	_walkman.add_child(cam)
 	cam.position = Vector3(0, 1.62, 0)
-	cam.rotation = Vector3.ZERO
+	# Смотреть жёстко в -Z — при спавне в узкой прихожей запросто упирались
+	# камерой в стену вплотную (near=0.05 давал во весь экран размытую
+	# текстуру стены). Разворачиваем на самое открытое из 4 направлений —
+	# куда от spot дальше всего видно сквозь комнаты, не упираясь в стену.
+	var look_dir := Vector3.BACK
+	var best_clear := -1.0
+	for dir_ in [Vector3(0, 0, 1), Vector3(0, 0, -1), Vector3(1, 0, 0), Vector3(-1, 0, 0)]:
+		var t := 0.05
+		while t < 6.0:
+			if _kind_at(spot.x + dir_.x * t, spot.z + dir_.z * t) == "":
+				break
+			t += 0.1
+		if t > best_clear:
+			best_clear = t
+			look_dir = dir_
+	cam.global_position = _walkman.global_position + Vector3(0, 1.62, 0)
+	cam.look_at(cam.global_position + look_dir, Vector3.UP)
 
 
 func _find_cam() -> Camera3D:
