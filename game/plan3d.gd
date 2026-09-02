@@ -3141,11 +3141,48 @@ func _physics_process(delta: float) -> void:
 		_fly_step(delta)
 
 
+## Диагностика бага «WASD не двигает»: раз само подозрение — не доходит ли
+## ввод до окна вообще — числом не проверить без живого запуска, вывожу
+## его текстом прямо в кадр. Разделяет два разных случая одним взглядом:
+## если "W=✓" не загорается при нажатой клавише — ввод не доходит до окна
+## (фокус/ОС); если загорается, а "walkman" не меняется — дело в физике/коде.
+var _debug_label: Label = null
+
+func _update_debug_hud() -> void:
+	if _walkman == null:
+		return
+	if _debug_label == null:
+		var layer := CanvasLayer.new()
+		add_child(layer)
+		_debug_label = Label.new()
+		_debug_label.position = Vector2(12, 12)
+		_debug_label.add_theme_font_size_override("font_size", 18)
+		_debug_label.add_theme_color_override("font_color", Color.WHITE)
+		_debug_label.add_theme_color_override("font_shadow_color", Color.BLACK)
+		_debug_label.add_theme_constant_override("shadow_offset_x", 1)
+		_debug_label.add_theme_constant_override("shadow_offset_y", 1)
+		layer.add_child(_debug_label)
+	var has_focus := get_window().has_focus() if get_window() != null else false
+	var p := _walkman.global_position
+	_debug_label.text = ("окно в фокусе: %s\nW=%s A=%s S=%s D=%s space=%s\n" +
+			"мышь захвачена (ПКМ): %s\nwalkman xyz = %.2f, %.2f, %.2f\n" +
+			"F — полёт, Esc — выход") % [
+			("да" if has_focus else "НЕТ"),
+			("✓" if Input.is_key_pressed(KEY_W) else "-"),
+			("✓" if Input.is_key_pressed(KEY_A) else "-"),
+			("✓" if Input.is_key_pressed(KEY_S) else "-"),
+			("✓" if Input.is_key_pressed(KEY_D) else "-"),
+			("✓" if Input.is_key_pressed(KEY_SPACE) else "-"),
+			("да" if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED else "нет"),
+			p.x, p.y, p.z]
+
+
 func _process(_d: float) -> void:
 	if _turn != "":
 		_turn_step()
 		return
 	if _shot == "":
+		_update_debug_hud()
 		return
 	_frames -= 1
 	if _frames > 0:
