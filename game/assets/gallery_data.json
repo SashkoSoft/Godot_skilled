@@ -1035,6 +1035,57 @@
     ]
   },
   {
+    "category": "stairs",
+    "path": "res://assets/models/stairs/railing_flight.glb",
+    "rel": "stairs/railing_flight.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0447166099997006,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 516,
+        "uv_cv": 0.103406676716066
+      }
+    ]
+  },
+  {
+    "category": "stairs",
+    "path": "res://assets/models/stairs/railing_landing.glb",
+    "rel": "stairs/railing_landing.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.042192221218501,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 516,
+        "uv_cv": 0.117479878530114
+      }
+    ]
+  },
+  {
+    "category": "stairs",
+    "path": "res://assets/models/stairs/railing_post.glb",
+    "rel": "stairs/railing_post.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.047008401894566,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 132,
+        "uv_cv": 0.176267118248645
+      }
+    ]
+  },
+  {
     "category": "windows",
     "path": "res://assets/models/windows/balcony_door.glb",
     "rel": "windows/balcony_door.glb",
