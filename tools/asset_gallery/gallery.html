@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Галерея ассетов</title>
+<script type="module" src="model-viewer.min.js"></script>
+<style>
+	:root {
+		color-scheme: dark;
+		--bg: #16181d;
+		--card: #1e2128;
+		--card-border: #2c3038;
+		--text: #e6e8eb;
+		--muted: #8b909a;
+		--ok: #5ec98a;
+		--bad: #e2665a;
+		--accent: #6ea8ff;
+	}
+	* { box-sizing: border-box; }
+	body {
+		margin: 0;
+		background: var(--bg);
+		color: var(--text);
+		font: 14px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif;
+	}
+	header {
+		position: sticky; top: 0; z-index: 5;
+		background: var(--bg);
+		border-bottom: 1px solid var(--card-border);
+		padding: 14px 20px;
+		display: flex; align-items: center; gap: 16px;
+	}
+	header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+	header input {
+		flex: 1; max-width: 360px;
+		background: var(--card); border: 1px solid var(--card-border);
+		color: var(--text); border-radius: 6px; padding: 7px 10px; font-size: 13px;
+	}
+	#stamp { color: var(--muted); font-size: 12px; }
+	main { padding: 20px; }
+	.category { margin-bottom: 28px; }
+	.category h2 {
+		font-size: 13px; text-transform: uppercase; letter-spacing: .05em;
+		color: var(--muted); margin: 0 0 10px; font-weight: 600;
+	}
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+		gap: 12px;
+	}
+	.card {
+		background: var(--card); border: 1px solid var(--card-border);
+		border-radius: 8px; overflow: hidden; display: flex; flex-direction: column;
+		transition: grid-column .15s, grid-row .15s;
+	}
+	.card.expanded { grid-column: span 2; grid-row: span 2; }
+	model-viewer {
+		width: 100%; height: 220px; background: #0e1013;
+		--poster-color: transparent;
+	}
+	.card.expanded model-viewer { height: 460px; }
+	.meta { padding: 8px 10px 10px; }
+	.name {
+		font-size: 12.5px; font-weight: 600; word-break: break-all;
+		cursor: pointer;
+	}
+	.name:hover { color: var(--accent); }
+	.badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+	.badge {
+		font-size: 11px; padding: 2px 6px; border-radius: 4px;
+		background: #262a32; color: var(--muted);
+	}
+	.badge.ok { color: var(--ok); }
+	.badge.bad { color: var(--bad); background: #3a2225; }
+	.empty { color: var(--muted); padding: 40px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+	<h1>Галерея ассетов</h1>
+	<input id="filter" type="search" placeholder="Фильтр по имени…">
+	<span id="stamp"></span>
+</header>
+<main id="main"><div class="empty">Загрузка…</div></main>
+<script>
+const DATA_URL = "../../game/assets/gallery_data.json";
+const MODELS_ROOT = "../../game/assets/models/";
+const CATEGORY_NAMES = {
+	furniture: "Мебель", doors: "Двери", windows: "Окна", curtains: "Шторы",
+	skirting: "Плинтус", fixtures: "Сантехника", closets: "Кладовки", lift: "Лифт",
+};
+
+function aggregate(item) {
+	const s = item.surfaces;
+	const tris = s.reduce((a, x) => a + x.tris, 0);
+	const degenerate = s.reduce((a, x) => a + x.degenerate, 0);
+	const worstNormals = Math.max(...s.map(x => x.inconsistent_normals_pct));
+	const cvs = s.map(x => x.uv_cv).filter(v => v >= 0);
+	const worstUvCv = cvs.length ? Math.max(...cvs) : -1;
+	const allAlbedo = s.every(x => x.albedo);
+	const anyAlbedo = s.some(x => x.albedo);
+	const sigmas = s.filter(x => x.albedo && x.sigma >= 0).map(x => x.sigma);
+	const minSigma = sigmas.length ? Math.min(...sigmas) : -1;
+	const texSizes = [...new Set(s.filter(x => x.albedo).map(x => `${x.tex_w}×${x.tex_h}`))];
+	return { tris, degenerate, worstNormals, worstUvCv, allAlbedo, anyAlbedo, minSigma, texSizes, surfCount: s.length };
+}
+
+function badge(text, cls) {
+	const span = document.createElement("span");
+	span.className = "badge" + (cls ? " " + cls : "");
+	span.textContent = text;
+	return span;
+}
+
+function card(item) {
+	const a = aggregate(item);
+	const el = document.createElement("div");
+	el.className = "card";
+	el.dataset.name = item.rel.toLowerCase();
+
+	const mv = document.createElement("model-viewer");
+	mv.setAttribute("src", MODELS_ROOT + item.rel);
+	mv.setAttribute("camera-controls", "");
+	mv.setAttribute("touch-action", "pan-y");
+	mv.setAttribute("exposure", "1.0");
+	mv.setAttribute("shadow-intensity", "0.7");
+	mv.setAttribute("environment-image", "neutral");
+	mv.setAttribute("loading", "lazy");
+	mv.setAttribute("reveal", "auto");
+	el.appendChild(mv);
+
+	const meta = document.createElement("div");
+	meta.className = "meta";
+	const name = document.createElement("div");
+	name.className = "name";
+	name.textContent = item.rel;
+	name.title = "Клик — крупнее";
+	name.onclick = () => el.classList.toggle("expanded");
+	meta.appendChild(name);
+
+	const badges = document.createElement("div");
+	badges.className = "badges";
+	badges.appendChild(badge(`${a.tris} тр.`));
+	badges.appendChild(badge(a.surfCount + (a.surfCount === 1 ? " surf" : " surf")));
+	if (a.allAlbedo) {
+		badges.appendChild(badge("albedo ✓ " + (a.texSizes[0] || ""), "ok"));
+	} else if (a.anyAlbedo) {
+		badges.appendChild(badge("albedo частично", "bad"));
+	} else {
+		badges.appendChild(badge("нет текстуры", "bad"));
+	}
+	if (a.degenerate > 0) badges.appendChild(badge(`вырожд.=${a.degenerate}`, "bad"));
+	if (a.worstNormals > 0.5) badges.appendChild(badge(`нормали ${a.worstNormals.toFixed(1)}%`, "bad"));
+	if (a.worstUvCv >= 0) badges.appendChild(badge(`UV σ/ср=${a.worstUvCv.toFixed(2)}`));
+	if (a.minSigma >= 0) badges.appendChild(badge(`σ=${a.minSigma.toFixed(3)}`));
+	meta.appendChild(badges);
+	el.appendChild(meta);
+	return el;
+}
+
+async function main() {
+	const root = document.getElementById("main");
+	let data;
+	try {
+		const res = await fetch(DATA_URL, { cache: "no-store" });
+		if (!res.ok) throw new Error(res.status);
+		data = await res.json();
+	} catch (e) {
+		root.innerHTML = `<div class="empty">Не смог загрузить ${DATA_URL}.<br>
+			Сначала: tools/asset_gallery/build.sh, потом открывать страницу
+			через tools/asset_gallery/serve.sh (не file://).<br>${e}</div>`;
+		return;
+	}
+
+	document.getElementById("stamp").textContent = `${data.length} моделей`;
+
+	const byCategory = new Map();
+	for (const item of data) {
+		const cat = item.category || "прочее";
+		if (!byCategory.has(cat)) byCategory.set(cat, []);
+		byCategory.get(cat).push(item);
+	}
+
+	root.innerHTML = "";
+	for (const [cat, items] of [...byCategory.entries()].sort()) {
+		const section = document.createElement("div");
+		section.className = "category";
+		section.dataset.cat = cat;
+		const h2 = document.createElement("h2");
+		h2.textContent = `${CATEGORY_NAMES[cat] || cat} (${items.length})`;
+		section.appendChild(h2);
+		const grid = document.createElement("div");
+		grid.className = "grid";
+		for (const item of items.sort((x, y) => x.rel.localeCompare(y.rel))) {
+			grid.appendChild(card(item));
+		}
+		section.appendChild(grid);
+		root.appendChild(section);
+	}
+
+	document.getElementById("filter").addEventListener("input", (e) => {
+		const q = e.target.value.trim().toLowerCase();
+		for (const section of root.querySelectorAll(".category")) {
+			let any = false;
+			for (const c of section.querySelectorAll(".card")) {
+				const hit = !q || c.dataset.name.includes(q);
+				c.style.display = hit ? "" : "none";
+				any = any || hit;
+			}
+			section.style.display = any ? "" : "none";
+		}
+	});
+}
+
+main();
+</script>
+</body>
+</html>

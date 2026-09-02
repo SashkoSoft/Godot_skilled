@@ -86,6 +86,17 @@ func _ready() -> void:
 			get_tree().quit()
 			return
 
+	# --gallery-data[=res://путь/к.json] — обход всей game/assets/models и
+	# выгрузка цифр (тр., нормали, UV, albedo) в JSON для tools/asset_gallery/.
+	for a in OS.get_cmdline_user_args():
+		if a == "--gallery-data" or a.begins_with("--gallery-data="):
+			var out := "res://assets/gallery_data.json"
+			if a.begins_with("--gallery-data="):
+				out = a.substr(15)
+			_gallery_data(out)
+			get_tree().quit()
+			return
+
 	# --asset=res://путь/к.glb — осмотр одной модели вне квартиры и без плана:
 	# --debug=uv кладёт шахматную развёртку, --debug=normal — цвет по нормали;
 	# кадр — через --shot=, как обычно. Не требует --headless=false отдельно,
@@ -506,6 +517,180 @@ func _asset_inspect(path: String) -> void:
 	cam.global_position = center + eye
 	cam.look_at(center, Vector3.UP)
 	_frame(cam, whole.position, whole.position + whole.size)
+
+
+## Те же цифры, что --meshcheck=/--texcheck=, но по одной поверхности сразу
+## (меш грузится один раз, а не дважды) — для пакетного прохода по всей
+## библиотеке в --gallery-data=. Отдельная функция, а не общая с
+## _meshcheck_asset/_texcheck_asset: те печатают в stdout построчно для
+## человека, тут нужен словарь для JSON, и совмещать оба формата в одной
+## функции сложнее, чем недорого продублировать один проход по треугольникам.
+func _surface_gallery_stats(m: MeshInstance3D, si: int) -> Dictionary:
+	var mesh := m.mesh
+	var arrays := mesh.surface_get_arrays(si)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL] \
+			if arrays[Mesh.ARRAY_NORMAL] != null else PackedVector3Array()
+	var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV] \
+			if arrays[Mesh.ARRAY_TEX_UV] != null else PackedVector2Array()
+	var idx: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] \
+			if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+	if idx.is_empty():
+		idx.resize(verts.size())
+		for i in verts.size():
+			idx[i] = i
+	var tri_count := idx.size() / 3
+	var degenerate := 0
+	var flipped := 0
+	var normal_checked := 0
+	var ratios: Array[float] = []
+	var umin := 1e9
+	var umax := -1e9
+	var vmin := 1e9
+	var vmax := -1e9
+	for t in tri_count:
+		var i0 := idx[t * 3]
+		var i1 := idx[t * 3 + 1]
+		var i2 := idx[t * 3 + 2]
+		var p0 := verts[i0]
+		var p1 := verts[i1]
+		var p2 := verts[i2]
+		var cr := (p1 - p0).cross(p2 - p0)
+		var area2 := cr.length()
+		if area2 < 1e-10:
+			degenerate += 1
+			continue
+		if not normals.is_empty():
+			var vn := normals[i0] + normals[i1] + normals[i2]
+			if vn.length() > 1e-6:
+				normal_checked += 1
+				if vn.normalized().dot(cr / area2) < 0.0:
+					flipped += 1
+		if not uvs.is_empty():
+			var u0 := uvs[i0]
+			var u1 := uvs[i1]
+			var u2 := uvs[i2]
+			umin = minf(umin, minf(u0.x, minf(u1.x, u2.x)))
+			umax = maxf(umax, maxf(u0.x, maxf(u1.x, u2.x)))
+			vmin = minf(vmin, minf(u0.y, minf(u1.y, u2.y)))
+			vmax = maxf(vmax, maxf(u0.y, maxf(u1.y, u2.y)))
+			var uv_area2 := absf((u1 - u0).cross(u2 - u0))
+			if uv_area2 > 1e-12:
+				ratios.append(uv_area2 / area2)
+	var cv := -1.0
+	if ratios.size() > 1:
+		var s := 0.0
+		for r in ratios:
+			s += r
+		var mean: float = s / ratios.size()
+		var s2 := 0.0
+		for r in ratios:
+			s2 += (r - mean) * (r - mean)
+		var sd := sqrt(s2 / ratios.size())
+		cv = sd / mean if mean > 0.0 else -1.0
+	var inconsistent_pct := 0.0
+	if normal_checked > 0:
+		inconsistent_pct = 100.0 * mini(flipped, normal_checked - flipped) \
+				/ float(normal_checked)
+
+	var mat := m.get_active_material(si)
+	var albedo := false
+	var tex_w := 0
+	var tex_h := 0
+	var sigma := -1.0
+	if mat is BaseMaterial3D:
+		var alb := (mat as BaseMaterial3D).albedo_texture
+		if alb != null:
+			albedo = true
+			tex_w = alb.get_width()
+			tex_h = alb.get_height()
+			var img := alb.get_image()
+			if img != null and umax > umin and vmax > vmin:
+				img.convert(Image.FORMAT_RGB8)
+				var w := img.get_width()
+				var h := img.get_height()
+				var x0 := clampi(int(clampf(umin, 0.0, 1.0) * w), 0, w - 1)
+				var x1 := clampi(int(clampf(umax, 0.0, 1.0) * w), x0 + 1, w)
+				var y0 := clampi(int(clampf(vmin, 0.0, 1.0) * h), 0, h - 1)
+				var y1 := clampi(int(clampf(vmax, 0.0, 1.0) * h), y0 + 1, h)
+				var sx := maxi((x1 - x0) / 60, 1)
+				var sy := maxi((y1 - y0) / 60, 1)
+				var sum := 0.0
+				var sum2 := 0.0
+				var n := 0
+				var yy := y0
+				while yy < y1:
+					var xx := x0
+					while xx < x1:
+						var px := img.get_pixel(xx, yy)
+						var g := (px.r + px.g + px.b) / 3.0
+						sum += g
+						sum2 += g * g
+						n += 1
+						xx += sx
+					yy += sy
+				if n > 0:
+					var mn := sum / float(n)
+					sigma = sqrt(maxf(sum2 / float(n) - mn * mn, 0.0))
+	return {
+		"tris": tri_count, "degenerate": degenerate,
+		"inconsistent_normals_pct": inconsistent_pct,
+		"uv_cv": cv, "albedo": albedo, "tex_w": tex_w, "tex_h": tex_h,
+		"sigma": sigma,
+	}
+
+
+## Обход всей библиотеки моделей и выгрузка в JSON — данные для галереи
+## (tools/asset_gallery/). Сам HTML статический и ничего не считает, только
+## читает этот файл через fetch(); чтобы обновить галерею после новой
+## поставки — перезапустить --gallery-data=, HTML не трогать.
+## --gallery-data=res://путь/к.json (по умолчанию res://assets/gallery_data.json).
+func _gallery_data(out_path: String) -> void:
+	var root := "res://assets/models/"
+	var stack: Array[String] = [root]
+	var files: Array[String] = []
+	while not stack.is_empty():
+		var dir_path: String = stack.pop_back()
+		var d := DirAccess.open(dir_path)
+		if d == null:
+			continue
+		d.list_dir_begin()
+		var fn := d.get_next()
+		while fn != "":
+			if fn == "." or fn == "..":
+				fn = d.get_next()
+				continue
+			var full := dir_path.path_join(fn)
+			if d.current_is_dir():
+				stack.append(full)
+			elif fn.ends_with(".glb"):
+				files.append(full)
+			fn = d.get_next()
+		d.list_dir_end()
+	files.sort()
+	var results := []
+	for path in files:
+		var node: Node3D = (load(path) as PackedScene).instantiate()
+		add_child(node)
+		var surfaces := []
+		for mi in node.find_children("*", "MeshInstance3D", true, false):
+			var m := mi as MeshInstance3D
+			if m.mesh == null:
+				continue
+			for si in m.mesh.get_surface_count():
+				surfaces.append(_surface_gallery_stats(m, si))
+		node.queue_free()
+		var rel: String = path.substr(root.length())
+		results.append({"path": path, "rel": rel,
+				"category": rel.get_base_dir(), "surfaces": surfaces})
+		print("[gallery] ", rel, " — ", surfaces.size(), " surf.")
+	var f := FileAccess.open(out_path, FileAccess.WRITE)
+	if f == null:
+		push_error("[gallery] не смог записать: " + out_path)
+		return
+	f.store_string(JSON.stringify(results, "  "))
+	f.close()
+	print("[gallery] записал ", results.size(), " моделей в ", out_path)
 
 
 ## Материал по набору текстур из assets: albedo + normal + ORM.
