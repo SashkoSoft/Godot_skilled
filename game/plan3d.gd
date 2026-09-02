@@ -144,6 +144,7 @@ func _ready() -> void:
 	if OS.get_cmdline_user_args().has("--gi"):
 		_bake_gi()
 	_ready_fly()
+	_setup_audio()
 	if OS.get_cmdline_user_args().has("--hall"):
 		_hall_report()
 	for a in OS.get_cmdline_user_args():
@@ -2607,6 +2608,77 @@ var _fly := false
 var _walkman: CharacterBody3D = null
 var _fly_speed := 3.5
 
+## Звук пустой квартиры (task-0020): шаги по пройденному расстоянию, не по
+## таймеру — иначе у бега и медленной ходьбы был бы один и тот же интервал
+## между шагами. Материал пола беру тем же способом, что и сама укладка
+## пола (`_kind_at` по room["kind"]), а не гадаю заново.
+const SOUND_DIR := "res://assets/sound/"
+const STEP_LENGTH := 0.68
+const FOOTSTEP_SURFACE := {
+	"кухня": "lino", "прихожая": "lino", "санузел": "tile",
+	"жилая": "parquet", "лоджия": "concrete",
+}
+var _step_dist := 0.0
+var _step_player: AudioStreamPlayer = null
+var _last_step_idx := -1
+
+
+func _setup_audio() -> void:
+	if _shot != "":
+		return
+	var amb_path := SOUND_DIR + "amb_flat_loop.ogg"
+	if ResourceLoader.exists(amb_path):
+		var amb := AudioStreamPlayer.new()
+		var stream: AudioStream = load(amb_path)
+		if stream is AudioStreamOggVorbis:
+			(stream as AudioStreamOggVorbis).loop = true
+		amb.stream = stream
+		amb.volume_db = -14.0
+		amb.autoplay = true
+		add_child(amb)
+
+	# Ветер лоджии — направленный источник в самой лоджии, не общий гул на
+	# всю квартиру: у разбитого остекления его должно быть заметно больше.
+	var loggia_path := SOUND_DIR + "amb_loggia_loop.ogg"
+	if ResourceLoader.exists(loggia_path):
+		for room in _plan["rooms"]:
+			if String(room["kind"]) != "лоджия":
+				continue
+			for r in room["rects"]:
+				var wind := AudioStreamPlayer3D.new()
+				var wstream: AudioStream = load(loggia_path)
+				if wstream is AudioStreamOggVorbis:
+					(wstream as AudioStreamOggVorbis).loop = true
+				wind.stream = wstream
+				wind.unit_size = 3.0
+				wind.max_distance = 9.0
+				wind.volume_db = -4.0
+				wind.autoplay = true
+				wind.position = Vector3((float(r[0]) + float(r[2])) * 0.5, 1.4,
+						(float(r[1]) + float(r[3])) * 0.5)
+				add_child(wind)
+
+	_step_player = AudioStreamPlayer.new()
+	add_child(_step_player)
+
+
+## Не позиционный (шаги всегда «под ногами» слушателя) — 4 варианта на
+## поверхность, без повтора одного и того же подряд.
+func _play_footstep() -> void:
+	if _step_player == null or _walkman == null:
+		return
+	var kind := _kind_at(_walkman.global_position.x, _walkman.global_position.z)
+	var surface: String = FOOTSTEP_SURFACE.get(kind, "concrete")
+	var idx := randi() % 4
+	if idx == _last_step_idx:
+		idx = (idx + 1) % 4
+	_last_step_idx = idx
+	var path := "%sstep_%s_%02d.wav" % [SOUND_DIR, surface, idx + 1]
+	if not ResourceLoader.exists(path):
+		return
+	_step_player.stream = load(path)
+	_step_player.play()
+
 
 func _ready_fly() -> void:
 	if _shot != "":
@@ -2756,6 +2828,14 @@ func _fly_step(delta: float) -> void:
 		v.y -= 9.8 * delta
 	_walkman.velocity = v
 	_walkman.move_and_slide()
+
+	if _walkman.is_on_floor() and Vector2(v.x, v.z).length() > 0.1:
+		_step_dist += Vector2(v.x, v.z).length() * delta
+		if _step_dist >= STEP_LENGTH:
+			_step_dist = 0.0
+			_play_footstep()
+	else:
+		_step_dist = 0.0
 
 
 # --- проверка проходимости ---------------------------------------------------
