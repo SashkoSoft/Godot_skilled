@@ -78,6 +78,27 @@ func _ready() -> void:
 			get_tree().quit()
 			return
 
+	# --meshcheck=res://путь/к.glb — форма и развёртка по треугольникам: доля
+	# перевёрнутых нормалей, вырожденные треугольники, разброс плотности UV.
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--meshcheck="):
+			_meshcheck_asset(a.substr(12))
+			get_tree().quit()
+			return
+
+	# --asset=res://путь/к.glb — осмотр одной модели вне квартиры и без плана:
+	# --debug=uv кладёт шахматную развёртку, --debug=normal — цвет по нормали;
+	# кадр — через --shot=, как обычно. Не требует --headless=false отдельно,
+	# но сам рендер (в отличие от --probe/--texcheck/--meshcheck) нуждается
+	# в GPU-контексте — без --headless в запуске.
+	var asset_path := ""
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--asset="):
+			asset_path = a.substr(8)
+	if asset_path != "":
+		_asset_inspect(asset_path)
+		return
+
 
 	# Снимок делаю в SubViewport, а не в окне: окно упирается в размер экрана
 	# (1800 x 1500 превращается в 1800 x 1012), а вьюпорту потолка нет и кадр
@@ -192,10 +213,14 @@ func _probe_asset(path: String) -> void:
 
 ## Проверка текстуры числом, а не рендером и глазом: по каждой поверхности —
 ## привязан ли albedo, реальный размер текстуры, границы UV и разброс (σ)
-## яркости пикселей ИМЕННО в той области атласа, куда смотрит эта
-## поверхность. Плоский участок без фактуры даст σ около нуля, даже если
-## сам атлас пёстрый — так поймалось одеяло (task-0035): у него σ на плоской
-## части в разы меньше, чем у изголовья, при одном и том же файле текстуры.
+## яркости пикселей в прямоугольнике UV-границ этой поверхности. Ловит
+## главное — вообще не привязанную текстуру (albedo=false, так поймался
+## task-0029/task-0030 с внешним uri без скопированного PNG). Но это σ по
+## всему UV-прямоугольнику поверхности разом: если на одном меше есть и
+## пёстрый, и ровный участок с одним материалом (как каркас+одеяло в одном
+## surface у кровати), общий σ смажет разницу. Для проверки конкретного
+## участка меша — --meshcheck= (площадь UV/3D по треугольникам) и
+## --asset=...--debug=uv|normal (посмотреть глазами по факту, не гадая).
 ## --texcheck=res://путь/к.glb.
 func _texcheck_asset(path: String) -> void:
 	if not ResourceLoader.exists(path):
@@ -264,6 +289,223 @@ func _texcheck_asset(path: String) -> void:
 					"UV=(%.3f..%.3f, %.3f..%.3f) разброс(σ)=%.4f")
 					% [m.name, si, mat_class, alb != null, tex_size,
 							umin, umax, vmin, vmax, stddev])
+
+
+## Форма и развёртка числом, по треугольникам, а не по пикселям текстуры.
+## На каждом треугольнике сравниваю площадь в 3D с площадью в UV — их
+## отношение и есть плотность текстуры на этом кусочке меша. Если развёртка
+## растянута неровно, отношение скачет от треугольника к треугольнику;
+## коэффициент вариации (σ/среднее) — единое число на разброс, не зависящее
+## от того, пёстрый атлас или нет. Заодно: вырожденные (нулевой площади)
+## треугольники и доля треугольников, чья геометрическая нормаль не
+## согласуется с большинством меша (не «перевёрнута ли нормаль вообще» —
+## общее направление cross-произведения зависит от порядка вершин в
+## экспорте и само по себе ничего не значит; важно, когда часть треугольников
+## одного меша расходится с остальными — это и есть реальный дефект,
+## например залипшая symmetry-модификация или трансформация навыворот).
+## --meshcheck=res://путь/к.glb.
+func _meshcheck_asset(path: String) -> void:
+	if not ResourceLoader.exists(path):
+		print("[meshcheck] нет файла: ", path)
+		return
+	var node: Node3D = (load(path) as PackedScene).instantiate()
+	add_child(node)
+	for mi in node.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		var mesh := m.mesh
+		if mesh == null:
+			continue
+		for si in mesh.get_surface_count():
+			var arrays := mesh.surface_get_arrays(si)
+			var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+			var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL] \
+					if arrays[Mesh.ARRAY_NORMAL] != null else PackedVector3Array()
+			var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV] \
+					if arrays[Mesh.ARRAY_TEX_UV] != null else PackedVector2Array()
+			var idx: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] \
+					if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+			if idx.is_empty():
+				idx.resize(verts.size())
+				for i in verts.size():
+					idx[i] = i
+			var tri_count := idx.size() / 3
+			var degenerate := 0
+			var flipped := 0
+			var normal_checked := 0
+			var ratios: Array[float] = []
+			for t in tri_count:
+				var i0 := idx[t * 3]
+				var i1 := idx[t * 3 + 1]
+				var i2 := idx[t * 3 + 2]
+				var p0 := verts[i0]
+				var p1 := verts[i1]
+				var p2 := verts[i2]
+				var cr := (p1 - p0).cross(p2 - p0)
+				var area2 := cr.length()
+				if area2 < 1e-10:
+					degenerate += 1
+					continue
+				if not normals.is_empty():
+					var vn := normals[i0] + normals[i1] + normals[i2]
+					if vn.length() > 1e-6:
+						normal_checked += 1
+						if vn.normalized().dot(cr / area2) < 0.0:
+							flipped += 1
+				if not uvs.is_empty():
+					var u0 := uvs[i0]
+					var u1 := uvs[i1]
+					var u2 := uvs[i2]
+					var uv_area2 := absf((u1 - u0).cross(u2 - u0))
+					if uv_area2 > 1e-12:
+						ratios.append(uv_area2 / area2)
+			var line := "[meshcheck] меш=%s surf=%d тр=%d вырожд=%d" \
+					% [m.name, si, tri_count, degenerate]
+			if normal_checked > 0:
+				# Направление cross-произведения — условность (порядок вершин
+				# в буфере против часовой/по часовой), поэтому 100% или 0% на
+				# весь меш — это просто общая конвенция экспорта, не дефект.
+				# Дефект — когда часть треугольников смотрит иначе, чем
+				# большинство: несогласованность внутри одного меша.
+				var inconsistent: int = mini(flipped, normal_checked - flipped)
+				line += " несогласованных_нормалей=%d/%d (%.1f%%)" \
+						% [inconsistent, normal_checked,
+								100.0 * inconsistent / normal_checked]
+			if ratios.size() > 1:
+				var s := 0.0
+				for r in ratios:
+					s += r
+				var mean: float = s / ratios.size()
+				var s2 := 0.0
+				for r in ratios:
+					s2 += (r - mean) * (r - mean)
+				var sd := sqrt(s2 / ratios.size())
+				var lo: float = ratios[0]
+				var hi: float = ratios[0]
+				for r in ratios:
+					lo = minf(lo, r)
+					hi = maxf(hi, r)
+				line += " UV-плотность: среднее=%.5f σ=%.5f σ/сред=%.2f мин=%.5f макс=%.5f" \
+						% [mean, sd, (sd / mean if mean > 0.0 else -1.0), lo, hi]
+			print(line)
+
+
+## UV-текстура для --debug=uv: стандартная пронумерованная сетка (00..99,
+## стрелка на каждой клетке — видно поворот и зеркалирование, подписи
+## [0,0]/[1,1] по углам — видно, где на развёртке верх/низ). Своя клетка без
+## разметки не давала отличить поворот на 90° и зеркалирование от нормальной
+## развёртки — этого рисунком без стрелок не видно. Файл — готовый
+## UV-Checker-Grid (ALanMAttano, CC-BY 4.0), лежит рядом с игрой, а не
+## генерируется в рантайме.
+const UV_CHECKER := "res://assets/debug/uv_checker_grid_2k.png"
+
+func _checker_texture() -> Texture2D:
+	if ResourceLoader.exists(UV_CHECKER):
+		return load(UV_CHECKER) as Texture2D
+	push_error("[asset] нет " + UV_CHECKER + " — эталонная UV-сетка не скачана")
+	var img := Image.create(64, 64, false, Image.FORMAT_RGB8)
+	img.fill(Color.MAGENTA)
+	return ImageTexture.create_from_image(img)
+
+
+## Цвет = нормаль поверхности, без освещения. Перевёрнутая или рваная
+## нормаль сразу видна как чужой или скачущий цвет там, где на глаз всё
+## ровно.
+func _normal_debug_shader() -> Shader:
+	var sh := Shader.new()
+	sh.code = "shader_type spatial;\nrender_mode unshaded, cull_disabled;\n" \
+			+ "void fragment() {\n\tALBEDO = NORMAL * 0.5 + 0.5;\n}\n"
+	return sh
+
+
+## Осмотр одной модели вне квартиры и без разбора плана — форма, развёртка,
+## нормали. --debug=uv кладёт шахматную текстуру на все поверхности,
+## --debug=normal — цвет по нормали; без --debug — обычный материал модели.
+## Кадр берётся тем же --shot=/--size=/--ss=/--pitch=/--yaw=/--zoom=, что и
+## у сцены квартиры — код захвата в _process() общий, здесь только своя
+## камера, кадрирующая AABB модели, а не помещения.
+func _asset_inspect(path: String) -> void:
+	if not ResourceLoader.exists(path):
+		push_error("[asset] нет файла: " + path)
+		get_tree().quit()
+		return
+	var node: Node3D = (load(path) as PackedScene).instantiate()
+	add_child(node)
+	var whole := AABB()
+	var first := true
+	var meshes: Array[MeshInstance3D] = []
+	for mi in node.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		meshes.append(m)
+		var a: AABB = m.global_transform * m.get_aabb()
+		whole = a if first else whole.merge(a)
+		first = false
+	if first:
+		push_error("[asset] в модели нет MeshInstance3D: " + path)
+		get_tree().quit()
+		return
+
+	var debug_mode := ""
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--debug="):
+			debug_mode = a.substr(8)
+	if debug_mode == "uv":
+		var checker := _checker_texture()
+		for m in meshes:
+			var mat := StandardMaterial3D.new()
+			mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			mat.albedo_texture = checker
+			m.material_override = mat
+	elif debug_mode == "normal":
+		var nmat := ShaderMaterial.new()
+		nmat.shader = _normal_debug_shader()
+		for m in meshes:
+			m.material_override = nmat
+
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-55.0, -35.0, 0.0)
+	sun.light_energy = 1.1
+	add_child(sun)
+	var env_res := Environment.new()
+	env_res.background_mode = Environment.BG_COLOR
+	env_res.background_color = Color(0.5, 0.52, 0.55)
+	env_res.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env_res.ambient_light_color = Color(0.65, 0.65, 0.68)
+	var world_env := WorldEnvironment.new()
+	world_env.environment = env_res
+	add_child(world_env)
+
+	var cam := Camera3D.new()
+	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
+	cam.current = true
+	if _shot != "":
+		_vp = SubViewport.new()
+		_vp.size = _size * _ss
+		_vp.own_world_3d = false
+		_vp.world_3d = get_viewport().find_world_3d()
+		_vp.msaa_3d = Viewport.MSAA_8X
+		_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		add_child(_vp)
+		_vp.add_child(cam)
+	else:
+		add_child(cam)
+
+	var pitch := 35.0
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--pitch="):
+			pitch = clampf(float(a.substr(8)), 5.0, 89.0)
+	var yaw := 35.0
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--yaw="):
+			yaw = float(a.substr(6))
+	var center := whole.position + whole.size * 0.5
+	var diag := maxf(whole.size.length(), 0.05)
+	cam.size = diag
+	var rad := deg_to_rad(pitch)
+	var yr := deg_to_rad(yaw)
+	var eye := Vector3(cos(rad) * sin(yr), sin(rad), cos(rad) * cos(yr)) * diag * 3.0
+	cam.global_position = center + eye
+	cam.look_at(center, Vector3.UP)
+	_frame(cam, whole.position, whole.position + whole.size)
 
 
 ## Материал по набору текстур из assets: albedo + normal + ORM.
