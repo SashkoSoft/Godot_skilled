@@ -78,21 +78,30 @@
 		padding-top: 18px; border-top: 1px solid var(--card-border);
 	}
 	.supertitle:first-child { border-top: none; padding-top: 0; }
+	.material-main-wrap { position: relative; }
 	.material-main {
 		width: 100%; height: 220px; object-fit: cover; background: #0e1013;
-		display: block;
+		display: block; cursor: zoom-in;
 	}
 	.card.expanded .material-main { height: 460px; }
+	.material-current {
+		position: absolute; top: 6px; left: 6px;
+		background: rgba(0, 0, 0, .6); color: var(--text);
+		font-size: 10px; letter-spacing: .05em; text-transform: uppercase;
+		padding: 2px 6px; border-radius: 4px; pointer-events: none;
+	}
 	.material-thumbs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 	.material-thumbs .thumb { width: 44px; text-align: center; }
 	.material-thumbs .thumb img {
 		width: 44px; height: 44px; object-fit: cover; border-radius: 4px;
-		border: 1px solid var(--card-border); cursor: zoom-in;
+		border: 1px solid var(--card-border); cursor: pointer;
 	}
+	.material-thumbs .thumb.active img { border-color: var(--accent); border-width: 2px; }
 	.material-thumbs .thumb span {
 		display: block; font-size: 9px; color: var(--muted); margin-top: 2px;
 		text-transform: uppercase;
 	}
+	.material-thumbs .thumb.active span { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -194,12 +203,21 @@ function materialCard(item) {
 	el.dataset.name = item.category.toLowerCase();
 
 	const albedoFile = item.files.find(f => f.toLowerCase().includes("albedo")) || item.files[0];
+
+	const mainWrap = document.createElement("div");
+	mainWrap.className = "material-main-wrap";
 	const img = document.createElement("img");
 	img.className = "material-main";
 	img.src = TEXTURES_ROOT + item.category + "/" + albedoFile;
 	img.loading = "lazy";
+	img.title = "Клик — крупнее";
 	img.onclick = () => el.classList.toggle("expanded");
-	el.appendChild(img);
+	mainWrap.appendChild(img);
+	const curLabel = document.createElement("span");
+	curLabel.className = "material-current";
+	curLabel.textContent = mapLabel(albedoFile);
+	mainWrap.appendChild(curLabel);
+	el.appendChild(mainWrap);
 
 	const meta = document.createElement("div");
 	meta.className = "meta";
@@ -212,18 +230,27 @@ function materialCard(item) {
 
 	const thumbs = document.createElement("div");
 	thumbs.className = "material-thumbs";
+	const thumbImgs = [];
 	for (const f of item.files) {
 		const wrap = document.createElement("div");
 		wrap.className = "thumb";
 		const t = document.createElement("img");
 		t.src = TEXTURES_ROOT + item.category + "/" + f;
 		t.loading = "lazy";
-		t.title = f;
+		t.title = "Показать крупно: " + f;
+		if (f === albedoFile) wrap.classList.add("active");
+		t.onclick = () => {
+			img.src = TEXTURES_ROOT + item.category + "/" + f;
+			curLabel.textContent = mapLabel(f);
+			for (const w of thumbImgs) w.classList.remove("active");
+			wrap.classList.add("active");
+		};
 		wrap.appendChild(t);
 		const lbl = document.createElement("span");
 		lbl.textContent = mapLabel(f);
 		wrap.appendChild(lbl);
 		thumbs.appendChild(wrap);
+		thumbImgs.push(wrap);
 	}
 	meta.appendChild(thumbs);
 	el.appendChild(meta);
