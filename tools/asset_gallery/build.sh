@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Пересчитывает game/assets/gallery_data.json (модели),
-# game/assets/textures_data.json (материалы) и game/assets/decals_data.json
-# (декали). HTML (gallery.html) статический и ничего не считает сам —
-# запускать это после каждой новой поставки, страницу не трогать.
+# game/assets/textures_data.json (материалы), game/assets/decals_data.json
+# (декали) и game/assets/integration_gaps.json (что принято, но не
+# скопировано в игру — банер вверху страницы). HTML (gallery.html)
+# статический и ничего не считает сам — запускать это после каждой новой
+# поставки, страницу не трогать.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
@@ -10,3 +12,4 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 		-- --gallery-data
 python tools/asset_gallery/build_textures.py
 python tools/asset_gallery/build_decals.py
+python pipeline/check_integration.py
