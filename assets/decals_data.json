@@ -1,0 +1,107 @@
+[
+  {
+    "category": "calendar",
+    "files": [
+      "paper/calendar_albedo_512.png"
+    ]
+  },
+  {
+    "category": "child_drawing",
+    "files": [
+      "paper/child_drawing_albedo_512.png"
+    ]
+  },
+  {
+    "category": "debris_floor",
+    "files": [
+      "debris_floor_albedo_512.png",
+      "debris_floor_normal_512.png",
+      "debris_floor_orm_512.png"
+    ]
+  },
+  {
+    "category": "door_number",
+    "files": [
+      "paper/door_number_albedo_512.png"
+    ]
+  },
+  {
+    "category": "furniture_ghost",
+    "files": [
+      "furniture_ghost_albedo_512.png",
+      "furniture_ghost_normal_512.png"
+    ]
+  },
+  {
+    "category": "leak_ceiling",
+    "files": [
+      "leak_ceiling_albedo_1k.png",
+      "leak_ceiling_normal_1k.png"
+    ]
+  },
+  {
+    "category": "leak_wall",
+    "files": [
+      "leak_wall_albedo_512.png",
+      "leak_wall_normal_512.png"
+    ]
+  },
+  {
+    "category": "mold_corner",
+    "files": [
+      "mold_corner_albedo_512.png",
+      "mold_corner_normal_512.png"
+    ]
+  },
+  {
+    "category": "mold_seam",
+    "files": [
+      "mold_seam_albedo_512.png",
+      "mold_seam_normal_512.png"
+    ]
+  },
+  {
+    "category": "newspaper_scrap",
+    "files": [
+      "paper/newspaper_scrap_albedo_512.png"
+    ]
+  },
+  {
+    "category": "paper_peel",
+    "files": [
+      "paper_peel_albedo_512.png",
+      "paper_peel_normal_512.png"
+    ]
+  },
+  {
+    "category": "path_worn",
+    "files": [
+      "path_worn_albedo_1k.png",
+      "path_worn_normal_1k.png"
+    ]
+  },
+  {
+    "category": "photo_frame_mark",
+    "files": [
+      "paper/photo_frame_mark_albedo_512.png"
+    ]
+  },
+  {
+    "category": "poster_torn",
+    "files": [
+      "paper/poster_torn_albedo_1k.png"
+    ]
+  },
+  {
+    "category": "switch_grime",
+    "files": [
+      "paper/switch_grime_albedo_512.png"
+    ]
+  },
+  {
+    "category": "wallpaper_patch",
+    "files": [
+      "paper/wallpaper_patch_albedo_1k.png"
+    ]
+  }
+]

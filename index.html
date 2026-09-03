@@ -116,6 +116,8 @@ const DATA_URL = "assets/gallery_data.json";
 const MODELS_ROOT = "assets/models/";
 const TEXTURES_DATA_URL = "assets/textures_data.json";
 const TEXTURES_ROOT = "assets/textures/";
+const DECALS_DATA_URL = "assets/decals_data.json";
+const DECALS_ROOT = "assets/decals/";
 const CATEGORY_NAMES = {
 	furniture: "Мебель", doors: "Двери", windows: "Окна", curtains: "Шторы",
 	skirting: "Плинтус", fixtures: "Сантехника", closets: "Кладовки", lift: "Лифт",
@@ -197,7 +199,7 @@ function card(item) {
 	return el;
 }
 
-function materialCard(item) {
+function materialCard(item, urlFor) {
 	const el = document.createElement("div");
 	el.className = "card";
 	el.dataset.name = item.category.toLowerCase();
@@ -208,7 +210,7 @@ function materialCard(item) {
 	mainWrap.className = "material-main-wrap";
 	const img = document.createElement("img");
 	img.className = "material-main";
-	img.src = TEXTURES_ROOT + item.category + "/" + albedoFile;
+	img.src = urlFor(item, albedoFile);
 	img.loading = "lazy";
 	img.title = "Клик — крупнее";
 	img.onclick = () => el.classList.toggle("expanded");
@@ -235,12 +237,12 @@ function materialCard(item) {
 		const wrap = document.createElement("div");
 		wrap.className = "thumb";
 		const t = document.createElement("img");
-		t.src = TEXTURES_ROOT + item.category + "/" + f;
+		t.src = urlFor(item, f);
 		t.loading = "lazy";
 		t.title = "Показать крупно: " + f;
 		if (f === albedoFile) wrap.classList.add("active");
 		t.onclick = () => {
-			img.src = TEXTURES_ROOT + item.category + "/" + f;
+			img.src = urlFor(item, f);
 			curLabel.textContent = mapLabel(f);
 			for (const w of thumbImgs) w.classList.remove("active");
 			wrap.classList.add("active");
@@ -287,18 +289,37 @@ async function loadJson(url) {
 	return res.json();
 }
 
+function renderFlatSection(root, title, catKey, items, urlFor) {
+	const t = document.createElement("div");
+	t.className = "supertitle";
+	t.textContent = title;
+	root.appendChild(t);
+	const wrap = document.createElement("div");
+	wrap.className = "category";
+	wrap.dataset.cat = catKey;
+	const grid = document.createElement("div");
+	grid.className = "grid";
+	for (const item of items.slice().sort((x, y) => x.category.localeCompare(y.category))) {
+		grid.appendChild(materialCard(item, urlFor));
+	}
+	wrap.appendChild(grid);
+	root.appendChild(wrap);
+}
+
 async function main() {
 	const root = document.getElementById("main");
-	let models, textures;
+	let models, textures, decals;
 	try {
-		[models, textures] = await Promise.all([loadJson(DATA_URL), loadJson(TEXTURES_DATA_URL)]);
+		[models, textures, decals] = await Promise.all([
+			loadJson(DATA_URL), loadJson(TEXTURES_DATA_URL), loadJson(DECALS_DATA_URL),
+		]);
 	} catch (e) {
 		root.innerHTML = `<div class="empty">Не смог загрузить данные галереи.<br>${e}</div>`;
 		return;
 	}
 
 	document.getElementById("stamp").textContent =
-			`${models.length} моделей, ${textures.length} материалов`;
+			`${models.length} моделей, ${textures.length} материалов, ${decals.length} декалей`;
 
 	root.innerHTML = "";
 
@@ -308,20 +329,10 @@ async function main() {
 	root.appendChild(modelsTitle);
 	renderGrouped(root, models, "category", c => CATEGORY_NAMES[c] || c, card, x => x.rel);
 
-	const texturesTitle = document.createElement("div");
-	texturesTitle.className = "supertitle";
-	texturesTitle.textContent = "Материалы";
-	root.appendChild(texturesTitle);
-	const texWrap = document.createElement("div");
-	texWrap.className = "category";
-	texWrap.dataset.cat = "материалы";
-	const grid = document.createElement("div");
-	grid.className = "grid";
-	for (const item of textures.sort((x, y) => x.category.localeCompare(y.category))) {
-		grid.appendChild(materialCard(item));
-	}
-	texWrap.appendChild(grid);
-	root.appendChild(texWrap);
+	renderFlatSection(root, "Материалы", "материалы", textures,
+			(item, f) => TEXTURES_ROOT + item.category + "/" + f);
+	renderFlatSection(root, "Декали", "декали", decals,
+			(item, f) => DECALS_ROOT + f);
 
 	document.getElementById("filter").addEventListener("input", (e) => {
 		const q = e.target.value.trim().toLowerCase();
