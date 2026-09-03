@@ -1006,12 +1006,12 @@
     "rel": "skirting/skirting_pvc.glb",
     "surfaces": [
       {
-        "albedo": false,
+        "albedo": true,
         "degenerate": 0,
         "inconsistent_normals_pct": 0.0,
-        "sigma": -1.0,
-        "tex_h": 0,
-        "tex_w": 0,
+        "sigma": 0.0553757310225032,
+        "tex_h": 512,
+        "tex_w": 512,
         "tris": 38,
         "uv_cv": 0.0219583119981275
       }
@@ -1023,12 +1023,12 @@
     "rel": "skirting/skirting_wood.glb",
     "surfaces": [
       {
-        "albedo": false,
+        "albedo": true,
         "degenerate": 0,
         "inconsistent_normals_pct": 0.0,
-        "sigma": -1.0,
-        "tex_h": 0,
-        "tex_w": 0,
+        "sigma": 0.0530822859817026,
+        "tex_h": 512,
+        "tex_w": 512,
         "tris": 38,
         "uv_cv": 0.0728759222758768
       }
