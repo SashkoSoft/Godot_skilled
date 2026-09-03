@@ -1,0 +1,32 @@
+[
+  {
+    "task": "task-0002",
+    "title": "Бетонная панель: стены и перекрытия",
+    "copied": "9/12",
+    "missing": "concrete_facade_height_2k.png, wall_paint_height_2k.png, wall_paint_worn_height_2k.png"
+  },
+  {
+    "task": "task-0003",
+    "title": "Плитка и бетон лестничной клетки",
+    "copied": "9/12",
+    "missing": "landing_floor_height_2k.png, stair_tread_height_2k.png, stair_wall_height_2k.png"
+  },
+  {
+    "task": "task-0011",
+    "title": "Зелень: плети, мох, трава",
+    "copied": "0/12",
+    "missing": "grass_patch_1_albedo_1k.png, grass_patch_1_normal_1k.png, grass_patch_2_albedo_1k.png, grass_patch_2_normal_1k.png, moss_corner_albedo_1k.png, moss_corner_normal_1k.png, moss_edge_albedo_1k.png, moss_edge_normal_1k.png, vine_wall_1_albedo_1k.png, vine_wall_1_normal_1k.png, vine_wall_2_albedo_1k.png, vine_wall_2_normal_1k.png"
+  },
+  {
+    "task": "task-0017",
+    "title": "Остекление лоджии: парапет и переплёт",
+    "copied": "0/6",
+    "missing": "loggia_albedo_1k.png, loggia_frame_section.glb, loggia_frame_vent.glb, loggia_normal_1k.png, loggia_orm_1k.png, loggia_parapet.glb"
+  },
+  {
+    "task": "task-0024",
+    "title": "Балконная дверь под проём 1.13",
+    "copied": "0/5",
+    "missing": "balcony_door_narrow.glb, balcony_door_narrow_albedo_1k.png, balcony_door_narrow_broken.glb, balcony_door_narrow_normal_1k.png, balcony_door_narrow_orm_1k.png"
+  }
+]
