@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Галерея ассетов</title>
+<script type="module" src="model-viewer.min.js"></script>
+<style>
+	:root {
+		color-scheme: dark;
+		--bg: #16181d;
+		--card: #1e2128;
+		--card-border: #2c3038;
+		--text: #e6e8eb;
+		--muted: #8b909a;
+		--ok: #5ec98a;
+		--bad: #e2665a;
+		--accent: #6ea8ff;
+	}
+	* { box-sizing: border-box; }
+	body {
+		margin: 0;
+		background: var(--bg);
+		color: var(--text);
+		font: 14px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif;
+	}
+	header {
+		position: sticky; top: 0; z-index: 5;
+		background: var(--bg);
+		border-bottom: 1px solid var(--card-border);
+		padding: 14px 20px;
+		display: flex; align-items: center; gap: 16px;
+	}
+	header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+	header input {
+		flex: 1; max-width: 360px;
+		background: var(--card); border: 1px solid var(--card-border);
+		color: var(--text); border-radius: 6px; padding: 7px 10px; font-size: 13px;
+	}
+	#stamp { color: var(--muted); font-size: 12px; }
+	main { padding: 20px; }
+	.category { margin-bottom: 28px; }
+	.category h2 {
+		font-size: 13px; text-transform: uppercase; letter-spacing: .05em;
+		color: var(--muted); margin: 0 0 10px; font-weight: 600;
+	}
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+		gap: 12px;
+	}
+	.card {
+		background: var(--card); border: 1px solid var(--card-border);
+		border-radius: 8px; overflow: hidden; display: flex; flex-direction: column;
+		transition: grid-column .15s, grid-row .15s;
+	}
+	.card.expanded { grid-column: span 2; grid-row: span 2; }
+	model-viewer {
+		width: 100%; height: 220px; background: #0e1013;
+		--poster-color: transparent;
+	}
+	.card.expanded model-viewer { height: 460px; }
+	.meta { padding: 8px 10px 10px; }
+	.name {
+		font-size: 12.5px; font-weight: 600; word-break: break-all;
+		cursor: pointer;
+	}
+	.name:hover { color: var(--accent); }
+	.badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+	.badge {
+		font-size: 11px; padding: 2px 6px; border-radius: 4px;
+		background: #262a32; color: var(--muted);
+	}
+	.badge.ok { color: var(--ok); }
+	.badge.bad { color: var(--bad); background: #3a2225; }
+	.empty { color: var(--muted); padding: 40px; text-align: center; }
+	.supertitle {
+		font-size: 18px; font-weight: 700; margin: 4px 0 16px;
+		padding-top: 18px; border-top: 1px solid var(--card-border);
+	}
+	.supertitle:first-child { border-top: none; padding-top: 0; }
+	.material-main-wrap { position: relative; }
+	.material-main {
+		width: 100%; height: 220px; object-fit: cover; background: #0e1013;
+		display: block; cursor: zoom-in;
+	}
+	.card.expanded .material-main { height: 460px; }
+	.material-current {
+		position: absolute; top: 6px; left: 6px;
+		background: rgba(0, 0, 0, .6); color: var(--text);
+		font-size: 10px; letter-spacing: .05em; text-transform: uppercase;
+		padding: 2px 6px; border-radius: 4px; pointer-events: none;
+	}
+	.material-thumbs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+	.material-thumbs .thumb { width: 44px; text-align: center; }
+	.material-thumbs .thumb img {
+		width: 44px; height: 44px; object-fit: cover; border-radius: 4px;
+		border: 1px solid var(--card-border); cursor: pointer;
+	}
+	.material-thumbs .thumb.active img { border-color: var(--accent); border-width: 2px; }
+	.material-thumbs .thumb span {
+		display: block; font-size: 9px; color: var(--muted); margin-top: 2px;
+		text-transform: uppercase;
+	}
+	.material-thumbs .thumb.active span { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+	<h1>Галерея ассетов</h1>
+	<input id="filter" type="search" placeholder="Фильтр по имени…">
+	<span id="stamp"></span>
+</header>
+<main id="main"><div class="empty">Загрузка…</div></main>
+<script>
+const DATA_URL = "assets/gallery_data.json";
+const MODELS_ROOT = "assets/models/";
+const TEXTURES_DATA_URL = "assets/textures_data.json";
+const TEXTURES_ROOT = "assets/textures/";
+const CATEGORY_NAMES = {
+	furniture: "Мебель", doors: "Двери", windows: "Окна", curtains: "Шторы",
+	skirting: "Плинтус", fixtures: "Сантехника", closets: "Кладовки", lift: "Лифт",
+};
+const MAP_LABELS = ["albedo", "normal", "orm", "seam", "id", "rough", "metal", "ao", "height", "mask"];
+
+function mapLabel(filename) {
+	const stem = filename.replace(/\.[a-zA-Z0-9]+$/, "");
+	const lower = stem.toLowerCase();
+	for (const k of MAP_LABELS) if (lower.includes(k)) return k;
+	return stem;
+}
+
+function aggregate(item) {
+	const s = item.surfaces;
+	const tris = s.reduce((a, x) => a + x.tris, 0);
+	const degenerate = s.reduce((a, x) => a + x.degenerate, 0);
+	const worstNormals = Math.max(...s.map(x => x.inconsistent_normals_pct));
+	const cvs = s.map(x => x.uv_cv).filter(v => v >= 0);
+	const worstUvCv = cvs.length ? Math.max(...cvs) : -1;
+	const allAlbedo = s.every(x => x.albedo);
+	const anyAlbedo = s.some(x => x.albedo);
+	const sigmas = s.filter(x => x.albedo && x.sigma >= 0).map(x => x.sigma);
+	const minSigma = sigmas.length ? Math.min(...sigmas) : -1;
+	const texSizes = [...new Set(s.filter(x => x.albedo).map(x => `${x.tex_w}×${x.tex_h}`))];
+	return { tris, degenerate, worstNormals, worstUvCv, allAlbedo, anyAlbedo, minSigma, texSizes, surfCount: s.length };
+}
+
+function badge(text, cls) {
+	const span = document.createElement("span");
+	span.className = "badge" + (cls ? " " + cls : "");
+	span.textContent = text;
+	return span;
+}
+
+function card(item) {
+	const a = aggregate(item);
+	const el = document.createElement("div");
+	el.className = "card";
+	el.dataset.name = item.rel.toLowerCase();
+
+	const mv = document.createElement("model-viewer");
+	mv.setAttribute("src", MODELS_ROOT + item.rel);
+	mv.setAttribute("camera-controls", "");
+	mv.setAttribute("touch-action", "pan-y");
+	mv.setAttribute("exposure", "1.0");
+	mv.setAttribute("shadow-intensity", "0.7");
+	mv.setAttribute("environment-image", "neutral");
+	mv.setAttribute("loading", "lazy");
+	mv.setAttribute("reveal", "auto");
+	el.appendChild(mv);
+
+	const meta = document.createElement("div");
+	meta.className = "meta";
+	const name = document.createElement("div");
+	name.className = "name";
+	name.textContent = item.rel;
+	name.title = "Клик — крупнее";
+	name.onclick = () => el.classList.toggle("expanded");
+	meta.appendChild(name);
+
+	const badges = document.createElement("div");
+	badges.className = "badges";
+	badges.appendChild(badge(`${a.tris} тр.`));
+	badges.appendChild(badge(a.surfCount + (a.surfCount === 1 ? " surf" : " surf")));
+	if (a.allAlbedo) {
+		badges.appendChild(badge("albedo ✓ " + (a.texSizes[0] || ""), "ok"));
+	} else if (a.anyAlbedo) {
+		badges.appendChild(badge("albedo частично", "bad"));
+	} else {
+		badges.appendChild(badge("нет текстуры", "bad"));
+	}
+	if (a.degenerate > 0) badges.appendChild(badge(`вырожд.=${a.degenerate}`, "bad"));
+	if (a.worstNormals > 0.5) badges.appendChild(badge(`нормали ${a.worstNormals.toFixed(1)}%`, "bad"));
+	if (a.worstUvCv >= 0) badges.appendChild(badge(`UV σ/ср=${a.worstUvCv.toFixed(2)}`));
+	if (a.minSigma >= 0) badges.appendChild(badge(`σ=${a.minSigma.toFixed(3)}`));
+	meta.appendChild(badges);
+	el.appendChild(meta);
+	return el;
+}
+
+function materialCard(item) {
+	const el = document.createElement("div");
+	el.className = "card";
+	el.dataset.name = item.category.toLowerCase();
+
+	const albedoFile = item.files.find(f => f.toLowerCase().includes("albedo")) || item.files[0];
+
+	const mainWrap = document.createElement("div");
+	mainWrap.className = "material-main-wrap";
+	const img = document.createElement("img");
+	img.className = "material-main";
+	img.src = TEXTURES_ROOT + item.category + "/" + albedoFile;
+	img.loading = "lazy";
+	img.title = "Клик — крупнее";
+	img.onclick = () => el.classList.toggle("expanded");
+	mainWrap.appendChild(img);
+	const curLabel = document.createElement("span");
+	curLabel.className = "material-current";
+	curLabel.textContent = mapLabel(albedoFile);
+	mainWrap.appendChild(curLabel);
+	el.appendChild(mainWrap);
+
+	const meta = document.createElement("div");
+	meta.className = "meta";
+	const name = document.createElement("div");
+	name.className = "name";
+	name.textContent = item.category;
+	name.title = "Клик — крупнее";
+	name.onclick = () => el.classList.toggle("expanded");
+	meta.appendChild(name);
+
+	const thumbs = document.createElement("div");
+	thumbs.className = "material-thumbs";
+	const thumbImgs = [];
+	for (const f of item.files) {
+		const wrap = document.createElement("div");
+		wrap.className = "thumb";
+		const t = document.createElement("img");
+		t.src = TEXTURES_ROOT + item.category + "/" + f;
+		t.loading = "lazy";
+		t.title = "Показать крупно: " + f;
+		if (f === albedoFile) wrap.classList.add("active");
+		t.onclick = () => {
+			img.src = TEXTURES_ROOT + item.category + "/" + f;
+			curLabel.textContent = mapLabel(f);
+			for (const w of thumbImgs) w.classList.remove("active");
+			wrap.classList.add("active");
+		};
+		wrap.appendChild(t);
+		const lbl = document.createElement("span");
+		lbl.textContent = mapLabel(f);
+		wrap.appendChild(lbl);
+		thumbs.appendChild(wrap);
+		thumbImgs.push(wrap);
+	}
+	meta.appendChild(thumbs);
+	el.appendChild(meta);
+	return el;
+}
+
+function renderGrouped(root, items, groupKey, titleFor, makeCard, sortKey) {
+	const byCategory = new Map();
+	for (const item of items) {
+		const cat = item[groupKey] || "прочее";
+		if (!byCategory.has(cat)) byCategory.set(cat, []);
+		byCategory.get(cat).push(item);
+	}
+	for (const [cat, group] of [...byCategory.entries()].sort()) {
+		const section = document.createElement("div");
+		section.className = "category";
+		section.dataset.cat = cat;
+		const h2 = document.createElement("h2");
+		h2.textContent = `${titleFor(cat)} (${group.length})`;
+		section.appendChild(h2);
+		const grid = document.createElement("div");
+		grid.className = "grid";
+		for (const item of group.sort((x, y) => sortKey(x).localeCompare(sortKey(y)))) {
+			grid.appendChild(makeCard(item));
+		}
+		section.appendChild(grid);
+		root.appendChild(section);
+	}
+}
+
+async function loadJson(url) {
+	const res = await fetch(url, { cache: "no-store" });
+	if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+	return res.json();
+}
+
+async function main() {
+	const root = document.getElementById("main");
+	let models, textures;
+	try {
+		[models, textures] = await Promise.all([loadJson(DATA_URL), loadJson(TEXTURES_DATA_URL)]);
+	} catch (e) {
+		root.innerHTML = `<div class="empty">Не смог загрузить данные галереи.<br>${e}</div>`;
+		return;
+	}
+
+	document.getElementById("stamp").textContent =
+			`${models.length} моделей, ${textures.length} материалов`;
+
+	root.innerHTML = "";
+
+	const modelsTitle = document.createElement("div");
+	modelsTitle.className = "supertitle";
+	modelsTitle.textContent = "Модели";
+	root.appendChild(modelsTitle);
+	renderGrouped(root, models, "category", c => CATEGORY_NAMES[c] || c, card, x => x.rel);
+
+	const texturesTitle = document.createElement("div");
+	texturesTitle.className = "supertitle";
+	texturesTitle.textContent = "Материалы";
+	root.appendChild(texturesTitle);
+	const texWrap = document.createElement("div");
+	texWrap.className = "category";
+	texWrap.dataset.cat = "материалы";
+	const grid = document.createElement("div");
+	grid.className = "grid";
+	for (const item of textures.sort((x, y) => x.category.localeCompare(y.category))) {
+		grid.appendChild(materialCard(item));
+	}
+	texWrap.appendChild(grid);
+	root.appendChild(texWrap);
+
+	document.getElementById("filter").addEventListener("input", (e) => {
+		const q = e.target.value.trim().toLowerCase();
+		for (const section of root.querySelectorAll(".category")) {
+			let any = false;
+			for (const c of section.querySelectorAll(".card")) {
+				const hit = !q || c.dataset.name.includes(q);
+				c.style.display = hit ? "" : "none";
+				any = any || hit;
+			}
+			section.style.display = any ? "" : "none";
+		}
+	});
+}
+
+main();
+</script>
+</body>
+</html>

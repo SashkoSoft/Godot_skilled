@@ -1,0 +1,227 @@
+[
+  {
+    "category": "ceiling-white",
+    "files": [
+      "ceiling_white_albedo_1k.png",
+      "ceiling_white_normal_1k.png",
+      "ceiling_white_orm_1k.png"
+    ]
+  },
+  {
+    "category": "concrete-facade",
+    "files": [
+      "concrete_facade_albedo_1k.png",
+      "concrete_facade_normal_1k.png",
+      "concrete_facade_orm_1k.png"
+    ]
+  },
+  {
+    "category": "floor-lino",
+    "files": [
+      "floor_lino_albedo_1k.png",
+      "floor_lino_normal_1k.png",
+      "floor_lino_orm_1k.png"
+    ]
+  },
+  {
+    "category": "floor-lino-2",
+    "files": [
+      "floor_lino_2_albedo_1k.png",
+      "floor_lino_2_normal_1k.png",
+      "floor_lino_2_orm_1k.png"
+    ]
+  },
+  {
+    "category": "floor-parquet",
+    "files": [
+      "floor_parquet_albedo_1k.png",
+      "floor_parquet_normal_1k.png",
+      "floor_parquet_orm_1k.png"
+    ]
+  },
+  {
+    "category": "floor-parquet-2",
+    "files": [
+      "floor_parquet_2_albedo_1k.png",
+      "floor_parquet_2_id_1k.png",
+      "floor_parquet_2_normal_1k.png",
+      "floor_parquet_2_orm_1k.png"
+    ]
+  },
+  {
+    "category": "floor-parquet-3",
+    "files": [
+      "floor_parquet_3_albedo_1k.png",
+      "floor_parquet_3_normal_1k.png",
+      "floor_parquet_3_orm_1k.png"
+    ]
+  },
+  {
+    "category": "landing-floor",
+    "files": [
+      "landing_floor_albedo_1k.png",
+      "landing_floor_normal_1k.png",
+      "landing_floor_orm_1k.png"
+    ]
+  },
+  {
+    "category": "stair-tread",
+    "files": [
+      "stair_tread_albedo_1k.png",
+      "stair_tread_normal_1k.png",
+      "stair_tread_orm_1k.png"
+    ]
+  },
+  {
+    "category": "stair-wall",
+    "files": [
+      "stair_wall_albedo_1k.png",
+      "stair_wall_normal_1k.png",
+      "stair_wall_orm_1k.png"
+    ]
+  },
+  {
+    "category": "tile-bath",
+    "files": [
+      "tile_bath_albedo_1k.png",
+      "tile_bath_id_1k.png",
+      "tile_bath_normal_1k.png",
+      "tile_bath_orm_1k.png",
+      "tile_bath_seam_1k.png"
+    ]
+  },
+  {
+    "category": "tile-floor",
+    "files": [
+      "tile_floor_albedo_1k.png",
+      "tile_floor_id_1k.png",
+      "tile_floor_normal_1k.png",
+      "tile_floor_orm_1k.png",
+      "tile_floor_seam_1k.png"
+    ]
+  },
+  {
+    "category": "tile-kitchen",
+    "files": [
+      "tile_kitchen_albedo_1k.png",
+      "tile_kitchen_id_1k.png",
+      "tile_kitchen_normal_1k.png",
+      "tile_kitchen_orm_1k.png",
+      "tile_kitchen_seam_1k.png"
+    ]
+  },
+  {
+    "category": "wall-paint",
+    "files": [
+      "wall_paint_albedo_1k.png",
+      "wall_paint_normal_1k.png",
+      "wall_paint_orm_1k.png"
+    ]
+  },
+  {
+    "category": "wall-paint-kitchen",
+    "files": [
+      "wall_paint_kitchen_albedo_1k.png",
+      "wall_paint_kitchen_normal_1k.png",
+      "wall_paint_kitchen_orm_1k.png"
+    ]
+  },
+  {
+    "category": "wall-paint-kitchen-2",
+    "files": [
+      "wall_paint_kitchen_2_albedo_1k.png",
+      "wall_paint_kitchen_2_normal_1k.png",
+      "wall_paint_kitchen_2_orm_1k.png"
+    ]
+  },
+  {
+    "category": "wall-paint-worn",
+    "files": [
+      "wall_paint_worn_albedo_1k.png",
+      "wall_paint_worn_normal_1k.png",
+      "wall_paint_worn_orm_1k.png"
+    ]
+  },
+  {
+    "category": "wall-paper",
+    "files": [
+      "wall_paper_albedo_1k.png",
+      "wall_paper_normal_1k.png",
+      "wall_paper_orm_1k.png"
+    ]
+  },
+  {
+    "category": "wall-paper-2",
+    "files": [
+      "wall_paper_2_albedo_1k.png",
+      "wall_paper_2_normal_1k.png",
+      "wall_paper_2_orm_1k.png"
+    ]
+  },
+  {
+    "category": "wall-paper-3",
+    "files": [
+      "wall_paper_3_albedo_1k.png",
+      "wall_paper_3_normal_1k.png",
+      "wall_paper_3_orm_1k.png"
+    ]
+  },
+  {
+    "category": "wall-paper-4",
+    "files": [
+      "wall_paper_4_albedo_1k.png",
+      "wall_paper_4_normal_1k.png",
+      "wall_paper_4_orm_1k.png"
+    ]
+  },
+  {
+    "category": "wall-paper-5",
+    "files": [
+      "wall_paper_5_albedo_1k.png",
+      "wall_paper_5_normal_1k.png",
+      "wall_paper_5_orm_1k.png"
+    ]
+  },
+  {
+    "category": "wall-paper-6",
+    "files": [
+      "wall_paper_6_albedo_1k.png",
+      "wall_paper_6_normal_1k.png",
+      "wall_paper_6_orm_1k.png"
+    ]
+  },
+  {
+    "category": "wall-paper-7",
+    "files": [
+      "wall_paper_7_albedo_1k.png",
+      "wall_paper_7_normal_1k.png",
+      "wall_paper_7_orm_1k.png"
+    ]
+  },
+  {
+    "category": "wall-paper-8",
+    "files": [
+      "wall_paper_8_albedo_1k.png",
+      "wall_paper_8_normal_1k.png",
+      "wall_paper_8_orm_1k.png"
+    ]
+  },
+  {
+    "category": "wall-paper-9",
+    "files": [
+      "wall_paper_9_albedo_1k.png",
+      "wall_paper_9_normal_1k.png",
+      "wall_paper_9_orm_1k.png"
+    ]
+  },
+  {
+    "category": "window-grime",
+    "files": [
+      "cracked-1.png",
+      "grime-1.png",
+      "grime-2.png",
+      "grime-3.png",
+      "grime-4.png"
+    ]
+  }
+]

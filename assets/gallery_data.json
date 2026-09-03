@@ -1,0 +1,1289 @@
+[
+  {
+    "category": "closets",
+    "path": "res://assets/models/closets/closet_door_46.glb",
+    "rel": "closets/closet_door_46.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0241437770849849,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 72,
+        "uv_cv": 0.00000334900277600648
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0236214388743657,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 112,
+        "uv_cv": 0.0000117847677486216
+      }
+    ]
+  },
+  {
+    "category": "closets",
+    "path": "res://assets/models/closets/closet_door_71.glb",
+    "rel": "closets/closet_door_71.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0243785619173036,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 72,
+        "uv_cv": 0.00000387033232015391
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0250931703199405,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 112,
+        "uv_cv": 0.0000148705999755385
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.025410635673512,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 112,
+        "uv_cv": 0.00000981512350423069
+      }
+    ]
+  },
+  {
+    "category": "closets",
+    "path": "res://assets/models/closets/closet_door_broken.glb",
+    "rel": "closets/closet_door_broken.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0248601770344439,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 72,
+        "uv_cv": 0.0000027275483285951
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0241704482148724,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 92,
+        "uv_cv": 0.000016139897137943
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0278086021323919,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 112,
+        "uv_cv": 0.0000100193558204291
+      }
+    ]
+  },
+  {
+    "category": "curtains",
+    "path": "res://assets/models/curtains/curtain_half.glb",
+    "rel": "curtains/curtain_half.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0325595636550698,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 16128,
+        "uv_cv": 0.0910616928170931
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0335286421530895,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 212,
+        "uv_cv": 0.0245461335706388
+      }
+    ]
+  },
+  {
+    "category": "curtains",
+    "path": "res://assets/models/curtains/curtain_pair.glb",
+    "rel": "curtains/curtain_pair.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0338924186169057,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 36864,
+        "uv_cv": 0.0985623807412691
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0341127303768406,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 212,
+        "uv_cv": 0.0245410457008183
+      }
+    ]
+  },
+  {
+    "category": "curtains",
+    "path": "res://assets/models/curtains/curtain_rail.glb",
+    "rel": "curtains/curtain_rail.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0345287675176442,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 212,
+        "uv_cv": 0.0245424587253321
+      }
+    ]
+  },
+  {
+    "category": "curtains",
+    "path": "res://assets/models/curtains/curtain_rail_bare.glb",
+    "rel": "curtains/curtain_rail_bare.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0343305669210493,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 132,
+        "uv_cv": 0.0310961733599902
+      }
+    ]
+  },
+  {
+    "category": "curtains",
+    "path": "res://assets/models/curtains/curtain_torn.glb",
+    "rel": "curtains/curtain_torn.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0325868942043326,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 22210,
+        "uv_cv": 0.0950691659914901
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0340726353371748,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 212,
+        "uv_cv": 0.0245401673801088
+      }
+    ]
+  },
+  {
+    "category": "curtains",
+    "path": "res://assets/models/curtains/curtain_tulle.glb",
+    "rel": "curtains/curtain_tulle.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.033842655063719,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 23040,
+        "uv_cv": 0.0958129796058495
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0337907336738753,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 212,
+        "uv_cv": 0.0245438605447019
+      }
+    ]
+  },
+  {
+    "category": "doors",
+    "path": "res://assets/models/doors/door_broken.glb",
+    "rel": "doors/door_broken.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.119386197679915,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 460,
+        "uv_cv": 0.167765324754863
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.145298590839505,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 388,
+        "uv_cv": 0.16337954009501
+      }
+    ]
+  },
+  {
+    "category": "doors",
+    "path": "res://assets/models/doors/door_flat.glb",
+    "rel": "doors/door_flat.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.123419403323576,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 524,
+        "uv_cv": 0.160744043859723
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.140299356045471,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 276,
+        "uv_cv": 0.140745956187324
+      }
+    ]
+  },
+  {
+    "category": "doors",
+    "path": "res://assets/models/doors/door_frame_only.glb",
+    "rel": "doors/door_frame_only.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0618702899815736,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 396,
+        "uv_cv": 0.176386094552721
+      }
+    ]
+  },
+  {
+    "category": "doors",
+    "path": "res://assets/models/doors/door_room.glb",
+    "rel": "doors/door_room.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.11728198940542,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 524,
+        "uv_cv": 0.160642981850915
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.144508726221113,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 388,
+        "uv_cv": 0.163335329429429
+      }
+    ]
+  },
+  {
+    "category": "fixtures",
+    "path": "res://assets/models/fixtures/bathtub.glb",
+    "rel": "fixtures/bathtub.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.12109470866975,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 216,
+        "uv_cv": 0.0000111984795696078
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.120945875870427,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 80,
+        "uv_cv": 0.0347539921512655
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.122680553653162,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 24,
+        "uv_cv": 0.0634610217324794
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.116799487379591,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 24,
+        "uv_cv": 0.0634584395001569
+      }
+    ]
+  },
+  {
+    "category": "fixtures",
+    "path": "res://assets/models/fixtures/kitchen_sink.glb",
+    "rel": "fixtures/kitchen_sink.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.119710705733097,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 224,
+        "uv_cv": 0.0000138292666884586
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.118800786271161,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 80,
+        "uv_cv": 0.0347479567674244
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.123222277026572,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 24,
+        "uv_cv": 0.0634576442890076
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.122314549478724,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 24,
+        "uv_cv": 0.0634537984392632
+      }
+    ]
+  },
+  {
+    "category": "fixtures",
+    "path": "res://assets/models/fixtures/stove.glb",
+    "rel": "fixtures/stove.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.119950790465609,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 260,
+        "uv_cv": 0.0000103321279057999
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.119942982554288,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 80,
+        "uv_cv": 0.00000891515011885751
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.116120325357565,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 24,
+        "uv_cv": 0.0634632034513871
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.117540090536264,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 24,
+        "uv_cv": 0.0634644349821206
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.118543531198741,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 24,
+        "uv_cv": 0.0634634949104234
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.118585924127939,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 24,
+        "uv_cv": 0.0634445790433297
+      }
+    ]
+  },
+  {
+    "category": "fixtures",
+    "path": "res://assets/models/fixtures/toilet.glb",
+    "rel": "fixtures/toilet.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.124001858511729,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 156,
+        "uv_cv": 0.0916718720838888
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.12220357352977,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 24,
+        "uv_cv": 0.00000232652449051222
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.11868180180942,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 24,
+        "uv_cv": 0.0634726757829994
+      }
+    ]
+  },
+  {
+    "category": "fixtures",
+    "path": "res://assets/models/fixtures/washbasin.glb",
+    "rel": "fixtures/washbasin.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.122056754251234,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 124,
+        "uv_cv": 0.00000915755339514337
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.118286631264677,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 80,
+        "uv_cv": 0.0347615750864352
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.120030371606901,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 24,
+        "uv_cv": 0.0634771859416634
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.119730162702146,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 24,
+        "uv_cv": 0.0634835350622968
+      }
+    ]
+  },
+  {
+    "category": "furniture",
+    "path": "res://assets/models/furniture/bed_double.glb",
+    "rel": "furniture/bed_double.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0523808291865923,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 1130,
+        "uv_cv": 0.0266061909416295
+      }
+    ]
+  },
+  {
+    "category": "furniture",
+    "path": "res://assets/models/furniture/bed_single.glb",
+    "rel": "furniture/bed_single.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0523808291865923,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 1130,
+        "uv_cv": 0.06697729245053
+      }
+    ]
+  },
+  {
+    "category": "furniture",
+    "path": "res://assets/models/furniture/ceiling_lamp.glb",
+    "rel": "furniture/ceiling_lamp.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0640598691878831,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 140,
+        "uv_cv": 0.0302043906715869
+      }
+    ]
+  },
+  {
+    "category": "furniture",
+    "path": "res://assets/models/furniture/door_frame.glb",
+    "rel": "furniture/door_frame.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0623611858003644,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 108,
+        "uv_cv": 0.00000325720787155358
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0585197746006794,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 48,
+        "uv_cv": 0.0448704951130115
+      }
+    ]
+  },
+  {
+    "category": "furniture",
+    "path": "res://assets/models/furniture/dresser.glb",
+    "rel": "furniture/dresser.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0530348492252325,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 72,
+        "uv_cv": 0.00000975474042803523
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0515834345289202,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 52,
+        "uv_cv": 0.00247966077611138
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0515584562379824,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 52,
+        "uv_cv": 0.00249280093212631
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0536545808287437,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 88,
+        "uv_cv": 0.00206303567100016
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0541012872246756,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 52,
+        "uv_cv": 0.00248753962649887
+      }
+    ]
+  },
+  {
+    "category": "furniture",
+    "path": "res://assets/models/furniture/fridge.glb",
+    "rel": "furniture/fridge.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.053856136953963,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 132,
+        "uv_cv": 0.0000017961795091677
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0549264988261576,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 56,
+        "uv_cv": 0.0000206963518119346
+      }
+    ]
+  },
+  {
+    "category": "furniture",
+    "path": "res://assets/models/furniture/kitchen_chair.glb",
+    "rel": "furniture/kitchen_chair.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0555835618402504,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 204,
+        "uv_cv": 0.00153797518377964
+      }
+    ]
+  },
+  {
+    "category": "furniture",
+    "path": "res://assets/models/furniture/kitchen_counter.glb",
+    "rel": "furniture/kitchen_counter.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0606980250840068,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 84,
+        "uv_cv": 0.00000381931707707681
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0601506983279943,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 32,
+        "uv_cv": 0.00138418716276724
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0598718079599822,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 32,
+        "uv_cv": 0.00138598154156354
+      }
+    ]
+  },
+  {
+    "category": "furniture",
+    "path": "res://assets/models/furniture/kitchen_table.glb",
+    "rel": "furniture/kitchen_table.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0545719112427702,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 388,
+        "uv_cv": 0.0628102307880142
+      }
+    ]
+  },
+  {
+    "category": "furniture",
+    "path": "res://assets/models/furniture/kitchen_upper.glb",
+    "rel": "furniture/kitchen_upper.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0594938953655542,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 72,
+        "uv_cv": 0.00000709999437944139
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0667772102357495,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 32,
+        "uv_cv": 0.00138481889347077
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0671593535259397,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 32,
+        "uv_cv": 0.00138605901893377
+      }
+    ]
+  },
+  {
+    "category": "furniture",
+    "path": "res://assets/models/furniture/nightstand.glb",
+    "rel": "furniture/nightstand.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0543074226916169,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 96,
+        "uv_cv": 0.00000788636914006355
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0554552786620705,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 32,
+        "uv_cv": 0.00275610563194286
+      }
+    ]
+  },
+  {
+    "category": "furniture",
+    "path": "res://assets/models/furniture/radiator.glb",
+    "rel": "furniture/radiator.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0617192513776825,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 272,
+        "uv_cv": 0.0266598514971678
+      }
+    ]
+  },
+  {
+    "category": "furniture",
+    "path": "res://assets/models/furniture/wardrobe.glb",
+    "rel": "furniture/wardrobe.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0602925253797929,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 96,
+        "uv_cv": 0.000221041762281481
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0606231021063667,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 32,
+        "uv_cv": 0.00137677097670794
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0605127377907718,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 32,
+        "uv_cv": 0.00137685066875159
+      }
+    ]
+  },
+  {
+    "category": "lift",
+    "path": "res://assets/models/lift/lift_cabin.glb",
+    "rel": "lift/lift_cabin.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0881520223396623,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 1300,
+        "uv_cv": 0.150971500869269
+      }
+    ]
+  },
+  {
+    "category": "lift",
+    "path": "res://assets/models/lift/lift_shaft.glb",
+    "rel": "lift/lift_shaft.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0895932286228704,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 220,
+        "uv_cv": 0.176549654063766
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0912283429138046,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 220,
+        "uv_cv": 0.176546355488401
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0933273604201794,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 484,
+        "uv_cv": 0.176515459707496
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0916964874594337,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 420,
+        "uv_cv": 0.133723229620477
+      }
+    ]
+  },
+  {
+    "category": "skirting",
+    "path": "res://assets/models/skirting/skirting_pvc.glb",
+    "rel": "skirting/skirting_pvc.glb",
+    "surfaces": [
+      {
+        "albedo": false,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": -1.0,
+        "tex_h": 0,
+        "tex_w": 0,
+        "tris": 38,
+        "uv_cv": 0.0219583119981275
+      }
+    ]
+  },
+  {
+    "category": "skirting",
+    "path": "res://assets/models/skirting/skirting_wood.glb",
+    "rel": "skirting/skirting_wood.glb",
+    "surfaces": [
+      {
+        "albedo": false,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": -1.0,
+        "tex_h": 0,
+        "tex_w": 0,
+        "tris": 38,
+        "uv_cv": 0.0728759222758768
+      }
+    ]
+  },
+  {
+    "category": "stairs",
+    "path": "res://assets/models/stairs/railing_flight.glb",
+    "rel": "stairs/railing_flight.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0447166099997006,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 516,
+        "uv_cv": 0.103406676716066
+      }
+    ]
+  },
+  {
+    "category": "stairs",
+    "path": "res://assets/models/stairs/railing_landing.glb",
+    "rel": "stairs/railing_landing.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.042192221218501,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 516,
+        "uv_cv": 0.117479878530114
+      }
+    ]
+  },
+  {
+    "category": "stairs",
+    "path": "res://assets/models/stairs/railing_post.glb",
+    "rel": "stairs/railing_post.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.047008401894566,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 132,
+        "uv_cv": 0.176267118248645
+      }
+    ]
+  },
+  {
+    "category": "windows",
+    "path": "res://assets/models/windows/balcony_door.glb",
+    "rel": "windows/balcony_door.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0876004300807457,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 632,
+        "uv_cv": 0.156999026219385
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0875775860645786,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 416,
+        "uv_cv": 0.166975157597444
+      },
+      {
+        "albedo": false,
+        "degenerate": 8,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": -1.0,
+        "tex_h": 0,
+        "tex_w": 0,
+        "tris": 44,
+        "uv_cv": 0.120540912509682
+      },
+      {
+        "albedo": false,
+        "degenerate": 8,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": -1.0,
+        "tex_h": 0,
+        "tex_w": 0,
+        "tris": 44,
+        "uv_cv": 0.120540548069528
+      }
+    ]
+  },
+  {
+    "category": "windows",
+    "path": "res://assets/models/windows/window_broken.glb",
+    "rel": "windows/window_broken.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0862677667564352,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 696,
+        "uv_cv": 0.152369585529669
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0864450639552768,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 328,
+        "uv_cv": 0.164008332149143
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0866982902735677,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 328,
+        "uv_cv": 0.163920925220949
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0846743603639207,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 328,
+        "uv_cv": 0.164005541011204
+      },
+      {
+        "albedo": false,
+        "degenerate": 8,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": -1.0,
+        "tex_h": 0,
+        "tex_w": 0,
+        "tris": 44,
+        "uv_cv": 0.120533655576449
+      },
+      {
+        "albedo": false,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": -1.0,
+        "tex_h": 0,
+        "tex_w": 0,
+        "tris": 104,
+        "uv_cv": 0.000249230704521275
+      },
+      {
+        "albedo": false,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": -1.0,
+        "tex_h": 0,
+        "tex_w": 0,
+        "tris": 88,
+        "uv_cv": 0.000188683441539013
+      }
+    ]
+  },
+  {
+    "category": "windows",
+    "path": "res://assets/models/windows/window_double.glb",
+    "rel": "windows/window_double.glb",
+    "surfaces": [
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.086683827982131,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 696,
+        "uv_cv": 0.152544750421227
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0863723041866523,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 328,
+        "uv_cv": 0.16422352380052
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0852652285057157,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 328,
+        "uv_cv": 0.164179217500518
+      },
+      {
+        "albedo": true,
+        "degenerate": 0,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": 0.0888218611348853,
+        "tex_h": 1024,
+        "tex_w": 1024,
+        "tris": 328,
+        "uv_cv": 0.164234697278411
+      },
+      {
+        "albedo": false,
+        "degenerate": 8,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": -1.0,
+        "tex_h": 0,
+        "tex_w": 0,
+        "tris": 44,
+        "uv_cv": 0.120540513984412
+      },
+      {
+        "albedo": false,
+        "degenerate": 8,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": -1.0,
+        "tex_h": 0,
+        "tex_w": 0,
+        "tris": 44,
+        "uv_cv": 0.120525893491658
+      },
+      {
+        "albedo": false,
+        "degenerate": 8,
+        "inconsistent_normals_pct": 0.0,
+        "sigma": -1.0,
+        "tex_h": 0,
+        "tex_w": 0,
+        "tris": 44,
+        "uv_cv": 0.120540247154623
+      }
+    ]
+  }
+]
