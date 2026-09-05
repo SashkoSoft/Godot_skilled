@@ -79,6 +79,7 @@ func _inspect_scene(path: String) -> Array[String]:
 
 	var total_tris := 0
 	var mats := {}
+	var no_albedo := 0
 	var aabb := AABB()
 	var first := true
 
@@ -95,6 +96,16 @@ func _inspect_scene(path: String) -> Array[String]:
 			var m := mi.get_active_material(s)
 			if m != null:
 				mats[m.resource_name if m.resource_name != "" else str(m)] = true
+				# glTF-материал может ссылаться на текстуру внешним uri —
+				# если файл рядом не скопирован (или .glb ждёт другое имя,
+				# чем реально сдано), albedo_texture молча становится null,
+				# без единой ошибки при импорте. Иначе это вскрывается
+				# только на интеграции в игру, а не на приёмке.
+				# glass-* — конвенция этого пайплайна: стекло сдаётся БЕЗ
+				# материала нарочно, принимающая сторона ставит свой шейдер.
+				if m is BaseMaterial3D and (m as BaseMaterial3D).albedo_texture == null \
+						and not String(mi.name).to_lower().begins_with("glass"):
+					no_albedo += 1
 		total_tris += mesh_tris
 		var box := mi.global_transform * mesh.get_aabb() if mi.is_inside_tree() else mesh.get_aabb()
 		if first:
@@ -112,6 +123,7 @@ func _inspect_scene(path: String) -> Array[String]:
 	print("  начало координат внутри габаритов: низ по Y = %.2f" % aabb.position.y)
 	print("  всего треугольников: %d" % total_tris)
 	print("  материалов: %d" % mats.size())
+	print("  поверхностей без albedo_texture: %d" % no_albedo)
 	print("  скелетов: %d" % skeletons)
 
 	for ap in anims:
@@ -119,6 +131,9 @@ func _inspect_scene(path: String) -> Array[String]:
 		print("  анимации (%s): %s" % [ap.name, ", ".join(list)])
 
 	# Проверки по ASSET_SPEC.md
+	if no_albedo > 0:
+		problems.append("%s: %d поверхностей без привязанной текстуры albedo — " % [path.get_file(), no_albedo] +
+				"проверьте images[].uri внутри .glb против реально сданных имён файлов")
 	var max_dim: float = maxf(aabb.size.x, maxf(aabb.size.y, aabb.size.z))
 	if max_dim > 200.0:
 		problems.append("%s: габарит %.1f м — похоже на сантиметры вместо метров" % [path.get_file(), max_dim])
