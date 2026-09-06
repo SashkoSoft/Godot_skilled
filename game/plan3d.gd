@@ -3341,6 +3341,33 @@ func _process(_d: float) -> void:
 	if _frames > 0:
 		return
 	await RenderingServer.frame_post_draw
+	# --probe-pixel=x,y — какой мировой точке на полу (--probe-y= меняет
+	# высоту плоскости, по умолчанию 0.04 — верх коробки пола, её центр на
+	# 0.02, высота 0.04) соответствует пиксель готового кадра. Через
+	# camera.project_ray_* — та же матрица проекции, что и у самого
+	# рендера, а не её ручная реконструкция (в ней легко ошибиться на
+	# уровне пары текселей, а разбор шва по текстуре именно такой точности
+	# и требует).
+	var probe_y := 0.04
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--probe-y="):
+			probe_y = float(a.substr(10))
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--probe-pixel="):
+			var nums := a.substr(14).split(",")
+			var cam := _find_cam()
+			if cam != null and nums.size() == 2:
+				# Пиксель задан в координатах ФИНАЛЬНОГО кадра (_size), а
+				# камера/вьюпорт рендерят в _size*_ss — масштабируем.
+				var px := nums[0].to_float() * float(_ss)
+				var py := nums[1].to_float() * float(_ss)
+				var ro := cam.project_ray_origin(Vector2(px, py))
+				var rd := cam.project_ray_normal(Vector2(px, py))
+				var t := (probe_y - ro.y) / rd.y
+				var wp := ro + rd * t
+				print("[probe] pixel=(%s,%s) world=(%.4f,%.4f,%.4f)"
+						% [nums[0], nums[1], wp.x, wp.y, wp.z])
+
 	var img := (_vp if _vp != null else get_viewport()).get_texture().get_image()
 	if _vp != null and _ss > 1:
 		img.resize(_size.x, _size.y, Image.INTERPOLATE_LANCZOS)
