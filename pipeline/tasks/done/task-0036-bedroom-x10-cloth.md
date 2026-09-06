@@ -3,12 +3,12 @@ id: task-0036
 title: Кровать: сетка одеяла x10 для настоящих складок
 assignee: houdini-assets
 type: model
-status: open
+status: done
 revision: 1
 priority: normal
 created: 2026-09-06
-started:
-finished:
+started: 2026-09-06
+finished: 2026-09-06
 ---
 
 # task-0036 — Кровать: сетка одеяла x10 для настоящих складок
