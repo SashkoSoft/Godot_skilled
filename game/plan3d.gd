@@ -2527,6 +2527,43 @@ func _camera() -> void:
 		_vp.add_child(cam)
 	else:
 		add_child(cam)
+	# --eye=x,z — камера внутри помещения на уровне глаз (1.65 м), смотрит в
+	# самую открытую сторону (тот же приём, что при спавне игрока, см.
+	# _ready_fly) — в отличие от --focus/--flat, не вписывает комнату
+	# целиком в кадр (для этого камера обязана уйти выше потолка и наружу
+	# стены — так внутренний кадр не снять), а стоит внутри неё. --look=deg
+	# переопределяет направление взгляда (0 = +Z, по часовой) вместо
+	# автоподбора самого открытого вида.
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--eye="):
+			var nums := a.substr(6).split(",")
+			if nums.size() == 2:
+				var ex := nums[0].to_float()
+				var ez := nums[1].to_float()
+				var look_deg := -999.0
+				for a2 in OS.get_cmdline_user_args():
+					if a2.begins_with("--look="):
+						look_deg = float(a2.substr(7))
+				var look_dir := Vector3.BACK
+				if look_deg > -998.0:
+					var yr := deg_to_rad(look_deg)
+					look_dir = Vector3(sin(yr), 0.0, cos(yr))
+				else:
+					var best_clear := -1.0
+					for dir_ in [Vector3(0, 0, 1), Vector3(0, 0, -1),
+							Vector3(1, 0, 0), Vector3(-1, 0, 0)]:
+						var t := 0.05
+						while t < 6.0:
+							if _kind_at(ex + dir_.x * t, ez + dir_.z * t) == "":
+								break
+							t += 0.1
+						if t > best_clear:
+							best_clear = t
+							look_dir = dir_
+				cam.global_position = Vector3(ex, 1.65, ez)
+				cam.look_at(cam.global_position + look_dir, Vector3.UP)
+				return
+
 	# --focus=x0,z0,x1,z1 — тот же кадр, что и --flat, но границы заданы явно:
 	# для проверки одной детали (декаль, шов, стык) вблизи, без подгонки под
 	# всю квартиру.
