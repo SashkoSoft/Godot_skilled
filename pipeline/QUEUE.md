@@ -28,7 +28,7 @@
 | task-0019 | Бумага на стенах: плакаты, календарь, обрывки | **comfyui** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
 | task-0020 | Звук пустой квартиры: шаги, двери, гул | **comfyui** | audio | v1 | accepted | done/ | 2026-08-31 | 2026-09-03 |
 | task-0021 | Обои: четыре разных рисунка на выбор | **houdini-assets** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
-| task-0022 | Полы: паркет ёлочкой и второй линолеум | **houdini-assets** | texture | v3 | done | done/ | 2026-08-31 | 2026-09-06 |
+| task-0022 | Полы: паркет ёлочкой и второй линолеум | **houdini-assets** | texture | v3 | accepted | done/ | 2026-08-31 | 2026-09-06 |
 | task-0023 | Краска кухни и прихожей: убавить выбоины, два состояния | **houdini-assets** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
 | task-0024 | Балконная дверь под проём 1.13 | **houdini-assets** | model | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
 | task-0025 | Плитка пола санузла и фартук кухни | **houdini-assets** | texture | v2 | accepted | done/ | 2026-08-31 | 2026-08-31 |
