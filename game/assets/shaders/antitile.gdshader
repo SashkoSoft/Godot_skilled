@@ -20,7 +20,13 @@ render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley,
 uniform sampler2D tex_albedo : source_color, filter_linear_mipmap_anisotropic;
 uniform sampler2D tex_normal : hint_normal, filter_linear_mipmap_anisotropic;
 uniform sampler2D tex_orm : hint_default_white, filter_linear_mipmap_anisotropic;
-uniform sampler2D tex_id : hint_default_black, filter_linear_mipmap_anisotropic;
+// Карта id — дискретные подписи планок (в floor-parquet-2 их всего 144
+// разных значения на всю текстуру), не непрерывные данные. Линейная или
+// анизотропная фильтрация усредняет соседние подписи на границе планок и
+// особенно на дальних мипах — получается число, которого нет ни у одной
+// настоящей планки, и она читается расколотой на мелкие пятна другого
+// оттенка. Только nearest: одна планка — один целый номер, без смешивания.
+uniform sampler2D tex_id : hint_default_black, filter_nearest;
 // Маска шва: белое — шов, чёрное — плитка (task-0033). Если карты нет у
 // набора, sampler по умолчанию чёрный — use_seam остаётся выключенным, и
 // ветка ниже не заходит ни разу.
@@ -85,16 +91,36 @@ varying vec3 world_pos;
 varying vec3 world_nrm;
 
 
-// Дублировать треугольную сетку на каждый канал незачем: у альбедо, нормали,
-// ORM и id один и тот же uv, значит и решётка, и веса смешивания общие.
-// Раньше sample_stochastic пересчитывала её самостоятельно на каждый вызов —
-// до четырёх раз за фрагмент с одинаковым результатом.
+// Дублировать треугольную сетку на каждый канал незачем: у альбедо, нормали
+// и ORM один и тот же uv, значит и решётка, и веса смешивания общие. Карта
+// id сюда не входит — ниже отдельная функция, не generic: Godot требует от
+// всех сэмплеров, переданных в один generic-параметр, ОДИНАКОВЫЙ filter/repeat,
+// а id обязан быть nearest (дискретные подписи планок), тогда как остальные —
+// linear_mipmap_anisotropic. Раньше sample_stochastic пересчитывала решётку
+// самостоятельно на каждый вызов — до четырёх раз за фрагмент с одинаковым
+// результатом.
 vec4 blend3(sampler2D t, vec2 uv, vec2 ddx, vec2 ddy,
 		vec2 o1, vec2 o2, vec2 o3, vec3 p) {
 	vec4 c1 = textureGrad(t, uv + o1, ddx, ddy);
 	vec4 c2 = textureGrad(t, uv + o2, ddx, ddy);
 	vec4 c3 = textureGrad(t, uv + o3, ddx, ddy);
 	return c1 * p.x + c2 * p.y + c3 * p.z;
+}
+
+
+// id не блендить: три сдвинутые копии несут РАЗНЫЕ номера планок, и их
+// смесь — не номер ни одной из них, а случайное число где-то между.
+// Берём офсет той копии, у которой вес решётки больше всех — там же, где
+// на глаз читается именно она, — и сэмплим nearest, без интерполяции внутри
+// планки и без мипов между планками.
+float sample_id(vec2 uv, vec2 ddx, vec2 ddy, vec2 o1, vec2 o2, vec2 o3, vec3 p) {
+	vec2 o = o1;
+	if (p.y > p.x && p.y > p.z) {
+		o = o2;
+	} else if (p.z > p.x && p.z > p.y) {
+		o = o3;
+	}
+	return textureGrad(tex_id, uv + o, ddx, ddy).r;
 }
 
 
@@ -234,7 +260,7 @@ void fragment() {
 	// своя окраска каждой паркетине — та же решётка, что у альбедо выше
 	if (use_id) {
 		float id = use_stochastic
-				? blend3(tex_id, uv, ddx, ddy, o1, o2, o3, p).r
+				? sample_id(uv, ddx, ddy, o1, o2, o3, p)
 				: textureGrad(tex_id, uv, ddx, ddy).r;
 		float h = hash1(floor(id * 255.0) + 0.5);
 		col *= 1.0 + (h - 0.5) * 2.0 * id_value;
