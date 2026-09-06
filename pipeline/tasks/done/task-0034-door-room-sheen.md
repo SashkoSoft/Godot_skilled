@@ -3,12 +3,12 @@ id: task-0034
 title: Дверь room: полотно бликует металлом/стеклом
 assignee: houdini-assets
 type: model
-status: in_progress
+status: done
 revision: 1
 priority: normal
 created: 2026-09-01
 started: 2026-09-06
-finished:
+finished: 2026-09-06
 ---
 
 # task-0034 — Дверь room: полотно бликует металлом/стеклом
