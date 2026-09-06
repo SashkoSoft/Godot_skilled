@@ -863,9 +863,15 @@ func _build() -> void:
 		# поперёк, и доски выглядят пересекающимися. Повторяемость снимается
 		# макро-вариацией и картой id, а сетку тайла у диагонального рисунка
 		# глаз и так не ловит.
+		# mono_scale_m увеличен против дефолта (2.6 м): при обычном шаге
+		# резкая граница пятна выцветания проходила посреди отдельной
+		# планки ёлочки — одна и та же доска читалась разбитой на две
+		# половины разного тона, будто это два разных куска паркета.
+		# На дистанции с комнату (~9 м) с той же кромкой (mono_sharp)
+		# граница уходит за пределы кадра почти всегда.
 		m_herring = _tex_st("floor-parquet-2", "floor_parquet_2",
 				_tile_m("floor-parquet-2", 1.70) * 1.35, wood, 0.13, 0, 0.85,
-				1.0, Color(0.5, 0.5, 0.5), false, 0.65, wear_zhilaya, 0.12, 0.5)
+				1.0, Color(0.5, 0.5, 0.5), false, 0.65, wear_zhilaya, 0.12, 0.5, 9.0)
 	for room in _plan["rooms"]:
 		var mk: Material = m_kind.get(room["kind"], m_floor)
 		for r in room["rects"]:
@@ -1956,7 +1962,8 @@ func _tex_st(dir_: String, base: String, tile_m: float,
 		snap := 0, rough_mul := 1.0, contrast := 1.0,
 		base_col := Color(0.5, 0.5, 0.5), stoch := true,
 		mono := 0.0, wear_pts: Array = [],
-		wear_strength := 0.0, wear_radius := 1.0) -> ShaderMaterial:
+		wear_strength := 0.0, wear_radius := 1.0,
+		mono_scale_m := 2.6) -> ShaderMaterial:
 	if _antitile_shader == null:
 		_antitile_shader = load(ANTITILE)
 	var root := "res://assets/textures/%s/%s" % [dir_, base]
@@ -1982,6 +1989,7 @@ func _tex_st(dir_: String, base: String, tile_m: float,
 	m.set_shader_parameter("use_stochastic", stoch)
 	m.set_shader_parameter("contrast", contrast)
 	m.set_shader_parameter("mono_patch", mono)
+	m.set_shader_parameter("mono_scale_m", mono_scale_m)
 	m.set_shader_parameter("base_col", base_col)
 	# Маска шва (task-0033): если исполнитель уже прислал <набор>_seam_1k.png —
 	# включаем сами, без правки вызовов на местах.
