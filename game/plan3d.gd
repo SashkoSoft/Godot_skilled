@@ -2486,10 +2486,11 @@ func _show_lights() -> void:
 		var mi := MeshInstance3D.new()
 		mi.mesh = mesh
 		var m := StandardMaterial3D.new()
-		m.albedo_color = l.light_color
-		m.emission_enabled = true
-		m.emission = l.light_color
-		m.emission_energy_multiplier = 8.0
+		# Unshaded выводит ТОЛЬКО albedo — emission у него не считается вовсе
+		# (по документации BaseMaterial3D), поэтому HDR-яркость для glow даём
+		# самим albedo: Color допускает компоненты больше 1.0, и через
+		# unshaded это доходит до кадра как есть, без клампа.
+		m.albedo_color = l.light_color * 8.0
 		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		mi.material_override = m
 		mi.position = l.position
