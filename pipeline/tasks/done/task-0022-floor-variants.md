@@ -3,12 +3,12 @@ id: task-0022
 title: Полы: паркет ёлочкой и второй линолеум
 assignee: houdini-assets
 type: texture
-status: open
+status: done
 revision: 3
 priority: high
 created: 2026-08-31
-started: 2026-08-31
-finished: 2026-08-31
+started: 2026-09-06
+finished: 2026-09-06
 ---
 
 # task-0022 — Полы: паркет ёлочкой и второй линолеум
