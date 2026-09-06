@@ -147,6 +147,10 @@ func _ready() -> void:
 	_setup_audio()
 	if OS.get_cmdline_user_args().has("--hall"):
 		_hall_report()
+	if OS.get_cmdline_user_args().has("--check-lights"):
+		_check_lights()
+		get_tree().quit()
+		return
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--spot="):
 			var nums := a.substr(7).split(",")
@@ -1549,6 +1553,35 @@ func _footprint(path: String, body_only: bool) -> Vector2:
 	return fp
 
 
+static var _bottom_cache: Dictionary = {}
+
+## Низ AABB модели (обычно отрицательный при пивоте сверху, как у висящих
+## под потолком светильников) — измеренное число вместо переписанной от
+## руки константы. Раньше свет вешался на h - 0.559, где 0.559 — разовый
+## замер --probe, скопированный в код; если модель поменяется, число молча
+## устареет и никто не заметит, пока кто-то не пожалуется, что лампочка
+## светит не оттуда.
+func _asset_bottom(path: String) -> float:
+	if _bottom_cache.has(path):
+		return _bottom_cache[path]
+	var bottom := 0.0
+	if ResourceLoader.exists(path):
+		var node: Node3D = (load(path) as PackedScene).instantiate()
+		add_child(node)
+		var whole := AABB()
+		var first := true
+		for mi in node.find_children("*", "MeshInstance3D", true, false):
+			var m := mi as MeshInstance3D
+			var a: AABB = m.global_transform * m.get_aabb()
+			whole = a if first else whole.merge(a)
+			first = false
+		if not first:
+			bottom = whole.position.y
+		node.queue_free()
+	_bottom_cache[path] = bottom
+	return bottom
+
+
 ## Ставит модель к одной из четырёх стен помещения — задом (узлы door*/
 ## drawer* не в счёт), лицом в комнату, конвенция «низ в нуле, лицо в −Z»
 ## для всех принятых моделей. Сама измеряет модель и сама сканирует стену
@@ -1644,6 +1677,7 @@ func _furniture() -> void:
 					Vector3((float(r[0]) + float(r[2])) * 0.5, h,
 							(float(r[1]) + float(r[3])) * 0.5), 0.0)
 			if lamp_node != null:
+				lamp_node.set_meta("is_ceiling_lamp_visual", true)
 				# Патрон висит ниже источника и закрывал его собой: по полу шёл
 				# тёмный круг во всю комнату. Голая лампочка такой тени не даёт.
 				for c in lamp_node.find_children("*", "MeshInstance3D", true, false):
@@ -2431,12 +2465,16 @@ func _room_lights() -> void:
 			if w < 0.5 or d < 0.5:
 				continue
 			var lamp := OmniLight3D.new()
-			# На уровне самой лампочки — низ патрона (замерено --probe: пивот
-			# модели у потолка, низ на 0.559 ниже). Источник света и видимый
-			# шарик (_show_lights) должны совпадать с настоящим плафоном, а не
-			# висеть отдельно от него.
-			lamp.position = Vector3((float(r[0]) + float(r[2])) * 0.5, h - 0.559,
+			# На уровне самой лампочки — низ измерен по реальной модели, не
+			# переписан от руки: если ceiling_lamp.glb поменяют, число само
+			# подтянется, а не устареет молча. Источник света и видимый
+			# патрон должны совпадать, а не висеть отдельно друг от друга —
+			# проверяется --check-lights.
+			lamp.position = Vector3((float(r[0]) + float(r[2])) * 0.5,
+					h + _asset_bottom(FURN + "ceiling_lamp.glb"),
 					(float(r[1]) + float(r[3])) * 0.5)
+			lamp.set_meta("is_room_lamp", true)
+			lamp.set_meta("room_kind", String(room["kind"]))
 			lamp.light_color = col
 			# Яркость по площади: одна и та же лампа в комнате 3 x 5 читается
 			# ровно, а в уборной 0.7 x 1.6 выбивает стены в белое. Опорная
@@ -3057,6 +3095,66 @@ func _spot_debug(rect: Array) -> void:
 			var box := mi.global_transform * mi.get_aabb()
 			if box.position.x < rect[2] and box.end.x > rect[0] 					and box.position.z < rect[3] and box.end.z > rect[1]:
 				print("[spot] %s box %v..%v" % [c.name, box.position, box.end])
+
+
+## Числом, не на глаз: каждый источник света комнатной лампы (OmniLight3D,
+## помечен is_room_lamp в _room_lights) должен стоять там же, где висит
+## настоящий патрон (ceiling_lamp.glb, помечен is_ceiling_lamp_visual в
+## _furniture) — и по XZ (та же комната), и по Y (низ патрона). Раньше
+## расхождение обнаруживалось только когда кто-то смотрел на кадр и видел
+## лампочку в воздухе отдельно от патрона; здесь — сразу число.
+## --check-lights, headless-safe (без --shot, только позиции после сборки).
+func _check_lights() -> void:
+	var lamps: Array[Node3D] = []
+	var visuals: Array[Node3D] = []
+	for n in get_children():
+		if n is Node3D:
+			if n.has_meta("is_room_lamp"):
+				lamps.append(n)
+			if n.has_meta("is_ceiling_lamp_visual"):
+				visuals.append(n)
+	# Лоджия — намеренное исключение: _furniture() сам её пропускает при
+	# расстановке патронов (балкон без потолочного светильника, только
+	# холодный «дневной» источник), поэтому здесь она не в счёт, а не «мимо».
+	var checkable: Array[Node3D] = []
+	var loggia := 0
+	for lamp in lamps:
+		if String(lamp.get_meta("room_kind", "")) == "лоджия":
+			loggia += 1
+		else:
+			checkable.append(lamp)
+	print(("[check-lights] источников=%d (из них лоджия без патрона по " +
+			"замыслу=%d) патронов=%d") % [lamps.size(), loggia, visuals.size()])
+	if checkable.size() != visuals.size():
+		print("  ВНИМАНИЕ: числа не совпадают — где-то лампа без патрона " +
+				"или патрон без лампы (без учёта лоджии)")
+
+	var expected_bottom := _asset_bottom(FURN + "ceiling_lamp.glb")
+	var bad := 0
+	const TOL := 0.03
+	for lamp in checkable:
+		var best: Node3D = null
+		var best_xz := 1e9
+		for v in visuals:
+			var dx := lamp.global_position.x - v.global_position.x
+			var dz := lamp.global_position.z - v.global_position.z
+			var d := sqrt(dx * dx + dz * dz)
+			if d < best_xz:
+				best_xz = d
+				best = v
+		if best == null:
+			print("  свет %s — нет ни одного патрона в сцене вообще" % lamp.global_position)
+			bad += 1
+			continue
+		var expected_y := best.global_position.y + expected_bottom
+		var y_diff := absf(lamp.global_position.y - expected_y)
+		var ok := best_xz < TOL and y_diff < TOL
+		print(("  свет %s -> ближайший патрон %s: смещение_XZ=%.4f " +
+				"смещение_Y=%.4f %s") % [lamp.global_position, best.global_position,
+						best_xz, y_diff, ("OK" if ok else "МИМО")])
+		if not ok:
+			bad += 1
+	print("[check-lights] несовпадений: %d из %d (без лоджии)" % [bad, checkable.size()])
 
 
 func _hall_report() -> void:
