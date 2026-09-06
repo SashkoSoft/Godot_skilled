@@ -151,6 +151,10 @@ func _ready() -> void:
 		_check_lights()
 		get_tree().quit()
 		return
+	if OS.get_cmdline_user_args().has("--list-doors"):
+		_list_doors(self)
+		get_tree().quit()
+		return
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--spot="):
 			var nums := a.substr(7).split(",")
@@ -3121,6 +3125,19 @@ func _spot_debug(rect: Array) -> void:
 ## расхождение обнаруживалось только когда кто-то смотрел на кадр и видел
 ## лампочку в воздухе отдельно от патрона; здесь — сразу число.
 ## --check-lights, headless-safe (без --shot, только позиции после сборки).
+## Диагностика task-0034: список всех распахнутых door_room.glb (полотно
+## `leaf`) со сцены — координаты нужны, чтобы прицельно снять кадр дефекта,
+## а не гадать focus-боксом по всей квартире.
+func _list_doors(root: Node) -> void:
+	for n in root.get_children():
+		if n is Node3D and n.has_meta("opening") and n.scene_file_path.ends_with("door_room.glb"):
+			var leaf := n.find_child("leaf", true, false) as Node3D
+			var leaf_deg := rad_to_deg(leaf.rotation.y) if leaf != null else 0.0
+			print("[door] pos=(%.2f,%.2f) rot_y=%.1f leaf_rot=%.1f"
+					% [n.position.x, n.position.z, rad_to_deg(n.rotation.y), leaf_deg])
+		_list_doors(n)
+
+
 func _check_lights() -> void:
 	var lamps: Array[Node3D] = []
 	var visuals: Array[Node3D] = []
