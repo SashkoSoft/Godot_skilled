@@ -13,7 +13,7 @@
 | task-0006 — Оконные и балконные блоки | accepted | 6/6 | 3/6 |  |
 | task-0007 — Перила и ограждения лестницы | accepted | 6/6 | 0/6 |  |
 | task-0008 — Двери лифта и обрамление шахты | accepted | 5/5 | 2/5 |  |
-| task-0011 — Зелень: плети, мох, трава | accepted | 0/12 | 0/12 | grass_patch_1_albedo_1k.png, grass_patch_1_normal_1k.png, grass_patch_2_albedo_1k.png, grass_patch_2_normal_1k.png, moss_corner_albedo_1k.png, moss_corner_normal_1k.png, moss_edge_albedo_1k.png, moss_edge_normal_1k.png, vine_wall_1_albedo_1k.png, vine_wall_1_normal_1k.png, vine_wall_2_albedo_1k.png, vine_wall_2_normal_1k.png |
+| task-0011 — Зелень: плети, мох, трава | accepted | 12/12 | 0/12 |  |
 | task-0012 — Сантехника и кухонная плита | accepted | 8/8 | 5/8 |  |
 | task-0014 — Материалы квартиры: полы, стены, потолок, плитка | accepted | 18/18 | 0/18 |  |
 | task-0015 — Мебель квартиры: кухня, шкафы, батареи | accepted | 9/9 | 6/9 |  |
@@ -33,12 +33,16 @@
 | task-0029 — Кровать, тумбочка, комод для жилых комнат | accepted | 7/7 | 4/7 |  |
 | task-0030 — Обеденный стол и стулья, холодильник | accepted | 6/6 | 3/6 |  |
 | task-0031 — Плинтус вдоль пола во всех помещениях | accepted | 5/5 | 2/5 |  |
+| task-0032 — Абажуры и битые плафоны для потолочных ламп | done | 0/6 | 0/6 | lampshades_albedo_512.png, lampshades_normal_512.png, lampshades_orm_512.png, shade_broken.glb, shade_fabric.glb, shade_glass.glb |
 | task-0033 — Плитка — маска шва для процедурного нойза | accepted | 3/3 | 0/3 |  |
+| task-0034 — Дверь room: полотно бликует металлом/стеклом | done | 0/2 | 0/2 | sheen_14deg.png, sheen_55deg.png |
+| task-0036 — Кровать: сетка одеяла x10 для настоящих складок | accepted | 7/7 | 4/7 |  |
 
 ## Не полностью в игре
 
 - **task-0002** — Бетонная панель: стены и перекрытия: скопировано 9/12, не хватает: concrete_facade_height_2k.png, wall_paint_height_2k.png, wall_paint_worn_height_2k.png
 - **task-0003** — Плитка и бетон лестничной клетки: скопировано 9/12, не хватает: landing_floor_height_2k.png, stair_tread_height_2k.png, stair_wall_height_2k.png
-- **task-0011** — Зелень: плети, мох, трава: скопировано 0/12, не хватает: grass_patch_1_albedo_1k.png, grass_patch_1_normal_1k.png, grass_patch_2_albedo_1k.png, grass_patch_2_normal_1k.png, moss_corner_albedo_1k.png, moss_corner_normal_1k.png, moss_edge_albedo_1k.png, moss_edge_normal_1k.png, vine_wall_1_albedo_1k.png, vine_wall_1_normal_1k.png, vine_wall_2_albedo_1k.png, vine_wall_2_normal_1k.png
 - **task-0017** — Остекление лоджии: парапет и переплёт: скопировано 0/6, не хватает: loggia_albedo_1k.png, loggia_frame_section.glb, loggia_frame_vent.glb, loggia_normal_1k.png, loggia_orm_1k.png, loggia_parapet.glb
 - **task-0024** — Балконная дверь под проём 1.13: скопировано 0/5, не хватает: balcony_door_narrow.glb, balcony_door_narrow_albedo_1k.png, balcony_door_narrow_broken.glb, balcony_door_narrow_normal_1k.png, balcony_door_narrow_orm_1k.png
+- **task-0032** — Абажуры и битые плафоны для потолочных ламп: скопировано 0/6, не хватает: lampshades_albedo_512.png, lampshades_normal_512.png, lampshades_orm_512.png, shade_broken.glb, shade_fabric.glb, shade_glass.glb
+- **task-0034** — Дверь room: полотно бликует металлом/стеклом: скопировано 0/2, не хватает: sheen_14deg.png, sheen_55deg.png

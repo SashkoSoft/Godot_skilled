@@ -12,12 +12,6 @@
     "missing": "landing_floor_height_2k.png, stair_tread_height_2k.png, stair_wall_height_2k.png"
   },
   {
-    "task": "task-0011",
-    "title": "Зелень: плети, мох, трава",
-    "copied": "0/12",
-    "missing": "grass_patch_1_albedo_1k.png, grass_patch_1_normal_1k.png, grass_patch_2_albedo_1k.png, grass_patch_2_normal_1k.png, moss_corner_albedo_1k.png, moss_corner_normal_1k.png, moss_edge_albedo_1k.png, moss_edge_normal_1k.png, vine_wall_1_albedo_1k.png, vine_wall_1_normal_1k.png, vine_wall_2_albedo_1k.png, vine_wall_2_normal_1k.png"
-  },
-  {
     "task": "task-0017",
     "title": "Остекление лоджии: парапет и переплёт",
     "copied": "0/6",
@@ -28,5 +22,17 @@
     "title": "Балконная дверь под проём 1.13",
     "copied": "0/5",
     "missing": "balcony_door_narrow.glb, balcony_door_narrow_albedo_1k.png, balcony_door_narrow_broken.glb, balcony_door_narrow_normal_1k.png, balcony_door_narrow_orm_1k.png"
+  },
+  {
+    "task": "task-0032",
+    "title": "Абажуры и битые плафоны для потолочных ламп",
+    "copied": "0/6",
+    "missing": "lampshades_albedo_512.png, lampshades_normal_512.png, lampshades_orm_512.png, shade_broken.glb, shade_fabric.glb, shade_glass.glb"
+  },
+  {
+    "task": "task-0034",
+    "title": "Дверь room: полотно бликует металлом/стеклом",
+    "copied": "0/2",
+    "missing": "sheen_14deg.png, sheen_55deg.png"
   }
 ]

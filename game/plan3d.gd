@@ -1310,6 +1310,19 @@ const DECAL_M := {
 	"furniture_ghost": [1.00, 1.80, "512"],
 	"paper_peel": [0.60, 0.90, "512"],
 	"debris_floor": [0.80, 0.40, "512"],
+	# Зелень (task-0011). Ключ со слешем = подпапка: путь собирается тем же
+	# способом, отдельной ветки в _decal под неё не нужно.
+	# Метры взяты из текста задания, размер картинки им не равен — исполнитель
+	# отдавал степени двойки: vine_wall 1024x1024 под 2 x 2.8 (листва натянется
+	# примерно на 40 %), moss_edge 1024x256 = 2 x 0.5, а не 2 x 0.4.
+	# Ставим по метрам задания, потому что проекция меряется в мире, а не в
+	# пикселях; замечание про натяжение — в «Правки» задачи.
+	"overgrowth/vine_wall_1": [2.00, 2.80, "1k"],
+	"overgrowth/vine_wall_2": [2.00, 2.80, "1k"],
+	"overgrowth/moss_corner": [1.00, 1.00, "1k"],
+	"overgrowth/moss_edge": [2.00, 0.50, "1k"],
+	"overgrowth/grass_patch_1": [2.00, 2.00, "1k"],
+	"overgrowth/grass_patch_2": [2.00, 2.00, "1k"],
 }
 
 
@@ -1338,12 +1351,24 @@ func _decal(kind: String, pos: Vector3, normal: Vector3, scale_: float = 1.0,
 	# а не наклейка.
 	d.upper_fade = 1.2
 	d.lower_fade = 1.2
-	var yv := -normal.normalized()
+	# Decal проецирует вдоль своего локального −Y, поэтому +Y обязан смотреть
+	# НА поверхность, то есть совпадать с её нормалью. Здесь был минус — ось
+	# уходила в другую сторону, и normal_fade (0.4) гасил декаль целиком:
+	# поверхность была отвёрнута от проектора ровно на 180°. Из-за этого ни
+	# одна настенная декаль износа (task-0018) в игре не рисовалась, а пол
+	# рисовался только потому, что вызовы для пола передавали нормаль уже
+	# перевёрнутой — и два минуса гасили друг друга.
+	# Проверено заменой знака: трава на полу лоджии появляется и исчезает
+	# ровно по нему, больше в кадре ничего не меняется.
+	var yv := normal.normalized()
 	var xv := Vector3.UP.cross(yv)
 	if xv.length() < 0.01:
 		xv = Vector3.RIGHT
 	xv = xv.normalized()
-	var zv := yv.cross(xv).normalized()
+	# Decal разворачивает текстуру так, что верх картинки уходит в сторону
+	# локального −Z (V растёт вниз по изображению), поэтому чтобы «верх
+	# картинки» смотрел в мировой верх, локальный Z обязан смотреть ВНИЗ.
+	var zv := -yv.cross(xv).normalized()
 	# Одна и та же декаль в двух местах не должна читаться копией. Пятну на
 	# полу и на потолке можно крутить как угодно, потёку и плесени — нет:
 	# у них есть верх. Поэтому на стенах только зеркалю и слегка меняю размер,
@@ -1357,10 +1382,19 @@ func _decal(kind: String, pos: Vector3, normal: Vector3, scale_: float = 1.0,
 	elif absf(normal.y) > 0.5:
 		b = b.rotated(yv, r1 * TAU)
 	elif r1 < 0.5:
-		b = Basis(-xv, yv, -zv)          # зеркально, верх на месте
+		# Только по горизонтали: было Basis(-xv, yv, -zv), а это не зеркало,
+		# а поворот на 180° вокруг нормали — на стене он ставит картинку вверх
+		# ногами. У потёка, плесени и плети есть верх, и половина настенных
+		# декалей висела перевёрнутой: плеть вьюна росла сверху вниз вместо
+		# того, чтобы лезть от пола вверх.
+		b = Basis(-xv, yv, zv)
 	d.transform = Transform3D(b, pos)
 	d.size *= 1.0 + (r2 - 0.5) * 0.24
 	add_child(d)
+	if OS.get_cmdline_user_args().has("--decal-report"):
+		print("[decal] %s pos=%.2f,%.2f,%.2f size=%.2f,%.2f,%.2f n=%.0f,%.0f,%.0f" % [
+				kind, pos.x, pos.y, pos.z, d.size.x, d.size.y, d.size.z,
+				normal.x, normal.y, normal.z])
 
 
 # --- предметы: сантехника, шторы, мебель ------------------------------------
@@ -1843,7 +1877,8 @@ func _paper_decal(kind: String, pos: Vector3, normal: Vector3) -> void:
 	d.albedo_mix = 0.62 if kind == "furniture_ghost" else 0.8
 	d.upper_fade = 2.2
 	d.lower_fade = 2.2
-	var yv := -normal.normalized()
+	# знак оси проекции — см. _decal: +Y смотрит на поверхность
+	var yv := normal.normalized()
 	var xv := Vector3.UP.cross(yv)
 	if xv.length() < 0.01:
 		xv = Vector3.RIGHT
@@ -1920,12 +1955,121 @@ func _decals() -> void:
 					_decal("paper_peel", Vector3(x0 + w * 0.35, lintel - 0.35,
 							z1 - 0.02), Vector3(0, 0, -1), 1.0)
 					_decal("debris_floor", Vector3(x0 + w * 0.7, 0.05,
-							z1 - 0.28), Vector3(0, -1, 0), 1.0)
+							z1 - 0.28), Vector3(0, 1, 0), 1.0)
 				"кухня":
 					_decal("leak_wall", Vector3(x0 + 0.02, lintel - 0.75,
 							z0 + dp * 0.5), Vector3(1, 0, 0), 0.9)
 					_decal("debris_floor", Vector3(x0 + w * 0.5, 0.05,
-							z1 - 0.25), Vector3(0, -1, 0), 1.0)
+							z1 - 0.25), Vector3(0, 1, 0), 1.0)
+	_overgrowth()
+
+
+## Зелень (task-0011) — только на лоджии. Внутри квартиры её нет намеренно:
+## там работают плесень и потёки из task-0018, это решение записано в задании.
+## Лоджия наполовину улица: парапет мокнет, штукатурка сыплется, растение
+## заходит в дом именно отсюда — и она же постоянно в кадре, видна и с фасада,
+## и из комнаты через балконный блок.
+##
+## Сторона с парапетом вычисляется по самому разбору — ищется прямоугольник
+## из `parapets`, у которого общее ребро с лоджией. Захардкоженный «зелень
+## слева» работал бы только на одной квартире из двух: половины плана зеркальны
+## относительно z = 0, и у верхней лоджия смотрит в другую сторону.
+func _overgrowth() -> void:
+	for room in _plan["rooms"]:
+		if String(room["kind"]) != "лоджия":
+			continue
+		for r in room["rects"]:
+			var x0: float = float(r[0])
+			var z0: float = float(r[1])
+			var x1: float = float(r[2])
+			var z1: float = float(r[3])
+			var side := _parapet_side(x0, z0, x1, z1)
+			if side.is_empty():
+				continue
+			var n: Vector3 = side[0]              # внутрь лоджии от парапета
+			var face: float = side[1]             # координата грани парапета
+			# парапет тянется вдоль Z, если его нормаль смотрит вдоль X
+			var along_z: bool = absf(n.x) > 0.5
+			var axis := Vector3(0, 0, 1) if along_z else Vector3(1, 0, 0)
+			var lo := z0 if along_z else x0
+			var hi := z1 if along_z else x1
+			var d_lo := x0 if along_z else z0
+			var d_hi := x1 if along_z else z1
+			var run := hi - lo
+			var depth := d_hi - d_lo
+			if run < 1.2 or depth < 0.6:
+				continue
+
+			# Мох полосой по низу парапета. Кусков столько, чтобы каждый шёл
+			# примерно в свой натуральный размер (2 м): растягивать один на всю
+			# длину нельзя — трава станет вдвое крупнее травы на полу рядом.
+			var n_edge := maxi(1, int(round(run / 2.0)))
+			var step := run / float(n_edge)
+			for i in n_edge:
+				_decal("overgrowth/moss_edge",
+						_loggia_pos(along_z, face, lo + (i + 0.5) * step, 0.26,
+								0.02, n),
+						n, step * 0.5)
+			# Углы у торцов — там дольше всего стоит вода
+			_decal("overgrowth/moss_corner",
+					_loggia_pos(along_z, face, lo + 0.55, 0.45, 0.02, n), n, 0.85)
+			_decal("overgrowth/moss_corner",
+					_loggia_pos(along_z, face, hi - 0.55, 0.40, 0.02, n), n, 0.75)
+
+			# Трава сквозь пол: ближе к парапету, куда задувает дождь
+			_decal("overgrowth/grass_patch_1",
+					_loggia_pos(along_z, face, lo + run * 0.30, 0.02,
+							depth * 0.32, n),
+					Vector3(0, 1, 0), 0.55)
+			_decal("overgrowth/grass_patch_2",
+					_loggia_pos(along_z, face, lo + run * 0.72, 0.02,
+							depth * 0.40, n),
+					Vector3(0, 1, 0), 0.50)
+
+			# Плети по торцевым стенам. Масштаб 0.62 — не вкус: плеть сдана под
+			# 2 м ширины, а торец лоджии 1.31 м, и в натуральную величину она
+			# вылезла бы на парапет и на остекление.
+			_decal("overgrowth/vine_wall_1",
+					_loggia_pos(along_z, face, lo + 0.02, 0.95, depth * 0.5, n),
+					axis, 0.62)
+			_decal("overgrowth/vine_wall_2",
+					_loggia_pos(along_z, face, hi - 0.02, 0.90, depth * 0.5, n),
+					-axis, 0.58)
+
+
+## Прямоугольник парапета, у которого общее ребро с этой лоджией.
+## Возвращает [нормаль внутрь лоджии, координата грани] или [] — если парапета
+## нет. Проверяется и совпадение ребра, и перекрытие по второй оси: у зеркальной
+## квартиры парапет стоит на том же x, и по одной координате он совпал бы тоже.
+func _parapet_side(x0: float, z0: float, x1: float, z1: float) -> Array:
+	var eps := 0.06
+	for p in _plan.get("parapets", []):
+		var px0: float = float(p[0])
+		var pz0: float = float(p[1])
+		var px1: float = float(p[2])
+		var pz1: float = float(p[3])
+		var over_z := minf(pz1, z1) - maxf(pz0, z0)
+		var over_x := minf(px1, x1) - maxf(px0, x0)
+		if over_z > 0.5:
+			if absf(px1 - x0) < eps:
+				return [Vector3(1, 0, 0), x0]
+			if absf(px0 - x1) < eps:
+				return [Vector3(-1, 0, 0), x1]
+		if over_x > 0.5:
+			if absf(pz1 - z0) < eps:
+				return [Vector3(0, 0, 1), z0]
+			if absf(pz0 - z1) < eps:
+				return [Vector3(0, 0, -1), z1]
+	return []
+
+
+## Точка на лоджии в координатах «вдоль парапета / высота / вглубь от парапета».
+## Так расстановка не зависит от того, вдоль какой мировой оси стоит лоджия.
+func _loggia_pos(along_z: bool, face: float, t: float, y: float, s: float,
+		inward: Vector3) -> Vector3:
+	if along_z:
+		return Vector3(face + inward.x * s, y, t)
+	return Vector3(t, y, face + inward.z * s)
 
 
 ## Размер тайла берётся из tiles.txt доставки, а не из кода: исполнитель
@@ -2704,6 +2848,28 @@ func _camera() -> void:
 var _fly := false
 var _walkman: CharacterBody3D = null
 var _fly_speed := 3.5
+# Изометрия (--iso, клавиша I): камера не в глазах, а сверху-сбоку на
+# фиксированном угле, снаружи _walkman — тогда виден сам человечек.
+# Фигурка — болванка (капсула + метка лица), настоящий ассет персонажа
+# ещё не заказан, это только чтобы было видно, куда идёт тело.
+var _iso := false
+var _iso_body: Node3D = null
+# Дистанция и высота — не как у --focus/--flat (тем камера сидит СНАРУЖИ
+# коробки дома, потолок ей не мешает): здесь потолок сплошной, реальный
+# геймплей, и при старой дистанции (6 м, pitch 50°) камера утыкалась в
+# потолок высотой 2.7-2.84 м и упиралась в ближайшую стену — то самое
+# «фронтальная стене». Держим камеру ниже потолка с запасом.
+var _iso_yaw_deg := 45.0
+# Круче и выше по просьбе: camera_y = 0.9 + ISO_DIST*sin(pitch) = 2.42 м —
+# по-прежнему с запасом под потолком 2.7-2.84 м, но заметно выше прежних
+# 2.05 м; и обзор пошире (ISO_SIZE).
+const ISO_PITCH_DEG := 55.0
+const ISO_DIST := 1.85
+# Пожаловались, что тесно — тут узкий кадр (архитектурная планировка сама
+# по себе плотная: прихожая 0.98 м, санузел 1.3 x 1.6, это с чертежа БТИ,
+# не камера) только усугублял. 4.5 -> 7.0: тот же фиксированный угол
+# и высота, просто шире рамка кадра, комната читается свободнее.
+const ISO_SIZE := 7.0
 
 ## Звук пустой квартиры (task-0020): шаги по пройденному расстоянию, не по
 ## таймеру — иначе у бега и медленной ходьбы был бы один и тот же интервал
@@ -2784,7 +2950,10 @@ func _ready_fly() -> void:
 	if cam == null:
 		return
 	cam.projection = Camera3D.PROJECTION_PERSPECTIVE
-	cam.fov = 75.0
+	# Было 75 — узковато для настолько тесной планировки (прихожая 0.98 м
+	# в чистоте), комната читалась теснее, чем есть на самом деле. 90 —
+	# как в большинстве шутеров от первого лица, без рыбьего глаза.
+	cam.fov = 90.0
 	cam.near = 0.05
 
 	# ставим в прихожую: берём самый большой её прямоугольник из разбора, а
@@ -2838,17 +3007,93 @@ func _ready_fly() -> void:
 			look_dir = dir_
 	cam.global_position = _walkman.global_position + Vector3(0, 1.62, 0)
 	cam.look_at(cam.global_position + look_dir, Vector3.UP)
+	# Изометрическая камера смотрит в ту же открытую сторону, а не в
+	# постоянные 45° — иначе в узкой комнате она смотрела бы в ближайшую
+	# стену вместо свободного пространства.
+	_iso_yaw_deg = rad_to_deg(atan2(-look_dir.x, -look_dir.z))
+
+	_iso_body = _make_iso_body()
+	_walkman.add_child(_iso_body)
+	_iso_body.visible = false
+	if OS.get_cmdline_user_args().has("--iso"):
+		_set_iso(true)
 
 
+## Болванка человечка для изометрии: капсула тело + метка лица (без неё
+## с вида сверху-сбоку не понять, куда персонаж смотрит). Настоящий
+## ассет — отдельная задача в pipeline, не эта; здесь только блокаут.
+func _make_iso_body() -> Node3D:
+	var root := Node3D.new()
+	root.name = "iso_body"
+	var body := MeshInstance3D.new()
+	var cap := CapsuleMesh.new()
+	cap.radius = 0.28
+	cap.height = 1.70
+	body.mesh = cap
+	body.position.y = 0.85
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.85, 0.55, 0.25)
+	body.material_override = mat
+	root.add_child(body)
+	var nose := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(0.10, 0.10, 0.16)
+	nose.mesh = box
+	nose.position = Vector3(0, 1.55, -0.20)
+	var nose_mat := StandardMaterial3D.new()
+	nose_mat.albedo_color = Color(0.1, 0.1, 0.1)
+	nose.material_override = nose_mat
+	root.add_child(nose)
+	return root
+
+
+## Переключение изометрии: камера выходит из _walkman (иначе разворот
+## персонажа/мышиный взгляд тянут её за собой) и держится на мировом
+## смещении с фиксированным углом, обновляется в _fly_step. В обычном
+## режиме камера снова в глазах, как раньше.
+func _set_iso(on: bool) -> void:
+	_iso = on
+	var cam := _find_cam()
+	if cam == null or _walkman == null:
+		return
+	_iso_body.visible = on
+	if on:
+		cam.get_parent().remove_child(cam)
+		add_child(cam)
+		cam.projection = Camera3D.PROJECTION_ORTHOGONAL
+		cam.size = ISO_SIZE
+		cam.rotation = Vector3.ZERO
+		_update_iso_camera()
+	else:
+		cam.get_parent().remove_child(cam)
+		_walkman.add_child(cam)
+		cam.projection = Camera3D.PROJECTION_PERSPECTIVE
+		cam.fov = 90.0
+		cam.position = Vector3(0, 1.62, 0)
+		cam.rotation = Vector3.ZERO
+
+
+func _update_iso_camera() -> void:
+	var cam := _find_cam()
+	if cam == null or _walkman == null:
+		return
+	var yr := deg_to_rad(_iso_yaw_deg)
+	var pr := deg_to_rad(ISO_PITCH_DEG)
+	var off := Vector3(cos(pr) * sin(yr), sin(pr), cos(pr) * cos(yr)) * ISO_DIST
+	var target := _walkman.global_position + Vector3(0, 0.9, 0)
+	cam.global_position = target + off
+	cam.look_at(target, Vector3.UP)
+
+
+## Через get_viewport() — не обход детей: камера в интерактивной игре
+## лежит внутри _walkman (для мыши-обзора и движения от первого лица),
+## то есть не прямой потомок корня, и старый перебор get_children() её
+## не находил вовсе после того, как её туда переставили. Всё это время
+## интерактивную игру (не скриншоты) с реальным вводом никто не гонял —
+## всплыло только на --iso, где _find_cam() понадобился в первый кадр.
 func _find_cam() -> Camera3D:
-	for c in get_children():
-		if c is Camera3D:
-			return c
-	if _vp != null:
-		for c in _vp.get_children():
-			if c is Camera3D:
-				return c
-	return null
+	var vp := _vp if _vp != null else get_viewport()
+	return vp.get_camera_3d()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -2861,6 +3106,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif kc == KEY_F:
 			_fly = not _fly
 			print("[режим] ", "полёт" if _fly else "ходьба")
+		elif kc == KEY_I:
+			_set_iso(not _iso)
+			print("[режим] ", "изометрия" if _iso else "от первого лица")
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_RIGHT:
@@ -2869,7 +3117,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_fly_speed = minf(_fly_speed * 1.25, 30.0)
 		elif mb.pressed and mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			_fly_speed = maxf(_fly_speed * 0.8, 0.4)
-	if event is InputEventMouseMotion 			and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+	if event is InputEventMouseMotion 			and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not _iso:
 		var cam := _find_cam()
 		if cam != null:
 			var mm := event as InputEventMouseMotion
@@ -2882,15 +3130,17 @@ func _fly_step(delta: float) -> void:
 	var cam := _find_cam()
 	if cam == null:
 		return
+	if _iso:
+		_update_iso_camera()
 	var dir := Vector3.ZERO
 	var basis := cam.global_transform.basis
-	if Input.is_key_pressed(KEY_W):
+	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
 		dir -= basis.z
-	if Input.is_key_pressed(KEY_S):
+	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
 		dir += basis.z
-	if Input.is_key_pressed(KEY_A):
+	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
 		dir -= basis.x
-	if Input.is_key_pressed(KEY_D):
+	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
 		dir += basis.x
 
 	if _fly or _walkman == null:
@@ -2913,6 +3163,8 @@ func _fly_step(delta: float) -> void:
 		var h := dir.normalized() * speed
 		v.x = h.x
 		v.z = h.z
+		if _iso and _iso_body != null:
+			_iso_body.rotation.y = atan2(h.x, -h.z)
 	else:
 		v.x = 0.0
 		v.z = 0.0
