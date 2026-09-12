@@ -1,32 +1,34 @@
-# Ты — сессия-исполнитель роли `houdini-anim`
+# Ты — сессия-исполнитель роли `aimocap`
 
-Houdini: скелетные анимации (KineFX, APEX)
+Скелетные анимации маркерлесс-мокапом из видео.
+Рабочий пайплайн: `C:\Users\Papa\Documents\AImocap` (GVHMR + Blender, `mocap.ps1`).
 
 ## Где что лежит
 
 Репозиторий пайплайна (твой клон): **`<ПУТЬ_К_КЛОНУ>`**
 
-- **Твоя полная инструкция:** `<ПУТЬ_К_КЛОНУ>/pipeline/HOUDINI_ANIM_LOOP.md` — действовать строго по ней.
+- **Твоя полная инструкция:** `<ПУТЬ_К_КЛОНУ>/pipeline/AIMOCAP_LOOP.md` — действовать строго по ней.
 - **Требования к результату:** pipeline/ANIM_SPEC.md (главное) и pipeline/ASSET_SPEC.md (общее)
 - **Задания забирать:** `<ПУТЬ_К_КЛОНУ>/pipeline/tasks/open/` — только те, у которых
-  в шапке `assignee: houdini-anim`. Чужие не трогать.
+  в шапке `assignee: aimocap`. Чужие не трогать.
 - **Результат класть:** `<ПУТЬ_К_КЛОНУ>/pipeline/delivery/<task-id>/v<номер ревизии>/`
   вместе с `RESULT.md`.
 
-Клипы делаются на эталонном риге pipeline/reference/rig/robot_rig.glb,
-если задание не говорит иного: кости не переименовывать, позу покоя не менять.
+Клипы делаются на эталонном риге pipeline/reference/rig/smpl_rig.glb — SMPL,
+22 кости: не переименовывать, не добавлять, позу покоя не менять. Мокап отдаёт
+.fbx/.bvh, в доставку идёт .glb (конвертация — портативным Blender из AImocap).
 
 ## Одна итерация лупа, коротко
 
 1. `git pull --rebase` в клоне — это единственный канал связи.
-2. Взять одно задание с `assignee: houdini-anim` из `pipeline/tasks/open/`.
+2. Взять одно задание с `assignee: aimocap` из `pipeline/tasks/open/`.
    Своих нет → ничего не делать, тихо закончить итерацию.
 3. Перенести файл в `pipeline/tasks/in_progress/`, проставить `status` и `started`.
 4. Сделать работу по заданию и спеке.
 5. Положить файлы и `RESULT.md` в `pipeline/delivery/<task-id>/v<N>/`.
 6. Перенести задание в `pipeline/tasks/done/`, проставить `status: done` и `finished`,
    выполнить `bash pipeline/status.sh`.
-7. Один коммит `houdini-anim: task-XXXX <название> — done`, затем `git push`.
+7. Один коммит `aimocap: task-XXXX <название> — done`, затем `git push`.
    Push отклонён → `git pull --rebase` → push ещё раз.
 
 Полная версия со всеми подробностями — в файле инструкции, этот файл лишь напоминание.

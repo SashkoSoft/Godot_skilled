@@ -3,7 +3,7 @@
 >  **Если ты сессия-исполнитель** (делаешь контент, работаешь в `/loop`) — этот файл не про тебя.
 > Твоя инструкция по роли:
 > `houdini-assets` → **`pipeline/HOUDINI_LOOP.md`** ·
-> `houdini-anim` → **`pipeline/HOUDINI_ANIM_LOOP.md`** ·
+> `aimocap` → **`pipeline/AIMOCAP_LOOP.md`** ·
 > `comfyui` → **`pipeline/COMFYUI_LOOP.md`**.
 > Всё остальное в репозитории читать не нужно, трогать — тем более. Godot ставить не нужно.
 
@@ -45,7 +45,7 @@ Godot **4.7-stable** лежит прямо в корне:
 | Роль (`assignee`) | Что делает | Спека |
 |---|---|---|
 | `houdini-assets` | модели, текстуры, материалы, VFX | `pipeline/ASSET_SPEC.md` |
-| `houdini-anim` | скелетные анимации (KineFX, APEX) | `pipeline/ANIM_SPEC.md` |
+| `aimocap` | скелетные анимации (мокап из видео, GVHMR) | `pipeline/ANIM_SPEC.md` |
 | `comfyui` | изображения, флипбуки, UI, концепты, SFX | `pipeline/ASSET_SPEC.md`, `pipeline/AUDIO_SPEC.md` |
 
 Со стороны этой сессии:
@@ -54,7 +54,7 @@ Godot **4.7-stable** лежит прямо в корне:
 - **создать задание:** `bash pipeline/new_task.sh <роль> <slug> "<заголовок>"` — подставит
   свободный номер, `assignee` и ссылку на нужную спеку; дальше описать «Зачем это в игре»
   и «Требования». Задание без внятного «зачем» вернётся вопросом;
-- **посмотреть очередь роли:** `bash pipeline/status.sh --for houdini-anim`;
+- **посмотреть очередь роли:** `bash pipeline/status.sh --for aimocap`;
 - **принять работу:** `git pull`, затем
   `bash tools/asset_check/check.sh pipeline/delivery/<task-id>/v<N>` — паспорт ассета
   (габариты, полигонаж, материалы, скелеты, анимации; для звука — длительность, частота,

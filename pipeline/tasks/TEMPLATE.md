@@ -1,7 +1,7 @@
 ---
 id: task-0000
 title: Короткое название
-assignee: houdini-assets | houdini-anim | comfyui
+assignee: houdini-assets | aimocap | comfyui
 type: model | texture | material | vfx | hdri | animation | audio | ui
 status: open | in_progress | done | accepted | blocked
 revision: 1

@@ -2,7 +2,7 @@
 # Создаёт новое задание из шаблона со следующим свободным номером.
 # Для Godot-сессии; исполнители этим не пользуются.
 #
-#   bash pipeline/new_task.sh houdini-anim walk-cycle
+#   bash pipeline/new_task.sh aimocap walk-cycle
 #   bash pipeline/new_task.sh comfyui ui-icons "Иконки интерфейса"
 set -euo pipefail
 
@@ -12,10 +12,10 @@ SLUG="${2:-}"
 TITLE="${3:-}"
 
 case "$ROLE" in
-	houdini-assets|houdini-anim|comfyui) ;;
+	houdini-assets|aimocap|comfyui) ;;
 	*)
 		echo "Использование: bash pipeline/new_task.sh <роль> <slug> [заголовок]"
-		echo "Роли: houdini-assets | houdini-anim | comfyui"
+		echo "Роли: houdini-assets | aimocap | comfyui"
 		exit 1
 		;;
 esac
@@ -37,7 +37,7 @@ today="$(date +%Y-%m-%d)"
 
 case "$ROLE" in
 	# тип — стартовое значение, при необходимости поправьте в шапке задания
-	houdini-anim)   spec="ANIM_SPEC.md"; type="animation" ;;
+	aimocap)   spec="ANIM_SPEC.md"; type="animation" ;;
 	comfyui)        spec="ASSET_SPEC.md (текстуры) / AUDIO_SPEC.md (звук)"; type="texture" ;;
 	houdini-assets) spec="ASSET_SPEC.md"; type="model" ;;
 esac

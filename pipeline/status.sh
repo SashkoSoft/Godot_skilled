@@ -13,7 +13,7 @@ OUT="$PIPE/QUEUE.md"
 FILTER=""
 if [ "${1:-}" = "--for" ]; then
 	FILTER="${2:-}"
-	[ -n "$FILTER" ] || { echo "Укажите роль: --for houdini-assets|houdini-anim|comfyui"; exit 1; }
+	[ -n "$FILTER" ] || { echo "Укажите роль: --for houdini-assets|aimocap|comfyui"; exit 1; }
 fi
 
 field() { # field <файл> <имя_поля>

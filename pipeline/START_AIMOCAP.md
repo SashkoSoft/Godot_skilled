@@ -1,4 +1,4 @@
-# Точка входа: роль «houdini-anim»
+# Точка входа: роль «aimocap»
 
 Ты — сессия Claude Code, которой дали ссылку на этот файл. Больше ничего тебе
 не сказали, и не нужно: здесь всё. Читай подряд и выполняй.
@@ -12,21 +12,25 @@
 
 ```bash
 cd /c/Users/Papa/Documents
-[ -d houdini_anim ] || git clone git@github.com:SashkoSoft/Godot_skilled.git houdini_anim
-cd houdini_anim
+[ -d aimocap_anim ] || git clone git@github.com:SashkoSoft/Godot_skilled.git aimocap_anim
+cd aimocap_anim
 git pull
-git config user.name "houdini-anim"
+git config user.name "aimocap"
 git config user.email "prujinkin@gmail.com"
 ```
 
 Если `git@github.com` не пускает — попробуй `https://github.com/SashkoSoft/Godot_skilled.git`,
 репозиторий открытый; для пуша тогда понадобится `gh auth login`.
 
-Дальше все пути — от `/c/Users/Papa/Documents/houdini_anim`.
+Дальше все пути — от `/c/Users/Papa/Documents/aimocap_anim`.
+
+Мокап-пайплайн у тебя **отдельно** от клона и уже развёрнут:
+`C:\Users\Papa\Documents\AImocap` (GVHMR + портативный Blender, `mocap.ps1`).
+Ставить его не надо, в репозиторий он не копируется.
 
 ## Шаг 2. Прочитать свою инструкцию
 
-Твоя полная инструкция — **`pipeline/HOUDINI_ANIM_LOOP.md`**. Она главная, всё остальное
+Твоя полная инструкция — **`pipeline/AIMOCAP_LOOP.md`**. Она главная, всё остальное
 подчинено ей. Прочитай её целиком, прежде чем что-то делать.
 
 Спеки, на которые она ссылается: `pipeline/ANIM_SPEC.md`.
@@ -47,12 +51,12 @@ git config user.email "prujinkin@gmail.com"
 Когда окружение подтверждено, запусти себя в лупе — этой командой:
 
 ```
-/loop 20m Прочитай pipeline/HOUDINI_ANIM_LOOP.md и выполни одну итерацию цикла. Бери только задания с assignee: houdini-anim. Если своих заданий в pipeline/tasks/open/ нет — ничего не делай и молча заверши итерацию.
+/loop 20m Прочитай pipeline/AIMOCAP_LOOP.md и выполни одну итерацию цикла. Бери только задания с assignee: aimocap. Если своих заданий в pipeline/tasks/open/ нет — ничего не делай и молча заверши итерацию.
 ```
 
 ## Как устроена работа дальше
 
-- задания приходят файлами в `pipeline/tasks/open/` с полем `assignee: houdini-anim`;
+- задания приходят файлами в `pipeline/tasks/open/` с полем `assignee: aimocap`;
 - чужие задания не трогай, даже если можешь их сделать;
 - взял задание — перенеси файл в `pipeline/tasks/in_progress/` и запушь, чтобы
   никто не взялся за то же самое;

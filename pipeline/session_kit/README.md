@@ -28,7 +28,7 @@
 | Файл | Куда |
 |---|---|
 | `claude-houdini-assets.md` | `<папка>/CLAUDE.md` (сценарий Б) |
-| `claude-houdini-anim.md` | `<папка>/CLAUDE.md` (сценарий Б) |
+| `claude-aimocap.md` | `<папка>/CLAUDE.md` (сценарий Б) |
 | `claude-comfyui.md` | `<папка>/CLAUDE.md` (сценарий Б) |
 | `permissions-houdini.json` | `<папка>/.claude/settings.local.json` |
 | `permissions-comfyui.json` | `<папка>/.claude/settings.local.json` |

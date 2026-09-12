@@ -8,7 +8,7 @@
 файлами, всё через git.
 
 Твоя роль в пайплайне называется **`houdini-assets`**. Рядом работают ещё две сессии:
-`houdini-anim` (скелетные анимации) и `comfyui` (изображения и звук). Вы не пересекаетесь:
+`aimocap` (скелетные анимации) и `comfyui` (изображения и звук). Вы не пересекаетесь:
 каждая берёт только задания со своим `assignee`.
 
 С Godot ты не работаешь, устанавливать его не нужно, знать его не нужно. Все требования
@@ -172,7 +172,7 @@ git add pipeline && git commit -m "houdini: task-0007 lava texture - done" && gi
 | [`pipeline/tasks/TEMPLATE.md`](https://github.com/SashkoSoft/Godot_skilled/blob/main/pipeline/tasks/TEMPLATE.md) | из чего состоит задание, какие в нём разделы |
 
 Соседние роли (на случай, если задание адресовано не тебе):
-[`HOUDINI_ANIM_LOOP.md`](https://github.com/SashkoSoft/Godot_skilled/blob/main/pipeline/HOUDINI_ANIM_LOOP.md) ·
+[`AIMOCAP_LOOP.md`](https://github.com/SashkoSoft/Godot_skilled/blob/main/pipeline/AIMOCAP_LOOP.md) ·
 [`COMFYUI_LOOP.md`](https://github.com/SashkoSoft/Godot_skilled/blob/main/pipeline/COMFYUI_LOOP.md)
 
 Если в задании что-то противоречит этим файлам — верь заданию, но напиши о расхождении

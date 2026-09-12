@@ -9,7 +9,7 @@
 |---|---|---|---|
 | **godot** | пишет игру, ставит задания, принимает работу | `CLAUDE.md` в корне | — |
 | **houdini-assets** | модели, текстуры, материалы, VFX | [`HOUDINI_LOOP.md`](HOUDINI_LOOP.md) | `ASSET_SPEC.md` |
-| **houdini-anim** | скелетные анимации (KineFX, APEX) | [`HOUDINI_ANIM_LOOP.md`](HOUDINI_ANIM_LOOP.md) | `ANIM_SPEC.md` + `ASSET_SPEC.md` |
+| **aimocap** | скелетные анимации (мокап из видео, GVHMR) | [`AIMOCAP_LOOP.md`](AIMOCAP_LOOP.md) | `ANIM_SPEC.md` + `ASSET_SPEC.md` |
 | **comfyui** | изображения, флипбуки, UI, концепты, SFX | [`COMFYUI_LOOP.md`](COMFYUI_LOOP.md) | `ASSET_SPEC.md` + `AUDIO_SPEC.md` |
 
 Ссылка на инструкцию — единственное, что нужно дать новой сессии: каждый файл
@@ -46,7 +46,7 @@ pipeline/
 ```yaml
 ---
 id: task-0012
-assignee: houdini-anim
+assignee: aimocap
 ...
 ---
 ```
@@ -103,7 +103,7 @@ bash pipeline/status.sh --for comfyui
 ## Git: правила, чтобы четыре сессии не подрались
 
 - Каждая сессия начинает итерацию с `git pull --rebase` и заканчивает **одним** коммитом.
-- Префикс в сообщении = роль: `houdini-anim: task-0012 walk cycle — done`.
+- Префикс в сообщении = роль: `aimocap: task-0012 walk cycle — done`.
 - Push отклонён → `git pull --rebase` → push ещё раз. Стороны пишут в разные файлы,
   поэтому ребейз проходит без конфликтов.
 
