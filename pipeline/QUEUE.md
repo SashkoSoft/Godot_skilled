@@ -8,6 +8,7 @@
 | task-0038 | Локомоция мокапом на SMPL-риге | **aimocap** | animation | v1 | open | open/ | 2026-09-12 | — |
 | task-0039 | Персонаж-выживший — модель на эталонном скелете | **houdini-assets** | model | v1 | open | open/ | 2026-09-12 | — |
 | task-0040 | Зелень с настоящей альфой взамен набора task-0011 | **houdini-assets** | texture | v1 | open | open/ | 2026-09-13 | — |
+| task-0041 | Деревья на улицу | **houdini-assets** | model | v1 | open | open/ | 2026-09-13 | — |
 | task-0001 | Локомоция на эталонном риге | **aimocap** | animation | v1 | cancelled | done/ | 2026-08-23 | 2026-09-12 |
 | task-0002 | Бетонная панель: стены и перекрытия | **comfyui** | texture | v2 | accepted | done/ | 2026-08-27 | 2026-08-27 |
 | task-0003 | Плитка и бетон лестничной клетки | **comfyui** | texture | v1 | accepted | done/ | 2026-08-27 | 2026-08-27 |
@@ -48,4 +49,4 @@
 
 ## Следующий свободный номер
 
-**task-0041**
+**task-0042**
