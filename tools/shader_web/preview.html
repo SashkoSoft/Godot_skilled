@@ -375,7 +375,7 @@ select {
 
 <div id="app">
 	<header>
-		<div class="brand"><b>Лаборатория покрытий</b><span>surface.gdshader</span></div>
+		<div class="brand"><b>Лаборатория покрытий</b><span>surface.glsl</span></div>
 		<div class="views" id="views"></div>
 		<div class="readout">
 			<span>рендер <b id="r-res">—</b></span>
@@ -402,11 +402,11 @@ select {
 			<div class="matpick" id="matpick"></div>
 			<div id="mat-body"></div>
 			<div class="note">
-				<b>Что переносится в игру.</b> Кнопка ниже отдаёт готовые строки для
-				<code>road.gd::_materials()</code> — с теми же <code>Color()</code>,
-				что стоят сейчас.
+				<b>Что переносится в игру.</b> Кнопка ниже отдаёт блок
+				<code>PRESETS</code> для <code>web/src/surface.js</code> — теми же
+				sRGB-значениями, что стоят сейчас.
 				<div class="actions">
-					<button class="btn primary" id="copy-mat">Скопировать материалы для road.gd</button>
+					<button class="btn primary" id="copy-mat">Скопировать PRESETS для surface.js</button>
 				</div>
 			</div>
 		</div>
@@ -417,20 +417,21 @@ select {
 			<textarea id="editor" spellcheck="false" aria-label="Исходник шейдера"></textarea>
 			<div id="log" class="ok">—</div>
 			<div class="actions">
-				<button class="btn primary" id="copy-shader">Скопировать .gdshader</button>
+				<button class="btn primary" id="copy-shader">Скопировать surface.glsl</button>
 				<button class="btn" id="recompile">Пересобрать (Ctrl+Enter)</button>
 				<button class="btn" id="revert">Вернуть исходный</button>
 			</div>
 			<div class="note">
 				В окне — <b>ровно тот текст</b>, что лежит в
-				<code>game/surface.gdshader</code>. Переходник снимает
-				<code>shader_type</code>, <code>render_mode</code> и слово
-				<code>uniform</code>, всё остальное — и <code>dFdx</code>, и
-				<code>fwidth</code>, и встроенные <code>VERTEX</code>/<code>NORMAL</code> —
-				работает как в Godot.
+				<code>web/src/shaders/surface.glsl</code>. Переводить его не надо:
+				в игре он вставляется в <code>MeshStandardMaterial</code>, здесь
+				вызывается из трассировщика, а код один и тот же. Стенд только
+				снимает слово <code>uniform</code> — одна программа рисует все
+				полосы разом, значит параметры должны меняться от пикселя к
+				пикселю, а не быть общими на всю полосу.
 				<ol>
 					<li>правишь здесь, смотришь сразу;</li>
-					<li>«Скопировать .gdshader» → вставить в файл целиком;</li>
+					<li>«Скопировать surface.glsl» → вставить в файл целиком;</li>
 					<li><code>python tools/shader_web/sync.py</code> — вернуть правку на страницу.</li>
 				</ol>
 			</div>
@@ -438,40 +439,43 @@ select {
 	</aside>
 </div>
 
-<script id="gdshader" type="x-shader/x-gdshader">
-//<<<BEGIN surface.gdshader
-shader_type spatial;
-render_mode cull_back, diffuse_burley;
-
+<script id="surface-src" type="x-shader/x-glsl">
+//<<<BEGIN surface.glsl
 // Покрытие улицы: тротуарная плита, асфальт, земля. Рисунок считается от
 // МИРОВОЙ точки, а не берётся тайловой картинкой — на полосе длиной в сотни
 // метров любой тайл рано или поздно начинает дышать сеткой, и никакой размер
 // плитки этого не лечит. Здесь повтора нет ни на каком масштабе.
 //
+// Файл вставляется в `MeshStandardMaterial` через `onBeforeCompile`: своего
+// света у покрытия нет намеренно. Иначе улица и загруженные модели
+// освещались бы двумя разными моделями освещения и никогда бы не сошлись.
+// Отсюда наружу отдаются только альбедо, шероховатость и нормаль.
+//
 // `kind`: 0 — плита, 1 — асфальт, 2 — земля.
-uniform int kind = 0;
 
-uniform vec3 col_a : source_color = vec3(0.62, 0.61, 0.58);
-uniform vec3 col_b : source_color = vec3(0.44, 0.43, 0.41);
-uniform vec3 col_joint : source_color = vec3(0.24, 0.24, 0.22);
-uniform float plate = 0.75;
-uniform float joint = 0.030;
-uniform float rough_base = 0.92;
+uniform vec3 col_a;
+uniform vec3 col_b;
+uniform vec3 col_joint;
+uniform float plate;
+uniform float joint;
+uniform float rough_base;
 
 // Поперечная привязка полосы. Улица идёт вдоль X, значит «поперёк» — это Z.
 // lat = 0 по оси полосы, ±1 у кромок. Без этой оси покрытие остаётся ровным
 // серым полем: ни колеи, ни осевая разметка, ни намыв у бордюра не знают,
 // где у полосы середина. У каждой полосы своя копия материала — общий
 // материал означал бы один lat_center на всех.
-uniform float lat_center = 0.0;
-uniform float lat_half = 1.0;
+uniform float lat_center;
+uniform float lat_half;
 
-// Разметка: 0 — нет, 1 — осевой пунктир.
-uniform int marking = 0;
-// Глубина микрорельефа в метрах. 0 — плоско, как крашеный картон.
-uniform float bump = 1.0;
-// Отладка: 0 — как есть, 1 — мировая нормаль цветом, 2 — поле высот.
-uniform int debug = 0;
+uniform int kind;
+uniform int marking;      // 0 — нет, 1 — осевой пунктир
+uniform float bump;       // глубина микрорельефа; 0 — плоско, как картон
+uniform int debugMode;    // 0 — как есть, 1 — нормаль цветом, 2 — поле высот
+
+// vWorldPos / vWorldNormal / vViewPos объявляет surface.js: один и тот же
+// блок вставляется и в вершинный, и во фрагментный шейдер, поэтому здесь их
+// повторять нельзя — GLSL ругнётся на redefinition.
 
 // Хеш без `sin`. Это полноэкранные плоскости, на каждый пиксель приходятся
 // десятки выборок шума, и тригонометрия в каждой — самое дорогое, что тут
@@ -509,7 +513,6 @@ float fbm(vec2 p, int oct) {
 // процедурной текстуры нет мип-уровней, и как только период шума становится
 // меньше пары пикселей, он перестаёт быть фактурой и превращается в шахматку
 // из отдельных точек — ровно тот же муар, что и от тайла, только мельче.
-// `texel` — сколько метров приходится на пиксель здесь и сейчас.
 float band(float freq, float texel) {
 	return clamp(1.0 - texel * freq * 1.6, 0.0, 1.0);
 }
@@ -530,27 +533,20 @@ float ridge(vec2 p, int oct) {
 	return s;
 }
 
-void fragment() {
-	vec3 wpos = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
+void surface(out vec3 outAlbedo, out float outRough, out vec3 outNormal) {
+	vec3 wpos = vWorldPos;
 	vec2 w = wpos.xz;
 
-	// Боковые грани — торец бордюра или обрез покрытия, им ни колеи, ни
-	// разметка не нужны. Ранним `return` это не отсечь: в Godot `return` во
-	// фрагментной функции запрещён, поэтому флаг и подмена в конце.
-	//
-	// Сравнивать надо МИРОВУЮ вертикаль. `NORMAL` во фрагменте Godot — видовая,
-	// и у горизонтального пола её `y` падает вместе с наклоном камеры: на
-	// взгляде сверху (−84°) он равен 0.1, и всё покрытие уходило в ветку
-	// торца — сверху дорога превращалась в ровные серые ленты.
-	vec3 n_world = normalize((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).xyz);
+	// Сравнивать надо МИРОВУЮ вертикаль. Если взять видовую нормаль, её y
+	// падает вместе с наклоном камеры: на взгляде сверху он равен 0.1, и всё
+	// покрытие уходит в ветку торца — сверху дорога становится ровной лентой.
+	vec3 n_world = normalize(vWorldNormal);
 	bool is_side = abs(n_world.y) < 0.5 && kind != 2;
 
 	float lat = clamp((w.y - lat_center) / max(lat_half, 0.001), -1.0, 1.0);
 	float edge = abs(lat);
 
-	// Высокие частоты глушатся с расстоянием: иначе на дальнем плане зерно
-	// превращается в муар, то есть в ту же сетку, от которой мы уходили.
-	float dist = length(VERTEX);
+	float dist = length(vViewPos);
 	// Среднее геометрическое, а не максимум: под скользящим углом пиксельный
 	// след сильно вытянут, и по максимуму гасится вся фактура разом — плита в
 	// двух метрах от камеры остаётся гладким мылом. Аппаратная анизотропия
@@ -578,7 +574,7 @@ void fragment() {
 	float hgt = (grain - 0.5) * 0.002;
 
 	if (kind == 0) {
-		// --- тротуарная плита ----------------------------------------------
+		// --- тротуарная плита ------------------------------------------------
 		// Перевязка: каждый второй ряд сдвинут на полплиты. Прямая сетка
 		// «клетка в клетку» сразу читается фальшивкой, так плитку не кладут.
 		float row = floor(w.y / plate);
@@ -590,12 +586,9 @@ void fragment() {
 		float r1 = h21(id);
 		float r2 = h21(id + 19.7);
 		// Разброс тона от плиты к плите — то, что отличает уложенный двор от
-		// одной большой серой поверхности с сеткой поверх. Плиты лили разными
-		// замесами и в разные годы.
+		// одной большой серой поверхности с сеткой поверх.
 		col *= 1.0 + (r1 - 0.5) * 0.24;
 		col *= 1.0 + (vnoise(w * 2.7 + id * 7.3) - 0.5) * 0.14;
-		// Разводы поверх раскладки — переиспользуем уже посчитанное поле.
-		// Без них плиты одного замеса выглядят покрашенными из одного ведра.
 		col *= 0.90 + mid * 0.22;
 
 		// Ширина шва гуляет: где-то плиты разошлись, где-то встык. Модуляция
@@ -621,13 +614,11 @@ void fragment() {
 		// Рельеф плиты — это ФАСКА по краю, а не общая просадка к шву. Широкая
 		// мягкая ямка вокруг всего периметра превращает плиту в надутую
 		// подушку: при скользящем свете каждая начинает блестеть по центру.
-		// Реальная плита плоская, у неё снята кромка 2–3 см.
 		float cham = 1.0 - smoothstep(0.0, 0.030, dmin);
 		hgt -= cham * 0.005 + seam * 0.004;
 
 		// Плиты просели и перекосились. Перекос слабый: на 0.75 м плиты
-		// разница краёв в 5 мм уже читается, больше — превращает тротуар в
-		// волну.
+		// разница краёв в 5 мм уже читается, больше — превращает тротуар в волну.
 		float sunk = smoothstep(0.62, 1.0, r2);
 		col *= 1.0 - sunk * 0.14;
 		hgt -= sunk * 0.008;
@@ -650,7 +641,7 @@ void fragment() {
 			hgt -= cm * 0.003;
 		}
 	} else if (kind == 1) {
-		// --- асфальт ---------------------------------------------------------
+		// --- асфальт -----------------------------------------------------------
 		// щебень — одна выборка, не fbm: на таком масштабе октавы неразличимы
 		float chips = vnoise(w * 26.0);
 		col *= 1.0 - (chips - 0.5) * 0.34 * band(26.0, texel);
@@ -672,20 +663,15 @@ void fragment() {
 			float pw = fwidth(pd) * 0.8;
 			float inside = smoothstep(0.03, 0.07, pd);
 			col = mix(col, col * 0.74, inside);
-			// Шов заплаты — такая же тонкая линия, как шов плиты, и так же
-			// рассыпается в пунктир без запаса на пиксель.
 			float pseam = (1.0 - smoothstep(0.008 - pw, 0.035 + pw, pd))
 					* smoothstep(0.0, 0.010 + pw, pd);
 			col = mix(col, col_joint, pseam * 0.6);
 			hgt += inside * 0.006 - pseam * 0.010;
 		}
 
-		// Сетка трещин. Один хребтовый шум на три октавы даёт и крупные
-		// разломы, и мелкое ветвление; по краям, где нет нагрузки, сетка
-		// гуще — это «крокодилья кожа» настоящего старого асфальта.
-		// Пороги подняты, а затемнение ослаблено: трещина в асфальте — это
-		// тонкий тёмный волос, а не жирная чёрная линия. Жирная читается как
-		// нарисованная поверх, и вся полоса выглядит заляпанной.
+		// Сетка трещин. Пороги подняты, а затемнение ослаблено: трещина в
+		// асфальте — тонкий тёмный волос, а не жирная чёрная линия. Жирная
+		// читается как нарисованная поверх, и вся полоса выглядит заляпанной.
 		float big = ridge(w * 0.55, 3);
 		float cm1 = smoothstep(0.70, 0.86, big);
 		float cm2 = smoothstep(0.80, 0.94, big) * smoothstep(0.35, 0.9, edge);
@@ -729,25 +715,18 @@ void fragment() {
 		rough = mix(rough, 1.0, silt);
 		hgt += silt * 0.005;
 	} else {
-		// --- земля -----------------------------------------------------------
-		// Комковатость двух масштабов: крупные бугры и мелкая структура.
+		// --- земля -------------------------------------------------------------
 		float lumps = fbm(w * 3.1, 3);
 		col *= 0.85 + lumps * 0.35;
 		hgt += lumps * 0.012;
-		// Проплешины вытоптанного грунта в траве и наоборот.
 		float bare = smoothstep(0.42, 0.66, stain);
 		col = mix(col, col_a * 1.05, bare * 0.35);
 		rough = mix(rough, 1.0, bare);
 
 		// Обочина: полоса у самой кромки тротуара вытоптана и засыпана
-		// высыпавшимся щебнем. Без неё плита встречается с землёй по линейке,
-		// и обе выглядят приклеенными друг к другу.
-		// Контраст щебня гаснет с расстоянием: на дальнем плане мелкая крупа
-		// превращается в мерцающую сыпь, то есть в тот же муар.
-		// Контраст щебня заметно ниже, чем хочется «по смыслу»: полоса идёт
-		// вдоль всего кадра, и любой яркий мелкий разброс на ней читается не
-		// обочиной, а белой сыпью по краю дороги — самым искусственным пятном
-		// в кадре. Плюс затухание по пикселю, иначе вдали она мерцает.
+		// высыпавшимся щебнем. Контраст заметно ниже, чем хочется «по смыслу»:
+		// полоса идёт вдоль всего кадра, и яркий мелкий разброс читается не
+		// обочиной, а белой сыпью по краю дороги.
 		float shoulder = smoothstep(0.988, 1.0, edge);
 		float b_gr = band(18.0, texel);
 		float gr = vnoise(rot * w * 18.0);
@@ -758,16 +737,14 @@ void fragment() {
 
 	// Ближняя фактура. Без неё любое покрытие на расстоянии вытянутой руки
 	// превращается в гладкое мыло: поля шума на 9 см и крупнее с двух метров
-	// уже не видны, а поры, раковины и зерно — видны. Включается только
-	// вблизи: на 120 выборках на метр всё, что дальше десятка метров, — муар.
-	// Две октавы, а не одна: поворот убирает совпадение с осями, вторая
-	// октава — совпадение с решёткой.
-	float b_grit = band(28.0, texel);
-	float b_pore = band(60.0, texel);
-	// Деление на 0.75 — это нормировка: `fbm` на двух октавах даёт диапазон
+	// уже не видны, а поры, раковины и зерно — видны.
+	//
+	// Деление на 0.75 — нормировка: `fbm` на двух октавах даёт диапазон
 	// [0, 0.75] со средним 0.375, а не [0, 1] со средним 0.5. Без неё
 	// `(grit − 0.5)` почти всегда отрицательно, и вместо фактуры получается
-	// ровное затемнение с еле заметным разбросом — поверхность снова гладкая.
+	// ровное затемнение с еле заметным разбросом.
+	float b_grit = band(28.0, texel);
+	float b_pore = band(60.0, texel);
 	if (b_grit > 0.01) {
 		float grit = fbm(rot * w * 14.0, 2) / 0.75;
 		col *= 1.0 - (grit - 0.5) * 0.30 * b_grit;
@@ -786,21 +763,20 @@ void fragment() {
 		hgt = 0.0;
 	}
 
-	// Нормаль из того же поля высот, экранными производными (Mikkelsen).
-	// Так не нужен ни тангентный базис BoxMesh, ни отдельная карта нормалей, а
-	// шов, просевшая плита и выбоина начинают ЛОВИТЬ СВЕТ — без этого любая,
-	// сколь угодно богатая процедурная раскраска остаётся крашеным картоном.
-	// Затухает с расстоянием: на мелком масштабе экранные производные шумят.
-	// Гасится с расстоянием и на скользящих углах: NORMAL во фрагменте —
-	// видовая, её z и есть косинус угла к камере.
+	// Нормаль из того же поля высот, экранными производными (Mikkelsen). Так
+	// не нужен ни тангентный базис, ни отдельная карта нормалей, а шов,
+	// просевшая плита и выбоина начинают ЛОВИТЬ СВЕТ — без этого любая, сколь
+	// угодно богатая процедурная раскраска остаётся крашеным картоном.
+	vec3 nb = n_world;
+	vec3 nv = normalize((viewMatrix * vec4(n_world, 0.0)).xyz);
 	float bs = bump * clamp(1.0 - dist / 70.0, 0.0, 1.0)
-			* smoothstep(0.05, 0.28, abs(NORMAL.z));
+			* smoothstep(0.05, 0.28, abs(nv.z));
+
 	vec3 sx = dFdx(wpos);
 	vec3 sy = dFdy(wpos);
-	vec3 nw = n_world;
-	vec3 r1 = cross(sy, nw);
-	vec3 r2 = cross(nw, sx);
-	float det = dot(sx, r1);
+	vec3 r1v = cross(sy, n_world);
+	vec3 r2v = cross(n_world, sx);
+	float det = dot(sx, r1v);
 	float dn = abs(det);
 
 	// `dn` — площадь пиксельного следа на поверхности, и она обращается в НОЛЬ
@@ -808,10 +784,10 @@ void fragment() {
 	// становятся коллинеарны). В этой точке `sign(det)` тоже ноль, то есть и
 	// градиент ноль, и `normalize(vec3(0))` даёт NaN — на земле это рисовало
 	// аккуратную тонкую тёмную линию через весь кадр, ступеньками. MSAA её не
-	// сглаживал: это затенение, а не кромка геометрии, и диагноз ставится
+	// сглаживает: это затенение, а не кромка геометрии, и диагноз ставится
 	// только выводом нормали цветом (чёрная линия = NaN).
 	if (bs > 0.001 && dn > 1e-9) {
-		vec3 g = bs * sign(det) * (dFdx(hgt) * r1 + dFdy(hgt) * r2) / dn;
+		vec3 g = bs * sign(det) * (dFdx(hgt) * r1v + dFdy(hgt) * r2v) / dn;
 		// Возмущение не должно превзойти саму нормаль: иначе на скользящих
 		// участках она переворачивается и поверхность идёт белыми блёстками,
 		// как солью. Потолок наклона микрорельефа — около 31°.
@@ -819,26 +795,24 @@ void fragment() {
 		if (gl > 0.6) {
 			g *= 0.6 / gl;
 		}
-		NORMAL = normalize((VIEW_MATRIX * vec4(normalize(nw - g), 0.0)).xyz);
+		nb = normalize(n_world - g);
 	}
 
-	ALBEDO = col;
-	ROUGHNESS = clamp(rough, 0.35, 1.0);
-	METALLIC = 0.0;
-	SPECULAR = 0.25;
+	outAlbedo = col;
+	outRough = clamp(rough, 0.35, 1.0);
+	outNormal = nb;
 
 	// Отладочный вывод внутрь шейдера — самый быстрый способ понять, что
 	// именно неправильно, когда картинка «просто странная».
-	if (debug == 1) {
-		ALBEDO = normalize((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).xyz)
-				* 0.5 + 0.5;
-		ROUGHNESS = 1.0;
-	} else if (debug == 2) {
-		ALBEDO = vec3(fract(hgt * 60.0 + 0.5));
-		ROUGHNESS = 1.0;
+	if (debugMode == 1) {
+		outAlbedo = nb * 0.5 + 0.5;
+		outRough = 1.0;
+	} else if (debugMode == 2) {
+		outAlbedo = vec3(fract(hgt * 60.0 + 0.5));
+		outRough = 1.0;
 	}
 }
-//>>>END surface.gdshader
+//>>>END surface.glsl
 </script>
 
 <script>
@@ -852,16 +826,16 @@ const SCENE = {
 
 /* Материалы — по одному на роль, как в road.gd::_materials().
    Цвета хранятся в sRGB 0..1 ровно так, как записаны в Color(). */
-/*<<<BEGIN MATS — заполняется sync.py из road.gd::_materials() */
+/*<<<BEGIN MATS — заполняется sync.py из web/src/surface.js */
 const MATS = [
-	{ name: "Тротуар", gd: "_m_walk", kind: 0, plate: 0.75, joint: 0.030, rough: 0.92,
-	  a: [0.500, 0.490, 0.460], b: [0.350, 0.345, 0.330], j: [0.170, 0.170, 0.160] },
-	{ name: "Асфальт", gd: "_m_road", kind: 1, plate: 1.00, joint: 0.030, rough: 0.92,
-	  a: [0.270, 0.270, 0.275], b: [0.165, 0.165, 0.170], j: [0.100, 0.100, 0.105] },
-	{ name: "Бордюр", gd: "_m_kerb", kind: 0, plate: 1.00, joint: 0.030, rough: 0.92,
-	  a: [0.440, 0.440, 0.435], b: [0.330, 0.330, 0.325], j: [0.180, 0.180, 0.175] },
-	{ name: "Земля", gd: "_m_earth", kind: 2, plate: 1.00, joint: 0.030, rough: 0.92,
-	  a: [0.270, 0.250, 0.175], b: [0.145, 0.140, 0.105], j: [0.100, 0.090, 0.070] },
+	{ name: "Тротуар", key: "walk", kind: 0, plate: 0.75, joint: 0.030, rough: 0.92,
+	  a: [0.498, 0.490, 0.463], b: [0.349, 0.345, 0.329], j: [0.169, 0.169, 0.161] },
+	{ name: "Асфальт", key: "road", kind: 1, plate: 1.00, joint: 0.030, rough: 0.92,
+	  a: [0.271, 0.271, 0.275], b: [0.165, 0.165, 0.169], j: [0.102, 0.102, 0.106] },
+	{ name: "Бордюр", key: "kerb", kind: 0, plate: 1.00, joint: 0.030, rough: 0.92,
+	  a: [0.439, 0.439, 0.435], b: [0.329, 0.329, 0.325], j: [0.180, 0.180, 0.176] },
+	{ name: "Земля", key: "earth", kind: 2, plate: 1.00, joint: 0.030, rough: 0.92,
+	  a: [0.271, 0.251, 0.176], b: [0.145, 0.141, 0.106], j: [0.102, 0.090, 0.071] },
 ];
 /*>>>END MATS*/
 /* порядок в шейдере: 0 плита тротуара, 1 асфальт, 2 бордюр, 3 земля */
@@ -881,27 +855,21 @@ const VIEWS = {
 };
 const cam = { p: [-16, 10, 16], yaw: -45, pitch: -26, fov: 55, speed: 5 };
 
-/* ═══ переходник Godot → GLSL ES 3.0 ═══════════════════════════════
-   Держим построчное соответствие: строки не удаляются, а
-   закомментируются. Тогда номер строки в ошибке компилятора
-   переводится в номер строки в .gdshader простым вычитанием. */
-function translateGodot(src) {
-	const out = [];
-	for (const ln of src.split("\n")) {
-		const t = ln.trim();
-		if (t.startsWith("shader_type") || t.startsWith("render_mode")) {
-			out.push("// [переходник] " + t);
-			continue;
-		}
-		// uniform TYPE NAME [: hint] [= default];  →  TYPE NAME;
-		const m = t.match(/^uniform\s+(\w+)\s+(\w+)\s*(?::[^=;]+)?\s*(?:=[^;]+)?;\s*(\/\/.*)?$/);
-		if (m) {
-			out.push(m[1] + " " + m[2] + "; " + (m[3] || ""));
-			continue;
-		}
-		out.push(ln);
-	}
-	return out.join("\n");
+/* ═══ подгонка под стенд ═══════════════════════════════════════════
+   Шейдер игры — уже чистый GLSL ES 3.0, переводить нечего. Остаётся
+   одно: в игре его параметры приходят `uniform`-ами и одинаковы на всю
+   полосу, а здесь одна и та же программа рисует все полосы разом,
+   поэтому они должны меняться от пикселя к пикселю. Снимаем слово
+   `uniform` — объявления становятся обычными глобальными переменными,
+   которые стенд заполняет перед вызовом `surface()`.
+
+   Строки не удаляются: номер в ошибке компилятора переводится в номер
+   строки файла простым вычитанием. */
+function stripUniforms(src) {
+	return src.split("\n").map((ln) => {
+		const m = ln.trim().match(/^uniform\s+(\w+\s+\w+\s*;.*)$/);
+		return m ? m[1] : ln;
+	}).join("\n");
 }
 
 const PRELUDE = `#version 300 es
@@ -911,7 +879,7 @@ out vec4 FRAG;
 
 uniform vec2 u_res;
 uniform vec3 u_cam, u_right, u_up, u_back;
-uniform mat4 u_ivm, u_vm;
+uniform mat4 u_vm;
 uniform float u_tanHalf;
 
 uniform vec3 u_sun, u_sunCol, u_skyTop, u_skyHor, u_gndHor, u_gndBot, u_fogCol;
@@ -925,10 +893,9 @@ uniform float u_bump;
 uniform int u_debug, u_marking;
 uniform float gRoadHalf, gKerbW, gKerbH, gWalkW, gVerge, gLen;
 
-// встроенные Godot, которые шейдер читает и пишет
-vec3 VERTEX, NORMAL, ALBEDO;
-float ROUGHNESS, METALLIC, SPECULAR;
-mat4 INV_VIEW_MATRIX, VIEW_MATRIX;
+// То, что в игре приходит из вершинного шейдера и от three.js.
+vec3 vWorldPos, vWorldNormal, vViewPos;
+mat4 viewMatrix;
 `;
 
 const EPILOGUE = `
@@ -1009,7 +976,7 @@ void main() {
 	vec3 p, nw;
 	bool hit = trace(u_cam, rd, p, nw);
 
-	// fragment() зовётся ВСЕГДА, даже под небом: dFdx внутри неоднородного
+	// surface() зовётся ВСЕГДА, даже под небом: dFdx внутри неоднородного
 	// ветвления не определён, и на части видеокарт это даёт мусор по кромке.
 	int mi = HIT_MAT;
 	col_a = mA[mi]; col_b = mB[mi]; col_joint = mJ[mi];
@@ -1017,27 +984,26 @@ void main() {
 	kind = mKind[mi];
 	lat_center = HIT_LATC; lat_half = max(HIT_LATH, 0.05);
 	marking = (mi == 1) ? u_marking : 0;
-	bump = u_bump; debug = u_debug;
+	bump = u_bump; debugMode = u_debug;
 
-	INV_VIEW_MATRIX = u_ivm; VIEW_MATRIX = u_vm;
+	viewMatrix = u_vm;
 	vec3 d = p - u_cam;
-	VERTEX = vec3(dot(d, u_right), dot(d, u_up), dot(d, u_back));
-	NORMAL = vec3(dot(nw, u_right), dot(nw, u_up), dot(nw, u_back));
-	ALBEDO = vec3(0.5); ROUGHNESS = 0.9; METALLIC = 0.0; SPECULAR = 0.5;
+	vWorldPos = p;
+	vWorldNormal = nw;
+	vViewPos = vec3(dot(d, u_right), dot(d, u_up), dot(d, u_back));
 
-	fragment();
-
-	vec3 n2 = normalize(u_right * NORMAL.x + u_up * NORMAL.y + u_back * NORMAL.z);
-	float dist = length(VERTEX);
+	vec3 alb; float rgh; vec3 n2;
+	surface(alb, rgh, n2);
+	float dist = length(vViewPos);
 
 	float ndl = max(dot(n2, u_sun), 0.0);
-	vec3 col = ALBEDO * u_sunCol * u_sunE * ndl;
+	vec3 col = alb * u_sunCol * u_sunE * ndl;
 	vec3 hv = normalize(u_sun - rd);
-	float al = max(ROUGHNESS * ROUGHNESS, 0.004);
+	float al = max(rgh * rgh, 0.004);
 	float ndh = max(dot(n2, hv), 0.0);
 	float dgg = al * al / (3.14159 * pow(ndh * ndh * (al * al - 1.0) + 1.0, 2.0));
-	col += u_sunCol * u_sunE * ndl * dgg * SPECULAR * 0.5;
-	col += ALBEDO * mix(u_gndHor, u_skyTop, clamp(n2.y * 0.5 + 0.5, 0.0, 1.0)) * u_ambE;
+	col += u_sunCol * u_sunE * ndl * dgg * 0.12;
+	col += alb * mix(u_gndHor, u_skyTop, clamp(n2.y * 0.5 + 0.5, 0.0, 1.0)) * u_ambE;
 
 	float fa = 0.0;
 	if (u_fogOn == 1) {
@@ -1083,7 +1049,7 @@ function compile(type, src) {
 	return { shader: s };
 }
 
-/* Номер строки из компилятора → номер строки в .gdshader. */
+/* Номер строки из компилятора → номер строки в surface.glsl. */
 function remapLog(info, bodyLines) {
 	return info.split("\n").filter(Boolean).map((ln) => {
 		return ln.replace(/ERROR:\s*\d+:(\d+)/, (full, num) => {
@@ -1094,8 +1060,8 @@ function remapLog(info, bodyLines) {
 	}).join("\n");
 }
 
-function build(godotSrc) {
-	const body = translateGodot(godotSrc);
+function build(srcText) {
+	const body = stripUniforms(srcText);
 	const full = PRELUDE + body + EPILOGUE;
 	const vs = compile(gl.VERTEX_SHADER, VS);
 	const fs = compile(gl.FRAGMENT_SHADER, full);
@@ -1354,9 +1320,9 @@ Object.keys(VIEWS).forEach((name) => {
 
 /* ═══ редактор ═════════════════════════════════════════════════════ */
 const editor = document.getElementById("editor");
-const RAW = document.getElementById("gdshader").textContent
-	.replace(/^[\s\S]*?\/\/<<<BEGIN surface\.gdshader\n/, "")
-	.replace(/\n\/\/>>>END surface\.gdshader[\s\S]*$/, "");
+const RAW = document.getElementById("surface-src").textContent
+	.replace(/^[\s\S]*?\/\/<<<BEGIN surface\.glsl\n/, "")
+	.replace(/\n\/\/>>>END surface\.glsl[\s\S]*$/, "");
 editor.value = RAW;
 
 let timer = null;
@@ -1381,20 +1347,20 @@ async function copy(text, btn) {
 $("#copy-shader").onclick = (e) => copy(editor.value, e.target);
 
 $("#copy-mat").onclick = (e) => {
-	const f = (c) => "Color(" + c.map((v) => v.toFixed(3)).join(", ") + ")";
+	const hx = (c) => "0x" + c.map((v) =>
+		Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, "0")).join("");
+	const pad = (s, n) => (s + " ".repeat(n)).slice(0, n);
 	const lines = MATS.map((m) =>
-		`\t${m.gd} = _surface(${m.kind}, ${f(m.a)}, ${f(m.b)},\n` +
-		`\t\t\t${f(m.j)}, ${m.plate.toFixed(2)})`);
+		`\t${pad(m.key + ":", 7)}{ kind: ${m.kind}, plate: ${m.plate.toFixed(2)}, ` +
+		`a: ${hx(m.a)}, b: ${hx(m.b)}, j: ${hx(m.j)} },`);
 	const env = [
 		"",
-		"\t# свет и туман — road.gd::_env()",
-		`\t# sun.light_energy = ${ENV.sunE.toFixed(2)}`,
-		`\t# env.ambient_light_energy = ${ENV.ambE.toFixed(2)}`,
-		`\t# env.fog_depth_begin = ${ENV.fogB.toFixed(1)}`,
-		`\t# env.fog_depth_end = ${ENV.fogEnd.toFixed(1)}`,
-		`\t# азимут/высота солнца: ${ENV.sunAz.toFixed(0)}° / ${ENV.sunEl.toFixed(0)}°`,
+		"// свет и туман — web/src/main.js",
+		`// солнце ${ENV.sunAz.toFixed(0)}° азимут / ${ENV.sunEl.toFixed(0)}° высота`,
+		`// scene.fog = new THREE.Fog(FOG, ${ENV.fogB.toFixed(0)}, ${ENV.fogEnd.toFixed(0)});`,
 	];
-	copy(lines.join("\n") + "\n" + env.join("\n"), e.target);
+	copy("export const PRESETS = {\n" + lines.join("\n") + "\n};\n" +
+		env.join("\n"), e.target);
 };
 
 /* ═══ цикл ═════════════════════════════════════════════════════════ */
