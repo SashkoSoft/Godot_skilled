@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Улица — веб</title>
+<style>
+:root {
+	--ground: #15171a;
+	--ink: #e8e5df;
+	--dim: #8d9297;
+	--accent: #d8903c;
+	--warn: #c9584c;
+	--mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+	color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; background: var(--ground); }
+#view { display: block; width: 100vw; height: 100vh; cursor: grab; }
+#view:active { cursor: grabbing; }
+
+#hud {
+	position: fixed;
+	left: 12px; top: 12px;
+	font-family: var(--mono);
+	font-size: 11.5px;
+	line-height: 1.75;
+	color: var(--dim);
+	background: rgba(12, 14, 16, 0.74);
+	border: 1px solid #2e3338;
+	border-radius: 3px;
+	padding: 9px 12px;
+	pointer-events: none;
+	font-variant-numeric: tabular-nums;
+}
+#hud b { color: var(--ink); font-weight: 500; }
+#status { color: var(--accent); }
+#status.bad { color: var(--warn); }
+#hud hr { border: none; border-top: 1px solid #2e3338; margin: 7px 0; }
+#hud kbd { color: var(--ink); }
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+
+<div id="hud">
+	<b id="fps">—</b> к/с · рендер <b id="res">—</b> · камера <b id="pos">—</b><br>
+	<span id="status">загрузка…</span>
+	<hr>
+	<kbd>ЛКМ</kbd> обзор · <kbd>WASD</kbd> ходить · <kbd>Q</kbd>/<kbd>E</kbd> вверх-вниз<br>
+	<kbd>Shift</kbd> быстро · колесо — шаг · <kbd>1</kbd>…<kbd>4</kbd> ракурсы<br>
+	<kbd>N</kbd> отладочный вывод · <kbd>B</kbd> микрорельеф
+</div>
+
+<script type="importmap">
+{
+	"imports": {
+		"three": "./vendor/three/three.module.js",
+		"three/addons/": "./vendor/three/"
+	}
+}
+</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
