@@ -1,0 +1,1538 @@
+<title>Лаборатория покрытий</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+
+<style>
+/* Стенд смотрят как смотрят материал: на тёмном окружении. Светлая обвязка
+   вокруг вьюпорта сбивает оценку тона асфальта, поэтому тема тут одна и
+   выбрана намеренно — как в любом инструменте для работы с материалом. */
+:root {
+	--ground: #15171a;
+	--panel: #1b1e21;
+	--panel-2: #212529;
+	--edge: #2e3338;
+	--edge-hi: #3d444b;
+	--ink: #e8e5df;
+	--dim: #8d9297;
+	--dimmer: #5f666c;
+	--accent: #d8903c;      /* натриевый фонарь — единственный цвет улицы */
+	--accent-dim: #7c5423;
+	--ok: #7fa86b;
+	--warn: #c9584c;
+	--mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+	--sans: "IBM Plex Sans", system-ui, "Segoe UI", sans-serif;
+	color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+	margin: 0;
+	background: var(--ground);
+	color: var(--ink);
+	font-family: var(--sans);
+	font-size: 13px;
+	height: 100vh;
+	overflow: hidden;
+}
+
+#app {
+	display: grid;
+	grid-template-columns: 1fr 376px;
+	grid-template-rows: 44px 1fr;
+	height: 100vh;
+}
+
+/* ── шапка ─────────────────────────────────────────────────────────── */
+header {
+	grid-column: 1 / -1;
+	display: flex;
+	align-items: center;
+	gap: 18px;
+	padding: 0 14px;
+	background: var(--panel);
+	border-bottom: 1px solid var(--edge);
+}
+
+.brand {
+	display: flex;
+	align-items: baseline;
+	gap: 9px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+}
+.brand b { font-weight: 600; }
+.brand span {
+	font-family: var(--mono);
+	font-size: 10px;
+	color: var(--dimmer);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.views { display: flex; gap: 1px; margin-left: auto; }
+.views button {
+	font-family: var(--sans);
+	font-size: 12px;
+	padding: 5px 11px;
+	background: var(--panel-2);
+	color: var(--dim);
+	border: 1px solid var(--edge);
+	cursor: pointer;
+}
+.views button:first-child { border-radius: 3px 0 0 3px; }
+.views button:last-child { border-radius: 0 3px 3px 0; }
+.views button + button { border-left: none; }
+.views button:hover { color: var(--ink); background: var(--edge); }
+.views button[aria-pressed="true"] { color: var(--ground); background: var(--accent); border-color: var(--accent); }
+
+.readout {
+	font-family: var(--mono);
+	font-size: 11px;
+	color: var(--dim);
+	display: flex;
+	gap: 14px;
+	font-variant-numeric: tabular-nums;
+}
+.readout b { color: var(--ink); font-weight: 500; }
+
+/* ── вьюпорт ───────────────────────────────────────────────────────── */
+#stage {
+	position: relative;
+	overflow: hidden;
+	background:
+		repeating-conic-gradient(#1a1d20 0% 25%, #17191c 0% 50%) 50% / 24px 24px;
+	display: grid;
+	place-items: center;
+}
+canvas {
+	display: block;
+	max-width: 100%;
+	max-height: 100%;
+	cursor: grab;
+	background: #000;
+}
+canvas.dragging { cursor: grabbing; }
+
+#hint {
+	position: absolute;
+	left: 12px;
+	bottom: 10px;
+	font-family: var(--mono);
+	font-size: 10.5px;
+	line-height: 1.7;
+	color: var(--dimmer);
+	pointer-events: none;
+	background: rgba(12, 14, 16, 0.72);
+	border: 1px solid var(--edge);
+	border-radius: 3px;
+	padding: 7px 10px;
+}
+#hint kbd {
+	font-family: var(--mono);
+	color: var(--dim);
+	background: var(--edge);
+	border-radius: 2px;
+	padding: 0 4px;
+}
+
+/* ── правая колонка ────────────────────────────────────────────────── */
+aside {
+	background: var(--panel);
+	border-left: 1px solid var(--edge);
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.tabs { display: flex; border-bottom: 1px solid var(--edge); }
+.tabs button {
+	flex: 1;
+	font-family: var(--sans);
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.07em;
+	padding: 10px 0 8px;
+	background: none;
+	border: none;
+	border-bottom: 2px solid transparent;
+	color: var(--dimmer);
+	cursor: pointer;
+}
+.tabs button:hover { color: var(--dim); }
+.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+
+.pane { display: none; overflow-y: auto; flex: 1; min-height: 0; }
+.pane[data-open] { display: block; }
+
+.group { border-bottom: 1px solid var(--edge); }
+.group > summary {
+	list-style: none;
+	cursor: pointer;
+	padding: 9px 14px;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.07em;
+	color: var(--dim);
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	user-select: none;
+}
+.group > summary::-webkit-details-marker { display: none; }
+.group > summary::before {
+	content: "";
+	width: 0; height: 0;
+	border-left: 4px solid var(--dimmer);
+	border-top: 3.5px solid transparent;
+	border-bottom: 3.5px solid transparent;
+	transition: transform .12s;
+}
+.group[open] > summary::before { transform: rotate(90deg); }
+.group > summary:hover { color: var(--ink); }
+.group .body { padding: 4px 14px 12px; display: flex; flex-direction: column; gap: 7px; }
+
+/* строка параметра: имя — ползунок — число */
+.row {
+	display: grid;
+	grid-template-columns: 92px 1fr 52px;
+	align-items: center;
+	gap: 9px;
+}
+.row > label {
+	font-family: var(--mono);
+	font-size: 11px;
+	color: var(--dim);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.row output {
+	font-family: var(--mono);
+	font-size: 11px;
+	color: var(--ink);
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+input[type=range] {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 100%;
+	height: 18px;
+	background: none;
+	cursor: ew-resize;
+}
+input[type=range]::-webkit-slider-runnable-track {
+	height: 2px; background: var(--edge-hi); border-radius: 1px;
+}
+input[type=range]::-moz-range-track {
+	height: 2px; background: var(--edge-hi); border-radius: 1px;
+}
+input[type=range]::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	width: 11px; height: 11px; margin-top: -4.5px;
+	background: var(--accent); border-radius: 50%;
+}
+input[type=range]::-moz-range-thumb {
+	width: 11px; height: 11px; border: none;
+	background: var(--accent); border-radius: 50%;
+}
+input[type=range]:focus-visible { outline: 1px solid var(--accent); outline-offset: 3px; }
+
+.swatch {
+	display: grid;
+	grid-template-columns: 92px 30px 1fr;
+	align-items: center;
+	gap: 9px;
+}
+.swatch > label { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+input[type=color] {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 30px; height: 20px; padding: 0;
+	border: 1px solid var(--edge-hi);
+	border-radius: 2px;
+	background: none;
+	cursor: pointer;
+}
+input[type=color]::-webkit-color-swatch-wrapper { padding: 2px; }
+input[type=color]::-webkit-color-swatch { border: none; border-radius: 1px; }
+.swatch code {
+	font-family: var(--mono);
+	font-size: 10.5px;
+	color: var(--dimmer);
+	font-variant-numeric: tabular-nums;
+}
+
+select {
+	font-family: var(--mono);
+	font-size: 11px;
+	background: var(--panel-2);
+	color: var(--ink);
+	border: 1px solid var(--edge-hi);
+	border-radius: 2px;
+	padding: 3px 5px;
+	width: 100%;
+}
+
+.matpick { display: flex; gap: 1px; padding: 10px 14px 4px; }
+.matpick button {
+	flex: 1;
+	font-family: var(--sans);
+	font-size: 11px;
+	padding: 6px 0;
+	background: var(--panel-2);
+	color: var(--dim);
+	border: 1px solid var(--edge);
+	cursor: pointer;
+}
+.matpick button + button { border-left: none; }
+.matpick button:first-child { border-radius: 3px 0 0 3px; }
+.matpick button:last-child { border-radius: 0 3px 3px 0; }
+.matpick button[aria-pressed="true"] {
+	color: var(--ink);
+	background: var(--edge);
+	box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* ── редактор шейдера ──────────────────────────────────────────────── */
+#pane-shader { display: none; flex-direction: column; min-height: 0; }
+#pane-shader[data-open] { display: flex; }
+
+#editor {
+	flex: 1;
+	min-height: 0;
+	width: 100%;
+	resize: none;
+	border: none;
+	border-bottom: 1px solid var(--edge);
+	background: #131518;
+	color: #cfd4d8;
+	font-family: var(--mono);
+	font-size: 11px;
+	line-height: 1.55;
+	padding: 10px 12px;
+	tab-size: 4;
+	white-space: pre;
+	overflow: auto;
+}
+#editor:focus { outline: none; box-shadow: inset 2px 0 0 var(--accent); }
+
+#log {
+	max-height: 150px;
+	overflow: auto;
+	font-family: var(--mono);
+	font-size: 10.5px;
+	line-height: 1.6;
+	padding: 8px 12px;
+	white-space: pre-wrap;
+	border-bottom: 1px solid var(--edge);
+	color: var(--warn);
+}
+#log.ok { color: var(--ok); }
+
+.actions { display: flex; gap: 6px; padding: 10px 12px; flex-wrap: wrap; }
+.btn {
+	font-family: var(--sans);
+	font-size: 12px;
+	padding: 7px 12px;
+	background: var(--panel-2);
+	color: var(--ink);
+	border: 1px solid var(--edge-hi);
+	border-radius: 3px;
+	cursor: pointer;
+}
+.btn:hover { border-color: var(--accent-dim); color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #17181a; font-weight: 600; }
+.btn.primary:hover { background: #e6a052; color: #17181a; }
+
+.note {
+	padding: 11px 14px 14px;
+	font-size: 12px;
+	line-height: 1.65;
+	color: var(--dim);
+	border-top: 1px solid var(--edge);
+}
+.note b { color: var(--ink); font-weight: 600; }
+.note code {
+	font-family: var(--mono);
+	font-size: 11px;
+	color: var(--accent);
+}
+.note ol { margin: 7px 0 0; padding-left: 18px; }
+.note li { margin-bottom: 4px; }
+
+@media (max-width: 940px) {
+	#app { grid-template-columns: 1fr; grid-template-rows: 44px 46vh 1fr; }
+	aside { border-left: none; border-top: 1px solid var(--edge); }
+}
+@media (prefers-reduced-motion: reduce) {
+	* { transition: none !important; }
+}
+</style>
+
+<div id="app">
+	<header>
+		<div class="brand"><b>Лаборатория покрытий</b><span>surface.gdshader</span></div>
+		<div class="views" id="views"></div>
+		<div class="readout">
+			<span>рендер <b id="r-res">—</b></span>
+			<span><b id="r-fps">—</b> к/с</span>
+		</div>
+	</header>
+
+	<div id="stage">
+		<canvas id="gl"></canvas>
+		<div id="hint">
+			<kbd>ЛКМ</kbd> обзор · <kbd>WASD</kbd> ходить · <kbd>Q</kbd>/<kbd>E</kbd> вверх-вниз · <kbd>Shift</kbd> быстро · колесо — шаг<br>
+			размер пикселя в мире правит <code>band()</code>: держи разрешение как в игре
+		</div>
+	</div>
+
+	<aside>
+		<div class="tabs" role="tablist">
+			<button role="tab" data-tab="mat" aria-selected="true">Материалы</button>
+			<button role="tab" data-tab="scene" aria-selected="false">Сцена</button>
+			<button role="tab" data-tab="shader" aria-selected="false">Шейдер</button>
+		</div>
+
+		<div class="pane" id="pane-mat" data-open>
+			<div class="matpick" id="matpick"></div>
+			<div id="mat-body"></div>
+			<div class="note">
+				<b>Что переносится в игру.</b> Кнопка ниже отдаёт готовые строки для
+				<code>road.gd::_materials()</code> — с теми же <code>Color()</code>,
+				что стоят сейчас.
+				<div class="actions">
+					<button class="btn primary" id="copy-mat">Скопировать материалы для road.gd</button>
+				</div>
+			</div>
+		</div>
+
+		<div class="pane" id="pane-scene"><div id="scene-body"></div></div>
+
+		<div class="pane" id="pane-shader">
+			<textarea id="editor" spellcheck="false" aria-label="Исходник шейдера"></textarea>
+			<div id="log" class="ok">—</div>
+			<div class="actions">
+				<button class="btn primary" id="copy-shader">Скопировать .gdshader</button>
+				<button class="btn" id="recompile">Пересобрать (Ctrl+Enter)</button>
+				<button class="btn" id="revert">Вернуть исходный</button>
+			</div>
+			<div class="note">
+				В окне — <b>ровно тот текст</b>, что лежит в
+				<code>game/surface.gdshader</code>. Переходник снимает
+				<code>shader_type</code>, <code>render_mode</code> и слово
+				<code>uniform</code>, всё остальное — и <code>dFdx</code>, и
+				<code>fwidth</code>, и встроенные <code>VERTEX</code>/<code>NORMAL</code> —
+				работает как в Godot.
+				<ol>
+					<li>правишь здесь, смотришь сразу;</li>
+					<li>«Скопировать .gdshader» → вставить в файл целиком;</li>
+					<li><code>python tools/shader_web/sync.py</code> — вернуть правку на страницу.</li>
+				</ol>
+			</div>
+		</div>
+	</aside>
+</div>
+
+<script id="gdshader" type="x-shader/x-gdshader">
+//<<<BEGIN surface.gdshader
+shader_type spatial;
+render_mode cull_back, diffuse_burley;
+
+// Покрытие улицы: тротуарная плита, асфальт, земля. Рисунок считается от
+// МИРОВОЙ точки, а не берётся тайловой картинкой — на полосе длиной в сотни
+// метров любой тайл рано или поздно начинает дышать сеткой, и никакой размер
+// плитки этого не лечит. Здесь повтора нет ни на каком масштабе.
+//
+// `kind`: 0 — плита, 1 — асфальт, 2 — земля.
+uniform int kind = 0;
+
+uniform vec3 col_a : source_color = vec3(0.62, 0.61, 0.58);
+uniform vec3 col_b : source_color = vec3(0.44, 0.43, 0.41);
+uniform vec3 col_joint : source_color = vec3(0.24, 0.24, 0.22);
+uniform float plate = 0.75;
+uniform float joint = 0.030;
+uniform float rough_base = 0.92;
+
+// Поперечная привязка полосы. Улица идёт вдоль X, значит «поперёк» — это Z.
+// lat = 0 по оси полосы, ±1 у кромок. Без этой оси покрытие остаётся ровным
+// серым полем: ни колеи, ни осевая разметка, ни намыв у бордюра не знают,
+// где у полосы середина. У каждой полосы своя копия материала — общий
+// материал означал бы один lat_center на всех.
+uniform float lat_center = 0.0;
+uniform float lat_half = 1.0;
+
+// Разметка: 0 — нет, 1 — осевой пунктир.
+uniform int marking = 0;
+// Глубина микрорельефа в метрах. 0 — плоско, как крашеный картон.
+uniform float bump = 1.0;
+// Отладка: 0 — как есть, 1 — мировая нормаль цветом, 2 — поле высот.
+uniform int debug = 0;
+
+// Хеш без `sin`. Это полноэкранные плоскости, на каждый пиксель приходятся
+// десятки выборок шума, и тригонометрия в каждой — самое дорогое, что тут
+// может быть.
+float h21(vec2 p) {
+	vec3 q = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
+	q += dot(q, q.yzx + 33.33);
+	return fract((q.x + q.y) * q.z);
+}
+
+float vnoise(vec2 p) {
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	f = f * f * (3.0 - 2.0 * f);
+	float a = h21(i);
+	float b = h21(i + vec2(1.0, 0.0));
+	float c = h21(i + vec2(0.0, 1.0));
+	float d = h21(i + vec2(1.0, 1.0));
+	return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+float fbm(vec2 p, int oct) {
+	float s = 0.0;
+	float a = 0.5;
+	for (int i = 0; i < 6; i++) {
+		if (i >= oct) break;
+		s += a * vnoise(p);
+		p *= 2.03;
+		a *= 0.5;
+	}
+	return s;
+}
+
+// Затухание полосы частот по размеру пикселя в МИРОВЫХ единицах. У
+// процедурной текстуры нет мип-уровней, и как только период шума становится
+// меньше пары пикселей, он перестаёт быть фактурой и превращается в шахматку
+// из отдельных точек — ровно тот же муар, что и от тайла, только мельче.
+// `texel` — сколько метров приходится на пиксель здесь и сейчас.
+float band(float freq, float texel) {
+	return clamp(1.0 - texel * freq * 1.6, 0.0, 1.0);
+}
+
+// Хребтовый шум: даёт ВЕТВЯЩИЕСЯ тонкие линии. Обычный fbm с порогом по
+// |n−0.5| рисует одну мажущую полосу на октаву, и асфальт от неё выглядит
+// заляпанным, а не потрескавшимся.
+float ridge(vec2 p, int oct) {
+	float s = 0.0;
+	float a = 0.5;
+	for (int i = 0; i < 6; i++) {
+		if (i >= oct) break;
+		float n = 1.0 - abs(vnoise(p) * 2.0 - 1.0);
+		s += a * n * n;
+		p = p * 2.11 + 7.3;
+		a *= 0.5;
+	}
+	return s;
+}
+
+void fragment() {
+	vec3 wpos = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	vec2 w = wpos.xz;
+
+	// Боковые грани — торец бордюра или обрез покрытия, им ни колеи, ни
+	// разметка не нужны. Ранним `return` это не отсечь: в Godot `return` во
+	// фрагментной функции запрещён, поэтому флаг и подмена в конце.
+	//
+	// Сравнивать надо МИРОВУЮ вертикаль. `NORMAL` во фрагменте Godot — видовая,
+	// и у горизонтального пола её `y` падает вместе с наклоном камеры: на
+	// взгляде сверху (−84°) он равен 0.1, и всё покрытие уходило в ветку
+	// торца — сверху дорога превращалась в ровные серые ленты.
+	vec3 n_world = normalize((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).xyz);
+	bool is_side = abs(n_world.y) < 0.5 && kind != 2;
+
+	float lat = clamp((w.y - lat_center) / max(lat_half, 0.001), -1.0, 1.0);
+	float edge = abs(lat);
+
+	// Высокие частоты глушатся с расстоянием: иначе на дальнем плане зерно
+	// превращается в муар, то есть в ту же сетку, от которой мы уходили.
+	float dist = length(VERTEX);
+	// Среднее геометрическое, а не максимум: под скользящим углом пиксельный
+	// след сильно вытянут, и по максимуму гасится вся фактура разом — плита в
+	// двух метрах от камеры остаётся гладким мылом. Аппаратная анизотропия
+	// ровно этим и занимается; для процедурной текстуры приходится вручную.
+	float texel = sqrt(max(fwidth(w.x) * fwidth(w.y), 1e-12));
+	// Поворот домена для мелких слоёв: у value-шума экстремумы сидят на узлах
+	// решётки, и выборка по осям мира даёт мозаику из квадратных пятнышек,
+	// выровненных по X и Z, вместо фактуры.
+	mat2 rot = mat2(vec2(0.8, 0.6), vec2(-0.6, 0.8));
+	float mid_fade = clamp(1.0 - dist / 140.0, 0.0, 1.0);
+
+	// Три поля шума на всё покрытие, дальше они ПЕРЕИСПОЛЬЗУЮТСЯ: каждый
+	// лишний fbm — четыре выборки на октаву на каждом пикселе экрана.
+	float stain = fbm(w * 0.055, 3);
+	float mid = fbm(w * 0.9, 2);
+	float grain = fbm(w * 11.0, 2);
+
+	float t = clamp(stain * 0.85 + mid * 0.25 - 0.12, 0.0, 1.0);
+	vec3 col = mix(col_b, col_a, t);
+	col *= 1.0 - (grain - 0.5) * 0.20 * band(11.0, texel);
+
+	float rough = rough_base;
+	// Рельеф в метрах, накапливается вместе с цветом: то, что темнее из-за
+	// углубления, должно быть углублением и по нормали.
+	float hgt = (grain - 0.5) * 0.002;
+
+	if (kind == 0) {
+		// --- тротуарная плита ----------------------------------------------
+		// Перевязка: каждый второй ряд сдвинут на полплиты. Прямая сетка
+		// «клетка в клетку» сразу читается фальшивкой, так плитку не кладут.
+		float row = floor(w.y / plate);
+		float shift = mod(row, 2.0) * 0.5;
+		vec2 cell = vec2(w.x / plate + shift, w.y / plate);
+		vec2 id = floor(cell);
+		vec2 f = fract(cell);
+
+		float r1 = h21(id);
+		float r2 = h21(id + 19.7);
+		// Разброс тона от плиты к плите — то, что отличает уложенный двор от
+		// одной большой серой поверхности с сеткой поверх. Плиты лили разными
+		// замесами и в разные годы.
+		col *= 1.0 + (r1 - 0.5) * 0.24;
+		col *= 1.0 + (vnoise(w * 2.7 + id * 7.3) - 0.5) * 0.14;
+		// Разводы поверх раскладки — переиспользуем уже посчитанное поле.
+		// Без них плиты одного замеса выглядят покрашенными из одного ведра.
+		col *= 0.90 + mid * 0.22;
+
+		// Ширина шва гуляет: где-то плиты разошлись, где-то встык. Модуляция
+		// шума слабая намеренно: при сильной шов рассыпается в пунктир, и
+		// тротуар выглядит прошитым на машинке.
+		float jw = joint * (0.7 + 0.9 * h21(id + 5.1));
+		vec2 e = min(f, 1.0 - f) * plate;
+		float dmin = min(e.x, e.y);
+		// Ширина перехода не меньше пикселя на экране, иначе шов тоньше
+		// растра и рассыпается в пунктир из отдельных тёмных точек.
+		float fw = fwidth(dmin) * 1.5;
+		float seam = 1.0 - smoothstep(jw * 0.35 - fw, jw * 1.1 + fw, dmin);
+		seam *= 0.80 + 0.20 * vnoise(w * 6.0);
+
+		// Грязь копится у кромок полосы: у бордюра и у стены её больше всего,
+		// по середине ходят и вытирают.
+		float dirt = smoothstep(0.45, 1.0, edge) * 0.55 + stain * 0.35;
+		col *= 1.0 - dirt * 0.32;
+		col = mix(col, col_joint * (1.0 - dirt * 0.25),
+				seam * (0.70 + dirt * 0.30));
+		rough = mix(rough, 1.0, seam);
+
+		// Рельеф плиты — это ФАСКА по краю, а не общая просадка к шву. Широкая
+		// мягкая ямка вокруг всего периметра превращает плиту в надутую
+		// подушку: при скользящем свете каждая начинает блестеть по центру.
+		// Реальная плита плоская, у неё снята кромка 2–3 см.
+		float cham = 1.0 - smoothstep(0.0, 0.030, dmin);
+		hgt -= cham * 0.005 + seam * 0.004;
+
+		// Плиты просели и перекосились. Перекос слабый: на 0.75 м плиты
+		// разница краёв в 5 мм уже читается, больше — превращает тротуар в
+		// волну.
+		float sunk = smoothstep(0.62, 1.0, r2);
+		col *= 1.0 - sunk * 0.14;
+		hgt -= sunk * 0.008;
+		hgt += ((f.x - 0.5) * (r1 - 0.5) + (f.y - 0.5) * (r2 - 0.5))
+				* plate * 0.010;
+
+		if (r1 > 0.72) {
+			// Трещина через плиту, своя у каждой. Тонкая, рваная и не доходит
+			// до краёв: ровная жирная линия от шва до шва читается нарисованным
+			// червяком, а не расколом.
+			float cr = abs(f.x - (0.25 + 0.5 * r2)
+					+ (vnoise(w * 9.0 + id) - 0.5) * 0.20
+					+ (vnoise(w * 33.0) - 0.5) * 0.045);
+			float cm = 1.0 - smoothstep(0.004, 0.016, cr);
+			cm *= smoothstep(0.04, 0.30, f.y) * smoothstep(0.04, 0.30, 1.0 - f.y);
+			col = mix(col, col_joint, cm * 0.55);
+			rough = mix(rough, 1.0, cm);
+			// Мелко: у глубокой борозды кромка ловит свет и трещина читается
+			// белым червяком, то есть ровно тем, от чего уходили.
+			hgt -= cm * 0.003;
+		}
+	} else if (kind == 1) {
+		// --- асфальт ---------------------------------------------------------
+		// щебень — одна выборка, не fbm: на таком масштабе октавы неразличимы
+		float chips = vnoise(w * 26.0);
+		col *= 1.0 - (chips - 0.5) * 0.34 * band(26.0, texel);
+		hgt += (chips - 0.5) * 0.005 * band(26.0, texel);
+
+		// Колеи: две накатанные полосы. Там асфальт заглажен и темнее, между
+		// ними и по краям — шершавее и светлее.
+		float track = exp(-pow((edge - 0.46) / 0.15, 2.0));
+		col *= 1.0 - track * 0.13;
+		rough = mix(rough, 0.62, track * mid_fade);
+		hgt -= track * 0.012;
+
+		// Ремонтные карты: прямоугольные заплаты другого замеса, со швом.
+		vec2 pid = floor(vec2(w.x / 7.0, w.y / 3.5) + 31.0);
+		if (h21(pid) > 0.68) {
+			vec2 pf = fract(vec2(w.x / 7.0, w.y / 3.5) + 31.0);
+			vec2 pe = min(pf, 1.0 - pf);
+			float pd = min(pe.x, pe.y);
+			float pw = fwidth(pd) * 0.8;
+			float inside = smoothstep(0.03, 0.07, pd);
+			col = mix(col, col * 0.74, inside);
+			// Шов заплаты — такая же тонкая линия, как шов плиты, и так же
+			// рассыпается в пунктир без запаса на пиксель.
+			float pseam = (1.0 - smoothstep(0.008 - pw, 0.035 + pw, pd))
+					* smoothstep(0.0, 0.010 + pw, pd);
+			col = mix(col, col_joint, pseam * 0.6);
+			hgt += inside * 0.006 - pseam * 0.010;
+		}
+
+		// Сетка трещин. Один хребтовый шум на три октавы даёт и крупные
+		// разломы, и мелкое ветвление; по краям, где нет нагрузки, сетка
+		// гуще — это «крокодилья кожа» настоящего старого асфальта.
+		// Пороги подняты, а затемнение ослаблено: трещина в асфальте — это
+		// тонкий тёмный волос, а не жирная чёрная линия. Жирная читается как
+		// нарисованная поверх, и вся полоса выглядит заляпанной.
+		float big = ridge(w * 0.55, 3);
+		float cm1 = smoothstep(0.70, 0.86, big);
+		float cm2 = smoothstep(0.80, 0.94, big) * smoothstep(0.35, 0.9, edge);
+		float cm = clamp(cm1 + cm2 * 0.7, 0.0, 1.0);
+		col = mix(col, col_b * 0.55, cm * 0.65);
+		rough = mix(rough, 1.0, cm);
+		hgt -= cm * 0.010;
+
+		// Выбоины: редкие, с тёмным нутром и светлым обломанным ободком.
+		vec2 hid = floor(w / 4.5 + 61.0);
+		vec2 hf = fract(w / 4.5 + 61.0) - 0.5;
+		float hr = h21(hid);
+		if (hr > 0.86) {
+			float rad = 0.10 + 0.10 * h21(hid + 2.3);
+			float d2 = length(hf * vec2(1.0, 1.25))
+					+ (vnoise(w * 7.0) - 0.5) * 0.05;
+			float hole = 1.0 - smoothstep(rad * 0.6, rad, d2);
+			float rim = smoothstep(rad, rad * 1.25, d2)
+					* (1.0 - smoothstep(rad * 1.25, rad * 1.6, d2));
+			col = mix(col, col_joint * 0.6, hole * 0.85);
+			col = mix(col, col_a * 0.9, rim * 0.35);
+			rough = mix(rough, 1.0, hole);
+			hgt -= hole * 0.045;
+			hgt += rim * 0.010;
+		}
+
+		// Осевая разметка: почти стёрта. Она и делает полосу дорогой, а её
+		// состояние — заброшенной дорогой.
+		if (marking == 1) {
+			float dash = step(0.35, fract(w.x / 6.0));
+			float line = (1.0 - smoothstep(0.045, 0.075,
+					abs(lat * lat_half))) * dash;
+			float wear = smoothstep(0.30, 0.72, stain * 0.6 + mid * 0.4);
+			col = mix(col, vec3(0.72, 0.70, 0.63), line * wear * 0.55);
+			rough = mix(rough, 0.80, line * wear);
+		}
+
+		// У бордюра наметает песок и мусор, там же держится вода.
+		float silt = smoothstep(0.72, 1.0, edge);
+		col = mix(col, col_a * 0.78, silt * (0.30 + 0.30 * mid));
+		rough = mix(rough, 1.0, silt);
+		hgt += silt * 0.005;
+	} else {
+		// --- земля -----------------------------------------------------------
+		// Комковатость двух масштабов: крупные бугры и мелкая структура.
+		float lumps = fbm(w * 3.1, 3);
+		col *= 0.85 + lumps * 0.35;
+		hgt += lumps * 0.012;
+		// Проплешины вытоптанного грунта в траве и наоборот.
+		float bare = smoothstep(0.42, 0.66, stain);
+		col = mix(col, col_a * 1.05, bare * 0.35);
+		rough = mix(rough, 1.0, bare);
+
+		// Обочина: полоса у самой кромки тротуара вытоптана и засыпана
+		// высыпавшимся щебнем. Без неё плита встречается с землёй по линейке,
+		// и обе выглядят приклеенными друг к другу.
+		// Контраст щебня гаснет с расстоянием: на дальнем плане мелкая крупа
+		// превращается в мерцающую сыпь, то есть в тот же муар.
+		// Контраст щебня заметно ниже, чем хочется «по смыслу»: полоса идёт
+		// вдоль всего кадра, и любой яркий мелкий разброс на ней читается не
+		// обочиной, а белой сыпью по краю дороги — самым искусственным пятном
+		// в кадре. Плюс затухание по пикселю, иначе вдали она мерцает.
+		float shoulder = smoothstep(0.988, 1.0, edge);
+		float b_gr = band(18.0, texel);
+		float gr = vnoise(rot * w * 18.0);
+		col = mix(col, col * (1.10 + (gr - 0.5) * 0.22 * b_gr), shoulder);
+		hgt += (gr - 0.5) * 0.004 * shoulder * b_gr;
+		rough = mix(rough, 1.0, shoulder);
+	}
+
+	// Ближняя фактура. Без неё любое покрытие на расстоянии вытянутой руки
+	// превращается в гладкое мыло: поля шума на 9 см и крупнее с двух метров
+	// уже не видны, а поры, раковины и зерно — видны. Включается только
+	// вблизи: на 120 выборках на метр всё, что дальше десятка метров, — муар.
+	// Две октавы, а не одна: поворот убирает совпадение с осями, вторая
+	// октава — совпадение с решёткой.
+	float b_grit = band(28.0, texel);
+	float b_pore = band(60.0, texel);
+	// Деление на 0.75 — это нормировка: `fbm` на двух октавах даёт диапазон
+	// [0, 0.75] со средним 0.375, а не [0, 1] со средним 0.5. Без неё
+	// `(grit − 0.5)` почти всегда отрицательно, и вместо фактуры получается
+	// ровное затемнение с еле заметным разбросом — поверхность снова гладкая.
+	if (b_grit > 0.01) {
+		float grit = fbm(rot * w * 14.0, 2) / 0.75;
+		col *= 1.0 - (grit - 0.5) * 0.30 * b_grit;
+		rough = mix(rough, 1.0, b_grit * 0.25);
+	}
+	if (b_pore > 0.01) {
+		float pore = smoothstep(0.62, 0.88, fbm(rot * w * 30.0, 2) / 0.75);
+		col *= 1.0 - pore * 0.28 * b_pore;
+		hgt -= pore * 0.0030 * b_pore;
+	}
+
+	if (is_side) {
+		float se = fbm(wpos.xy * 6.0, 2);
+		col = col_b * (0.80 + se * 0.30);
+		rough = 1.0;
+		hgt = 0.0;
+	}
+
+	// Нормаль из того же поля высот, экранными производными (Mikkelsen).
+	// Так не нужен ни тангентный базис BoxMesh, ни отдельная карта нормалей, а
+	// шов, просевшая плита и выбоина начинают ЛОВИТЬ СВЕТ — без этого любая,
+	// сколь угодно богатая процедурная раскраска остаётся крашеным картоном.
+	// Затухает с расстоянием: на мелком масштабе экранные производные шумят.
+	// Гасится с расстоянием и на скользящих углах: NORMAL во фрагменте —
+	// видовая, её z и есть косинус угла к камере.
+	float bs = bump * clamp(1.0 - dist / 70.0, 0.0, 1.0)
+			* smoothstep(0.05, 0.28, abs(NORMAL.z));
+	vec3 sx = dFdx(wpos);
+	vec3 sy = dFdy(wpos);
+	vec3 nw = n_world;
+	vec3 r1 = cross(sy, nw);
+	vec3 r2 = cross(nw, sx);
+	float det = dot(sx, r1);
+	float dn = abs(det);
+
+	// `dn` — площадь пиксельного следа на поверхности, и она обращается в НОЛЬ
+	// на целой линии в кадре (там, где экранные производные мировой позиции
+	// становятся коллинеарны). В этой точке `sign(det)` тоже ноль, то есть и
+	// градиент ноль, и `normalize(vec3(0))` даёт NaN — на земле это рисовало
+	// аккуратную тонкую тёмную линию через весь кадр, ступеньками. MSAA её не
+	// сглаживал: это затенение, а не кромка геометрии, и диагноз ставится
+	// только выводом нормали цветом (чёрная линия = NaN).
+	if (bs > 0.001 && dn > 1e-9) {
+		vec3 g = bs * sign(det) * (dFdx(hgt) * r1 + dFdy(hgt) * r2) / dn;
+		// Возмущение не должно превзойти саму нормаль: иначе на скользящих
+		// участках она переворачивается и поверхность идёт белыми блёстками,
+		// как солью. Потолок наклона микрорельефа — около 31°.
+		float gl = length(g);
+		if (gl > 0.6) {
+			g *= 0.6 / gl;
+		}
+		NORMAL = normalize((VIEW_MATRIX * vec4(normalize(nw - g), 0.0)).xyz);
+	}
+
+	ALBEDO = col;
+	ROUGHNESS = clamp(rough, 0.35, 1.0);
+	METALLIC = 0.0;
+	SPECULAR = 0.25;
+
+	// Отладочный вывод внутрь шейдера — самый быстрый способ понять, что
+	// именно неправильно, когда картинка «просто странная».
+	if (debug == 1) {
+		ALBEDO = normalize((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).xyz)
+				* 0.5 + 0.5;
+		ROUGHNESS = 1.0;
+	} else if (debug == 2) {
+		ALBEDO = vec3(fract(hgt * 60.0 + 0.5));
+		ROUGHNESS = 1.0;
+	}
+}
+//>>>END surface.gdshader
+</script>
+
+<script>
+"use strict";
+
+/* ═══ раскладка улицы: те же числа, что в road.gd ═══════════════════ */
+const SCENE = {
+	roadHalf: 3.60, kerbW: 0.14, kerbH: 0.14, walkW: 2.40,
+	verge: 220.0, len: 220.0,
+};
+
+/* Материалы — по одному на роль, как в road.gd::_materials().
+   Цвета хранятся в sRGB 0..1 ровно так, как записаны в Color(). */
+/*<<<BEGIN MATS — заполняется sync.py из road.gd::_materials() */
+const MATS = [
+	{ name: "Тротуар", gd: "_m_walk", kind: 0, plate: 0.75, joint: 0.030, rough: 0.92,
+	  a: [0.500, 0.490, 0.460], b: [0.350, 0.345, 0.330], j: [0.170, 0.170, 0.160] },
+	{ name: "Асфальт", gd: "_m_road", kind: 1, plate: 1.00, joint: 0.030, rough: 0.92,
+	  a: [0.270, 0.270, 0.275], b: [0.165, 0.165, 0.170], j: [0.100, 0.100, 0.105] },
+	{ name: "Бордюр", gd: "_m_kerb", kind: 0, plate: 1.00, joint: 0.030, rough: 0.92,
+	  a: [0.440, 0.440, 0.435], b: [0.330, 0.330, 0.325], j: [0.180, 0.180, 0.175] },
+	{ name: "Земля", gd: "_m_earth", kind: 2, plate: 1.00, joint: 0.030, rough: 0.92,
+	  a: [0.270, 0.250, 0.175], b: [0.145, 0.140, 0.105], j: [0.100, 0.090, 0.070] },
+];
+/*>>>END MATS*/
+/* порядок в шейдере: 0 плита тротуара, 1 асфальт, 2 бордюр, 3 земля */
+
+const ENV = {
+	sunAz: 52.0, sunEl: 32.0, sunE: 1.25, ambE: 0.55, expo: 1.0,
+	fogOn: 1, fogB: 55.0, fogEnd: 150.0, fogCurve: 0.9, fogSky: 0.5,
+	bump: 1.0, marking: 1, debug: 0, scale: 1.0, lockRes: 0,
+};
+
+/* Ракурсы — те же, что `--cam=` в road.gd, чтобы кадры сходились. */
+const VIEWS = {
+	"Общий":  { p: [-16, 10, 16], yaw: -45, pitch: -26 },
+	"С глаз": { p: [-24, 1.70, 5.0], yaw: -78, pitch: -7 },
+	"Бордюр": { p: [-3, 1.20, 6.2], yaw: -37, pitch: -16 },
+	"Сверху": { p: [0, 60, 6], yaw: 0, pitch: -84 },
+};
+const cam = { p: [-16, 10, 16], yaw: -45, pitch: -26, fov: 55, speed: 5 };
+
+/* ═══ переходник Godot → GLSL ES 3.0 ═══════════════════════════════
+   Держим построчное соответствие: строки не удаляются, а
+   закомментируются. Тогда номер строки в ошибке компилятора
+   переводится в номер строки в .gdshader простым вычитанием. */
+function translateGodot(src) {
+	const out = [];
+	for (const ln of src.split("\n")) {
+		const t = ln.trim();
+		if (t.startsWith("shader_type") || t.startsWith("render_mode")) {
+			out.push("// [переходник] " + t);
+			continue;
+		}
+		// uniform TYPE NAME [: hint] [= default];  →  TYPE NAME;
+		const m = t.match(/^uniform\s+(\w+)\s+(\w+)\s*(?::[^=;]+)?\s*(?:=[^;]+)?;\s*(\/\/.*)?$/);
+		if (m) {
+			out.push(m[1] + " " + m[2] + "; " + (m[3] || ""));
+			continue;
+		}
+		out.push(ln);
+	}
+	return out.join("\n");
+}
+
+const PRELUDE = `#version 300 es
+precision highp float;
+precision highp int;
+out vec4 FRAG;
+
+uniform vec2 u_res;
+uniform vec3 u_cam, u_right, u_up, u_back;
+uniform mat4 u_ivm, u_vm;
+uniform float u_tanHalf;
+
+uniform vec3 u_sun, u_sunCol, u_skyTop, u_skyHor, u_gndHor, u_gndBot, u_fogCol;
+uniform float u_sunE, u_ambE, u_expo, u_fogB, u_fogEnd, u_fogCurve, u_fogSky;
+uniform int u_fogOn;
+
+uniform vec3 mA[4], mB[4], mJ[4];
+uniform float mPlate[4], mJoint[4], mRough[4];
+uniform int mKind[4];
+uniform float u_bump;
+uniform int u_debug, u_marking;
+uniform float gRoadHalf, gKerbW, gKerbH, gWalkW, gVerge, gLen;
+
+// встроенные Godot, которые шейдер читает и пишет
+vec3 VERTEX, NORMAL, ALBEDO;
+float ROUGHNESS, METALLIC, SPECULAR;
+mat4 INV_VIEW_MATRIX, VIEW_MATRIX;
+`;
+
+const EPILOGUE = `
+int   HIT_MAT;
+float HIT_LATC, HIT_LATH;
+bool  HIT_SIDE;
+
+// Пересечение луча с раскладкой улицы. Полосы плоские и горизонтальные,
+// поэтому честная геометрия тут не нужна — хватает плоскостей, а мировая
+// точка получается точной, что важно для dFdx.
+bool trace(vec3 ro, vec3 rd, out vec3 p, out vec3 n) {
+	float best = 1e9;
+	bool got = false;
+	float RH = gRoadHalf, KW = gKerbW, WW = gWalkW, KH = gKerbH;
+	float z1 = RH, z2 = RH + KW, z3 = RH + KW + WW, z4 = gVerge;
+
+	for (int i = 0; i < 7; i++) {
+		float a, b, y; int m;
+		if (i == 0)      { a = -RH; b =  RH; y = -KH;  m = 1; }
+		else if (i == 1) { a =  z1; b =  z2; y = 0.0;  m = 2; }
+		else if (i == 2) { a = -z2; b = -z1; y = 0.0;  m = 2; }
+		else if (i == 3) { a =  z2; b =  z3; y = 0.0;  m = 0; }
+		else if (i == 4) { a = -z3; b = -z2; y = 0.0;  m = 0; }
+		else if (i == 5) { a =  z3; b =  z4; y = -0.02; m = 3; }
+		else             { a = -z4; b = -z3; y = -0.02; m = 3; }
+		if (rd.y > -1e-6) continue;
+		float t = (y - ro.y) / rd.y;
+		if (t <= 0.0 || t >= best) continue;
+		vec3 q = ro + rd * t;
+		if (q.z < a || q.z > b || abs(q.x) > gLen) continue;
+		best = t; p = q; n = vec3(0.0, 1.0, 0.0);
+		HIT_MAT = m; HIT_LATC = (a + b) * 0.5; HIT_LATH = (b - a) * 0.5;
+		HIT_SIDE = false; got = true;
+	}
+
+	// лицевая грань бордюра и 2-сантиметровая ступенька тротуар→земля
+	for (int i = 0; i < 4; i++) {
+		float zf, nz, ylo, yhi; int m;
+		if (i == 0)      { zf =  z1; nz = -1.0; ylo = -KH;  yhi = 0.0; m = 2; }
+		else if (i == 1) { zf = -z1; nz =  1.0; ylo = -KH;  yhi = 0.0; m = 2; }
+		else if (i == 2) { zf =  z3; nz =  1.0; ylo = -0.02; yhi = 0.0; m = 0; }
+		else             { zf = -z3; nz = -1.0; ylo = -0.02; yhi = 0.0; m = 0; }
+		if (abs(rd.z) < 1e-6) continue;
+		if (rd.z * nz > 0.0) continue;
+		float t = (zf - ro.z) / rd.z;
+		if (t <= 0.0 || t >= best) continue;
+		vec3 q = ro + rd * t;
+		if (q.y < ylo || q.y > yhi || abs(q.x) > gLen) continue;
+		best = t; p = q; n = vec3(0.0, 0.0, nz);
+		HIT_MAT = m; HIT_LATC = zf; HIT_LATH = 0.07;
+		HIT_SIDE = true; got = true;
+	}
+	if (!got) { p = ro + rd * 900.0; n = vec3(0.0, 1.0, 0.0); HIT_MAT = 3;
+		HIT_LATC = 0.0; HIT_LATH = 100.0; HIT_SIDE = false; }
+	return got;
+}
+
+vec3 skyColor(vec3 rd) {
+	float h = rd.y;
+	vec3 c = h > 0.0
+		? mix(u_skyHor, u_skyTop, pow(clamp(h, 0.0, 1.0), 0.45))
+		: mix(u_gndHor, u_gndBot, pow(clamp(-h, 0.0, 1.0), 0.35));
+	c += u_sunCol * pow(max(dot(rd, u_sun), 0.0), 600.0) * 3.0;
+	return c;
+}
+
+vec3 aces(vec3 x) {
+	x *= u_expo;
+	return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0);
+}
+
+void main() {
+	vec2 uv = (gl_FragCoord.xy / u_res) * 2.0 - 1.0;
+	float aspect = u_res.x / u_res.y;
+	vec3 rd = normalize(u_right * uv.x * aspect * u_tanHalf
+			+ u_up * uv.y * u_tanHalf - u_back);
+
+	vec3 p, nw;
+	bool hit = trace(u_cam, rd, p, nw);
+
+	// fragment() зовётся ВСЕГДА, даже под небом: dFdx внутри неоднородного
+	// ветвления не определён, и на части видеокарт это даёт мусор по кромке.
+	int mi = HIT_MAT;
+	col_a = mA[mi]; col_b = mB[mi]; col_joint = mJ[mi];
+	plate = mPlate[mi]; joint = mJoint[mi]; rough_base = mRough[mi];
+	kind = mKind[mi];
+	lat_center = HIT_LATC; lat_half = max(HIT_LATH, 0.05);
+	marking = (mi == 1) ? u_marking : 0;
+	bump = u_bump; debug = u_debug;
+
+	INV_VIEW_MATRIX = u_ivm; VIEW_MATRIX = u_vm;
+	vec3 d = p - u_cam;
+	VERTEX = vec3(dot(d, u_right), dot(d, u_up), dot(d, u_back));
+	NORMAL = vec3(dot(nw, u_right), dot(nw, u_up), dot(nw, u_back));
+	ALBEDO = vec3(0.5); ROUGHNESS = 0.9; METALLIC = 0.0; SPECULAR = 0.5;
+
+	fragment();
+
+	vec3 n2 = normalize(u_right * NORMAL.x + u_up * NORMAL.y + u_back * NORMAL.z);
+	float dist = length(VERTEX);
+
+	float ndl = max(dot(n2, u_sun), 0.0);
+	vec3 col = ALBEDO * u_sunCol * u_sunE * ndl;
+	vec3 hv = normalize(u_sun - rd);
+	float al = max(ROUGHNESS * ROUGHNESS, 0.004);
+	float ndh = max(dot(n2, hv), 0.0);
+	float dgg = al * al / (3.14159 * pow(ndh * ndh * (al * al - 1.0) + 1.0, 2.0));
+	col += u_sunCol * u_sunE * ndl * dgg * SPECULAR * 0.5;
+	col += ALBEDO * mix(u_gndHor, u_skyTop, clamp(n2.y * 0.5 + 0.5, 0.0, 1.0)) * u_ambE;
+
+	float fa = 0.0;
+	if (u_fogOn == 1) {
+		fa = pow(clamp((dist - u_fogB) / max(u_fogEnd - u_fogB, 0.001), 0.0, 1.0),
+				u_fogCurve);
+	}
+	if (!hit) { col = skyColor(rd); fa = (u_fogOn == 1) ? u_fogSky : 0.0; }
+	col = mix(col, u_fogCol, fa);
+
+	FRAG = vec4(pow(aces(col), vec3(1.0 / 2.2)), 1.0);
+}
+`;
+
+/* ═══ WebGL ════════════════════════════════════════════════════════ */
+const canvas = document.getElementById("gl");
+const gl = canvas.getContext("webgl2", { antialias: false, alpha: false });
+const logEl = document.getElementById("log");
+
+if (!gl) {
+	logEl.textContent = "WebGL2 недоступен — стенд не запустится.";
+	logEl.classList.remove("ok");
+}
+
+const VS = `#version 300 es
+void main() {
+	vec2 v = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
+	gl_Position = vec4(v * 2.0 - 1.0, 0.0, 1.0);
+}`;
+
+let program = null;
+let uloc = {};
+const PRELUDE_LINES = PRELUDE.split("\n").length;
+
+function compile(type, src) {
+	const s = gl.createShader(type);
+	gl.shaderSource(s, src);
+	gl.compileShader(s);
+	if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+		const info = gl.getShaderInfoLog(s);
+		gl.deleteShader(s);
+		return { err: info };
+	}
+	return { shader: s };
+}
+
+/* Номер строки из компилятора → номер строки в .gdshader. */
+function remapLog(info, bodyLines) {
+	return info.split("\n").filter(Boolean).map((ln) => {
+		return ln.replace(/ERROR:\s*\d+:(\d+)/, (full, num) => {
+			const n = parseInt(num, 10) - PRELUDE_LINES;
+			if (n >= 1 && n <= bodyLines) return "строка " + n + ":";
+			return "переходник:";
+		});
+	}).join("\n");
+}
+
+function build(godotSrc) {
+	const body = translateGodot(godotSrc);
+	const full = PRELUDE + body + EPILOGUE;
+	const vs = compile(gl.VERTEX_SHADER, VS);
+	const fs = compile(gl.FRAGMENT_SHADER, full);
+	if (fs.err) {
+		logEl.classList.remove("ok");
+		logEl.textContent = remapLog(fs.err, body.split("\n").length);
+		return false;
+	}
+	const p = gl.createProgram();
+	gl.attachShader(p, vs.shader);
+	gl.attachShader(p, fs.shader);
+	gl.linkProgram(p);
+	if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+		logEl.classList.remove("ok");
+		logEl.textContent = gl.getProgramInfoLog(p);
+		return false;
+	}
+	if (program) gl.deleteProgram(program);
+	program = p;
+	uloc = {};
+	const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+	for (let i = 0; i < n; i++) {
+		const nm = gl.getActiveUniform(p, i).name.replace(/\[0\]$/, "");
+		uloc[nm] = gl.getUniformLocation(p, nm);
+	}
+	logEl.classList.add("ok");
+	logEl.textContent = "собрано · " + new Date().toLocaleTimeString("ru-RU");
+	return true;
+}
+
+/* ═══ цвет: sRGB как в Color() → линейный, как его видит Godot ═════ */
+const s2l = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+const lin3 = (c) => [s2l(c[0]), s2l(c[1]), s2l(c[2])];
+const toHex = (c) => "#" + c.map((v) =>
+	Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, "0")).join("");
+const fromHex = (h) => [1, 3, 5].map((i) => parseInt(h.substr(i, 2), 16) / 255);
+
+/* ═══ управление ═══════════════════════════════════════════════════ */
+function forward(yawDeg, pitchDeg) {
+	const y = yawDeg * Math.PI / 180, p = pitchDeg * Math.PI / 180;
+	return [-Math.cos(p) * Math.sin(y), Math.sin(p), -Math.cos(p) * Math.cos(y)];
+}
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const norm = (v) => { const l = Math.hypot(...v); return [v[0] / l, v[1] / l, v[2] / l]; };
+
+const keys = new Set();
+addEventListener("keydown", (e) => {
+	if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") {
+		if (e.key === "Enter" && e.ctrlKey && e.target.id === "editor") {
+			e.preventDefault(); build(editor.value);
+		}
+		if (e.key === "Tab" && e.target.id === "editor") {
+			e.preventDefault();
+			const s = editor.selectionStart;
+			editor.setRangeText("\t", s, editor.selectionEnd, "end");
+		}
+		return;
+	}
+	keys.add(e.key.toLowerCase());
+});
+addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
+
+let dragging = false;
+canvas.addEventListener("pointerdown", (e) => {
+	dragging = true; canvas.classList.add("dragging");
+	canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener("pointerup", (e) => {
+	dragging = false; canvas.classList.remove("dragging");
+	canvas.releasePointerCapture(e.pointerId);
+});
+canvas.addEventListener("pointermove", (e) => {
+	if (!dragging) return;
+	cam.yaw -= e.movementX * 0.16;
+	cam.pitch = Math.max(-89, Math.min(60, cam.pitch - e.movementY * 0.16));
+});
+canvas.addEventListener("wheel", (e) => {
+	e.preventDefault();
+	cam.speed = Math.max(0.5, Math.min(60, cam.speed * (e.deltaY > 0 ? 0.85 : 1.18)));
+}, { passive: false });
+
+/* ═══ панель ═══════════════════════════════════════════════════════ */
+const $ = (s) => document.querySelector(s);
+let activeMat = 0;
+
+function slider(parent, label, obj, key, min, max, step, dec) {
+	const row = document.createElement("div");
+	row.className = "row";
+	const l = document.createElement("label"); l.textContent = label;
+	const i = document.createElement("input");
+	i.type = "range"; i.min = min; i.max = max; i.step = step; i.value = obj[key];
+	i.setAttribute("aria-label", label);
+	const o = document.createElement("output");
+	o.textContent = Number(obj[key]).toFixed(dec);
+	i.addEventListener("input", () => {
+		obj[key] = parseFloat(i.value);
+		o.textContent = obj[key].toFixed(dec);
+	});
+	row.append(l, i, o);
+	parent.append(row);
+}
+
+function colorRow(parent, label, mat, key) {
+	const row = document.createElement("div");
+	row.className = "swatch";
+	const l = document.createElement("label"); l.textContent = label;
+	const i = document.createElement("input");
+	i.type = "color"; i.value = toHex(mat[key]);
+	i.setAttribute("aria-label", label);
+	const c = document.createElement("code");
+	const show = () => { c.textContent = mat[key].map((v) => v.toFixed(3)).join("  "); };
+	show();
+	i.addEventListener("input", () => { mat[key] = fromHex(i.value); show(); });
+	row.append(l, i, c);
+	parent.append(row);
+}
+
+function group(parent, title, open) {
+	const d = document.createElement("details");
+	d.className = "group"; if (open) d.open = true;
+	const s = document.createElement("summary"); s.textContent = title;
+	const b = document.createElement("div"); b.className = "body";
+	d.append(s, b); parent.append(d);
+	return b;
+}
+
+function buildMatPane() {
+	const pick = $("#matpick");
+	pick.innerHTML = "";
+	MATS.forEach((m, i) => {
+		const b = document.createElement("button");
+		b.textContent = m.name;
+		b.setAttribute("aria-pressed", String(i === activeMat));
+		b.onclick = () => { activeMat = i; buildMatPane(); };
+		pick.append(b);
+	});
+
+	const host = $("#mat-body");
+	host.innerHTML = "";
+	const m = MATS[activeMat];
+
+	const g1 = group(host, "Цвета", true);
+	colorRow(g1, "col_a", m, "a");
+	colorRow(g1, "col_b", m, "b");
+	colorRow(g1, "col_joint", m, "j");
+
+	const g2 = group(host, "Раскладка", true);
+	const kr = document.createElement("div");
+	kr.className = "row";
+	const kl = document.createElement("label"); kl.textContent = "kind";
+	const ks = document.createElement("select");
+	["0 — плита", "1 — асфальт", "2 — земля"].forEach((t, i) => {
+		const o = document.createElement("option"); o.value = i; o.textContent = t;
+		ks.append(o);
+	});
+	ks.value = m.kind;
+	ks.onchange = () => { m.kind = parseInt(ks.value, 10); };
+	kr.append(kl, ks, document.createElement("span"));
+	g2.append(kr);
+	slider(g2, "plate, м", m, "plate", 0.2, 3.0, 0.01, 2);
+	slider(g2, "joint, м", m, "joint", 0.002, 0.12, 0.001, 3);
+	slider(g2, "rough_base", m, "rough", 0.3, 1.0, 0.01, 2);
+}
+
+function buildScenePane() {
+	const host = $("#scene-body");
+	host.innerHTML = "";
+
+	const g0 = group(host, "Рельеф и отладка", true);
+	slider(g0, "bump", ENV, "bump", 0, 3, 0.01, 2);
+	const dr = document.createElement("div");
+	dr.className = "row";
+	const dl = document.createElement("label"); dl.textContent = "debug";
+	const ds = document.createElement("select");
+	["0 — как есть", "1 — нормаль цветом", "2 — поле высот"].forEach((t, i) => {
+		const o = document.createElement("option"); o.value = i; o.textContent = t;
+		ds.append(o);
+	});
+	ds.onchange = () => { ENV.debug = parseInt(ds.value, 10); };
+	dr.append(dl, ds, document.createElement("span"));
+	g0.append(dr);
+	slider(g0, "marking", ENV, "marking", 0, 1, 1, 0);
+
+	const g1 = group(host, "Свет", true);
+	slider(g1, "азимут, °", ENV, "sunAz", -180, 180, 1, 0);
+	slider(g1, "высота, °", ENV, "sunEl", 2, 88, 1, 0);
+	slider(g1, "солнце", ENV, "sunE", 0, 4, 0.01, 2);
+	slider(g1, "небо", ENV, "ambE", 0, 2, 0.01, 2);
+	slider(g1, "экспозиция", ENV, "expo", 0.2, 3, 0.01, 2);
+
+	const g2 = group(host, "Туман", false);
+	slider(g2, "вкл", ENV, "fogOn", 0, 1, 1, 0);
+	slider(g2, "начало, м", ENV, "fogB", 0, 200, 1, 0);
+	slider(g2, "конец, м", ENV, "fogEnd", 20, 400, 1, 0);
+	slider(g2, "кривая", ENV, "fogCurve", 0.2, 3, 0.05, 2);
+
+	const g3 = group(host, "Геометрия улицы", false);
+	slider(g3, "проезд/2, м", SCENE, "roadHalf", 1.5, 12, 0.05, 2);
+	slider(g3, "бордюр, м", SCENE, "kerbW", 0.05, 0.5, 0.01, 2);
+	slider(g3, "высота б., м", SCENE, "kerbH", 0.0, 0.4, 0.01, 2);
+	slider(g3, "тротуар, м", SCENE, "walkW", 0.6, 8, 0.05, 2);
+
+	const g4 = group(host, "Рендер", true);
+	slider(g4, "масштаб", ENV, "scale", 0.35, 1.0, 0.05, 2);
+	const lr = document.createElement("div");
+	lr.className = "row";
+	const ll = document.createElement("label"); ll.textContent = "размер";
+	const ls = document.createElement("select");
+	[["0", "по окну"], ["1", "1600×900 (как в игре)"], ["2", "1280×720"]]
+		.forEach(([v, t]) => {
+			const o = document.createElement("option"); o.value = v; o.textContent = t;
+			ls.append(o);
+		});
+	ls.onchange = () => { ENV.lockRes = parseInt(ls.value, 10); resize(); };
+	lr.append(ll, ls, document.createElement("span"));
+	g4.append(lr);
+
+	const note = document.createElement("div");
+	note.className = "note";
+	note.innerHTML = "<b>Разрешение — это параметр материала.</b> " +
+		"Затухание мелких слоёв считается от размера пикселя в мире " +
+		"(<code>band()</code>), поэтому фактура на 1280×720 и на 1600×900 " +
+		"разная. Сравнивать с кадрами из Godot — только на том же размере.";
+	host.append(note);
+}
+
+/* вкладки */
+document.querySelectorAll('[role="tab"]').forEach((b) => {
+	b.onclick = () => {
+		document.querySelectorAll('[role="tab"]').forEach((x) =>
+			x.setAttribute("aria-selected", String(x === b)));
+		["mat", "scene", "shader"].forEach((t) => {
+			const pane = document.getElementById("pane-" + t);
+			if (t === b.dataset.tab) pane.setAttribute("data-open", "");
+			else pane.removeAttribute("data-open");
+		});
+	};
+});
+
+/* ракурсы */
+const viewsBox = $("#views");
+let activeView = "Общий";
+Object.keys(VIEWS).forEach((name) => {
+	const b = document.createElement("button");
+	b.textContent = name;
+	b.setAttribute("aria-pressed", String(name === activeView));
+	b.onclick = () => {
+		const v = VIEWS[name];
+		cam.p = v.p.slice(); cam.yaw = v.yaw; cam.pitch = v.pitch;
+		activeView = name;
+		viewsBox.querySelectorAll("button").forEach((x) =>
+			x.setAttribute("aria-pressed", String(x === b)));
+	};
+	viewsBox.append(b);
+});
+
+/* ═══ редактор ═════════════════════════════════════════════════════ */
+const editor = document.getElementById("editor");
+const RAW = document.getElementById("gdshader").textContent
+	.replace(/^[\s\S]*?\/\/<<<BEGIN surface\.gdshader\n/, "")
+	.replace(/\n\/\/>>>END surface\.gdshader[\s\S]*$/, "");
+editor.value = RAW;
+
+let timer = null;
+editor.addEventListener("input", () => {
+	clearTimeout(timer);
+	timer = setTimeout(() => build(editor.value), 450);
+});
+$("#recompile").onclick = () => build(editor.value);
+$("#revert").onclick = () => { editor.value = RAW; build(RAW); };
+
+async function copy(text, btn) {
+	const was = btn.textContent;
+	try {
+		await navigator.clipboard.writeText(text);
+		btn.textContent = "Скопировано";
+	} catch (e) {
+		btn.textContent = "Буфер недоступен — выделите текст";
+	}
+	setTimeout(() => { btn.textContent = was; }, 1600);
+}
+
+$("#copy-shader").onclick = (e) => copy(editor.value, e.target);
+
+$("#copy-mat").onclick = (e) => {
+	const f = (c) => "Color(" + c.map((v) => v.toFixed(3)).join(", ") + ")";
+	const lines = MATS.map((m) =>
+		`\t${m.gd} = _surface(${m.kind}, ${f(m.a)}, ${f(m.b)},\n` +
+		`\t\t\t${f(m.j)}, ${m.plate.toFixed(2)})`);
+	const env = [
+		"",
+		"\t# свет и туман — road.gd::_env()",
+		`\t# sun.light_energy = ${ENV.sunE.toFixed(2)}`,
+		`\t# env.ambient_light_energy = ${ENV.ambE.toFixed(2)}`,
+		`\t# env.fog_depth_begin = ${ENV.fogB.toFixed(1)}`,
+		`\t# env.fog_depth_end = ${ENV.fogEnd.toFixed(1)}`,
+		`\t# азимут/высота солнца: ${ENV.sunAz.toFixed(0)}° / ${ENV.sunEl.toFixed(0)}°`,
+	];
+	copy(lines.join("\n") + "\n" + env.join("\n"), e.target);
+};
+
+/* ═══ цикл ═════════════════════════════════════════════════════════ */
+let W = 0, H = 0;
+function resize() {
+	const stage = $("#stage");
+	let w, h;
+	if (ENV.lockRes === 1) { w = 1600; h = 900; }
+	else if (ENV.lockRes === 2) { w = 1280; h = 720; }
+	else {
+		w = Math.round(stage.clientWidth * ENV.scale);
+		h = Math.round(stage.clientHeight * ENV.scale);
+	}
+	W = Math.max(16, w); H = Math.max(16, h);
+	canvas.width = W; canvas.height = H;
+	if (ENV.lockRes === 0) {
+		canvas.style.width = stage.clientWidth + "px";
+		canvas.style.height = stage.clientHeight + "px";
+	} else {
+		canvas.style.width = ""; canvas.style.height = "";
+	}
+	$("#r-res").textContent = W + "×" + H;
+}
+addEventListener("resize", resize);
+
+let last = performance.now(), fpsAcc = 0, fpsN = 0;
+
+function frame(now) {
+	const dt = Math.min(0.1, (now - last) / 1000);
+	last = now;
+	fpsAcc += dt; fpsN++;
+	if (fpsAcc > 0.5) {
+		$("#r-fps").textContent = Math.round(fpsN / fpsAcc);
+		fpsAcc = 0; fpsN = 0;
+	}
+	if (ENV.lockRes === 0 &&
+		(Math.abs(canvas.width - $("#stage").clientWidth * ENV.scale) > 2)) resize();
+
+	const f = forward(cam.yaw, cam.pitch);
+	const r = norm(cross(f, [0, 1, 0]));
+	const u = cross(r, f);
+	const back = [-f[0], -f[1], -f[2]];
+
+	let mv = [0, 0, 0];
+	if (keys.has("w")) mv = [mv[0] + f[0], mv[1] + f[1], mv[2] + f[2]];
+	if (keys.has("s")) mv = [mv[0] - f[0], mv[1] - f[1], mv[2] - f[2]];
+	if (keys.has("d")) mv = [mv[0] + r[0], mv[1] + r[1], mv[2] + r[2]];
+	if (keys.has("a")) mv = [mv[0] - r[0], mv[1] - r[1], mv[2] - r[2]];
+	if (keys.has("e")) mv[1] += 1;
+	if (keys.has("q")) mv[1] -= 1;
+	const ml = Math.hypot(...mv);
+	if (ml > 0.001) {
+		const sp = cam.speed * (keys.has("shift") ? 3.5 : 1) * dt;
+		cam.p = [cam.p[0] + mv[0] / ml * sp, cam.p[1] + mv[1] / ml * sp,
+			cam.p[2] + mv[2] / ml * sp];
+	}
+
+	if (program) {
+		gl.useProgram(program);
+		gl.viewport(0, 0, W, H);
+
+		// INV_VIEW_MATRIX: вид → мир, столбцы (right, up, back, cam)
+		const ivm = [
+			r[0], r[1], r[2], 0,
+			u[0], u[1], u[2], 0,
+			back[0], back[1], back[2], 0,
+			cam.p[0], cam.p[1], cam.p[2], 1,
+		];
+		const t = [-(r[0] * cam.p[0] + r[1] * cam.p[1] + r[2] * cam.p[2]),
+			-(u[0] * cam.p[0] + u[1] * cam.p[1] + u[2] * cam.p[2]),
+			-(back[0] * cam.p[0] + back[1] * cam.p[1] + back[2] * cam.p[2])];
+		const vm = [
+			r[0], u[0], back[0], 0,
+			r[1], u[1], back[1], 0,
+			r[2], u[2], back[2], 0,
+			t[0], t[1], t[2], 1,
+		];
+
+		const az = ENV.sunAz * Math.PI / 180, el = ENV.sunEl * Math.PI / 180;
+		const sun = [Math.cos(el) * Math.cos(az), Math.sin(el), Math.cos(el) * Math.sin(az)];
+
+		const U = (n, fn, ...v) => { if (uloc[n]) gl[fn](uloc[n], ...v); };
+		U("u_res", "uniform2f", W, H);
+		U("u_cam", "uniform3f", ...cam.p);
+		U("u_right", "uniform3f", ...r);
+		U("u_up", "uniform3f", ...u);
+		U("u_back", "uniform3f", ...back);
+		U("u_ivm", "uniformMatrix4fv", false, ivm);
+		U("u_vm", "uniformMatrix4fv", false, vm);
+		U("u_tanHalf", "uniform1f", Math.tan(cam.fov * Math.PI / 360));
+
+		U("u_sun", "uniform3f", ...sun);
+		U("u_sunCol", "uniform3f", ...lin3([1.0, 0.96, 0.90]));
+		U("u_skyTop", "uniform3f", ...lin3([0.42, 0.52, 0.62]));
+		U("u_skyHor", "uniform3f", ...lin3([0.68, 0.70, 0.70]));
+		U("u_gndHor", "uniform3f", ...lin3([0.62, 0.63, 0.62]));
+		U("u_gndBot", "uniform3f", ...lin3([0.26, 0.26, 0.24]));
+		U("u_fogCol", "uniform3f", ...lin3([0.70, 0.72, 0.71]));
+		U("u_sunE", "uniform1f", ENV.sunE);
+		U("u_ambE", "uniform1f", ENV.ambE);
+		U("u_expo", "uniform1f", ENV.expo);
+		U("u_fogB", "uniform1f", ENV.fogB);
+		U("u_fogEnd", "uniform1f", ENV.fogEnd);
+		U("u_fogCurve", "uniform1f", ENV.fogCurve);
+		U("u_fogSky", "uniform1f", ENV.fogSky);
+		U("u_fogOn", "uniform1i", ENV.fogOn | 0);
+
+		const order = [0, 1, 2, 3];
+		const flat = (key, conv) => {
+			const out = [];
+			for (const i of order) out.push(...conv(MATS[i][key]));
+			return out;
+		};
+		U("mA", "uniform3fv", flat("a", lin3));
+		U("mB", "uniform3fv", flat("b", lin3));
+		U("mJ", "uniform3fv", flat("j", lin3));
+		U("mPlate", "uniform1fv", order.map((i) => MATS[i].plate));
+		U("mJoint", "uniform1fv", order.map((i) => MATS[i].joint));
+		U("mRough", "uniform1fv", order.map((i) => MATS[i].rough));
+		U("mKind", "uniform1iv", order.map((i) => MATS[i].kind));
+		U("u_bump", "uniform1f", ENV.bump);
+		U("u_debug", "uniform1i", ENV.debug | 0);
+		U("u_marking", "uniform1i", ENV.marking | 0);
+
+		U("gRoadHalf", "uniform1f", SCENE.roadHalf);
+		U("gKerbW", "uniform1f", SCENE.kerbW);
+		U("gKerbH", "uniform1f", SCENE.kerbH);
+		U("gWalkW", "uniform1f", SCENE.walkW);
+		U("gVerge", "uniform1f", SCENE.verge);
+		U("gLen", "uniform1f", SCENE.len);
+
+		gl.drawArrays(gl.TRIANGLES, 0, 3);
+	}
+	requestAnimationFrame(frame);
+}
+
+buildMatPane();
+buildScenePane();
+resize();
+if (gl && build(RAW)) requestAnimationFrame(frame);
+</script>
