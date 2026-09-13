@@ -2016,25 +2016,30 @@ func _overgrowth() -> void:
 			_decal("overgrowth/moss_corner",
 					_loggia_pos(along_z, face, hi - 0.55, 0.40, 0.02, n), n, 0.75)
 
-			# Трава сквозь пол: ближе к парапету, куда задувает дождь
-			_decal("overgrowth/grass_patch_1",
-					_loggia_pos(along_z, face, lo + run * 0.30, 0.02,
-							depth * 0.32, n),
-					Vector3(0, 1, 0), 0.55)
-			_decal("overgrowth/grass_patch_2",
-					_loggia_pos(along_z, face, lo + run * 0.72, 0.02,
-							depth * 0.40, n),
-					Vector3(0, 1, 0), 0.50)
-
-			# Плети по торцевым стенам. Масштаб 0.62 — не вкус: плеть сдана под
-			# 2 м ширины, а торец лоджии 1.31 м, и в натуральную величину она
-			# вылезла бы на парапет и на остекление.
+			# ВРЕМЕННО: густой вариант для сравнения
+			var n_grass := maxi(2, int(round(run / 1.1)))
+			for i in n_grass:
+				var t := lo + (i + 0.5) * (run / float(n_grass))
+				var s := depth * (0.26 if i % 2 == 0 else 0.46)
+				_decal("overgrowth/grass_patch_1" if i % 2 == 0
+						else "overgrowth/grass_patch_2",
+						_loggia_pos(along_z, face, t, 0.02, s, n),
+						Vector3(0, 1, 0), 0.50)
+			# плети по торцам и через парапет
 			_decal("overgrowth/vine_wall_1",
 					_loggia_pos(along_z, face, lo + 0.02, 0.95, depth * 0.5, n),
 					axis, 0.62)
 			_decal("overgrowth/vine_wall_2",
 					_loggia_pos(along_z, face, hi - 0.02, 0.90, depth * 0.5, n),
 					-axis, 0.58)
+			var n_vine := maxi(2, int(round(run / 2.2)))
+			for i in n_vine:
+				_decal("overgrowth/vine_wall_1" if i % 2 == 0
+						else "overgrowth/vine_wall_2",
+						_loggia_pos(along_z, face,
+								lo + (i + 0.5) * (run / float(n_vine)), 0.55,
+								0.02, n),
+						n, 0.55)
 
 
 ## Прямоугольник парапета, у которого общее ребро с этой лоджией.
@@ -2870,6 +2875,11 @@ const ISO_DIST := 1.85
 # не камера) только усугублял. 4.5 -> 7.0: тот же фиксированный угол
 # и высота, просто шире рамка кадра, комната читается свободнее.
 const ISO_SIZE := 7.0
+# Ширина кадра крутится на ходу клавишами [ и ]: «пошире» на глаз числом не
+# назовёшь, а пересобирать .exe под каждую догадку — долго. В перспективе это
+# FOV в градусах, в изометрии — ширина ортогонального кадра в метрах.
+var _fov := 90.0
+var _iso_size := ISO_SIZE
 
 ## Звук пустой квартиры (task-0020): шаги по пройденному расстоянию, не по
 ## таймеру — иначе у бега и медленной ходьбы был бы один и тот же интервал
@@ -2953,7 +2963,8 @@ func _ready_fly() -> void:
 	# Было 75 — узковато для настолько тесной планировки (прихожая 0.98 м
 	# в чистоте), комната читалась теснее, чем есть на самом деле. 90 —
 	# как в большинстве шутеров от первого лица, без рыбьего глаза.
-	cam.fov = 90.0
+	# Дальше крутится клавишами [ и ], поэтому берём из _fov, а не из числа.
+	cam.fov = _fov
 	cam.near = 0.05
 
 	# ставим в прихожую: берём самый большой её прямоугольник из разбора, а
@@ -3061,14 +3072,14 @@ func _set_iso(on: bool) -> void:
 		cam.get_parent().remove_child(cam)
 		add_child(cam)
 		cam.projection = Camera3D.PROJECTION_ORTHOGONAL
-		cam.size = ISO_SIZE
+		cam.size = _iso_size
 		cam.rotation = Vector3.ZERO
 		_update_iso_camera()
 	else:
 		cam.get_parent().remove_child(cam)
 		_walkman.add_child(cam)
 		cam.projection = Camera3D.PROJECTION_PERSPECTIVE
-		cam.fov = 90.0
+		cam.fov = _fov
 		cam.position = Vector3(0, 1.62, 0)
 		cam.rotation = Vector3.ZERO
 
@@ -3096,6 +3107,23 @@ func _find_cam() -> Camera3D:
 	return vp.get_camera_3d()
 
 
+## Шире/уже кадр: в перспективе — FOV, в изометрии — размер ортогонального
+## кадра. Пределы не вкус, а физика кадра: ниже 60° в тесной квартире стены
+## сходятся, выше 120° начинается рыбий глаз.
+func _zoom_lens(dir: float) -> void:
+	var cam := _find_cam()
+	if cam == null:
+		return
+	if _iso:
+		_iso_size = clampf(_iso_size + dir * 0.5, 3.0, 20.0)
+		cam.size = _iso_size
+		print("[линза] ширина кадра %.1f м" % _iso_size)
+	else:
+		_fov = clampf(_fov + dir * 5.0, 60.0, 120.0)
+		cam.fov = _fov
+		print("[линза] FOV %.0f°" % _fov)
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if _shot != "":
 		return
@@ -3109,6 +3137,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif kc == KEY_I:
 			_set_iso(not _iso)
 			print("[режим] ", "изометрия" if _iso else "от первого лица")
+		elif kc == KEY_BRACKETLEFT:
+			_zoom_lens(-1.0)
+		elif kc == KEY_BRACKETRIGHT:
+			_zoom_lens(1.0)
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_RIGHT:

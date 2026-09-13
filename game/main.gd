@@ -31,6 +31,7 @@ var _fix_reach := false
 var _prune := false
 var _audit := false
 var _no_fade := false
+var _no_street := false   ## --no-street: снять улицу, кадр «было» для сравнения
 var _only_flat := -1
 var lifts: Array = []
 var _paint := false          ## бот закрашивает за собой пол
@@ -95,13 +96,26 @@ func _setup_environment() -> void:
 	env.volumetric_fog_ambient_inject = 0.12
 	env.volumetric_fog_sky_affect = 0.1
 
-	# Лёгкая дымка вдаль, чтобы дальние стены не были такими же контрастными.
+	# Дымка вдаль. Раньше была почти неразличимой (density 0.0005 по всей
+	# глубине) и служила только тому, чтобы дальние стены были менее
+	# контрастными. Теперь у неё вторая работа: закрыть край мира.
+	#
+	# Снаружи сцена упиралась в обрыв — плоскость земли кончалась, полосы улицы
+	# обрывались в воздухе, и всё читалось макетом на столе. Дальность решается
+	# не размером плоскости (её всё равно видно, где бы она ни кончилась),
+	# а тем, что за 110 м начинается дымка и к 240 м всё уходит в цвет неба.
+	# Дом и двор — ближе 110 м, поэтому вблизи ничего не замылилось.
 	env.fog_enabled = true
 	env.fog_mode = Environment.FOG_MODE_DEPTH
-	env.fog_light_color = Color(0.74, 0.76, 0.72)
-	env.fog_light_energy = 0.7
-	env.fog_density = 0.0005
-	env.fog_sky_affect = 0.0
+	env.fog_light_color = Color(0.76, 0.77, 0.73)
+	env.fog_light_energy = 0.85
+	env.fog_density = 1.0
+	env.fog_depth_begin = 110.0
+	env.fog_depth_end = 240.0
+	env.fog_depth_curve = 0.9
+	# Небо тоже уводим в дымку, иначе горизонт остаётся резкой линией
+	# и обрыв просто переезжает на неё.
+	env.fog_sky_affect = 0.6
 
 	# Затенение в углах и стыках — без него интерьер выглядит плоским.
 	env.ssao_enabled = true
@@ -156,19 +170,25 @@ func _setup_environment() -> void:
 
 
 func _build_world() -> void:
-	# Земля вокруг дома.
+	# Земля вокруг дома. Подложка под улицу: улица кладёт свои полосы поверх,
+	# а земля закрывает всё, до чего они не достают, и держит коллизию.
+	# 60 м не хватало — дом напротив стоит в 37 м от оси и повисал в пустоте.
 	var ground := StaticBody3D.new()
 	var gm := MeshInstance3D.new()
 	var plane := BoxMesh.new()
-	plane.size = Vector3(60, 0.4, 60)
+	plane.size = Vector3(420, 0.4, 420)
 	gm.mesh = plane
 	var gmat := StandardMaterial3D.new()
 	gmat.albedo_color = Color(0.31, 0.33, 0.28)
 	gmat.roughness = 1.0
 	gm.material_override = gmat
 	# Земля ниже пола дома: при совпадении верхних граней получается
-	# z-fighting — пол мерцает. Порог в 15 см игрок перешагивает (step-up).
-	ground.position.y = -0.35
+	# z-fighting — пол мерцает.
+	# Верх земли теперь −0.35, а не −0.15: улица кладёт свои полосы поверх,
+	# и самая низкая из них — проезжая часть на −0.29. При прежней высоте
+	# земля хоронила и проезд, и палисадник, наружу торчали одни бордюры.
+	# Порог у стены игрок не трогает: там лежит отмостка на −0.13.
+	ground.position.y = -0.55
 	ground.add_child(gm)
 	var gs := CollisionShape3D.new()
 	var gbox := BoxShape3D.new()
@@ -176,6 +196,13 @@ func _build_world() -> void:
 	gs.shape = gbox
 	ground.add_child(gs)
 	add_child(ground)
+
+	# Улица: проезд, тротуары, палисадник, дом напротив и зелень по фасаду.
+	# Ставится до дома, чтобы её полосы не перекрывали отмостку у стены.
+	if not _no_street:
+		var street := Street.new()
+		street.name = "Street"
+		add_child(street)
 
 	_build_tower()
 	if _prune:
@@ -328,6 +355,8 @@ func _parse_args() -> void:
 			_bot_log = true
 		elif a == "--no-fade":
 			_no_fade = true
+		elif a == "--no-street":
+			_no_street = true
 		elif a == "--plan":
 			_plan_view = true
 		elif a == "--paint-walk":
