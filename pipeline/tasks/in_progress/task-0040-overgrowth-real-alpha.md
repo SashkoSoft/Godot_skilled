@@ -3,11 +3,11 @@ id: task-0040
 title: Зелень с настоящей альфой взамен набора task-0011
 assignee: houdini-assets
 type: texture
-status: open
+status: in_progress
 revision: 1
 priority: high
 created: 2026-09-13
-started:
+started: 2026-09-14
 finished:
 ---
 
