@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { buildStreet, LAYOUT } from "./street.js";
+import { buildStreet } from "./street.js";
 import { setSurfaceUniform } from "./surface.js";
+import { loadProps } from "./props.js";
 
 const hud = {
 	fps: document.getElementById("fps"),
@@ -90,35 +90,8 @@ street = buildStreet(glsl);
 scene.add(street);
 say("улица собрана");
 
-/* ── один принятый ассет: доказательство всей цепочки ────────────────
-   Перила лестничного марша (task-0007, принято 28 августа) — сдача,
-   которая до сих пор не стояла нигде. Если она грузится и освещается тем же
-   светом, что процедурный тротуар, — значит библиотека из 41 модели и 27
-   наборов текстур переезжает в веб как есть, без конвертации. */
-const ASSET = "../game/assets/models/stairs/railing_flight.glb";
-new GLTFLoader().load(
-	ASSET,
-	(gltf) => {
-		const railing = gltf.scene;
-		railing.traverse((n) => {
-			if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; }
-		});
-		// вдоль тротуара, лицом к проезду
-		const L = LAYOUT;
-		const z = L.roadHalf + L.kerbW + L.walkW - 0.25;
-		for (let i = 0; i < 6; i++) {
-			const c = railing.clone(true);
-			c.position.set(-9 + i * 3.0, L.yWalk, z);
-			scene.add(c);
-		}
-		const box = new THREE.Box3().setFromObject(railing);
-		const s = box.getSize(new THREE.Vector3());
-		say(`ассет загружен: railing_flight.glb — ${s.x.toFixed(2)} × ` +
-			`${s.y.toFixed(2)} × ${s.z.toFixed(2)} м`);
-	},
-	undefined,
-	() => say(`не открылся ${ASSET} — сервер отдаёт корень репозитория?`, true),
-);
+/* ── обстановка из принятой библиотеки ──────────────────────────────── */
+loadProps(say).then((props) => scene.add(props));
 
 /* ── камера: те же ракурсы, что были в игре ─────────────────────────── */
 const VIEWS = {

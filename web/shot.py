@@ -64,8 +64,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 def serve(port: int) -> socketserver.TCPServer:
     handler = functools.partial(Handler, directory=str(ROOT))
-    socketserver.TCPServer.allow_reuse_address = True
-    srv = socketserver.TCPServer(("127.0.0.1", port), handler)
+    # ThreadingTCPServer, а не TCPServer: одна сцена тянет десятки файлов
+    # параллельно (модели и по три текстуры на каждую), и однопоточный сервер
+    # часть соединений просто отбивает. Симптом обманчивый — каждый раз
+    # падают РАЗНЫЕ файлы, и это выглядит как битые ассеты, а не как сервер.
+    socketserver.ThreadingTCPServer.allow_reuse_address = True
+    srv = socketserver.ThreadingTCPServer(("127.0.0.1", port), handler)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv
 
