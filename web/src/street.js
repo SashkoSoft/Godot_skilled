@@ -59,11 +59,8 @@ export function buildStreet(glsl) {
 			width: L.walkW, cz: s * (L.roadHalf + L.kerbW + L.walkW * 0.5),
 			top: L.yWalk, name: "Walk",
 		});
-		strip(g, glsl, PRESETS.earth, {
-			width: L.verge,
-			cz: s * (L.roadHalf + L.kerbW + L.walkW + L.verge * 0.5),
-			top: L.yWalk - 0.02, name: "Verge",
-		});
 	}
+	// Земля за тротуаром — отдельным модулем: ей нужна настоящая геометрия,
+	// плоской плитой она остаётся крашеным картоном. См. `ground.js`.
 	return g;
 }

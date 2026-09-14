@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { buildStreet } from "./street.js";
+import { buildGround } from "./ground.js";
 import { setSurfaceUniform } from "./surface.js";
 import { loadProps } from "./props.js";
 
@@ -88,6 +89,8 @@ let street = null;
 const glsl = await (await fetch("./src/shaders/surface.glsl")).text();
 street = buildStreet(glsl);
 scene.add(street);
+const ground = buildGround(glsl);
+scene.add(ground);
 say("улица собрана");
 
 /* ── обстановка из принятой библиотеки ──────────────────────────────────
