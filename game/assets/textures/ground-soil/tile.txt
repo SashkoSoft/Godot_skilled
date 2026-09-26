@@ -1,0 +1,6 @@
+tile_m=2.00
+height_cm=0.90
+albedo_mean=#50473b
+nscale=2.000
+normal_blue_mean=0.981
+opis=zemlya pod travoy

@@ -1,0 +1,8 @@
+tile_m=4.00
+height_cm=1.28
+albedo_mean=#514e49
+nscale=1.000
+normal_blue_mean=0.995
+px=2048
+variant_of=asphalt-road (tile 4 m, odin masshtab i ton)
+opis=v zaplatah: svezhiy temnyy asfalt pryamougolnikami, shov bitumom po konturu

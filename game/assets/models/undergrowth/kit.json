@@ -1,0 +1,4842 @@
+{
+  "kit": "trees",
+  "role": "predmet",
+  "pivot": "osnovanie stvola, x=z=0, y=0",
+  "units": "m, Y up",
+  "atlas": "leaf_atlas.png",
+  "materials": {
+    "bark": "cvet iz COLOR_0, metallic 0, roughness 0.9",
+    "leaf": "atlas + COLOR_0, alphaMode MASK 0.35, doubleSided; u dead uzla listvy net"
+  },
+  "keys": {
+    "species": "poroda",
+    "age": "young|mature|old (plan) ili null",
+    "health": "healthy|sparse|dead",
+    "variant": "nomer varianta sochetaniya"
+  },
+  "lod_hint_m": [
+    25,
+    70
+  ],
+  "trees": [
+    {
+      "tag": "tree_burdock_mature_dead_0",
+      "species": "burdock",
+      "age": "mature",
+      "health": "dead",
+      "variant": 0,
+      "seed": 143667988,
+      "kind": "weed",
+      "size_m": [
+        0.87,
+        0.9,
+        0.85
+      ],
+      "height_m": 0.9,
+      "crown_d_m": 0.86,
+      "target": {
+        "height_m": 0.9
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_burdock_mature_dead_0_lod0.glb",
+          "tris": 560,
+          "kb": 16,
+          "pct": 100.0,
+          "elements": 51,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_burdock_mature_dead_0_lod1.glb",
+          "tris": 242,
+          "kb": 10,
+          "pct": 43.2,
+          "elements": 49,
+          "keep_fit": 1.0,
+          "spread_pct": 99.2,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_burdock_mature_dead_0_lod2.glb",
+          "tris": 136,
+          "kb": 8,
+          "pct": 24.3,
+          "elements": 38,
+          "keep_fit": 1.0,
+          "spread_pct": 109.4,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_burdock_mature_dead_1",
+      "species": "burdock",
+      "age": "mature",
+      "health": "dead",
+      "variant": 1,
+      "seed": 138051204,
+      "kind": "weed",
+      "size_m": [
+        0.83,
+        0.92,
+        0.84
+      ],
+      "height_m": 0.92,
+      "crown_d_m": 0.83,
+      "target": {
+        "height_m": 0.92
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_burdock_mature_dead_1_lod0.glb",
+          "tris": 612,
+          "kb": 18,
+          "pct": 100.0,
+          "elements": 61,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_burdock_mature_dead_1_lod1.glb",
+          "tris": 214,
+          "kb": 9,
+          "pct": 35.0,
+          "elements": 41,
+          "keep_fit": 1.0,
+          "spread_pct": 114.5,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_burdock_mature_dead_1_lod2.glb",
+          "tris": 80,
+          "kb": 6,
+          "pct": 13.1,
+          "elements": 22,
+          "keep_fit": 1.0,
+          "spread_pct": 124.1,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_burdock_mature_healthy_0",
+      "species": "burdock",
+      "age": "mature",
+      "health": "healthy",
+      "variant": 0,
+      "seed": 764689141,
+      "kind": "weed",
+      "size_m": [
+        1.05,
+        0.83,
+        1.03
+      ],
+      "height_m": 0.83,
+      "crown_d_m": 1.04,
+      "target": {
+        "height_m": 0.83
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_burdock_mature_healthy_0_lod0.glb",
+          "tris": 792,
+          "kb": 22,
+          "pct": 100.0,
+          "elements": 78,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_burdock_mature_healthy_0_lod1.glb",
+          "tris": 298,
+          "kb": 12,
+          "pct": 37.6,
+          "elements": 65,
+          "keep_fit": 1.0,
+          "spread_pct": 107.7,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_burdock_mature_healthy_0_lod2.glb",
+          "tris": 182,
+          "kb": 10,
+          "pct": 23.0,
+          "elements": 52,
+          "keep_fit": 1.0,
+          "spread_pct": 119.7,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_burdock_mature_healthy_1",
+      "species": "burdock",
+      "age": "mature",
+      "health": "healthy",
+      "variant": 1,
+      "seed": 30804588,
+      "kind": "weed",
+      "size_m": [
+        1.18,
+        0.99,
+        1.04
+      ],
+      "height_m": 0.99,
+      "crown_d_m": 1.11,
+      "target": {
+        "height_m": 0.99
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_burdock_mature_healthy_1_lod0.glb",
+          "tris": 740,
+          "kb": 20,
+          "pct": 100.0,
+          "elements": 68,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_burdock_mature_healthy_1_lod1.glb",
+          "tris": 292,
+          "kb": 12,
+          "pct": 39.5,
+          "elements": 56,
+          "keep_fit": 1.0,
+          "spread_pct": 112.2,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_burdock_mature_healthy_1_lod2.glb",
+          "tris": 142,
+          "kb": 8,
+          "pct": 19.2,
+          "elements": 35,
+          "keep_fit": 1.0,
+          "spread_pct": 139.7,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_burdock_mature_healthy_2",
+      "species": "burdock",
+      "age": "mature",
+      "health": "healthy",
+      "variant": 2,
+      "seed": 588145293,
+      "kind": "weed",
+      "size_m": [
+        1.0,
+        0.83,
+        1.0
+      ],
+      "height_m": 0.83,
+      "crown_d_m": 1.0,
+      "target": {
+        "height_m": 0.83
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_burdock_mature_healthy_2_lod0.glb",
+          "tris": 744,
+          "kb": 21,
+          "pct": 100.0,
+          "elements": 69,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_burdock_mature_healthy_2_lod1.glb",
+          "tris": 298,
+          "kb": 12,
+          "pct": 40.1,
+          "elements": 65,
+          "keep_fit": 1.0,
+          "spread_pct": 103.9,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_burdock_mature_healthy_2_lod2.glb",
+          "tris": 148,
+          "kb": 8,
+          "pct": 19.9,
+          "elements": 41,
+          "keep_fit": 1.0,
+          "spread_pct": 128.6,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_burdock_old_dead_0",
+      "species": "burdock",
+      "age": "old",
+      "health": "dead",
+      "variant": 0,
+      "seed": 75613518,
+      "kind": "weed",
+      "size_m": [
+        1.02,
+        1.19,
+        0.98
+      ],
+      "height_m": 1.19,
+      "crown_d_m": 1.0,
+      "target": {
+        "height_m": 1.19
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_burdock_old_dead_0_lod0.glb",
+          "tris": 648,
+          "kb": 18,
+          "pct": 100.0,
+          "elements": 57,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_burdock_old_dead_0_lod1.glb",
+          "tris": 240,
+          "kb": 10,
+          "pct": 37.0,
+          "elements": 42,
+          "keep_fit": 1.0,
+          "spread_pct": 110.5,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_burdock_old_dead_0_lod2.glb",
+          "tris": 128,
+          "kb": 7,
+          "pct": 19.8,
+          "elements": 34,
+          "keep_fit": 1.0,
+          "spread_pct": 123.0,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_burdock_old_dead_1",
+      "species": "burdock",
+      "age": "old",
+      "health": "dead",
+      "variant": 1,
+      "seed": 1051671788,
+      "kind": "weed",
+      "size_m": [
+        0.85,
+        1.07,
+        0.74
+      ],
+      "height_m": 1.07,
+      "crown_d_m": 0.79,
+      "target": {
+        "height_m": 1.07
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_burdock_old_dead_1_lod0.glb",
+          "tris": 788,
+          "kb": 22,
+          "pct": 100.0,
+          "elements": 78,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_burdock_old_dead_1_lod1.glb",
+          "tris": 344,
+          "kb": 13,
+          "pct": 43.7,
+          "elements": 70,
+          "keep_fit": 1.0,
+          "spread_pct": 103.4,
+          "height_pct": 100.2
+        },
+        {
+          "lod": 2,
+          "glb": "tree_burdock_old_dead_1_lod2.glb",
+          "tris": 212,
+          "kb": 11,
+          "pct": 26.9,
+          "elements": 61,
+          "keep_fit": 1.0,
+          "spread_pct": 111.3,
+          "height_pct": 100.4
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_burdock_old_healthy_0",
+      "species": "burdock",
+      "age": "old",
+      "health": "healthy",
+      "variant": 0,
+      "seed": 667742423,
+      "kind": "weed",
+      "size_m": [
+        0.99,
+        1.1,
+        1.08
+      ],
+      "height_m": 1.1,
+      "crown_d_m": 1.04,
+      "target": {
+        "height_m": 1.1
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_burdock_old_healthy_0_lod0.glb",
+          "tris": 820,
+          "kb": 22,
+          "pct": 100.0,
+          "elements": 66,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_burdock_old_healthy_0_lod1.glb",
+          "tris": 318,
+          "kb": 13,
+          "pct": 38.8,
+          "elements": 63,
+          "keep_fit": 1.0,
+          "spread_pct": 104.6,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_burdock_old_healthy_0_lod2.glb",
+          "tris": 166,
+          "kb": 9,
+          "pct": 20.2,
+          "elements": 47,
+          "keep_fit": 1.0,
+          "spread_pct": 120.1,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_burdock_old_healthy_1",
+      "species": "burdock",
+      "age": "old",
+      "health": "healthy",
+      "variant": 1,
+      "seed": 476455605,
+      "kind": "weed",
+      "size_m": [
+        1.05,
+        1.06,
+        0.97
+      ],
+      "height_m": 1.06,
+      "crown_d_m": 1.01,
+      "target": {
+        "height_m": 1.06
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_burdock_old_healthy_1_lod0.glb",
+          "tris": 952,
+          "kb": 25,
+          "pct": 100.0,
+          "elements": 84,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_burdock_old_healthy_1_lod1.glb",
+          "tris": 344,
+          "kb": 13,
+          "pct": 36.1,
+          "elements": 64,
+          "keep_fit": 1.0,
+          "spread_pct": 116.3,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_burdock_old_healthy_1_lod2.glb",
+          "tris": 206,
+          "kb": 10,
+          "pct": 21.6,
+          "elements": 55,
+          "keep_fit": 1.0,
+          "spread_pct": 125.2,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_burdock_young_dead_0",
+      "species": "burdock",
+      "age": "young",
+      "health": "dead",
+      "variant": 0,
+      "seed": 711722201,
+      "kind": "weed",
+      "size_m": [
+        0.75,
+        0.49,
+        0.81
+      ],
+      "height_m": 0.49,
+      "crown_d_m": 0.78,
+      "target": {
+        "height_m": 0.62
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_burdock_young_dead_0_lod0.glb",
+          "tris": 200,
+          "kb": 7,
+          "pct": 100.0,
+          "elements": 5,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_burdock_young_dead_0_lod1.glb",
+          "tris": 56,
+          "kb": 4,
+          "pct": 28.0,
+          "elements": 4,
+          "keep_fit": 1.0,
+          "spread_pct": 123.4,
+          "height_pct": 100.1
+        },
+        {
+          "lod": 2,
+          "glb": "tree_burdock_young_dead_0_lod2.glb",
+          "tris": 24,
+          "kb": 3,
+          "pct": 12.0,
+          "elements": 3,
+          "keep_fit": 1.0,
+          "spread_pct": 138.8,
+          "height_pct": 112.3
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_burdock_young_dead_1",
+      "species": "burdock",
+      "age": "young",
+      "health": "dead",
+      "variant": 1,
+      "seed": 373390112,
+      "kind": "weed",
+      "size_m": [
+        0.81,
+        0.57,
+        0.88
+      ],
+      "height_m": 0.57,
+      "crown_d_m": 0.84,
+      "target": {
+        "height_m": 0.7
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_burdock_young_dead_1_lod0.glb",
+          "tris": 200,
+          "kb": 7,
+          "pct": 100.0,
+          "elements": 5,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_burdock_young_dead_1_lod1.glb",
+          "tris": 56,
+          "kb": 4,
+          "pct": 28.0,
+          "elements": 4,
+          "keep_fit": 1.0,
+          "spread_pct": 123.7,
+          "height_pct": 94.9
+        },
+        {
+          "lod": 2,
+          "glb": "tree_burdock_young_dead_1_lod2.glb",
+          "tris": 32,
+          "kb": 3,
+          "pct": 16.0,
+          "elements": 4,
+          "keep_fit": 1.0,
+          "spread_pct": 123.7,
+          "height_pct": 94.9
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_burdock_young_healthy_0",
+      "species": "burdock",
+      "age": "young",
+      "health": "healthy",
+      "variant": 0,
+      "seed": 846151071,
+      "kind": "weed",
+      "size_m": [
+        0.76,
+        0.62,
+        0.85
+      ],
+      "height_m": 0.62,
+      "crown_d_m": 0.8,
+      "target": {
+        "height_m": 0.68
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_burdock_young_healthy_0_lod0.glb",
+          "tris": 280,
+          "kb": 8,
+          "pct": 100.0,
+          "elements": 7,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_burdock_young_healthy_0_lod1.glb",
+          "tris": 98,
+          "kb": 5,
+          "pct": 35.0,
+          "elements": 7,
+          "keep_fit": 1.0,
+          "spread_pct": 108.0,
+          "height_pct": 94.1
+        },
+        {
+          "lod": 2,
+          "glb": "tree_burdock_young_healthy_0_lod2.glb",
+          "tris": 32,
+          "kb": 3,
+          "pct": 11.4,
+          "elements": 4,
+          "keep_fit": 1.0,
+          "spread_pct": 102.8,
+          "height_pct": 119.3
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_burdock_young_healthy_1",
+      "species": "burdock",
+      "age": "young",
+      "health": "healthy",
+      "variant": 1,
+      "seed": 1010691520,
+      "kind": "weed",
+      "size_m": [
+        0.92,
+        0.61,
+        1.09
+      ],
+      "height_m": 0.61,
+      "crown_d_m": 1.01,
+      "target": {
+        "height_m": 0.68
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_burdock_young_healthy_1_lod0.glb",
+          "tris": 280,
+          "kb": 8,
+          "pct": 100.0,
+          "elements": 7,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_burdock_young_healthy_1_lod1.glb",
+          "tris": 98,
+          "kb": 5,
+          "pct": 35.0,
+          "elements": 7,
+          "keep_fit": 1.0,
+          "spread_pct": 105.2,
+          "height_pct": 95.4
+        },
+        {
+          "lod": 2,
+          "glb": "tree_burdock_young_healthy_1_lod2.glb",
+          "tris": 32,
+          "kb": 3,
+          "pct": 11.4,
+          "elements": 4,
+          "keep_fit": 1.0,
+          "spread_pct": 140.7,
+          "height_pct": 121.0
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_elder_mature_dead_0",
+      "species": "elder",
+      "age": "mature",
+      "health": "dead",
+      "variant": 0,
+      "skeleton": "sk_elder_mature_0",
+      "seed": 165851323,
+      "size_m": [
+        2.45,
+        2.32,
+        2.25
+      ],
+      "height_m": 2.32,
+      "crown_d_m": 2.35,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_elder_mature_dead_0_lod0.glb",
+          "tris": 6644,
+          "kb": 242,
+          "pct": 100.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_elder_mature_dead_0_lod1.glb",
+          "tris": 1932,
+          "kb": 111,
+          "pct": 29.1,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 96.5,
+          "height_pct": 95.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_elder_mature_dead_0_lod2.glb",
+          "tris": 520,
+          "kb": 36,
+          "pct": 7.8,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 87.6,
+          "height_pct": 87.0
+        }
+      ],
+      "trunk_d_m": 0.06,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 2.31,
+        "crown_d_m": 2.25
+      },
+      "lai": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "cut_k": 0.5
+    },
+    {
+      "tag": "tree_elder_mature_dead_1",
+      "species": "elder",
+      "age": "mature",
+      "health": "dead",
+      "variant": 1,
+      "skeleton": "sk_elder_mature_1",
+      "seed": 796470490,
+      "size_m": [
+        1.99,
+        2.39,
+        2.34
+      ],
+      "height_m": 2.39,
+      "crown_d_m": 2.17,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_elder_mature_dead_1_lod0.glb",
+          "tris": 7044,
+          "kb": 252,
+          "pct": 100.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_elder_mature_dead_1_lod1.glb",
+          "tris": 2068,
+          "kb": 117,
+          "pct": 29.4,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 96.5,
+          "height_pct": 98.2
+        },
+        {
+          "lod": 2,
+          "glb": "tree_elder_mature_dead_1_lod2.glb",
+          "tris": 634,
+          "kb": 44,
+          "pct": 9.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 89.8,
+          "height_pct": 89.0
+        }
+      ],
+      "trunk_d_m": 0.06,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 2.39,
+        "crown_d_m": 1.91
+      },
+      "lai": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "cut_k": 0.5
+    },
+    {
+      "tag": "tree_elder_mature_healthy_0",
+      "species": "elder",
+      "age": "mature",
+      "health": "healthy",
+      "variant": 0,
+      "skeleton": "sk_elder_mature_0",
+      "seed": 165851323,
+      "size_m": [
+        2.45,
+        2.32,
+        2.25
+      ],
+      "height_m": 2.32,
+      "crown_d_m": 2.35,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_elder_mature_healthy_0_lod0.glb",
+          "tris": 7126,
+          "kb": 354,
+          "pct": 100.0,
+          "leaves": 861,
+          "leaf_m2": 21.5,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_elder_mature_healthy_0_lod1.glb",
+          "tris": 1900,
+          "kb": 129,
+          "pct": 26.7,
+          "leaves": 284,
+          "leaf_m2": 21.5,
+          "spread_pct": 112.5,
+          "height_pct": 106.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_elder_mature_healthy_0_lod2.glb",
+          "tris": 424,
+          "kb": 34,
+          "pct": 6.0,
+          "leaves": 52,
+          "leaf_m2": 21.5,
+          "spread_pct": 173.8,
+          "height_pct": 125.3
+        }
+      ],
+      "trunk_d_m": 0.06,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 2.31,
+        "crown_d_m": 2.25
+      },
+      "lai": [
+        4.97,
+        4.97,
+        4.97
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "leaf_size_k": 1.69
+    },
+    {
+      "tag": "tree_elder_mature_healthy_1",
+      "species": "elder",
+      "age": "mature",
+      "health": "healthy",
+      "variant": 1,
+      "skeleton": "sk_elder_mature_1",
+      "seed": 796470490,
+      "size_m": [
+        1.99,
+        2.39,
+        2.34
+      ],
+      "height_m": 2.39,
+      "crown_d_m": 2.17,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_elder_mature_healthy_1_lod0.glb",
+          "tris": 7302,
+          "kb": 341,
+          "pct": 100.0,
+          "leaves": 729,
+          "leaf_m2": 18.2,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_elder_mature_healthy_1_lod1.glb",
+          "tris": 2092,
+          "kb": 137,
+          "pct": 28.6,
+          "leaves": 240,
+          "leaf_m2": 18.2,
+          "spread_pct": 115.3,
+          "height_pct": 102.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_elder_mature_healthy_1_lod2.glb",
+          "tris": 440,
+          "kb": 34,
+          "pct": 6.0,
+          "leaves": 44,
+          "leaf_m2": 18.2,
+          "spread_pct": 158.5,
+          "height_pct": 156.8
+        }
+      ],
+      "trunk_d_m": 0.06,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 2.39,
+        "crown_d_m": 1.91
+      },
+      "lai": [
+        4.98,
+        4.98,
+        4.98
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "leaf_size_k": 1.69
+    },
+    {
+      "tag": "tree_elder_old_dead_0",
+      "species": "elder",
+      "age": "old",
+      "health": "dead",
+      "variant": 0,
+      "skeleton": "sk_elder_old_0",
+      "seed": 642295251,
+      "size_m": [
+        2.94,
+        2.65,
+        2.89
+      ],
+      "height_m": 2.65,
+      "crown_d_m": 2.92,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_elder_old_dead_0_lod0.glb",
+          "tris": 7216,
+          "kb": 260,
+          "pct": 100.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_elder_old_dead_0_lod1.glb",
+          "tris": 1812,
+          "kb": 101,
+          "pct": 25.1,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 90.9,
+          "height_pct": 97.9
+        },
+        {
+          "lod": 2,
+          "glb": "tree_elder_old_dead_0_lod2.glb",
+          "tris": 486,
+          "kb": 33,
+          "pct": 6.7,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 83.9,
+          "height_pct": 87.1
+        }
+      ],
+      "trunk_d_m": 0.08,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 2.65,
+        "crown_d_m": 2.82
+      },
+      "lai": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "cut_k": 0.738
+    },
+    {
+      "tag": "tree_elder_old_dead_1",
+      "species": "elder",
+      "age": "old",
+      "health": "dead",
+      "variant": 1,
+      "skeleton": "sk_elder_old_1",
+      "seed": 407427224,
+      "size_m": [
+        2.8,
+        2.5,
+        2.85
+      ],
+      "height_m": 2.5,
+      "crown_d_m": 2.83,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_elder_old_dead_1_lod0.glb",
+          "tris": 7124,
+          "kb": 252,
+          "pct": 100.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_elder_old_dead_1_lod1.glb",
+          "tris": 2148,
+          "kb": 120,
+          "pct": 30.2,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 97.0,
+          "height_pct": 98.1
+        },
+        {
+          "lod": 2,
+          "glb": "tree_elder_old_dead_1_lod2.glb",
+          "tris": 632,
+          "kb": 42,
+          "pct": 8.9,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 87.3,
+          "height_pct": 91.0
+        }
+      ],
+      "trunk_d_m": 0.08,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 2.5,
+        "crown_d_m": 2.79
+      },
+      "lai": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "cut_k": 0.5
+    },
+    {
+      "tag": "tree_elder_old_healthy_0",
+      "species": "elder",
+      "age": "old",
+      "health": "healthy",
+      "variant": 0,
+      "skeleton": "sk_elder_old_0",
+      "seed": 642295251,
+      "size_m": [
+        2.94,
+        2.65,
+        2.89
+      ],
+      "height_m": 2.65,
+      "crown_d_m": 2.92,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_elder_old_healthy_0_lod0.glb",
+          "tris": 7566,
+          "kb": 360,
+          "pct": 100.0,
+          "leaves": 789,
+          "leaf_m2": 33.2,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_elder_old_healthy_0_lod1.glb",
+          "tris": 2172,
+          "kb": 142,
+          "pct": 28.7,
+          "leaves": 260,
+          "leaf_m2": 33.2,
+          "spread_pct": 113.9,
+          "height_pct": 108.5
+        },
+        {
+          "lod": 2,
+          "glb": "tree_elder_old_healthy_0_lod2.glb",
+          "tris": 474,
+          "kb": 36,
+          "pct": 6.3,
+          "leaves": 47,
+          "leaf_m2": 33.2,
+          "spread_pct": 165.1,
+          "height_pct": 162.8
+        }
+      ],
+      "trunk_d_m": 0.08,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 2.65,
+        "crown_d_m": 2.82
+      },
+      "lai": [
+        4.98,
+        4.98,
+        4.98
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "leaf_size_k": 2.197
+    },
+    {
+      "tag": "tree_elder_old_healthy_1",
+      "species": "elder",
+      "age": "old",
+      "health": "healthy",
+      "variant": 1,
+      "skeleton": "sk_elder_old_1",
+      "seed": 407427224,
+      "size_m": [
+        2.8,
+        2.5,
+        2.85
+      ],
+      "height_m": 2.5,
+      "crown_d_m": 2.83,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_elder_old_healthy_1_lod0.glb",
+          "tris": 7590,
+          "kb": 352,
+          "pct": 100.0,
+          "leaves": 741,
+          "leaf_m2": 31.1,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_elder_old_healthy_1_lod1.glb",
+          "tris": 2180,
+          "kb": 140,
+          "pct": 28.7,
+          "leaves": 244,
+          "leaf_m2": 31.1,
+          "spread_pct": 113.1,
+          "height_pct": 108.8
+        },
+        {
+          "lod": 2,
+          "glb": "tree_elder_old_healthy_1_lod2.glb",
+          "tris": 414,
+          "kb": 32,
+          "pct": 5.5,
+          "leaves": 44,
+          "leaf_m2": 31.1,
+          "spread_pct": 169.6,
+          "height_pct": 142.5
+        }
+      ],
+      "trunk_d_m": 0.08,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 2.5,
+        "crown_d_m": 2.79
+      },
+      "lai": [
+        4.96,
+        4.96,
+        4.96
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "leaf_size_k": 2.197
+    },
+    {
+      "tag": "tree_elder_young_dead_0",
+      "species": "elder",
+      "age": "young",
+      "health": "dead",
+      "variant": 0,
+      "skeleton": "sk_elder_young_0",
+      "seed": 161907403,
+      "size_m": [
+        1.91,
+        1.9,
+        1.75
+      ],
+      "height_m": 1.9,
+      "crown_d_m": 1.83,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_elder_young_dead_0_lod0.glb",
+          "tris": 6448,
+          "kb": 237,
+          "pct": 100.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_elder_young_dead_0_lod1.glb",
+          "tris": 1828,
+          "kb": 107,
+          "pct": 28.3,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 93.3,
+          "height_pct": 97.7
+        },
+        {
+          "lod": 2,
+          "glb": "tree_elder_young_dead_0_lod2.glb",
+          "tris": 484,
+          "kb": 34,
+          "pct": 7.5,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 85.4,
+          "height_pct": 88.3
+        }
+      ],
+      "trunk_d_m": 0.04,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.9,
+        "crown_d_m": 1.49
+      },
+      "lai": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "cut_k": 0.5
+    },
+    {
+      "tag": "tree_elder_young_dead_1",
+      "species": "elder",
+      "age": "young",
+      "health": "dead",
+      "variant": 1,
+      "skeleton": "sk_elder_young_1",
+      "seed": 230858827,
+      "size_m": [
+        1.59,
+        1.65,
+        1.57
+      ],
+      "height_m": 1.65,
+      "crown_d_m": 1.58,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_elder_young_dead_1_lod0.glb",
+          "tris": 5980,
+          "kb": 222,
+          "pct": 100.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_elder_young_dead_1_lod1.glb",
+          "tris": 2140,
+          "kb": 128,
+          "pct": 35.8,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 98.5,
+          "height_pct": 97.7
+        },
+        {
+          "lod": 2,
+          "glb": "tree_elder_young_dead_1_lod2.glb",
+          "tris": 622,
+          "kb": 43,
+          "pct": 10.4,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 89.5,
+          "height_pct": 88.5
+        }
+      ],
+      "trunk_d_m": 0.04,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.65,
+        "crown_d_m": 1.41
+      },
+      "lai": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "cut_k": 0.3
+    },
+    {
+      "tag": "tree_elder_young_healthy_0",
+      "species": "elder",
+      "age": "young",
+      "health": "healthy",
+      "variant": 0,
+      "skeleton": "sk_elder_young_0",
+      "seed": 161907403,
+      "size_m": [
+        1.91,
+        1.9,
+        1.75
+      ],
+      "height_m": 1.9,
+      "crown_d_m": 1.83,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_elder_young_healthy_0_lod0.glb",
+          "tris": 6934,
+          "kb": 352,
+          "pct": 100.0,
+          "leaves": 873,
+          "leaf_m2": 12.9,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_elder_young_healthy_0_lod1.glb",
+          "tris": 1756,
+          "kb": 123,
+          "pct": 25.3,
+          "leaves": 288,
+          "leaf_m2": 12.9,
+          "spread_pct": 109.5,
+          "height_pct": 102.3
+        },
+        {
+          "lod": 2,
+          "glb": "tree_elder_young_healthy_0_lod2.glb",
+          "tris": 370,
+          "kb": 30,
+          "pct": 5.3,
+          "leaves": 52,
+          "leaf_m2": 12.9,
+          "spread_pct": 162.6,
+          "height_pct": 119.2
+        }
+      ],
+      "trunk_d_m": 0.04,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.9,
+        "crown_d_m": 1.49
+      },
+      "lai": [
+        4.91,
+        4.91,
+        4.91
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "leaf_size_k": 1.3
+    },
+    {
+      "tag": "tree_elder_young_healthy_1",
+      "species": "elder",
+      "age": "young",
+      "health": "healthy",
+      "variant": 1,
+      "skeleton": "sk_elder_young_1",
+      "seed": 230858827,
+      "size_m": [
+        1.59,
+        1.65,
+        1.57
+      ],
+      "height_m": 1.65,
+      "crown_d_m": 1.58,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_elder_young_healthy_1_lod0.glb",
+          "tris": 6536,
+          "kb": 364,
+          "pct": 100.0,
+          "leaves": 1116,
+          "leaf_m2": 9.7,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_elder_young_healthy_1_lod1.glb",
+          "tris": 1764,
+          "kb": 130,
+          "pct": 27.0,
+          "leaves": 368,
+          "leaf_m2": 9.7,
+          "spread_pct": 106.1,
+          "height_pct": 111.1
+        },
+        {
+          "lod": 2,
+          "glb": "tree_elder_young_healthy_1_lod2.glb",
+          "tris": 422,
+          "kb": 35,
+          "pct": 6.5,
+          "leaves": 67,
+          "leaf_m2": 9.7,
+          "spread_pct": 148.9,
+          "height_pct": 113.4
+        }
+      ],
+      "trunk_d_m": 0.04,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.65,
+        "crown_d_m": 1.41
+      },
+      "lai": [
+        4.95,
+        4.95,
+        4.95
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_nettle_mature_dead_0",
+      "species": "nettle",
+      "age": "mature",
+      "health": "dead",
+      "variant": 0,
+      "seed": 876964070,
+      "kind": "weed",
+      "size_m": [
+        0.84,
+        1.1,
+        0.85
+      ],
+      "height_m": 1.1,
+      "crown_d_m": 0.84,
+      "target": {
+        "height_m": 1.1
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_nettle_mature_dead_0_lod0.glb",
+          "tris": 1352,
+          "kb": 33,
+          "pct": 100.0,
+          "elements": 74,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_nettle_mature_dead_0_lod1.glb",
+          "tris": 210,
+          "kb": 8,
+          "pct": 15.5,
+          "elements": 21,
+          "keep_fit": 1.0,
+          "spread_pct": 94.7,
+          "height_pct": 99.5
+        },
+        {
+          "lod": 2,
+          "glb": "tree_nettle_mature_dead_0_lod2.glb",
+          "tris": 60,
+          "kb": 5,
+          "pct": 4.4,
+          "elements": 15,
+          "keep_fit": 1.0,
+          "spread_pct": 93.3,
+          "height_pct": 99.4
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_nettle_mature_dead_1",
+      "species": "nettle",
+      "age": "mature",
+      "health": "dead",
+      "variant": 1,
+      "seed": 145083768,
+      "kind": "weed",
+      "size_m": [
+        0.7,
+        1.01,
+        0.71
+      ],
+      "height_m": 1.01,
+      "crown_d_m": 0.7,
+      "target": {
+        "height_m": 1.01
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_nettle_mature_dead_1_lod0.glb",
+          "tris": 1300,
+          "kb": 30,
+          "pct": 100.0,
+          "elements": 61,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_nettle_mature_dead_1_lod1.glb",
+          "tris": 480,
+          "kb": 15,
+          "pct": 36.9,
+          "elements": 48,
+          "keep_fit": 1.562,
+          "spread_pct": 98.1,
+          "height_pct": 96.3
+        },
+        {
+          "lod": 2,
+          "glb": "tree_nettle_mature_dead_1_lod2.glb",
+          "tris": 202,
+          "kb": 11,
+          "pct": 15.5,
+          "elements": 50,
+          "keep_fit": 2.441,
+          "spread_pct": 99.8,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_nettle_mature_healthy_0",
+      "species": "nettle",
+      "age": "mature",
+      "health": "healthy",
+      "variant": 0,
+      "seed": 219590362,
+      "kind": "weed",
+      "size_m": [
+        0.74,
+        1.0,
+        0.74
+      ],
+      "height_m": 1.0,
+      "crown_d_m": 0.74,
+      "target": {
+        "height_m": 1.0
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_nettle_mature_healthy_0_lod0.glb",
+          "tris": 2560,
+          "kb": 82,
+          "pct": 100.0,
+          "elements": 376,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_nettle_mature_healthy_0_lod1.glb",
+          "tris": 628,
+          "kb": 27,
+          "pct": 24.5,
+          "elements": 182,
+          "keep_fit": 1.0,
+          "spread_pct": 107.2,
+          "height_pct": 95.4
+        },
+        {
+          "lod": 2,
+          "glb": "tree_nettle_mature_healthy_0_lod2.glb",
+          "tris": 206,
+          "kb": 13,
+          "pct": 8.0,
+          "elements": 88,
+          "keep_fit": 0.85,
+          "spread_pct": 120.3,
+          "height_pct": 95.7
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_nettle_mature_healthy_1",
+      "species": "nettle",
+      "age": "mature",
+      "health": "healthy",
+      "variant": 1,
+      "seed": 1056309622,
+      "kind": "weed",
+      "size_m": [
+        0.66,
+        1.02,
+        0.7
+      ],
+      "height_m": 1.02,
+      "crown_d_m": 0.68,
+      "target": {
+        "height_m": 1.02
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_nettle_mature_healthy_1_lod0.glb",
+          "tris": 2408,
+          "kb": 76,
+          "pct": 100.0,
+          "elements": 338,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_nettle_mature_healthy_1_lod1.glb",
+          "tris": 384,
+          "kb": 17,
+          "pct": 15.9,
+          "elements": 108,
+          "keep_fit": 1.0,
+          "spread_pct": 110.8,
+          "height_pct": 95.9
+        },
+        {
+          "lod": 2,
+          "glb": "tree_nettle_mature_healthy_1_lod2.glb",
+          "tris": 190,
+          "kb": 12,
+          "pct": 7.9,
+          "elements": 80,
+          "keep_fit": 1.0,
+          "spread_pct": 119.2,
+          "height_pct": 92.7
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_nettle_mature_healthy_2",
+      "species": "nettle",
+      "age": "mature",
+      "health": "healthy",
+      "variant": 2,
+      "seed": 379325987,
+      "kind": "weed",
+      "size_m": [
+        0.77,
+        0.95,
+        0.76
+      ],
+      "height_m": 0.95,
+      "crown_d_m": 0.77,
+      "target": {
+        "height_m": 0.95
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_nettle_mature_healthy_2_lod0.glb",
+          "tris": 2464,
+          "kb": 78,
+          "pct": 100.0,
+          "elements": 352,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_nettle_mature_healthy_2_lod1.glb",
+          "tris": 608,
+          "kb": 26,
+          "pct": 24.7,
+          "elements": 172,
+          "keep_fit": 1.0,
+          "spread_pct": 98.4,
+          "height_pct": 93.9
+        },
+        {
+          "lod": 2,
+          "glb": "tree_nettle_mature_healthy_2_lod2.glb",
+          "tris": 186,
+          "kb": 12,
+          "pct": 7.5,
+          "elements": 78,
+          "keep_fit": 0.614,
+          "spread_pct": 111.3,
+          "height_pct": 94.8
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_nettle_old_dead_0",
+      "species": "nettle",
+      "age": "old",
+      "health": "dead",
+      "variant": 0,
+      "seed": 635672829,
+      "kind": "weed",
+      "size_m": [
+        1.2,
+        1.37,
+        1.26
+      ],
+      "height_m": 1.37,
+      "crown_d_m": 1.23,
+      "target": {
+        "height_m": 1.37
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_nettle_old_dead_0_lod0.glb",
+          "tris": 1880,
+          "kb": 45,
+          "pct": 100.0,
+          "elements": 110,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_nettle_old_dead_0_lod1.glb",
+          "tris": 578,
+          "kb": 18,
+          "pct": 30.7,
+          "elements": 73,
+          "keep_fit": 1.0,
+          "spread_pct": 102.7,
+          "height_pct": 95.1
+        },
+        {
+          "lod": 2,
+          "glb": "tree_nettle_old_dead_0_lod2.glb",
+          "tris": 186,
+          "kb": 10,
+          "pct": 9.9,
+          "elements": 54,
+          "keep_fit": 1.0,
+          "spread_pct": 108.2,
+          "height_pct": 95.1
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_nettle_old_dead_1",
+      "species": "nettle",
+      "age": "old",
+      "health": "dead",
+      "variant": 1,
+      "seed": 861358572,
+      "kind": "weed",
+      "size_m": [
+        1.0,
+        1.23,
+        1.15
+      ],
+      "height_m": 1.23,
+      "crown_d_m": 1.07,
+      "target": {
+        "height_m": 1.23
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_nettle_old_dead_1_lod0.glb",
+          "tris": 1840,
+          "kb": 43,
+          "pct": 100.0,
+          "elements": 100,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_nettle_old_dead_1_lod1.glb",
+          "tris": 438,
+          "kb": 14,
+          "pct": 23.8,
+          "elements": 51,
+          "keep_fit": 1.0,
+          "spread_pct": 110.0,
+          "height_pct": 95.4
+        },
+        {
+          "lod": 2,
+          "glb": "tree_nettle_old_dead_1_lod2.glb",
+          "tris": 148,
+          "kb": 9,
+          "pct": 8.0,
+          "elements": 41,
+          "keep_fit": 1.0,
+          "spread_pct": 108.4,
+          "height_pct": 95.4
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_nettle_old_healthy_0",
+      "species": "nettle",
+      "age": "old",
+      "health": "healthy",
+      "variant": 0,
+      "seed": 836145812,
+      "kind": "weed",
+      "size_m": [
+        0.96,
+        1.28,
+        1.05
+      ],
+      "height_m": 1.28,
+      "crown_d_m": 1.0,
+      "target": {
+        "height_m": 1.26
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_nettle_old_healthy_0_lod0.glb",
+          "tris": 2912,
+          "kb": 92,
+          "pct": 100.0,
+          "elements": 416,
+          "keep_fit": 0.85,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_nettle_old_healthy_0_lod1.glb",
+          "tris": 884,
+          "kb": 36,
+          "pct": 30.4,
+          "elements": 250,
+          "keep_fit": 1.25,
+          "spread_pct": 105.9,
+          "height_pct": 96.6
+        },
+        {
+          "lod": 2,
+          "glb": "tree_nettle_old_healthy_0_lod2.glb",
+          "tris": 216,
+          "kb": 13,
+          "pct": 7.4,
+          "elements": 90,
+          "keep_fit": 1.25,
+          "spread_pct": 110.5,
+          "height_pct": 87.3
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_nettle_old_healthy_1",
+      "species": "nettle",
+      "age": "old",
+      "health": "healthy",
+      "variant": 1,
+      "seed": 501516037,
+      "kind": "weed",
+      "size_m": [
+        1.01,
+        1.22,
+        0.94
+      ],
+      "height_m": 1.22,
+      "crown_d_m": 0.97,
+      "target": {
+        "height_m": 1.22
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_nettle_old_healthy_1_lod0.glb",
+          "tris": 2704,
+          "kb": 86,
+          "pct": 100.0,
+          "elements": 388,
+          "keep_fit": 0.722,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_nettle_old_healthy_1_lod1.glb",
+          "tris": 612,
+          "kb": 26,
+          "pct": 22.6,
+          "elements": 174,
+          "keep_fit": 1.0,
+          "spread_pct": 111.0,
+          "height_pct": 98.1
+        },
+        {
+          "lod": 2,
+          "glb": "tree_nettle_old_healthy_1_lod2.glb",
+          "tris": 174,
+          "kb": 11,
+          "pct": 6.4,
+          "elements": 72,
+          "keep_fit": 0.85,
+          "spread_pct": 113.7,
+          "height_pct": 90.5
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_nettle_young_dead_0",
+      "species": "nettle",
+      "age": "young",
+      "health": "dead",
+      "variant": 0,
+      "seed": 1044398518,
+      "kind": "weed",
+      "size_m": [
+        0.48,
+        0.69,
+        0.52
+      ],
+      "height_m": 0.69,
+      "crown_d_m": 0.5,
+      "target": {
+        "height_m": 0.69
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_nettle_young_dead_0_lod0.glb",
+          "tris": 696,
+          "kb": 17,
+          "pct": 100.0,
+          "elements": 30,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_nettle_young_dead_0_lod1.glb",
+          "tris": 178,
+          "kb": 7,
+          "pct": 25.6,
+          "elements": 17,
+          "keep_fit": 1.0,
+          "spread_pct": 91.2,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_nettle_young_dead_0_lod2.glb",
+          "tris": 46,
+          "kb": 4,
+          "pct": 6.6,
+          "elements": 11,
+          "keep_fit": 1.0,
+          "spread_pct": 100.4,
+          "height_pct": 99.9
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_nettle_young_dead_1",
+      "species": "nettle",
+      "age": "young",
+      "health": "dead",
+      "variant": 1,
+      "seed": 962012875,
+      "kind": "weed",
+      "size_m": [
+        0.45,
+        0.63,
+        0.41
+      ],
+      "height_m": 0.63,
+      "crown_d_m": 0.43,
+      "target": {
+        "height_m": 0.63
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_nettle_young_dead_1_lod0.glb",
+          "tris": 752,
+          "kb": 20,
+          "pct": 100.0,
+          "elements": 44,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_nettle_young_dead_1_lod1.glb",
+          "tris": 192,
+          "kb": 8,
+          "pct": 25.5,
+          "elements": 24,
+          "keep_fit": 1.562,
+          "spread_pct": 97.6,
+          "height_pct": 97.8
+        },
+        {
+          "lod": 2,
+          "glb": "tree_nettle_young_dead_1_lod2.glb",
+          "tris": 102,
+          "kb": 7,
+          "pct": 13.6,
+          "elements": 30,
+          "keep_fit": 2.441,
+          "spread_pct": 95.7,
+          "height_pct": 97.7
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_nettle_young_healthy_0",
+      "species": "nettle",
+      "age": "young",
+      "health": "healthy",
+      "variant": 0,
+      "seed": 920738587,
+      "kind": "weed",
+      "size_m": [
+        0.4,
+        0.64,
+        0.42
+      ],
+      "height_m": 0.64,
+      "crown_d_m": 0.41,
+      "target": {
+        "height_m": 0.64
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_nettle_young_healthy_0_lod0.glb",
+          "tris": 1376,
+          "kb": 45,
+          "pct": 100.0,
+          "elements": 200,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_nettle_young_healthy_0_lod1.glb",
+          "tris": 244,
+          "kb": 12,
+          "pct": 17.7,
+          "elements": 74,
+          "keep_fit": 1.0,
+          "spread_pct": 102.7,
+          "height_pct": 94.8
+        },
+        {
+          "lod": 2,
+          "glb": "tree_nettle_young_healthy_0_lod2.glb",
+          "tris": 134,
+          "kb": 9,
+          "pct": 9.7,
+          "elements": 58,
+          "keep_fit": 1.0,
+          "spread_pct": 111.5,
+          "height_pct": 94.8
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_nettle_young_healthy_1",
+      "species": "nettle",
+      "age": "young",
+      "health": "healthy",
+      "variant": 1,
+      "seed": 723017325,
+      "kind": "weed",
+      "size_m": [
+        0.48,
+        0.78,
+        0.56
+      ],
+      "height_m": 0.78,
+      "crown_d_m": 0.52,
+      "target": {
+        "height_m": 0.78
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_nettle_young_healthy_1_lod0.glb",
+          "tris": 1296,
+          "kb": 42,
+          "pct": 100.0,
+          "elements": 180,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_nettle_young_healthy_1_lod1.glb",
+          "tris": 276,
+          "kb": 13,
+          "pct": 21.3,
+          "elements": 78,
+          "keep_fit": 1.0,
+          "spread_pct": 113.2,
+          "height_pct": 100.3
+        },
+        {
+          "lod": 2,
+          "glb": "tree_nettle_young_healthy_1_lod2.glb",
+          "tris": 114,
+          "kb": 8,
+          "pct": 8.8,
+          "elements": 48,
+          "keep_fit": 1.0,
+          "spread_pct": 95.2,
+          "height_pct": 101.3
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_rosehip_mature_dead_0",
+      "species": "rosehip",
+      "age": "mature",
+      "health": "dead",
+      "variant": 0,
+      "skeleton": "sk_rosehip_mature_0",
+      "seed": 907391642,
+      "size_m": [
+        1.85,
+        1.4,
+        1.76
+      ],
+      "height_m": 1.4,
+      "crown_d_m": 1.81,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_rosehip_mature_dead_0_lod0.glb",
+          "tris": 5420,
+          "kb": 205,
+          "pct": 100.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_rosehip_mature_dead_0_lod1.glb",
+          "tris": 2120,
+          "kb": 126,
+          "pct": 39.1,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 98.5,
+          "height_pct": 96.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_rosehip_mature_dead_0_lod2.glb",
+          "tris": 576,
+          "kb": 40,
+          "pct": 10.6,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 90.6,
+          "height_pct": 91.0
+        }
+      ],
+      "trunk_d_m": 0.035,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.4,
+        "crown_d_m": 1.87
+      },
+      "lai": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "cut_k": 0.3
+    },
+    {
+      "tag": "tree_rosehip_mature_dead_1",
+      "species": "rosehip",
+      "age": "mature",
+      "health": "dead",
+      "variant": 1,
+      "skeleton": "sk_rosehip_mature_1",
+      "seed": 996331142,
+      "size_m": [
+        1.87,
+        1.5,
+        1.96
+      ],
+      "height_m": 1.5,
+      "crown_d_m": 1.92,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_rosehip_mature_dead_1_lod0.glb",
+          "tris": 5372,
+          "kb": 201,
+          "pct": 100.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_rosehip_mature_dead_1_lod1.glb",
+          "tris": 2020,
+          "kb": 120,
+          "pct": 37.6,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 98.2,
+          "height_pct": 96.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_rosehip_mature_dead_1_lod2.glb",
+          "tris": 596,
+          "kb": 41,
+          "pct": 11.1,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 87.9,
+          "height_pct": 91.9
+        }
+      ],
+      "trunk_d_m": 0.035,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.5,
+        "crown_d_m": 1.93
+      },
+      "lai": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "cut_k": 0.3
+    },
+    {
+      "tag": "tree_rosehip_mature_healthy_0",
+      "species": "rosehip",
+      "age": "mature",
+      "health": "healthy",
+      "variant": 0,
+      "skeleton": "sk_rosehip_mature_0",
+      "seed": 907391642,
+      "size_m": [
+        1.85,
+        1.4,
+        1.76
+      ],
+      "height_m": 1.4,
+      "crown_d_m": 1.81,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_rosehip_mature_healthy_0_lod0.glb",
+          "tris": 6530,
+          "kb": 384,
+          "pct": 100.0,
+          "leaves": 1275,
+          "leaf_m2": 12.8,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_rosehip_mature_healthy_0_lod1.glb",
+          "tris": 1808,
+          "kb": 136,
+          "pct": 27.7,
+          "leaves": 420,
+          "leaf_m2": 12.8,
+          "spread_pct": 98.3,
+          "height_pct": 99.6
+        },
+        {
+          "lod": 2,
+          "glb": "tree_rosehip_mature_healthy_0_lod2.glb",
+          "tris": 368,
+          "kb": 32,
+          "pct": 5.6,
+          "leaves": 76,
+          "leaf_m2": 12.8,
+          "spread_pct": 114.3,
+          "height_pct": 128.4
+        }
+      ],
+      "trunk_d_m": 0.035,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.4,
+        "crown_d_m": 1.87
+      },
+      "lai": [
+        5.01,
+        5.01,
+        5.01
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_rosehip_mature_healthy_1",
+      "species": "rosehip",
+      "age": "mature",
+      "health": "healthy",
+      "variant": 1,
+      "skeleton": "sk_rosehip_mature_1",
+      "seed": 996331142,
+      "size_m": [
+        1.87,
+        1.5,
+        1.96
+      ],
+      "height_m": 1.5,
+      "crown_d_m": 1.92,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_rosehip_mature_healthy_1_lod0.glb",
+          "tris": 6788,
+          "kb": 410,
+          "pct": 100.0,
+          "leaves": 1434,
+          "leaf_m2": 14.4,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_rosehip_mature_healthy_1_lod1.glb",
+          "tris": 1972,
+          "kb": 148,
+          "pct": 29.1,
+          "leaves": 472,
+          "leaf_m2": 14.4,
+          "spread_pct": 97.5,
+          "height_pct": 98.9
+        },
+        {
+          "lod": 2,
+          "glb": "tree_rosehip_mature_healthy_1_lod2.glb",
+          "tris": 388,
+          "kb": 34,
+          "pct": 5.7,
+          "leaves": 86,
+          "leaf_m2": 14.4,
+          "spread_pct": 109.4,
+          "height_pct": 125.1
+        }
+      ],
+      "trunk_d_m": 0.035,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.5,
+        "crown_d_m": 1.93
+      },
+      "lai": [
+        5.0,
+        5.0,
+        5.0
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_rosehip_old_dead_0",
+      "species": "rosehip",
+      "age": "old",
+      "health": "dead",
+      "variant": 0,
+      "skeleton": "sk_rosehip_old_0",
+      "seed": 404035988,
+      "size_m": [
+        2.4,
+        2.0,
+        2.76
+      ],
+      "height_m": 2.0,
+      "crown_d_m": 2.58,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_rosehip_old_dead_0_lod0.glb",
+          "tris": 7436,
+          "kb": 271,
+          "pct": 100.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_rosehip_old_dead_0_lod1.glb",
+          "tris": 1948,
+          "kb": 111,
+          "pct": 26.2,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 95.5,
+          "height_pct": 96.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_rosehip_old_dead_0_lod2.glb",
+          "tris": 630,
+          "kb": 43,
+          "pct": 8.5,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 90.3,
+          "height_pct": 90.1
+        }
+      ],
+      "trunk_d_m": 0.045,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 2.0,
+        "crown_d_m": 2.68
+      },
+      "lai": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "cut_k": 0.387
+    },
+    {
+      "tag": "tree_rosehip_old_dead_1",
+      "species": "rosehip",
+      "age": "old",
+      "health": "dead",
+      "variant": 1,
+      "skeleton": "sk_rosehip_old_1",
+      "seed": 588018817,
+      "size_m": [
+        2.53,
+        1.89,
+        2.54
+      ],
+      "height_m": 1.89,
+      "crown_d_m": 2.54,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_rosehip_old_dead_1_lod0.glb",
+          "tris": 5916,
+          "kb": 218,
+          "pct": 100.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_rosehip_old_dead_1_lod1.glb",
+          "tris": 2116,
+          "kb": 125,
+          "pct": 35.8,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 97.5,
+          "height_pct": 96.1
+        },
+        {
+          "lod": 2,
+          "glb": "tree_rosehip_old_dead_1_lod2.glb",
+          "tris": 628,
+          "kb": 43,
+          "pct": 10.6,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 88.9,
+          "height_pct": 90.3
+        }
+      ],
+      "trunk_d_m": 0.045,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.89,
+        "crown_d_m": 2.79
+      },
+      "lai": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "cut_k": 0.387
+    },
+    {
+      "tag": "tree_rosehip_old_healthy_0",
+      "species": "rosehip",
+      "age": "old",
+      "health": "healthy",
+      "variant": 0,
+      "skeleton": "sk_rosehip_old_0",
+      "seed": 404035988,
+      "size_m": [
+        2.4,
+        2.0,
+        2.76
+      ],
+      "height_m": 2.0,
+      "crown_d_m": 2.58,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_rosehip_old_healthy_0_lod0.glb",
+          "tris": 6962,
+          "kb": 351,
+          "pct": 100.0,
+          "leaves": 903,
+          "leaf_m2": 25.9,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_rosehip_old_healthy_0_lod1.glb",
+          "tris": 2048,
+          "kb": 138,
+          "pct": 29.4,
+          "leaves": 298,
+          "leaf_m2": 25.9,
+          "spread_pct": 96.4,
+          "height_pct": 110.2
+        },
+        {
+          "lod": 2,
+          "glb": "tree_rosehip_old_healthy_0_lod2.glb",
+          "tris": 466,
+          "kb": 36,
+          "pct": 6.7,
+          "leaves": 54,
+          "leaf_m2": 25.9,
+          "spread_pct": 118.0,
+          "height_pct": 115.9
+        }
+      ],
+      "trunk_d_m": 0.045,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 2.0,
+        "crown_d_m": 2.68
+      },
+      "lai": [
+        4.98,
+        4.98,
+        4.98
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "leaf_size_k": 1.69
+    },
+    {
+      "tag": "tree_rosehip_old_healthy_1",
+      "species": "rosehip",
+      "age": "old",
+      "health": "healthy",
+      "variant": 1,
+      "skeleton": "sk_rosehip_old_1",
+      "seed": 588018817,
+      "size_m": [
+        2.53,
+        1.89,
+        2.54
+      ],
+      "height_m": 1.89,
+      "crown_d_m": 2.54,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_rosehip_old_healthy_1_lod0.glb",
+          "tris": 7920,
+          "kb": 456,
+          "pct": 100.0,
+          "leaves": 1488,
+          "leaf_m2": 25.2,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_rosehip_old_healthy_1_lod1.glb",
+          "tris": 2276,
+          "kb": 168,
+          "pct": 28.7,
+          "leaves": 492,
+          "leaf_m2": 25.2,
+          "spread_pct": 98.0,
+          "height_pct": 100.1
+        },
+        {
+          "lod": 2,
+          "glb": "tree_rosehip_old_healthy_1_lod2.glb",
+          "tris": 480,
+          "kb": 40,
+          "pct": 6.1,
+          "leaves": 89,
+          "leaf_m2": 25.2,
+          "spread_pct": 105.3,
+          "height_pct": 117.0
+        }
+      ],
+      "trunk_d_m": 0.045,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.89,
+        "crown_d_m": 2.79
+      },
+      "lai": [
+        4.99,
+        4.99,
+        4.99
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "leaf_size_k": 1.3
+    },
+    {
+      "tag": "tree_rosehip_young_dead_0",
+      "species": "rosehip",
+      "age": "young",
+      "health": "dead",
+      "variant": 0,
+      "skeleton": "sk_rosehip_young_0",
+      "seed": 131954390,
+      "size_m": [
+        1.12,
+        1.07,
+        1.4
+      ],
+      "height_m": 1.07,
+      "crown_d_m": 1.26,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_rosehip_young_dead_0_lod0.glb",
+          "tris": 5356,
+          "kb": 204,
+          "pct": 100.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_rosehip_young_dead_0_lod1.glb",
+          "tris": 1700,
+          "kb": 102,
+          "pct": 31.7,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 95.9,
+          "height_pct": 97.8
+        },
+        {
+          "lod": 2,
+          "glb": "tree_rosehip_young_dead_0_lod2.glb",
+          "tris": 552,
+          "kb": 39,
+          "pct": 10.3,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 81.7,
+          "height_pct": 85.0
+        }
+      ],
+      "trunk_d_m": 0.025,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.06,
+        "crown_d_m": 1.26
+      },
+      "lai": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "cut_k": 0.296
+    },
+    {
+      "tag": "tree_rosehip_young_dead_1",
+      "species": "rosehip",
+      "age": "young",
+      "health": "dead",
+      "variant": 1,
+      "skeleton": "sk_rosehip_young_1",
+      "seed": 369593389,
+      "size_m": [
+        1.26,
+        1.18,
+        1.23
+      ],
+      "height_m": 1.18,
+      "crown_d_m": 1.25,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_rosehip_young_dead_1_lod0.glb",
+          "tris": 4920,
+          "kb": 185,
+          "pct": 100.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_rosehip_young_dead_1_lod1.glb",
+          "tris": 1712,
+          "kb": 104,
+          "pct": 34.8,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 95.7,
+          "height_pct": 97.9
+        },
+        {
+          "lod": 2,
+          "glb": "tree_rosehip_young_dead_1_lod2.glb",
+          "tris": 624,
+          "kb": 43,
+          "pct": 12.7,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 93.5,
+          "height_pct": 93.6
+        }
+      ],
+      "trunk_d_m": 0.025,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.18,
+        "crown_d_m": 1.22
+      },
+      "lai": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": [],
+      "cut_k": 0.3
+    },
+    {
+      "tag": "tree_rosehip_young_healthy_0",
+      "species": "rosehip",
+      "age": "young",
+      "health": "healthy",
+      "variant": 0,
+      "skeleton": "sk_rosehip_young_0",
+      "seed": 131954390,
+      "size_m": [
+        1.12,
+        1.07,
+        1.4
+      ],
+      "height_m": 1.07,
+      "crown_d_m": 1.26,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_rosehip_young_healthy_0_lod0.glb",
+          "tris": 4452,
+          "kb": 235,
+          "pct": 100.0,
+          "leaves": 612,
+          "leaf_m2": 6.1,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_rosehip_young_healthy_0_lod1.glb",
+          "tris": 1248,
+          "kb": 91,
+          "pct": 28.0,
+          "leaves": 202,
+          "leaf_m2": 6.1,
+          "spread_pct": 98.2,
+          "height_pct": 95.3
+        },
+        {
+          "lod": 2,
+          "glb": "tree_rosehip_young_healthy_0_lod2.glb",
+          "tris": 226,
+          "kb": 20,
+          "pct": 5.1,
+          "leaves": 37,
+          "leaf_m2": 6.1,
+          "spread_pct": 112.0,
+          "height_pct": 134.4
+        }
+      ],
+      "trunk_d_m": 0.025,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.06,
+        "crown_d_m": 1.26
+      },
+      "lai": [
+        4.95,
+        4.95,
+        4.95
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_rosehip_young_healthy_1",
+      "species": "rosehip",
+      "age": "young",
+      "health": "healthy",
+      "variant": 1,
+      "skeleton": "sk_rosehip_young_1",
+      "seed": 369593389,
+      "size_m": [
+        1.26,
+        1.18,
+        1.23
+      ],
+      "height_m": 1.18,
+      "crown_d_m": 1.25,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_rosehip_young_healthy_1_lod0.glb",
+          "tris": 4932,
+          "kb": 252,
+          "pct": 100.0,
+          "leaves": 606,
+          "leaf_m2": 6.1,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_rosehip_young_healthy_1_lod1.glb",
+          "tris": 1376,
+          "kb": 98,
+          "pct": 27.9,
+          "leaves": 200,
+          "leaf_m2": 6.1,
+          "spread_pct": 102.6,
+          "height_pct": 106.6
+        },
+        {
+          "lod": 2,
+          "glb": "tree_rosehip_young_healthy_1_lod2.glb",
+          "tris": 240,
+          "kb": 21,
+          "pct": 4.9,
+          "leaves": 36,
+          "leaf_m2": 6.1,
+          "spread_pct": 136.0,
+          "height_pct": 110.7
+        }
+      ],
+      "trunk_d_m": 0.025,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.18,
+        "crown_d_m": 1.22
+      },
+      "lai": [
+        5.01,
+        5.01,
+        5.01
+      ],
+      "budget_tris": [
+        8000,
+        2400,
+        640
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sapling_mature_dead_0",
+      "species": "sapling",
+      "age": "mature",
+      "health": "dead",
+      "variant": 0,
+      "skeleton": "sk_sapling_mature_0",
+      "seed": 443025909,
+      "size_m": [
+        0.97,
+        1.52,
+        0.88
+      ],
+      "height_m": 1.52,
+      "crown_d_m": 0.93,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sapling_mature_dead_0_lod0.glb",
+          "tris": 3680,
+          "kb": 140,
+          "pct": 100.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sapling_mature_dead_0_lod1.glb",
+          "tris": 1436,
+          "kb": 87,
+          "pct": 39.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 98.1,
+          "height_pct": 96.3
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sapling_mature_dead_0_lod2.glb",
+          "tris": 384,
+          "kb": 27,
+          "pct": 10.4,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 91.8,
+          "height_pct": 90.6
+        }
+      ],
+      "trunk_d_m": 0.02,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.52,
+        "crown_d_m": 0.95
+      },
+      "lai": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "budget_tris": [
+        5000,
+        1500,
+        400
+      ],
+      "over_budget": [],
+      "cut_k": 0.3
+    },
+    {
+      "tag": "tree_sapling_mature_dead_1",
+      "species": "sapling",
+      "age": "mature",
+      "health": "dead",
+      "variant": 1,
+      "skeleton": "sk_sapling_mature_1",
+      "seed": 1002251440,
+      "size_m": [
+        1.08,
+        1.73,
+        1.17
+      ],
+      "height_m": 1.73,
+      "crown_d_m": 1.12,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sapling_mature_dead_1_lod0.glb",
+          "tris": 3700,
+          "kb": 139,
+          "pct": 100.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sapling_mature_dead_1_lod1.glb",
+          "tris": 1200,
+          "kb": 72,
+          "pct": 32.4,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 97.9,
+          "height_pct": 96.5
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sapling_mature_dead_1_lod2.glb",
+          "tris": 358,
+          "kb": 25,
+          "pct": 9.7,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 87.2,
+          "height_pct": 93.1
+        }
+      ],
+      "trunk_d_m": 0.02,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.73,
+        "crown_d_m": 1.08
+      },
+      "lai": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "budget_tris": [
+        5000,
+        1500,
+        400
+      ],
+      "over_budget": [],
+      "cut_k": 0.387
+    },
+    {
+      "tag": "tree_sapling_mature_healthy_0",
+      "species": "sapling",
+      "age": "mature",
+      "health": "healthy",
+      "variant": 0,
+      "skeleton": "sk_sapling_mature_0",
+      "seed": 443025909,
+      "size_m": [
+        0.97,
+        1.52,
+        0.88
+      ],
+      "height_m": 1.52,
+      "crown_d_m": 0.93,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sapling_mature_healthy_0_lod0.glb",
+          "tris": 3350,
+          "kb": 162,
+          "pct": 100.0,
+          "leaves": 315,
+          "leaf_m2": 3.3,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sapling_mature_healthy_0_lod1.glb",
+          "tris": 824,
+          "kb": 59,
+          "pct": 24.6,
+          "leaves": 104,
+          "leaf_m2": 3.3,
+          "spread_pct": 113.4,
+          "height_pct": 100.9
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sapling_mature_healthy_0_lod2.glb",
+          "tris": 166,
+          "kb": 15,
+          "pct": 5.0,
+          "leaves": 19,
+          "leaf_m2": 3.3,
+          "spread_pct": 194.3,
+          "height_pct": 120.3
+        }
+      ],
+      "trunk_d_m": 0.02,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.52,
+        "crown_d_m": 0.95
+      },
+      "lai": [
+        4.92,
+        4.92,
+        4.92
+      ],
+      "budget_tris": [
+        5000,
+        1500,
+        400
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sapling_mature_healthy_1",
+      "species": "sapling",
+      "age": "mature",
+      "health": "healthy",
+      "variant": 1,
+      "skeleton": "sk_sapling_mature_1",
+      "seed": 1002251440,
+      "size_m": [
+        1.08,
+        1.73,
+        1.17
+      ],
+      "height_m": 1.73,
+      "crown_d_m": 1.12,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sapling_mature_healthy_1_lod0.glb",
+          "tris": 3452,
+          "kb": 181,
+          "pct": 100.0,
+          "leaves": 462,
+          "leaf_m2": 4.9,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sapling_mature_healthy_1_lod1.glb",
+          "tris": 984,
+          "kb": 71,
+          "pct": 28.5,
+          "leaves": 152,
+          "leaf_m2": 4.9,
+          "spread_pct": 116.6,
+          "height_pct": 106.2
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sapling_mature_healthy_1_lod2.glb",
+          "tris": 190,
+          "kb": 17,
+          "pct": 5.5,
+          "leaves": 28,
+          "leaf_m2": 4.9,
+          "spread_pct": 180.4,
+          "height_pct": 112.4
+        }
+      ],
+      "trunk_d_m": 0.02,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.73,
+        "crown_d_m": 1.08
+      },
+      "lai": [
+        4.94,
+        4.94,
+        4.94
+      ],
+      "budget_tris": [
+        5000,
+        1500,
+        400
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sapling_old_dead_0",
+      "species": "sapling",
+      "age": "old",
+      "health": "dead",
+      "variant": 0,
+      "skeleton": "sk_sapling_old_0",
+      "seed": 93920250,
+      "size_m": [
+        1.31,
+        2.32,
+        1.0
+      ],
+      "height_m": 2.32,
+      "crown_d_m": 1.16,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sapling_old_dead_0_lod0.glb",
+          "tris": 4364,
+          "kb": 161,
+          "pct": 100.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sapling_old_dead_0_lod1.glb",
+          "tris": 1248,
+          "kb": 73,
+          "pct": 28.6,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 95.8,
+          "height_pct": 98.2
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sapling_old_dead_0_lod2.glb",
+          "tris": 396,
+          "kb": 28,
+          "pct": 9.1,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 89.8,
+          "height_pct": 94.7
+        }
+      ],
+      "trunk_d_m": 0.03,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 2.31,
+        "crown_d_m": 1.21
+      },
+      "lai": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "budget_tris": [
+        5000,
+        1500,
+        400
+      ],
+      "over_budget": [],
+      "cut_k": 0.5
+    },
+    {
+      "tag": "tree_sapling_old_dead_1",
+      "species": "sapling",
+      "age": "old",
+      "health": "dead",
+      "variant": 1,
+      "skeleton": "sk_sapling_old_1",
+      "seed": 779374881,
+      "size_m": [
+        1.12,
+        2.25,
+        1.0
+      ],
+      "height_m": 2.25,
+      "crown_d_m": 1.06,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sapling_old_dead_1_lod0.glb",
+          "tris": 4256,
+          "kb": 160,
+          "pct": 100.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sapling_old_dead_1_lod1.glb",
+          "tris": 1312,
+          "kb": 78,
+          "pct": 30.8,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 98.1,
+          "height_pct": 96.4
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sapling_old_dead_1_lod2.glb",
+          "tris": 350,
+          "kb": 25,
+          "pct": 8.2,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 85.5,
+          "height_pct": 91.0
+        }
+      ],
+      "trunk_d_m": 0.03,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 2.25,
+        "crown_d_m": 1.1
+      },
+      "lai": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "budget_tris": [
+        5000,
+        1500,
+        400
+      ],
+      "over_budget": [],
+      "cut_k": 0.5
+    },
+    {
+      "tag": "tree_sapling_old_healthy_0",
+      "species": "sapling",
+      "age": "old",
+      "health": "healthy",
+      "variant": 0,
+      "skeleton": "sk_sapling_old_0",
+      "seed": 93920250,
+      "size_m": [
+        1.31,
+        2.32,
+        1.0
+      ],
+      "height_m": 2.32,
+      "crown_d_m": 1.16,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sapling_old_healthy_0_lod0.glb",
+          "tris": 4554,
+          "kb": 222,
+          "pct": 100.0,
+          "leaves": 483,
+          "leaf_m2": 5.1,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sapling_old_healthy_0_lod1.glb",
+          "tris": 1208,
+          "kb": 83,
+          "pct": 26.5,
+          "leaves": 160,
+          "leaf_m2": 5.1,
+          "spread_pct": 116.4,
+          "height_pct": 99.1
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sapling_old_healthy_0_lod2.glb",
+          "tris": 214,
+          "kb": 19,
+          "pct": 4.7,
+          "leaves": 29,
+          "leaf_m2": 5.1,
+          "spread_pct": 175.7,
+          "height_pct": 112.7
+        }
+      ],
+      "trunk_d_m": 0.03,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 2.31,
+        "crown_d_m": 1.21
+      },
+      "lai": [
+        4.96,
+        4.96,
+        4.96
+      ],
+      "budget_tris": [
+        5000,
+        1500,
+        400
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sapling_old_healthy_1",
+      "species": "sapling",
+      "age": "old",
+      "health": "healthy",
+      "variant": 1,
+      "skeleton": "sk_sapling_old_1",
+      "seed": 779374881,
+      "size_m": [
+        1.12,
+        2.25,
+        1.0
+      ],
+      "height_m": 2.25,
+      "crown_d_m": 1.06,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sapling_old_healthy_1_lod0.glb",
+          "tris": 4062,
+          "kb": 197,
+          "pct": 100.0,
+          "leaves": 405,
+          "leaf_m2": 4.3,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sapling_old_healthy_1_lod1.glb",
+          "tris": 1044,
+          "kb": 72,
+          "pct": 25.7,
+          "leaves": 134,
+          "leaf_m2": 4.3,
+          "spread_pct": 115.0,
+          "height_pct": 105.1
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sapling_old_healthy_1_lod2.glb",
+          "tris": 238,
+          "kb": 20,
+          "pct": 5.9,
+          "leaves": 24,
+          "leaf_m2": 4.3,
+          "spread_pct": 169.5,
+          "height_pct": 106.6
+        }
+      ],
+      "trunk_d_m": 0.03,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 2.25,
+        "crown_d_m": 1.1
+      },
+      "lai": [
+        4.89,
+        4.89,
+        4.89
+      ],
+      "budget_tris": [
+        5000,
+        1500,
+        400
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sapling_young_dead_0",
+      "species": "sapling",
+      "age": "young",
+      "health": "dead",
+      "variant": 0,
+      "skeleton": "sk_sapling_young_0",
+      "seed": 235131574,
+      "size_m": [
+        0.56,
+        1.01,
+        0.53
+      ],
+      "height_m": 1.01,
+      "crown_d_m": 0.55,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sapling_young_dead_0_lod0.glb",
+          "tris": 3652,
+          "kb": 141,
+          "pct": 100.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sapling_young_dead_0_lod1.glb",
+          "tris": 1244,
+          "kb": 76,
+          "pct": 34.1,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 94.9,
+          "height_pct": 98.3
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sapling_young_dead_0_lod2.glb",
+          "tris": 376,
+          "kb": 27,
+          "pct": 10.3,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 86.5,
+          "height_pct": 93.0
+        }
+      ],
+      "trunk_d_m": 0.012,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.01,
+        "crown_d_m": 0.56
+      },
+      "lai": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "budget_tris": [
+        5000,
+        1500,
+        400
+      ],
+      "over_budget": [],
+      "cut_k": 0.232
+    },
+    {
+      "tag": "tree_sapling_young_dead_1",
+      "species": "sapling",
+      "age": "young",
+      "health": "dead",
+      "variant": 1,
+      "skeleton": "sk_sapling_young_1",
+      "seed": 477254844,
+      "size_m": [
+        0.79,
+        1.35,
+        0.52
+      ],
+      "height_m": 1.35,
+      "crown_d_m": 0.66,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sapling_young_dead_1_lod0.glb",
+          "tris": 3796,
+          "kb": 145,
+          "pct": 100.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sapling_young_dead_1_lod1.glb",
+          "tris": 1140,
+          "kb": 70,
+          "pct": 30.0,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 101.0,
+          "height_pct": 98.2
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sapling_young_dead_1_lod2.glb",
+          "tris": 328,
+          "kb": 23,
+          "pct": 8.6,
+          "leaves": 0,
+          "leaf_m2": 0.0,
+          "spread_pct": 89.4,
+          "height_pct": 89.4
+        }
+      ],
+      "trunk_d_m": 0.012,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.35,
+        "crown_d_m": 0.56
+      },
+      "lai": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "budget_tris": [
+        5000,
+        1500,
+        400
+      ],
+      "over_budget": [],
+      "cut_k": 0.3
+    },
+    {
+      "tag": "tree_sapling_young_healthy_0",
+      "species": "sapling",
+      "age": "young",
+      "health": "healthy",
+      "variant": 0,
+      "skeleton": "sk_sapling_young_0",
+      "seed": 235131574,
+      "size_m": [
+        0.56,
+        1.01,
+        0.53
+      ],
+      "height_m": 1.01,
+      "crown_d_m": 0.55,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sapling_young_healthy_0_lod0.glb",
+          "tris": 2174,
+          "kb": 98,
+          "pct": 100.0,
+          "leaves": 111,
+          "leaf_m2": 1.2,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sapling_young_healthy_0_lod1.glb",
+          "tris": 500,
+          "kb": 36,
+          "pct": 23.0,
+          "leaves": 36,
+          "leaf_m2": 1.2,
+          "spread_pct": 139.7,
+          "height_pct": 109.4
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sapling_young_healthy_0_lod2.glb",
+          "tris": 102,
+          "kb": 10,
+          "pct": 4.7,
+          "leaves": 7,
+          "leaf_m2": 1.2,
+          "spread_pct": 295.1,
+          "height_pct": 130.0
+        }
+      ],
+      "trunk_d_m": 0.012,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.01,
+        "crown_d_m": 0.56
+      },
+      "lai": [
+        5.15,
+        5.15,
+        5.15
+      ],
+      "budget_tris": [
+        5000,
+        1500,
+        400
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sapling_young_healthy_1",
+      "species": "sapling",
+      "age": "young",
+      "health": "healthy",
+      "variant": 1,
+      "skeleton": "sk_sapling_young_1",
+      "seed": 477254844,
+      "size_m": [
+        0.79,
+        1.35,
+        0.52
+      ],
+      "height_m": 1.35,
+      "crown_d_m": 0.66,
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sapling_young_healthy_1_lod0.glb",
+          "tris": 2406,
+          "kb": 110,
+          "pct": 100.0,
+          "leaves": 153,
+          "leaf_m2": 1.6,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sapling_young_healthy_1_lod1.glb",
+          "tris": 600,
+          "kb": 43,
+          "pct": 24.9,
+          "leaves": 50,
+          "leaf_m2": 1.6,
+          "spread_pct": 130.6,
+          "height_pct": 104.4
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sapling_young_healthy_1_lod2.glb",
+          "tris": 138,
+          "kb": 13,
+          "pct": 5.7,
+          "leaves": 9,
+          "leaf_m2": 1.6,
+          "spread_pct": 240.7,
+          "height_pct": 125.1
+        }
+      ],
+      "trunk_d_m": 0.012,
+      "count_in_scene": 2,
+      "target": {
+        "height_m": 1.35,
+        "crown_d_m": 0.56
+      },
+      "lai": [
+        4.96,
+        4.96,
+        4.96
+      ],
+      "budget_tris": [
+        5000,
+        1500,
+        400
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sedge_mature_dead_0",
+      "species": "sedge",
+      "age": "mature",
+      "health": "dead",
+      "variant": 0,
+      "seed": 1069412432,
+      "kind": "weed",
+      "size_m": [
+        0.96,
+        0.7,
+        0.85
+      ],
+      "height_m": 0.7,
+      "crown_d_m": 0.91,
+      "target": {
+        "height_m": 0.7
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sedge_mature_dead_0_lod0.glb",
+          "tris": 1560,
+          "kb": 53,
+          "pct": 100.0,
+          "elements": 130,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sedge_mature_dead_0_lod1.glb",
+          "tris": 408,
+          "kb": 17,
+          "pct": 26.2,
+          "elements": 68,
+          "keep_fit": 1.0,
+          "spread_pct": 94.7,
+          "height_pct": 88.8
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sedge_mature_dead_0_lod2.glb",
+          "tris": 108,
+          "kb": 6,
+          "pct": 6.9,
+          "elements": 27,
+          "keep_fit": 1.0,
+          "spread_pct": 93.6,
+          "height_pct": 88.8
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sedge_mature_dead_1",
+      "species": "sedge",
+      "age": "mature",
+      "health": "dead",
+      "variant": 1,
+      "seed": 233161166,
+      "kind": "weed",
+      "size_m": [
+        1.08,
+        0.73,
+        1.11
+      ],
+      "height_m": 0.73,
+      "crown_d_m": 1.1,
+      "target": {
+        "height_m": 0.73
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sedge_mature_dead_1_lod0.glb",
+          "tris": 1560,
+          "kb": 53,
+          "pct": 100.0,
+          "elements": 130,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sedge_mature_dead_1_lod1.glb",
+          "tris": 396,
+          "kb": 16,
+          "pct": 25.4,
+          "elements": 66,
+          "keep_fit": 1.0,
+          "spread_pct": 97.6,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sedge_mature_dead_1_lod2.glb",
+          "tris": 116,
+          "kb": 6,
+          "pct": 7.4,
+          "elements": 29,
+          "keep_fit": 1.0,
+          "spread_pct": 98.3,
+          "height_pct": 95.7
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sedge_mature_healthy_0",
+      "species": "sedge",
+      "age": "mature",
+      "health": "healthy",
+      "variant": 0,
+      "seed": 474603164,
+      "kind": "weed",
+      "size_m": [
+        0.8,
+        0.77,
+        0.86
+      ],
+      "height_m": 0.77,
+      "crown_d_m": 0.83,
+      "target": {
+        "height_m": 0.77
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sedge_mature_healthy_0_lod0.glb",
+          "tris": 1560,
+          "kb": 53,
+          "pct": 100.0,
+          "elements": 130,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sedge_mature_healthy_0_lod1.glb",
+          "tris": 438,
+          "kb": 18,
+          "pct": 28.1,
+          "elements": 73,
+          "keep_fit": 1.0,
+          "spread_pct": 100.8,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sedge_mature_healthy_0_lod2.glb",
+          "tris": 152,
+          "kb": 8,
+          "pct": 9.7,
+          "elements": 38,
+          "keep_fit": 1.0,
+          "spread_pct": 103.4,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sedge_mature_healthy_1",
+      "species": "sedge",
+      "age": "mature",
+      "health": "healthy",
+      "variant": 1,
+      "seed": 371243953,
+      "kind": "weed",
+      "size_m": [
+        0.92,
+        0.84,
+        0.94
+      ],
+      "height_m": 0.84,
+      "crown_d_m": 0.93,
+      "target": {
+        "height_m": 0.84
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sedge_mature_healthy_1_lod0.glb",
+          "tris": 1560,
+          "kb": 53,
+          "pct": 100.0,
+          "elements": 130,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sedge_mature_healthy_1_lod1.glb",
+          "tris": 330,
+          "kb": 14,
+          "pct": 21.2,
+          "elements": 55,
+          "keep_fit": 1.0,
+          "spread_pct": 93.4,
+          "height_pct": 98.5
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sedge_mature_healthy_1_lod2.glb",
+          "tris": 136,
+          "kb": 7,
+          "pct": 8.7,
+          "elements": 34,
+          "keep_fit": 1.0,
+          "spread_pct": 102.3,
+          "height_pct": 98.5
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sedge_mature_healthy_2",
+      "species": "sedge",
+      "age": "mature",
+      "health": "healthy",
+      "variant": 2,
+      "seed": 671467997,
+      "kind": "weed",
+      "size_m": [
+        0.89,
+        0.75,
+        0.86
+      ],
+      "height_m": 0.75,
+      "crown_d_m": 0.88,
+      "target": {
+        "height_m": 0.75
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sedge_mature_healthy_2_lod0.glb",
+          "tris": 1560,
+          "kb": 53,
+          "pct": 100.0,
+          "elements": 130,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sedge_mature_healthy_2_lod1.glb",
+          "tris": 384,
+          "kb": 16,
+          "pct": 24.6,
+          "elements": 64,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sedge_mature_healthy_2_lod2.glb",
+          "tris": 116,
+          "kb": 6,
+          "pct": 7.4,
+          "elements": 29,
+          "keep_fit": 1.0,
+          "spread_pct": 99.0,
+          "height_pct": 95.2
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sedge_old_dead_0",
+      "species": "sedge",
+      "age": "old",
+      "health": "dead",
+      "variant": 0,
+      "seed": 748785767,
+      "kind": "weed",
+      "size_m": [
+        1.13,
+        0.85,
+        1.2
+      ],
+      "height_m": 0.85,
+      "crown_d_m": 1.17,
+      "target": {
+        "height_m": 0.85
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sedge_old_dead_0_lod0.glb",
+          "tris": 2040,
+          "kb": 69,
+          "pct": 100.0,
+          "elements": 170,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sedge_old_dead_0_lod1.glb",
+          "tris": 558,
+          "kb": 22,
+          "pct": 27.4,
+          "elements": 93,
+          "keep_fit": 1.0,
+          "spread_pct": 102.2,
+          "height_pct": 95.8
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sedge_old_dead_0_lod2.glb",
+          "tris": 200,
+          "kb": 10,
+          "pct": 9.8,
+          "elements": 50,
+          "keep_fit": 1.0,
+          "spread_pct": 96.7,
+          "height_pct": 95.8
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sedge_old_dead_1",
+      "species": "sedge",
+      "age": "old",
+      "health": "dead",
+      "variant": 1,
+      "seed": 329425708,
+      "kind": "weed",
+      "size_m": [
+        1.47,
+        1.0,
+        1.35
+      ],
+      "height_m": 1.0,
+      "crown_d_m": 1.41,
+      "target": {
+        "height_m": 1.0
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sedge_old_dead_1_lod0.glb",
+          "tris": 2040,
+          "kb": 69,
+          "pct": 100.0,
+          "elements": 170,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sedge_old_dead_1_lod1.glb",
+          "tris": 456,
+          "kb": 18,
+          "pct": 22.4,
+          "elements": 76,
+          "keep_fit": 1.0,
+          "spread_pct": 98.6,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sedge_old_dead_1_lod2.glb",
+          "tris": 164,
+          "kb": 8,
+          "pct": 8.0,
+          "elements": 41,
+          "keep_fit": 1.0,
+          "spread_pct": 102.0,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sedge_old_healthy_0",
+      "species": "sedge",
+      "age": "old",
+      "health": "healthy",
+      "variant": 0,
+      "seed": 171609385,
+      "kind": "weed",
+      "size_m": [
+        1.05,
+        0.92,
+        1.06
+      ],
+      "height_m": 0.92,
+      "crown_d_m": 1.06,
+      "target": {
+        "height_m": 0.92
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sedge_old_healthy_0_lod0.glb",
+          "tris": 2040,
+          "kb": 69,
+          "pct": 100.0,
+          "elements": 170,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sedge_old_healthy_0_lod1.glb",
+          "tris": 462,
+          "kb": 19,
+          "pct": 22.6,
+          "elements": 77,
+          "keep_fit": 1.0,
+          "spread_pct": 95.4,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sedge_old_healthy_0_lod2.glb",
+          "tris": 188,
+          "kb": 9,
+          "pct": 9.2,
+          "elements": 47,
+          "keep_fit": 1.0,
+          "spread_pct": 102.7,
+          "height_pct": 93.1
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sedge_old_healthy_1",
+      "species": "sedge",
+      "age": "old",
+      "health": "healthy",
+      "variant": 1,
+      "seed": 880090144,
+      "kind": "weed",
+      "size_m": [
+        1.05,
+        0.86,
+        1.06
+      ],
+      "height_m": 0.86,
+      "crown_d_m": 1.06,
+      "target": {
+        "height_m": 0.86
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sedge_old_healthy_1_lod0.glb",
+          "tris": 2040,
+          "kb": 69,
+          "pct": 100.0,
+          "elements": 170,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sedge_old_healthy_1_lod1.glb",
+          "tris": 516,
+          "kb": 21,
+          "pct": 25.3,
+          "elements": 86,
+          "keep_fit": 1.0,
+          "spread_pct": 103.9,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sedge_old_healthy_1_lod2.glb",
+          "tris": 188,
+          "kb": 9,
+          "pct": 9.2,
+          "elements": 47,
+          "keep_fit": 1.0,
+          "spread_pct": 109.5,
+          "height_pct": 93.7
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sedge_young_dead_0",
+      "species": "sedge",
+      "age": "young",
+      "health": "dead",
+      "variant": 0,
+      "seed": 741998460,
+      "kind": "weed",
+      "size_m": [
+        0.56,
+        0.51,
+        0.64
+      ],
+      "height_m": 0.51,
+      "crown_d_m": 0.6,
+      "target": {
+        "height_m": 0.51
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sedge_young_dead_0_lod0.glb",
+          "tris": 1080,
+          "kb": 37,
+          "pct": 100.0,
+          "elements": 90,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sedge_young_dead_0_lod1.glb",
+          "tris": 288,
+          "kb": 12,
+          "pct": 26.7,
+          "elements": 48,
+          "keep_fit": 1.0,
+          "spread_pct": 103.8,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sedge_young_dead_0_lod2.glb",
+          "tris": 92,
+          "kb": 5,
+          "pct": 8.5,
+          "elements": 23,
+          "keep_fit": 1.0,
+          "spread_pct": 103.7,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sedge_young_dead_1",
+      "species": "sedge",
+      "age": "young",
+      "health": "dead",
+      "variant": 1,
+      "seed": 205600790,
+      "kind": "weed",
+      "size_m": [
+        0.69,
+        0.59,
+        0.83
+      ],
+      "height_m": 0.59,
+      "crown_d_m": 0.76,
+      "target": {
+        "height_m": 0.59
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sedge_young_dead_1_lod0.glb",
+          "tris": 1080,
+          "kb": 37,
+          "pct": 100.0,
+          "elements": 90,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sedge_young_dead_1_lod1.glb",
+          "tris": 240,
+          "kb": 10,
+          "pct": 22.2,
+          "elements": 40,
+          "keep_fit": 1.0,
+          "spread_pct": 93.3,
+          "height_pct": 98.6
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sedge_young_dead_1_lod2.glb",
+          "tris": 84,
+          "kb": 5,
+          "pct": 7.8,
+          "elements": 21,
+          "keep_fit": 1.0,
+          "spread_pct": 92.5,
+          "height_pct": 98.6
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sedge_young_healthy_0",
+      "species": "sedge",
+      "age": "young",
+      "health": "healthy",
+      "variant": 0,
+      "seed": 908267585,
+      "kind": "weed",
+      "size_m": [
+        0.55,
+        0.55,
+        0.56
+      ],
+      "height_m": 0.55,
+      "crown_d_m": 0.56,
+      "target": {
+        "height_m": 0.55
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sedge_young_healthy_0_lod0.glb",
+          "tris": 1080,
+          "kb": 37,
+          "pct": 100.0,
+          "elements": 90,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sedge_young_healthy_0_lod1.glb",
+          "tris": 288,
+          "kb": 12,
+          "pct": 26.7,
+          "elements": 48,
+          "keep_fit": 1.0,
+          "spread_pct": 104.4,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sedge_young_healthy_0_lod2.glb",
+          "tris": 104,
+          "kb": 6,
+          "pct": 9.6,
+          "elements": 26,
+          "keep_fit": 1.0,
+          "spread_pct": 96.0,
+          "height_pct": 98.6
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "tree_sedge_young_healthy_1",
+      "species": "sedge",
+      "age": "young",
+      "health": "healthy",
+      "variant": 1,
+      "seed": 1001550224,
+      "kind": "weed",
+      "size_m": [
+        0.59,
+        0.51,
+        0.5
+      ],
+      "height_m": 0.51,
+      "crown_d_m": 0.54,
+      "target": {
+        "height_m": 0.51
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "tree_sedge_young_healthy_1_lod0.glb",
+          "tris": 1080,
+          "kb": 37,
+          "pct": 100.0,
+          "elements": 90,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "tree_sedge_young_healthy_1_lod1.glb",
+          "tris": 210,
+          "kb": 9,
+          "pct": 19.4,
+          "elements": 35,
+          "keep_fit": 1.0,
+          "spread_pct": 97.8,
+          "height_pct": 96.1
+        },
+        {
+          "lod": 2,
+          "glb": "tree_sedge_young_healthy_1_lod2.glb",
+          "tris": 72,
+          "kb": 4,
+          "pct": 6.7,
+          "elements": 18,
+          "keep_fit": 1.0,
+          "spread_pct": 97.0,
+          "height_pct": 95.2
+        }
+      ],
+      "budget_tris": [
+        3000,
+        900,
+        240
+      ],
+      "over_budget": []
+    }
+  ],
+  "budget_tris": [
+    8000,
+    2400,
+    640
+  ],
+  "proverki_proshli": false
+}

@@ -1,0 +1,8 @@
+version=2
+tile_m=2.00
+height_cm=2.50
+nscale=2.000
+species=birch,maple,linden,poplar
+N=4
+mask=R poryadok v stopke (porog R > 1-density; NE svyazan s porodoy), G poroda i nomer: poroda k v polose [k/N, (k+1)/N), zapas 0.02 ot kraev, vnutri - nomer lista; B svetoten (0.5 neytral); A vysota 0..1
+opis=opad 4 porod: bereza, klen, lipa, topol

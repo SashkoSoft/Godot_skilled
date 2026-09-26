@@ -1,0 +1,3 @@
+﻿CHERNOVIK: ne sdano. Sverit s domami, razrusheniyami i kuchami sessii hou (cvet, razmer kirpicha, shov).
+brick-facade tile_m 2.00 rows 28 bond mnogoryadnaya 1:6 nscale 5.00 krasnyy kirpich 60-h, vycvetshiy
+

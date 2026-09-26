@@ -1,0 +1,8 @@
+tile_m=0.50
+height_cm=1.50
+albedo_mean=#857d72
+cd=#857D72
+nscale=1.000
+normal_blue_mean=0.870
+uv=U po okruzhnosti (celoe chislo povtorov), V vdol vetvi; tayl po obeim osyam
+opis=suhoe: vyvetrennaya seraya drevesina s ostatkami kory

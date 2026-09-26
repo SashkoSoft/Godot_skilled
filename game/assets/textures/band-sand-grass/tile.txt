@@ -1,0 +1,5 @@
+tile_u_m=4.00
+band_v_m=1.00
+res=1024x256
+format=RGBA dannye, lineynye; po U taylitsya, po V net
+channels=R pokrytie travoy (trava=1), G vysota travyanogo pokrova, B nanos peska v travu, A puchki travy v peske. V: 0 pesok, 1 trava

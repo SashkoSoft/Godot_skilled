@@ -1,0 +1,7 @@
+version=1
+tile_u_m=2.00
+band_v_m=1.00
+px=2048x1024
+tile_u=2m, lenta 1 m (tyanut do 2-3 m po V), V=1 kromka
+mask=R plotnost/temnota (0 fon); G nomer 0..1 po zametnosti (porog G > 1-amount; kromka G=1 vsegda); B izvestkovaya kayma i naplyvy na koncah; A vlazhnost dlya bleska
+opis=vodyanye potyoki ot verhney kromki, 90 shtuk + kromka

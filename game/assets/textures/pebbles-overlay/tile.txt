@@ -1,0 +1,5 @@
+tile_m=2.00
+height_cm=3.00
+nscale=2.000
+mask=R poryadok v stopke (porog R > 1-density), G nomer predmeta, B svetoten (0.5 neytral), A vysota 0..1 ot height_cm
+opis=kameshki: graviy i galka 0.5-4 sm, nemnogo kirpichnoy kroshki

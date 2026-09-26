@@ -1,0 +1,7 @@
+version=1
+tile_u_m=2.00
+band_v_m=1.50
+px=2048x1536
+tile_u=2m, lenta 1.5 m, V=1 kromka (karniz, otliv)
+mask=R plotnost; G nomer (porog G > 1-amount, kromka G=1); B zelen: 0 chernaya bioplenka, 1 zelenye vodorosli; A vlazhnost
+opis=vodorosli i bioplyonka: dlinnye shirokie temnye potyoki kolonijami

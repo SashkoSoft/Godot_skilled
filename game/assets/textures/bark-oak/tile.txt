@@ -1,0 +1,8 @@
+tile_m=0.50
+height_cm=1.99
+albedo_mean=#554739
+cd=#554739
+nscale=1.000
+normal_blue_mean=0.812
+uv=U po okruzhnosti (celoe chislo povtorov), V vdol vetvi; tayl po obeim osyam
+opis=dub: glubokie borozdy, grebni porvany poperek na plastiny

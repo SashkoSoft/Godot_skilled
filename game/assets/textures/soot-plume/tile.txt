@@ -1,0 +1,7 @@
+version=1
+tile_u_m=2.40
+band_v_m=2.00
+px=2458x2048
+NE tayl: 2.4 x 2.0 m, proyom 1.2 m na U 0.25..0.75, V=0 verh proyoma, kopot vverh
+mask=R plotnost kopoti; G yazyki (polosy vverh, dlya raznoobraziya tona); B chernoe yadro u peremychki; A sila pozhara (porog A > 1-severity daet razmer pyatna)
+opis=kopot nad proyomom posle pozhara: yazyki vverh, chernoe yadro u peremychki

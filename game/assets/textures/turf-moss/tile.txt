@@ -1,0 +1,6 @@
+tile_m=2.00
+height_cm=1.20
+albedo_mean=#5d623a
+nscale=2.000
+normal_blue_mean=0.856
+opis=dern syroy s mhom

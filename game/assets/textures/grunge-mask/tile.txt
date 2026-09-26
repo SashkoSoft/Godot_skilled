@@ -1,0 +1,3 @@
+tile_m=8.00
+format=RGBA dannye, lineynye, alfa - dannye
+channels=R gryaz pyatnami (gushe v uglubleniyah), G syrost i luzhi, B moh po shvam i nizam, A treshchiny

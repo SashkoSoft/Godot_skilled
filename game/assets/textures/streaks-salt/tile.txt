@@ -1,0 +1,7 @@
+version=1
+tile_u_m=1.50
+band_v_m=0.60
+px=1536x614
+tile_u=1.5m, lenta 0.6 m, V=1 shov/treshchina
+mask=R plotnost soli (belaya); G nomer (porog G > 1-amount, liniya shva G=1); B korka i naplyvy (rel'ef, mozhno v normal); A vlazhnost-dlina
+opis=vysoly: belye korotkie potyoki soli s naplyvami iz shva

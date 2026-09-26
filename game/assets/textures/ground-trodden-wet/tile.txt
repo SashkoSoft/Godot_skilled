@@ -1,0 +1,6 @@
+tile_m=2.00
+height_cm=0.20
+albedo_mean=#5c5143
+nscale=2.000
+normal_blue_mean=0.995
+opis=utoptannaya zemlya, vlazhnaya plotnaya

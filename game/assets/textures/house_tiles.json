@@ -1,0 +1,25 @@
+{
+ "tile_m": {
+  "concrete": 2.5,
+  "concrete_panel": 3.0,
+  "gypsum": 2.0,
+  "brick": 2.08,
+  "brick_facade": 2.08,
+  "blocks": 2.08,
+  "window_frame": 1.0,
+  "door_wood": 1.2,
+  "metal_painted": 1.5
+ },
+ "set": {
+  "concrete": "concrete",
+  "concrete_panel": "concrete-panel",
+  "gypsum": "plaster",
+  "brick": "brick-facade",
+  "brick_facade": "brick-facade",
+  "blocks": "brick-silicate",
+  "window_frame": "window-frame",
+  "door_wood": "door-wood",
+  "metal_painted": "metal-painted"
+ },
+ "note": "uv doma v metrah: uv_tex = uv / tile_m"
+}

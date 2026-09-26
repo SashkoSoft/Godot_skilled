@@ -1,0 +1,8 @@
+tile_m=0.50
+height_cm=1.52
+albedo_mean=#6b5341
+cd=#6B5341
+nscale=1.000
+normal_blue_mean=0.856
+uv=U po okruzhnosti (celoe chislo povtorov), V vdol vetvi; tayl po obeim osyam
+opis=topol: glubokie prodolnye borozdy, seraya

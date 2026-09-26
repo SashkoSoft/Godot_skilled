@@ -1,0 +1,8 @@
+tile_m=0.50
+height_cm=0.37
+albedo_mean=#cfcbbe
+cd=#CFCBBE
+nscale=1.000
+normal_blue_mean=0.992
+uv=U po okruzhnosti (celoe chislo povtorov), V vdol vetvi; tayl po obeim osyam
+opis=bereza: belaya beresta, temnye poperechnye chechevichki, chernye razryvy
