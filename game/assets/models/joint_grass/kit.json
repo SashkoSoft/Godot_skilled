@@ -6,27 +6,27 @@
   "atlas": "leaf_atlas.png",
   "trees": [
     {
-      "tag": "grass_bluegrass_tuft_healthy_0",
+      "tag": "grass_bluegrass_tuft_dead_0",
       "species": "bluegrass",
       "age": "tuft",
-      "health": "healthy",
+      "health": "dead",
       "variant": 0,
       "seed": 143667988,
       "kind": "weed",
       "size_m": [
-        0.17,
-        0.11,
-        0.19
+        0.2,
+        0.1,
+        0.21
       ],
-      "height_m": 0.11,
-      "crown_d_m": 0.18,
+      "height_m": 0.1,
+      "crown_d_m": 0.21,
       "target": {
         "height_m": 0.11
       },
       "lods": [
         {
           "lod": 0,
-          "glb": "grass_bluegrass_tuft_healthy_0_lod0.glb",
+          "glb": "grass_bluegrass_tuft_dead_0_lod0.glb",
           "tris": 770,
           "kb": 64,
           "pct": 100.0,
@@ -37,25 +37,25 @@
         },
         {
           "lod": 1,
-          "glb": "grass_bluegrass_tuft_healthy_0_lod1.glb",
-          "tris": 180,
-          "kb": 17,
-          "pct": 23.4,
-          "elements": 30,
-          "keep_fit": 1.0,
-          "spread_pct": 98.6,
-          "height_pct": 99.9
+          "glb": "grass_bluegrass_tuft_dead_0_lod1.glb",
+          "tris": 276,
+          "kb": 25,
+          "pct": 35.8,
+          "elements": 46,
+          "keep_fit": 1.25,
+          "spread_pct": 102.5,
+          "height_pct": 100.0
         },
         {
           "lod": 2,
-          "glb": "grass_bluegrass_tuft_healthy_0_lod2.glb",
-          "tris": 28,
-          "kb": 4,
-          "pct": 3.6,
-          "elements": 14,
-          "keep_fit": 1.0,
-          "spread_pct": 92.6,
-          "height_pct": 97.6
+          "glb": "grass_bluegrass_tuft_dead_0_lod2.glb",
+          "tris": 94,
+          "kb": 11,
+          "pct": 12.2,
+          "elements": 47,
+          "keep_fit": 3.052,
+          "spread_pct": 102.1,
+          "height_pct": 100.0
         }
       ],
       "budget_tris": [
@@ -66,56 +66,416 @@
       "over_budget": []
     },
     {
-      "tag": "grass_dandelion_rosette_healthy_0",
-      "species": "dandelion",
-      "age": "rosette",
-      "health": "healthy",
-      "variant": 0,
+      "tag": "grass_bluegrass_tuft_dead_1",
+      "species": "bluegrass",
+      "age": "tuft",
+      "health": "dead",
+      "variant": 1,
       "seed": 138051204,
       "kind": "weed",
       "size_m": [
-        0.31,
-        0.16,
-        0.28
+        0.21,
+        0.1,
+        0.23
       ],
-      "height_m": 0.16,
-      "crown_d_m": 0.3,
+      "height_m": 0.1,
+      "crown_d_m": 0.22,
       "target": {
-        "height_m": 0.15
+        "height_m": 0.12
       },
       "lods": [
         {
           "lod": 0,
-          "glb": "grass_dandelion_rosette_healthy_0_lod0.glb",
-          "tris": 74,
-          "kb": 7,
+          "glb": "grass_bluegrass_tuft_dead_1_lod0.glb",
+          "tris": 650,
+          "kb": 54,
           "pct": 100.0,
-          "elements": 12,
+          "elements": 65,
           "keep_fit": 1.0,
           "spread_pct": 100.0,
           "height_pct": 100.0
         },
         {
           "lod": 1,
-          "glb": "grass_dandelion_rosette_healthy_0_lod1.glb",
-          "tris": 38,
-          "kb": 5,
-          "pct": 51.4,
-          "elements": 10,
+          "glb": "grass_bluegrass_tuft_dead_1_lod1.glb",
+          "tris": 138,
+          "kb": 13,
+          "pct": 21.2,
+          "elements": 23,
           "keep_fit": 1.0,
-          "spread_pct": 110.4,
-          "height_pct": 101.4
+          "spread_pct": 101.8,
+          "height_pct": 100.0
         },
         {
           "lod": 2,
-          "glb": "grass_dandelion_rosette_healthy_0_lod2.glb",
+          "glb": "grass_bluegrass_tuft_dead_1_lod2.glb",
+          "tris": 26,
+          "kb": 4,
+          "pct": 4.0,
+          "elements": 13,
+          "keep_fit": 1.0,
+          "spread_pct": 99.4,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        1500,
+        450,
+        120
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_bluegrass_tuft_dead_2",
+      "species": "bluegrass",
+      "age": "tuft",
+      "health": "dead",
+      "variant": 2,
+      "seed": 764689141,
+      "kind": "weed",
+      "size_m": [
+        0.17,
+        0.07,
+        0.16
+      ],
+      "height_m": 0.07,
+      "crown_d_m": 0.17,
+      "target": {
+        "height_m": 0.08
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_bluegrass_tuft_dead_2_lod0.glb",
+          "tris": 540,
+          "kb": 45,
+          "pct": 100.0,
+          "elements": 54,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_bluegrass_tuft_dead_2_lod1.glb",
+          "tris": 162,
+          "kb": 15,
+          "pct": 30.0,
+          "elements": 27,
+          "keep_fit": 1.0,
+          "spread_pct": 102.2,
+          "height_pct": 90.1
+        },
+        {
+          "lod": 2,
+          "glb": "grass_bluegrass_tuft_dead_2_lod2.glb",
+          "tris": 28,
+          "kb": 4,
+          "pct": 5.2,
+          "elements": 14,
+          "keep_fit": 1.0,
+          "spread_pct": 105.9,
+          "height_pct": 90.1
+        }
+      ],
+      "budget_tris": [
+        1500,
+        450,
+        120
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_bluegrass_tuft_healthy_0",
+      "species": "bluegrass",
+      "age": "tuft",
+      "health": "healthy",
+      "variant": 0,
+      "seed": 30804588,
+      "kind": "weed",
+      "size_m": [
+        0.28,
+        0.14,
+        0.26
+      ],
+      "height_m": 0.14,
+      "crown_d_m": 0.27,
+      "target": {
+        "height_m": 0.14
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_bluegrass_tuft_healthy_0_lod0.glb",
+          "tris": 570,
+          "kb": 48,
+          "pct": 100.0,
+          "elements": 57,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_bluegrass_tuft_healthy_0_lod1.glb",
+          "tris": 138,
+          "kb": 13,
+          "pct": 24.2,
+          "elements": 23,
+          "keep_fit": 1.0,
+          "spread_pct": 101.7,
+          "height_pct": 95.1
+        },
+        {
+          "lod": 2,
+          "glb": "grass_bluegrass_tuft_healthy_0_lod2.glb",
           "tris": 24,
-          "kb": 5,
-          "pct": 32.4,
-          "elements": 9,
+          "kb": 4,
+          "pct": 4.2,
+          "elements": 12,
           "keep_fit": 1.25,
-          "spread_pct": 116.5,
-          "height_pct": 102.3
+          "spread_pct": 95.4,
+          "height_pct": 95.1
+        }
+      ],
+      "budget_tris": [
+        1500,
+        450,
+        120
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_bluegrass_tuft_healthy_1",
+      "species": "bluegrass",
+      "age": "tuft",
+      "health": "healthy",
+      "variant": 1,
+      "seed": 588145293,
+      "kind": "weed",
+      "size_m": [
+        0.16,
+        0.08,
+        0.17
+      ],
+      "height_m": 0.08,
+      "crown_d_m": 0.17,
+      "target": {
+        "height_m": 0.08
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_bluegrass_tuft_healthy_1_lod0.glb",
+          "tris": 770,
+          "kb": 64,
+          "pct": 100.0,
+          "elements": 77,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_bluegrass_tuft_healthy_1_lod1.glb",
+          "tris": 222,
+          "kb": 20,
+          "pct": 28.8,
+          "elements": 37,
+          "keep_fit": 1.0,
+          "spread_pct": 101.7,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_bluegrass_tuft_healthy_1_lod2.glb",
+          "tris": 34,
+          "kb": 5,
+          "pct": 4.4,
+          "elements": 17,
+          "keep_fit": 1.0,
+          "spread_pct": 100.2,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        1500,
+        450,
+        120
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_bluegrass_tuft_healthy_2",
+      "species": "bluegrass",
+      "age": "tuft",
+      "health": "healthy",
+      "variant": 2,
+      "seed": 75613518,
+      "kind": "weed",
+      "size_m": [
+        0.21,
+        0.13,
+        0.25
+      ],
+      "height_m": 0.13,
+      "crown_d_m": 0.23,
+      "target": {
+        "height_m": 0.15
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_bluegrass_tuft_healthy_2_lod0.glb",
+          "tris": 480,
+          "kb": 41,
+          "pct": 100.0,
+          "elements": 48,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_bluegrass_tuft_healthy_2_lod1.glb",
+          "tris": 156,
+          "kb": 15,
+          "pct": 32.5,
+          "elements": 26,
+          "keep_fit": 1.0,
+          "spread_pct": 98.8,
+          "height_pct": 95.6
+        },
+        {
+          "lod": 2,
+          "glb": "grass_bluegrass_tuft_healthy_2_lod2.glb",
+          "tris": 42,
+          "kb": 6,
+          "pct": 8.8,
+          "elements": 21,
+          "keep_fit": 1.562,
+          "spread_pct": 93.5,
+          "height_pct": 94.2
+        }
+      ],
+      "budget_tris": [
+        1500,
+        450,
+        120
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_bluegrass_tuft_healthy_3",
+      "species": "bluegrass",
+      "age": "tuft",
+      "health": "healthy",
+      "variant": 3,
+      "seed": 1051671788,
+      "kind": "weed",
+      "size_m": [
+        0.15,
+        0.09,
+        0.16
+      ],
+      "height_m": 0.09,
+      "crown_d_m": 0.15,
+      "target": {
+        "height_m": 0.1
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_bluegrass_tuft_healthy_3_lod0.glb",
+          "tris": 500,
+          "kb": 42,
+          "pct": 100.0,
+          "elements": 50,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_bluegrass_tuft_healthy_3_lod1.glb",
+          "tris": 156,
+          "kb": 15,
+          "pct": 31.2,
+          "elements": 26,
+          "keep_fit": 1.0,
+          "spread_pct": 105.6,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_bluegrass_tuft_healthy_3_lod2.glb",
+          "tris": 24,
+          "kb": 4,
+          "pct": 4.8,
+          "elements": 12,
+          "keep_fit": 1.0,
+          "spread_pct": 100.2,
+          "height_pct": 88.0
+        }
+      ],
+      "budget_tris": [
+        1500,
+        450,
+        120
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_dandelion_rosette_dead_0",
+      "species": "dandelion",
+      "age": "rosette",
+      "health": "dead",
+      "variant": 0,
+      "seed": 667742423,
+      "kind": "weed",
+      "size_m": [
+        0.28,
+        0.01,
+        0.26
+      ],
+      "height_m": 0.01,
+      "crown_d_m": 0.27,
+      "target": {
+        "height_m": 0.14
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_dandelion_rosette_dead_0_lod0.glb",
+          "tris": 40,
+          "kb": 5,
+          "pct": 100.0,
+          "elements": 10,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_dandelion_rosette_dead_0_lod1.glb",
+          "tris": 40,
+          "kb": 5,
+          "pct": 100.0,
+          "elements": 10,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_dandelion_rosette_dead_0_lod2.glb",
+          "tris": 40,
+          "kb": 5,
+          "pct": 100.0,
+          "elements": 10,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
         }
       ],
       "budget_tris": [
@@ -126,56 +486,416 @@
       "over_budget": []
     },
     {
-      "tag": "grass_gap_patch_big_healthy_0",
-      "species": "gap_patch",
-      "age": "big",
-      "health": "healthy",
-      "variant": 0,
-      "seed": 764689141,
+      "tag": "grass_dandelion_rosette_dead_1",
+      "species": "dandelion",
+      "age": "rosette",
+      "health": "dead",
+      "variant": 1,
+      "seed": 476455605,
       "kind": "weed",
       "size_m": [
-        1.02,
-        0.11,
-        1.02
+        0.25,
+        0.01,
+        0.24
       ],
-      "height_m": 0.11,
-      "crown_d_m": 1.02,
+      "height_m": 0.01,
+      "crown_d_m": 0.24,
       "target": {
-        "height_m": 0.11
+        "height_m": 0.12
       },
       "lods": [
         {
           "lod": 0,
-          "glb": "grass_gap_patch_big_healthy_0_lod0.glb",
-          "tris": 8570,
-          "kb": 696,
+          "glb": "grass_dandelion_rosette_dead_1_lod0.glb",
+          "tris": 48,
+          "kb": 6,
           "pct": 100.0,
-          "elements": 875,
+          "elements": 12,
           "keep_fit": 1.0,
           "spread_pct": 100.0,
           "height_pct": 100.0
         },
         {
           "lod": 1,
-          "glb": "grass_gap_patch_big_healthy_0_lod1.glb",
-          "tris": 1852,
-          "kb": 158,
-          "pct": 21.6,
-          "elements": 314,
+          "glb": "grass_dandelion_rosette_dead_1_lod1.glb",
+          "tris": 48,
+          "kb": 6,
+          "pct": 100.0,
+          "elements": 12,
           "keep_fit": 1.0,
-          "spread_pct": 97.7,
-          "height_pct": 97.4
+          "spread_pct": 100.0,
+          "height_pct": 100.0
         },
         {
           "lod": 2,
-          "glb": "grass_gap_patch_big_healthy_0_lod2.glb",
-          "tris": 210,
-          "kb": 23,
-          "pct": 2.5,
-          "elements": 105,
+          "glb": "grass_dandelion_rosette_dead_1_lod2.glb",
+          "tris": 48,
+          "kb": 6,
+          "pct": 100.0,
+          "elements": 12,
           "keep_fit": 1.0,
-          "spread_pct": 101.4,
-          "height_pct": 96.7
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        700,
+        220,
+        70
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_dandelion_rosette_dead_2",
+      "species": "dandelion",
+      "age": "rosette",
+      "health": "dead",
+      "variant": 2,
+      "seed": 711722201,
+      "kind": "weed",
+      "size_m": [
+        0.25,
+        0.01,
+        0.21
+      ],
+      "height_m": 0.01,
+      "crown_d_m": 0.23,
+      "target": {
+        "height_m": 0.11
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_dandelion_rosette_dead_2_lod0.glb",
+          "tris": 44,
+          "kb": 6,
+          "pct": 100.0,
+          "elements": 11,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_dandelion_rosette_dead_2_lod1.glb",
+          "tris": 44,
+          "kb": 6,
+          "pct": 100.0,
+          "elements": 11,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_dandelion_rosette_dead_2_lod2.glb",
+          "tris": 44,
+          "kb": 6,
+          "pct": 100.0,
+          "elements": 11,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        700,
+        220,
+        70
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_dandelion_rosette_healthy_0",
+      "species": "dandelion",
+      "age": "rosette",
+      "health": "healthy",
+      "variant": 0,
+      "seed": 373390112,
+      "kind": "weed",
+      "size_m": [
+        0.32,
+        0.14,
+        0.29
+      ],
+      "height_m": 0.14,
+      "crown_d_m": 0.3,
+      "target": {
+        "height_m": 0.15
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_dandelion_rosette_healthy_0_lod0.glb",
+          "tris": 100,
+          "kb": 7,
+          "pct": 100.0,
+          "elements": 12,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_dandelion_rosette_healthy_0_lod1.glb",
+          "tris": 76,
+          "kb": 7,
+          "pct": 76.0,
+          "elements": 12,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_dandelion_rosette_healthy_0_lod2.glb",
+          "tris": 52,
+          "kb": 7,
+          "pct": 52.0,
+          "elements": 12,
+          "keep_fit": 1.0,
+          "spread_pct": 99.9,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        700,
+        220,
+        70
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_dandelion_rosette_healthy_1",
+      "species": "dandelion",
+      "age": "rosette",
+      "health": "healthy",
+      "variant": 1,
+      "seed": 846151071,
+      "kind": "weed",
+      "size_m": [
+        0.29,
+        0.12,
+        0.27
+      ],
+      "height_m": 0.12,
+      "crown_d_m": 0.28,
+      "target": {
+        "height_m": 0.14
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_dandelion_rosette_healthy_1_lod0.glb",
+          "tris": 82,
+          "kb": 8,
+          "pct": 100.0,
+          "elements": 14,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_dandelion_rosette_healthy_1_lod1.glb",
+          "tris": 70,
+          "kb": 8,
+          "pct": 85.4,
+          "elements": 14,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_dandelion_rosette_healthy_1_lod2.glb",
+          "tris": 58,
+          "kb": 8,
+          "pct": 70.7,
+          "elements": 14,
+          "keep_fit": 1.0,
+          "spread_pct": 100.1,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        700,
+        220,
+        70
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_dandelion_rosette_healthy_2",
+      "species": "dandelion",
+      "age": "rosette",
+      "health": "healthy",
+      "variant": 2,
+      "seed": 1010691520,
+      "kind": "weed",
+      "size_m": [
+        0.27,
+        0.11,
+        0.24
+      ],
+      "height_m": 0.11,
+      "crown_d_m": 0.26,
+      "target": {
+        "height_m": 0.14
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_dandelion_rosette_healthy_2_lod0.glb",
+          "tris": 70,
+          "kb": 7,
+          "pct": 100.0,
+          "elements": 11,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_dandelion_rosette_healthy_2_lod1.glb",
+          "tris": 58,
+          "kb": 7,
+          "pct": 82.9,
+          "elements": 11,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_dandelion_rosette_healthy_2_lod2.glb",
+          "tris": 46,
+          "kb": 6,
+          "pct": 65.7,
+          "elements": 11,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        700,
+        220,
+        70
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_dandelion_rosette_healthy_3",
+      "species": "dandelion",
+      "age": "rosette",
+      "health": "healthy",
+      "variant": 3,
+      "seed": 876964070,
+      "kind": "weed",
+      "size_m": [
+        0.29,
+        0.16,
+        0.32
+      ],
+      "height_m": 0.16,
+      "crown_d_m": 0.3,
+      "target": {
+        "height_m": 0.18
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_dandelion_rosette_healthy_3_lod0.glb",
+          "tris": 108,
+          "kb": 8,
+          "pct": 100.0,
+          "elements": 14,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_dandelion_rosette_healthy_3_lod1.glb",
+          "tris": 84,
+          "kb": 8,
+          "pct": 77.8,
+          "elements": 14,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_dandelion_rosette_healthy_3_lod2.glb",
+          "tris": 60,
+          "kb": 7,
+          "pct": 55.6,
+          "elements": 14,
+          "keep_fit": 1.0,
+          "spread_pct": 100.1,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        700,
+        220,
+        70
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_gap_patch_big_dead_0",
+      "species": "gap_patch",
+      "age": "big",
+      "health": "dead",
+      "variant": 0,
+      "seed": 145083768,
+      "kind": "weed",
+      "size_m": [
+        1.04,
+        0.13,
+        1.05
+      ],
+      "height_m": 0.13,
+      "crown_d_m": 1.04,
+      "target": {
+        "height_m": 0.13
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_gap_patch_big_dead_0_lod0.glb",
+          "tris": 8628,
+          "kb": 700,
+          "pct": 100.0,
+          "elements": 879,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_gap_patch_big_dead_0_lod1.glb",
+          "tris": 1774,
+          "kb": 151,
+          "pct": 20.6,
+          "elements": 299,
+          "keep_fit": 1.0,
+          "spread_pct": 104.7,
+          "height_pct": 93.6
+        },
+        {
+          "lod": 2,
+          "glb": "grass_gap_patch_big_dead_0_lod2.glb",
+          "tris": 194,
+          "kb": 21,
+          "pct": 2.2,
+          "elements": 97,
+          "keep_fit": 1.0,
+          "spread_pct": 108.4,
+          "height_pct": 93.6
         }
       ],
       "budget_tris": [
@@ -186,56 +906,716 @@
       "over_budget": []
     },
     {
-      "tag": "grass_joint_strip_full_healthy_0",
-      "species": "joint_strip",
-      "age": "full",
-      "health": "healthy",
-      "variant": 0,
-      "seed": 30804588,
+      "tag": "grass_gap_patch_big_dead_1",
+      "species": "gap_patch",
+      "age": "big",
+      "health": "dead",
+      "variant": 1,
+      "seed": 219590362,
       "kind": "weed",
       "size_m": [
-        1.05,
+        1.04,
         0.12,
-        0.23
+        1.04
       ],
       "height_m": 0.12,
-      "crown_d_m": 0.64,
+      "crown_d_m": 1.04,
       "target": {
-        "height_m": 0.15
+        "height_m": 0.13
       },
       "lods": [
         {
           "lod": 0,
-          "glb": "grass_joint_strip_full_healthy_0_lod0.glb",
-          "tris": 5244,
-          "kb": 426,
+          "glb": "grass_gap_patch_big_dead_1_lod0.glb",
+          "tris": 8538,
+          "kb": 693,
           "pct": 100.0,
-          "elements": 531,
+          "elements": 867,
           "keep_fit": 1.0,
           "spread_pct": 100.0,
           "height_pct": 100.0
         },
         {
           "lod": 1,
-          "glb": "grass_joint_strip_full_healthy_0_lod1.glb",
-          "tris": 1354,
-          "kb": 116,
-          "pct": 25.8,
-          "elements": 231,
+          "glb": "grass_gap_patch_big_dead_1_lod1.glb",
+          "tris": 1778,
+          "kb": 151,
+          "pct": 20.8,
+          "elements": 303,
           "keep_fit": 1.0,
-          "spread_pct": 97.9,
-          "height_pct": 93.6
+          "spread_pct": 101.1,
+          "height_pct": 95.7
         },
         {
           "lod": 2,
-          "glb": "grass_joint_strip_full_healthy_0_lod2.glb",
-          "tris": 420,
-          "kb": 44,
-          "pct": 8.0,
-          "elements": 210,
-          "keep_fit": 2.441,
-          "spread_pct": 97.5,
-          "height_pct": 93.6
+          "glb": "grass_gap_patch_big_dead_1_lod2.glb",
+          "tris": 204,
+          "kb": 22,
+          "pct": 2.4,
+          "elements": 102,
+          "keep_fit": 1.0,
+          "spread_pct": 97.8,
+          "height_pct": 93.5
+        }
+      ],
+      "budget_tris": [
+        9000,
+        2700,
+        800
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_gap_patch_big_dead_2",
+      "species": "gap_patch",
+      "age": "big",
+      "health": "dead",
+      "variant": 2,
+      "seed": 1056309622,
+      "kind": "weed",
+      "size_m": [
+        1.05,
+        0.13,
+        1.04
+      ],
+      "height_m": 0.13,
+      "crown_d_m": 1.04,
+      "target": {
+        "height_m": 0.14
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_gap_patch_big_dead_2_lod0.glb",
+          "tris": 8548,
+          "kb": 694,
+          "pct": 100.0,
+          "elements": 874,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_gap_patch_big_dead_2_lod1.glb",
+          "tris": 1918,
+          "kb": 163,
+          "pct": 22.4,
+          "elements": 331,
+          "keep_fit": 1.0,
+          "spread_pct": 102.6,
+          "height_pct": 99.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_gap_patch_big_dead_2_lod2.glb",
+          "tris": 228,
+          "kb": 24,
+          "pct": 2.7,
+          "elements": 114,
+          "keep_fit": 1.0,
+          "spread_pct": 101.0,
+          "height_pct": 95.9
+        }
+      ],
+      "budget_tris": [
+        9000,
+        2700,
+        800
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_gap_patch_big_healthy_0",
+      "species": "gap_patch",
+      "age": "big",
+      "health": "healthy",
+      "variant": 0,
+      "seed": 379325987,
+      "kind": "weed",
+      "size_m": [
+        1.03,
+        0.12,
+        1.02
+      ],
+      "height_m": 0.12,
+      "crown_d_m": 1.02,
+      "target": {
+        "height_m": 0.11
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_gap_patch_big_healthy_0_lod0.glb",
+          "tris": 8632,
+          "kb": 701,
+          "pct": 100.0,
+          "elements": 880,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_gap_patch_big_healthy_0_lod1.glb",
+          "tris": 1850,
+          "kb": 158,
+          "pct": 21.4,
+          "elements": 319,
+          "keep_fit": 1.0,
+          "spread_pct": 99.5,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_gap_patch_big_healthy_0_lod2.glb",
+          "tris": 208,
+          "kb": 22,
+          "pct": 2.4,
+          "elements": 104,
+          "keep_fit": 1.0,
+          "spread_pct": 103.9,
+          "height_pct": 93.5
+        }
+      ],
+      "budget_tris": [
+        9000,
+        2700,
+        800
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_gap_patch_big_healthy_1",
+      "species": "gap_patch",
+      "age": "big",
+      "health": "healthy",
+      "variant": 1,
+      "seed": 635672829,
+      "kind": "weed",
+      "size_m": [
+        1.05,
+        0.16,
+        1.02
+      ],
+      "height_m": 0.16,
+      "crown_d_m": 1.04,
+      "target": {
+        "height_m": 0.15
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_gap_patch_big_healthy_1_lod0.glb",
+          "tris": 8482,
+          "kb": 688,
+          "pct": 100.0,
+          "elements": 862,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_gap_patch_big_healthy_1_lod1.glb",
+          "tris": 1882,
+          "kb": 160,
+          "pct": 22.2,
+          "elements": 319,
+          "keep_fit": 1.0,
+          "spread_pct": 99.3,
+          "height_pct": 98.5
+        },
+        {
+          "lod": 2,
+          "glb": "grass_gap_patch_big_healthy_1_lod2.glb",
+          "tris": 206,
+          "kb": 22,
+          "pct": 2.4,
+          "elements": 103,
+          "keep_fit": 1.0,
+          "spread_pct": 105.4,
+          "height_pct": 98.5
+        }
+      ],
+      "budget_tris": [
+        9000,
+        2700,
+        800
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_gap_patch_big_healthy_2",
+      "species": "gap_patch",
+      "age": "big",
+      "health": "healthy",
+      "variant": 2,
+      "seed": 861358572,
+      "kind": "weed",
+      "size_m": [
+        1.02,
+        0.11,
+        1.04
+      ],
+      "height_m": 0.11,
+      "crown_d_m": 1.03,
+      "target": {
+        "height_m": 0.11
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_gap_patch_big_healthy_2_lod0.glb",
+          "tris": 8608,
+          "kb": 698,
+          "pct": 100.0,
+          "elements": 871,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_gap_patch_big_healthy_2_lod1.glb",
+          "tris": 1848,
+          "kb": 157,
+          "pct": 21.5,
+          "elements": 312,
+          "keep_fit": 1.0,
+          "spread_pct": 99.1,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_gap_patch_big_healthy_2_lod2.glb",
+          "tris": 222,
+          "kb": 24,
+          "pct": 2.6,
+          "elements": 111,
+          "keep_fit": 1.0,
+          "spread_pct": 99.0,
+          "height_pct": 98.5
+        }
+      ],
+      "budget_tris": [
+        9000,
+        2700,
+        800
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_gap_patch_small_dead_0",
+      "species": "gap_patch",
+      "age": "small",
+      "health": "dead",
+      "variant": 0,
+      "seed": 836145812,
+      "kind": "weed",
+      "size_m": [
+        0.5,
+        0.09,
+        0.52
+      ],
+      "height_m": 0.09,
+      "crown_d_m": 0.51,
+      "target": {
+        "height_m": 0.1
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_gap_patch_small_dead_0_lod0.glb",
+          "tris": 2456,
+          "kb": 201,
+          "pct": 100.0,
+          "elements": 254,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_gap_patch_small_dead_0_lod1.glb",
+          "tris": 562,
+          "kb": 49,
+          "pct": 22.9,
+          "elements": 95,
+          "keep_fit": 1.0,
+          "spread_pct": 104.6,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_gap_patch_small_dead_0_lod2.glb",
+          "tris": 120,
+          "kb": 14,
+          "pct": 4.9,
+          "elements": 60,
+          "keep_fit": 1.953,
+          "spread_pct": 100.3,
+          "height_pct": 94.2
+        }
+      ],
+      "budget_tris": [
+        9000,
+        2700,
+        800
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_gap_patch_small_dead_1",
+      "species": "gap_patch",
+      "age": "small",
+      "health": "dead",
+      "variant": 1,
+      "seed": 501516037,
+      "kind": "weed",
+      "size_m": [
+        0.52,
+        0.08,
+        0.54
+      ],
+      "height_m": 0.08,
+      "crown_d_m": 0.53,
+      "target": {
+        "height_m": 0.08
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_gap_patch_small_dead_1_lod0.glb",
+          "tris": 2518,
+          "kb": 206,
+          "pct": 100.0,
+          "elements": 259,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_gap_patch_small_dead_1_lod1.glb",
+          "tris": 586,
+          "kb": 51,
+          "pct": 23.3,
+          "elements": 101,
+          "keep_fit": 1.0,
+          "spread_pct": 105.6,
+          "height_pct": 98.3
+        },
+        {
+          "lod": 2,
+          "glb": "grass_gap_patch_small_dead_1_lod2.glb",
+          "tris": 210,
+          "kb": 23,
+          "pct": 8.3,
+          "elements": 105,
+          "keep_fit": 3.052,
+          "spread_pct": 104.9,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        9000,
+        2700,
+        800
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_gap_patch_small_dead_2",
+      "species": "gap_patch",
+      "age": "small",
+      "health": "dead",
+      "variant": 2,
+      "seed": 1044398518,
+      "kind": "weed",
+      "size_m": [
+        0.54,
+        0.1,
+        0.52
+      ],
+      "height_m": 0.1,
+      "crown_d_m": 0.53,
+      "target": {
+        "height_m": 0.11
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_gap_patch_small_dead_2_lod0.glb",
+          "tris": 2466,
+          "kb": 202,
+          "pct": 100.0,
+          "elements": 255,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_gap_patch_small_dead_2_lod1.glb",
+          "tris": 532,
+          "kb": 47,
+          "pct": 21.6,
+          "elements": 92,
+          "keep_fit": 1.0,
+          "spread_pct": 101.7,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_gap_patch_small_dead_2_lod2.glb",
+          "tris": 84,
+          "kb": 10,
+          "pct": 3.4,
+          "elements": 42,
+          "keep_fit": 1.0,
+          "spread_pct": 108.3,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        9000,
+        2700,
+        800
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_gap_patch_small_healthy_0",
+      "species": "gap_patch",
+      "age": "small",
+      "health": "healthy",
+      "variant": 0,
+      "seed": 962012875,
+      "kind": "weed",
+      "size_m": [
+        0.52,
+        0.09,
+        0.5
+      ],
+      "height_m": 0.09,
+      "crown_d_m": 0.51,
+      "target": {
+        "height_m": 0.09
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_gap_patch_small_healthy_0_lod0.glb",
+          "tris": 2446,
+          "kb": 200,
+          "pct": 100.0,
+          "elements": 250,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_gap_patch_small_healthy_0_lod1.glb",
+          "tris": 556,
+          "kb": 48,
+          "pct": 22.7,
+          "elements": 94,
+          "keep_fit": 1.0,
+          "spread_pct": 103.0,
+          "height_pct": 96.9
+        },
+        {
+          "lod": 2,
+          "glb": "grass_gap_patch_small_healthy_0_lod2.glb",
+          "tris": 52,
+          "kb": 7,
+          "pct": 2.1,
+          "elements": 26,
+          "keep_fit": 1.0,
+          "spread_pct": 96.6,
+          "height_pct": 96.9
+        }
+      ],
+      "budget_tris": [
+        9000,
+        2700,
+        800
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_gap_patch_small_healthy_1",
+      "species": "gap_patch",
+      "age": "small",
+      "health": "healthy",
+      "variant": 1,
+      "seed": 920738587,
+      "kind": "weed",
+      "size_m": [
+        0.5,
+        0.1,
+        0.52
+      ],
+      "height_m": 0.1,
+      "crown_d_m": 0.51,
+      "target": {
+        "height_m": 0.09
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_gap_patch_small_healthy_1_lod0.glb",
+          "tris": 2520,
+          "kb": 206,
+          "pct": 100.0,
+          "elements": 261,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_gap_patch_small_healthy_1_lod1.glb",
+          "tris": 604,
+          "kb": 53,
+          "pct": 24.0,
+          "elements": 104,
+          "keep_fit": 1.0,
+          "spread_pct": 106.1,
+          "height_pct": 96.3
+        },
+        {
+          "lod": 2,
+          "glb": "grass_gap_patch_small_healthy_1_lod2.glb",
+          "tris": 66,
+          "kb": 8,
+          "pct": 2.6,
+          "elements": 33,
+          "keep_fit": 1.0,
+          "spread_pct": 95.8,
+          "height_pct": 96.3
+        }
+      ],
+      "budget_tris": [
+        9000,
+        2700,
+        800
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_gap_patch_small_healthy_2",
+      "species": "gap_patch",
+      "age": "small",
+      "health": "healthy",
+      "variant": 2,
+      "seed": 723017325,
+      "kind": "weed",
+      "size_m": [
+        0.52,
+        0.14,
+        0.53
+      ],
+      "height_m": 0.14,
+      "crown_d_m": 0.53,
+      "target": {
+        "height_m": 0.13
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_gap_patch_small_healthy_2_lod0.glb",
+          "tris": 2470,
+          "kb": 202,
+          "pct": 100.0,
+          "elements": 250,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_gap_patch_small_healthy_2_lod1.glb",
+          "tris": 574,
+          "kb": 50,
+          "pct": 23.2,
+          "elements": 97,
+          "keep_fit": 1.25,
+          "spread_pct": 93.7,
+          "height_pct": 88.2
+        },
+        {
+          "lod": 2,
+          "glb": "grass_gap_patch_small_healthy_2_lod2.glb",
+          "tris": 202,
+          "kb": 22,
+          "pct": 8.2,
+          "elements": 101,
+          "keep_fit": 3.815,
+          "spread_pct": 94.6,
+          "height_pct": 88.2
+        }
+      ],
+      "budget_tris": [
+        9000,
+        2700,
+        800
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_full_dead_0",
+      "species": "joint_strip",
+      "age": "full",
+      "health": "dead",
+      "variant": 0,
+      "seed": 1069412432,
+      "kind": "weed",
+      "size_m": [
+        1.02,
+        0.08,
+        0.17
+      ],
+      "height_m": 0.08,
+      "crown_d_m": 0.59,
+      "target": {
+        "height_m": 0.09
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_full_dead_0_lod0.glb",
+          "tris": 5240,
+          "kb": 426,
+          "pct": 100.0,
+          "elements": 530,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_full_dead_0_lod1.glb",
+          "tris": 1254,
+          "kb": 107,
+          "pct": 23.9,
+          "elements": 211,
+          "keep_fit": 1.0,
+          "spread_pct": 100.3,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_full_dead_0_lod2.glb",
+          "tris": 172,
+          "kb": 19,
+          "pct": 3.3,
+          "elements": 86,
+          "keep_fit": 1.0,
+          "spread_pct": 109.3,
+          "height_pct": 100.0
         }
       ],
       "budget_tris": [
@@ -246,27 +1626,1227 @@
       "over_budget": []
     },
     {
-      "tag": "grass_plantain_rosette_healthy_0",
-      "species": "plantain",
-      "age": "rosette",
-      "health": "healthy",
-      "variant": 0,
-      "seed": 588145293,
+      "tag": "grass_joint_strip_full_dead_1",
+      "species": "joint_strip",
+      "age": "full",
+      "health": "dead",
+      "variant": 1,
+      "seed": 233161166,
       "kind": "weed",
       "size_m": [
-        0.18,
-        0.04,
-        0.15
+        1.01,
+        0.07,
+        0.19
       ],
-      "height_m": 0.04,
-      "crown_d_m": 0.16,
+      "height_m": 0.07,
+      "crown_d_m": 0.6,
+      "target": {
+        "height_m": 0.1
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_full_dead_1_lod0.glb",
+          "tris": 5236,
+          "kb": 425,
+          "pct": 100.0,
+          "elements": 529,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_full_dead_1_lod1.glb",
+          "tris": 1310,
+          "kb": 112,
+          "pct": 25.0,
+          "elements": 221,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_full_dead_1_lod2.glb",
+          "tris": 176,
+          "kb": 19,
+          "pct": 3.4,
+          "elements": 88,
+          "keep_fit": 1.0,
+          "spread_pct": 99.6,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_full_dead_2",
+      "species": "joint_strip",
+      "age": "full",
+      "health": "dead",
+      "variant": 2,
+      "seed": 474603164,
+      "kind": "weed",
+      "size_m": [
+        1.01,
+        0.08,
+        0.23
+      ],
+      "height_m": 0.08,
+      "crown_d_m": 0.62,
+      "target": {
+        "height_m": 0.12
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_full_dead_2_lod0.glb",
+          "tris": 5276,
+          "kb": 429,
+          "pct": 100.0,
+          "elements": 539,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_full_dead_2_lod1.glb",
+          "tris": 1582,
+          "kb": 135,
+          "pct": 30.0,
+          "elements": 271,
+          "keep_fit": 1.25,
+          "spread_pct": 94.9,
+          "height_pct": 98.5
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_full_dead_2_lod2.glb",
+          "tris": 486,
+          "kb": 50,
+          "pct": 9.2,
+          "elements": 243,
+          "keep_fit": 3.052,
+          "spread_pct": 95.2,
+          "height_pct": 80.1
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_full_healthy_0",
+      "species": "joint_strip",
+      "age": "full",
+      "health": "healthy",
+      "variant": 0,
+      "seed": 371243953,
+      "kind": "weed",
+      "size_m": [
+        1.01,
+        0.11,
+        0.23
+      ],
+      "height_m": 0.11,
+      "crown_d_m": 0.62,
+      "target": {
+        "height_m": 0.14
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_full_healthy_0_lod0.glb",
+          "tris": 5232,
+          "kb": 425,
+          "pct": 100.0,
+          "elements": 528,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_full_healthy_0_lod1.glb",
+          "tris": 1192,
+          "kb": 102,
+          "pct": 22.8,
+          "elements": 202,
+          "keep_fit": 1.0,
+          "spread_pct": 97.9,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_full_healthy_0_lod2.glb",
+          "tris": 136,
+          "kb": 15,
+          "pct": 2.6,
+          "elements": 68,
+          "keep_fit": 1.0,
+          "spread_pct": 98.3,
+          "height_pct": 90.4
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_full_healthy_1",
+      "species": "joint_strip",
+      "age": "full",
+      "health": "healthy",
+      "variant": 1,
+      "seed": 671467997,
+      "kind": "weed",
+      "size_m": [
+        1.03,
+        0.09,
+        0.18
+      ],
+      "height_m": 0.09,
+      "crown_d_m": 0.6,
+      "target": {
+        "height_m": 0.11
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_full_healthy_1_lod0.glb",
+          "tris": 5272,
+          "kb": 429,
+          "pct": 100.0,
+          "elements": 538,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_full_healthy_1_lod1.glb",
+          "tris": 1204,
+          "kb": 103,
+          "pct": 22.8,
+          "elements": 206,
+          "keep_fit": 1.0,
+          "spread_pct": 101.8,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_full_healthy_1_lod2.glb",
+          "tris": 150,
+          "kb": 17,
+          "pct": 2.8,
+          "elements": 75,
+          "keep_fit": 1.0,
+          "spread_pct": 101.9,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_full_healthy_2",
+      "species": "joint_strip",
+      "age": "full",
+      "health": "healthy",
+      "variant": 2,
+      "seed": 748785767,
+      "kind": "weed",
+      "size_m": [
+        1.04,
+        0.08,
+        0.19
+      ],
+      "height_m": 0.08,
+      "crown_d_m": 0.61,
       "target": {
         "height_m": 0.09
       },
       "lods": [
         {
           "lod": 0,
-          "glb": "grass_plantain_rosette_healthy_0_lod0.glb",
+          "glb": "grass_joint_strip_full_healthy_2_lod0.glb",
+          "tris": 5232,
+          "kb": 425,
+          "pct": 100.0,
+          "elements": 528,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_full_healthy_2_lod1.glb",
+          "tris": 1172,
+          "kb": 100,
+          "pct": 22.4,
+          "elements": 196,
+          "keep_fit": 1.0,
+          "spread_pct": 105.8,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_full_healthy_2_lod2.glb",
+          "tris": 130,
+          "kb": 15,
+          "pct": 2.5,
+          "elements": 65,
+          "keep_fit": 1.0,
+          "spread_pct": 99.4,
+          "height_pct": 93.7
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_full_healthy_3",
+      "species": "joint_strip",
+      "age": "full",
+      "health": "healthy",
+      "variant": 3,
+      "seed": 329425708,
+      "kind": "weed",
+      "size_m": [
+        1.02,
+        0.12,
+        0.23
+      ],
+      "height_m": 0.12,
+      "crown_d_m": 0.62,
+      "target": {
+        "height_m": 0.15
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_full_healthy_3_lod0.glb",
+          "tris": 5268,
+          "kb": 428,
+          "pct": 100.0,
+          "elements": 537,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_full_healthy_3_lod1.glb",
+          "tris": 1272,
+          "kb": 109,
+          "pct": 24.1,
+          "elements": 218,
+          "keep_fit": 1.0,
+          "spread_pct": 98.8,
+          "height_pct": 94.6
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_full_healthy_3_lod2.glb",
+          "tris": 164,
+          "kb": 18,
+          "pct": 3.1,
+          "elements": 82,
+          "keep_fit": 1.0,
+          "spread_pct": 103.9,
+          "height_pct": 90.8
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_medium_dead_0",
+      "species": "joint_strip",
+      "age": "medium",
+      "health": "dead",
+      "variant": 0,
+      "seed": 171609385,
+      "kind": "weed",
+      "size_m": [
+        0.91,
+        0.05,
+        0.13
+      ],
+      "height_m": 0.05,
+      "crown_d_m": 0.52,
+      "target": {
+        "height_m": 0.09
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_medium_dead_0_lod0.glb",
+          "tris": 2632,
+          "kb": 215,
+          "pct": 100.0,
+          "elements": 268,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_medium_dead_0_lod1.glb",
+          "tris": 618,
+          "kb": 54,
+          "pct": 23.5,
+          "elements": 105,
+          "keep_fit": 1.0,
+          "spread_pct": 102.1,
+          "height_pct": 91.5
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_medium_dead_0_lod2.glb",
+          "tris": 60,
+          "kb": 8,
+          "pct": 2.3,
+          "elements": 30,
+          "keep_fit": 1.0,
+          "spread_pct": 93.8,
+          "height_pct": 89.1
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_medium_dead_1",
+      "species": "joint_strip",
+      "age": "medium",
+      "health": "dead",
+      "variant": 1,
+      "seed": 880090144,
+      "kind": "weed",
+      "size_m": [
+        0.98,
+        0.04,
+        0.12
+      ],
+      "height_m": 0.04,
+      "crown_d_m": 0.55,
+      "target": {
+        "height_m": 0.06
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_medium_dead_1_lod0.glb",
+          "tris": 2676,
+          "kb": 219,
+          "pct": 100.0,
+          "elements": 279,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_medium_dead_1_lod1.glb",
+          "tris": 644,
+          "kb": 56,
+          "pct": 24.1,
+          "elements": 112,
+          "keep_fit": 1.0,
+          "spread_pct": 98.6,
+          "height_pct": 89.9
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_medium_dead_1_lod2.glb",
+          "tris": 124,
+          "kb": 14,
+          "pct": 4.6,
+          "elements": 62,
+          "keep_fit": 1.562,
+          "spread_pct": 90.4,
+          "height_pct": 89.9
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_medium_dead_2",
+      "species": "joint_strip",
+      "age": "medium",
+      "health": "dead",
+      "variant": 2,
+      "seed": 741998460,
+      "kind": "weed",
+      "size_m": [
+        1.0,
+        0.05,
+        0.12
+      ],
+      "height_m": 0.05,
+      "crown_d_m": 0.56,
+      "target": {
+        "height_m": 0.06
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_medium_dead_2_lod0.glb",
+          "tris": 2688,
+          "kb": 220,
+          "pct": 100.0,
+          "elements": 282,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_medium_dead_2_lod1.glb",
+          "tris": 632,
+          "kb": 55,
+          "pct": 23.5,
+          "elements": 110,
+          "keep_fit": 1.0,
+          "spread_pct": 104.2,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_medium_dead_2_lod2.glb",
+          "tris": 102,
+          "kb": 12,
+          "pct": 3.8,
+          "elements": 51,
+          "keep_fit": 1.0,
+          "spread_pct": 103.7,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_medium_healthy_0",
+      "species": "joint_strip",
+      "age": "medium",
+      "health": "healthy",
+      "variant": 0,
+      "seed": 205600790,
+      "kind": "weed",
+      "size_m": [
+        0.94,
+        0.08,
+        0.16
+      ],
+      "height_m": 0.08,
+      "crown_d_m": 0.55,
+      "target": {
+        "height_m": 0.1
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_medium_healthy_0_lod0.glb",
+          "tris": 2676,
+          "kb": 219,
+          "pct": 100.0,
+          "elements": 279,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_medium_healthy_0_lod1.glb",
+          "tris": 1556,
+          "kb": 133,
+          "pct": 58.1,
+          "elements": 272,
+          "keep_fit": 2.441,
+          "spread_pct": 100.6,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_medium_healthy_0_lod2.glb",
+          "tris": 496,
+          "kb": 51,
+          "pct": 18.5,
+          "elements": 248,
+          "keep_fit": 5.96,
+          "spread_pct": 101.0,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_medium_healthy_1",
+      "species": "joint_strip",
+      "age": "medium",
+      "health": "healthy",
+      "variant": 1,
+      "seed": 908267585,
+      "kind": "weed",
+      "size_m": [
+        1.01,
+        0.06,
+        0.12
+      ],
+      "height_m": 0.06,
+      "crown_d_m": 0.56,
+      "target": {
+        "height_m": 0.08
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_medium_healthy_1_lod0.glb",
+          "tris": 2688,
+          "kb": 220,
+          "pct": 100.0,
+          "elements": 282,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_medium_healthy_1_lod1.glb",
+          "tris": 674,
+          "kb": 59,
+          "pct": 25.1,
+          "elements": 119,
+          "keep_fit": 1.0,
+          "spread_pct": 103.5,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_medium_healthy_1_lod2.glb",
+          "tris": 108,
+          "kb": 12,
+          "pct": 4.0,
+          "elements": 54,
+          "keep_fit": 1.25,
+          "spread_pct": 100.8,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_medium_healthy_2",
+      "species": "joint_strip",
+      "age": "medium",
+      "health": "healthy",
+      "variant": 2,
+      "seed": 1001550224,
+      "kind": "weed",
+      "size_m": [
+        0.98,
+        0.05,
+        0.12
+      ],
+      "height_m": 0.05,
+      "crown_d_m": 0.55,
+      "target": {
+        "height_m": 0.07
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_medium_healthy_2_lod0.glb",
+          "tris": 2644,
+          "kb": 216,
+          "pct": 100.0,
+          "elements": 271,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_medium_healthy_2_lod1.glb",
+          "tris": 642,
+          "kb": 56,
+          "pct": 24.3,
+          "elements": 111,
+          "keep_fit": 1.0,
+          "spread_pct": 96.4,
+          "height_pct": 89.3
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_medium_healthy_2_lod2.glb",
+          "tris": 122,
+          "kb": 14,
+          "pct": 4.6,
+          "elements": 61,
+          "keep_fit": 1.562,
+          "spread_pct": 91.2,
+          "height_pct": 89.3
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_medium_healthy_3",
+      "species": "joint_strip",
+      "age": "medium",
+      "health": "healthy",
+      "variant": 3,
+      "seed": 340780570,
+      "kind": "weed",
+      "size_m": [
+        0.99,
+        0.05,
+        0.11
+      ],
+      "height_m": 0.05,
+      "crown_d_m": 0.55,
+      "target": {
+        "height_m": 0.07
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_medium_healthy_3_lod0.glb",
+          "tris": 2692,
+          "kb": 220,
+          "pct": 100.0,
+          "elements": 283,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_medium_healthy_3_lod1.glb",
+          "tris": 890,
+          "kb": 77,
+          "pct": 33.1,
+          "elements": 157,
+          "keep_fit": 1.25,
+          "spread_pct": 106.1,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_medium_healthy_3_lod2.glb",
+          "tris": 176,
+          "kb": 19,
+          "pct": 6.5,
+          "elements": 88,
+          "keep_fit": 1.562,
+          "spread_pct": 103.0,
+          "height_pct": 97.5
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_sparse_dead_0",
+      "species": "joint_strip",
+      "age": "sparse",
+      "health": "dead",
+      "variant": 0,
+      "seed": 535707990,
+      "kind": "weed",
+      "size_m": [
+        1.0,
+        0.05,
+        0.13
+      ],
+      "height_m": 0.05,
+      "crown_d_m": 0.56,
+      "target": {
+        "height_m": 0.08
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_sparse_dead_0_lod0.glb",
+          "tris": 1100,
+          "kb": 91,
+          "pct": 100.0,
+          "elements": 110,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_sparse_dead_0_lod1.glb",
+          "tris": 258,
+          "kb": 23,
+          "pct": 23.5,
+          "elements": 43,
+          "keep_fit": 1.0,
+          "spread_pct": 98.7,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_sparse_dead_0_lod2.glb",
+          "tris": 44,
+          "kb": 6,
+          "pct": 4.0,
+          "elements": 22,
+          "keep_fit": 1.25,
+          "spread_pct": 90.2,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_sparse_dead_1",
+      "species": "joint_strip",
+      "age": "sparse",
+      "health": "dead",
+      "variant": 1,
+      "seed": 26399132,
+      "kind": "weed",
+      "size_m": [
+        0.99,
+        0.03,
+        0.11
+      ],
+      "height_m": 0.03,
+      "crown_d_m": 0.55,
+      "target": {
+        "height_m": 0.06
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_sparse_dead_1_lod0.glb",
+          "tris": 1100,
+          "kb": 91,
+          "pct": 100.0,
+          "elements": 110,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_sparse_dead_1_lod1.glb",
+          "tris": 396,
+          "kb": 35,
+          "pct": 36.0,
+          "elements": 66,
+          "keep_fit": 1.562,
+          "spread_pct": 93.2,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_sparse_dead_1_lod2.glb",
+          "tris": 152,
+          "kb": 17,
+          "pct": 13.8,
+          "elements": 76,
+          "keep_fit": 4.768,
+          "spread_pct": 90.5,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_sparse_dead_2",
+      "species": "joint_strip",
+      "age": "sparse",
+      "health": "dead",
+      "variant": 2,
+      "seed": 458725838,
+      "kind": "weed",
+      "size_m": [
+        0.97,
+        0.05,
+        0.12
+      ],
+      "height_m": 0.05,
+      "crown_d_m": 0.54,
+      "target": {
+        "height_m": 0.08
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_sparse_dead_2_lod0.glb",
+          "tris": 1100,
+          "kb": 91,
+          "pct": 100.0,
+          "elements": 110,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_sparse_dead_2_lod1.glb",
+          "tris": 294,
+          "kb": 26,
+          "pct": 26.7,
+          "elements": 49,
+          "keep_fit": 1.0,
+          "spread_pct": 93.9,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_sparse_dead_2_lod2.glb",
+          "tris": 28,
+          "kb": 4,
+          "pct": 2.5,
+          "elements": 14,
+          "keep_fit": 1.0,
+          "spread_pct": 93.2,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_sparse_healthy_0",
+      "species": "joint_strip",
+      "age": "sparse",
+      "health": "healthy",
+      "variant": 0,
+      "seed": 136583091,
+      "kind": "weed",
+      "size_m": [
+        0.9,
+        0.04,
+        0.09
+      ],
+      "height_m": 0.04,
+      "crown_d_m": 0.49,
+      "target": {
+        "height_m": 0.05
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_sparse_healthy_0_lod0.glb",
+          "tris": 1100,
+          "kb": 91,
+          "pct": 100.0,
+          "elements": 110,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_sparse_healthy_0_lod1.glb",
+          "tris": 510,
+          "kb": 45,
+          "pct": 46.4,
+          "elements": 85,
+          "keep_fit": 1.953,
+          "spread_pct": 101.7,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_sparse_healthy_0_lod2.glb",
+          "tris": 162,
+          "kb": 18,
+          "pct": 14.7,
+          "elements": 81,
+          "keep_fit": 4.768,
+          "spread_pct": 101.6,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_sparse_healthy_1",
+      "species": "joint_strip",
+      "age": "sparse",
+      "health": "healthy",
+      "variant": 1,
+      "seed": 991314920,
+      "kind": "weed",
+      "size_m": [
+        0.99,
+        0.05,
+        0.13
+      ],
+      "height_m": 0.05,
+      "crown_d_m": 0.56,
+      "target": {
+        "height_m": 0.07
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_sparse_healthy_1_lod0.glb",
+          "tris": 1100,
+          "kb": 91,
+          "pct": 100.0,
+          "elements": 110,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_sparse_healthy_1_lod1.glb",
+          "tris": 306,
+          "kb": 27,
+          "pct": 27.8,
+          "elements": 51,
+          "keep_fit": 1.25,
+          "spread_pct": 89.2,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_sparse_healthy_1_lod2.glb",
+          "tris": 50,
+          "kb": 7,
+          "pct": 4.5,
+          "elements": 25,
+          "keep_fit": 1.562,
+          "spread_pct": 90.0,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_sparse_healthy_2",
+      "species": "joint_strip",
+      "age": "sparse",
+      "health": "healthy",
+      "variant": 2,
+      "seed": 66486346,
+      "kind": "weed",
+      "size_m": [
+        1.0,
+        0.06,
+        0.13
+      ],
+      "height_m": 0.06,
+      "crown_d_m": 0.56,
+      "target": {
+        "height_m": 0.08
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_sparse_healthy_2_lod0.glb",
+          "tris": 1100,
+          "kb": 91,
+          "pct": 100.0,
+          "elements": 110,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_sparse_healthy_2_lod1.glb",
+          "tris": 246,
+          "kb": 22,
+          "pct": 22.4,
+          "elements": 41,
+          "keep_fit": 1.0,
+          "spread_pct": 94.5,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_sparse_healthy_2_lod2.glb",
+          "tris": 42,
+          "kb": 6,
+          "pct": 3.8,
+          "elements": 21,
+          "keep_fit": 1.562,
+          "spread_pct": 95.6,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_joint_strip_sparse_healthy_3",
+      "species": "joint_strip",
+      "age": "sparse",
+      "health": "healthy",
+      "variant": 3,
+      "seed": 794539958,
+      "kind": "weed",
+      "size_m": [
+        0.98,
+        0.07,
+        0.16
+      ],
+      "height_m": 0.07,
+      "crown_d_m": 0.57,
+      "target": {
+        "height_m": 0.08
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_joint_strip_sparse_healthy_3_lod0.glb",
+          "tris": 1100,
+          "kb": 91,
+          "pct": 100.0,
+          "elements": 110,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_joint_strip_sparse_healthy_3_lod1.glb",
+          "tris": 492,
+          "kb": 43,
+          "pct": 44.7,
+          "elements": 82,
+          "keep_fit": 1.953,
+          "spread_pct": 97.2,
+          "height_pct": 93.4
+        },
+        {
+          "lod": 2,
+          "glb": "grass_joint_strip_sparse_healthy_3_lod2.glb",
+          "tris": 152,
+          "kb": 17,
+          "pct": 13.8,
+          "elements": 76,
+          "keep_fit": 4.768,
+          "spread_pct": 95.2,
+          "height_pct": 93.4
+        }
+      ],
+      "budget_tris": [
+        6000,
+        1800,
+        500
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_plantain_rosette_dead_0",
+      "species": "plantain",
+      "age": "rosette",
+      "health": "dead",
+      "variant": 0,
+      "seed": 28930268,
+      "kind": "weed",
+      "size_m": [
+        0.16,
+        0.02,
+        0.15
+      ],
+      "height_m": 0.02,
+      "crown_d_m": 0.15,
+      "target": {
+        "height_m": 0.09
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_plantain_rosette_dead_0_lod0.glb",
           "tris": 28,
           "kb": 4,
           "pct": 100.0,
@@ -277,25 +2857,265 @@
         },
         {
           "lod": 1,
-          "glb": "grass_plantain_rosette_healthy_0_lod1.glb",
-          "tris": 14,
-          "kb": 3,
-          "pct": 50.0,
+          "glb": "grass_plantain_rosette_dead_0_lod1.glb",
+          "tris": 28,
+          "kb": 4,
+          "pct": 100.0,
           "elements": 7,
-          "keep_fit": 1.25,
-          "spread_pct": 101.5,
-          "height_pct": 79.0
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_plantain_rosette_dead_0_lod2.glb",
+          "tris": 28,
+          "kb": 4,
+          "pct": 100.0,
+          "elements": 7,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        600,
+        200,
+        60
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_plantain_rosette_dead_1",
+      "species": "plantain",
+      "age": "rosette",
+      "health": "dead",
+      "variant": 1,
+      "seed": 731085832,
+      "kind": "weed",
+      "size_m": [
+        0.12,
+        0.02,
+        0.16
+      ],
+      "height_m": 0.02,
+      "crown_d_m": 0.14,
+      "target": {
+        "height_m": 0.08
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_plantain_rosette_dead_1_lod0.glb",
+          "tris": 24,
+          "kb": 4,
+          "pct": 100.0,
+          "elements": 6,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_plantain_rosette_dead_1_lod1.glb",
+          "tris": 24,
+          "kb": 4,
+          "pct": 100.0,
+          "elements": 6,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_plantain_rosette_dead_1_lod2.glb",
+          "tris": 24,
+          "kb": 4,
+          "pct": 100.0,
+          "elements": 6,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        600,
+        200,
+        60
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_plantain_rosette_dead_2",
+      "species": "plantain",
+      "age": "rosette",
+      "health": "dead",
+      "variant": 2,
+      "seed": 99752142,
+      "kind": "weed",
+      "size_m": [
+        0.16,
+        0.02,
+        0.19
+      ],
+      "height_m": 0.02,
+      "crown_d_m": 0.17,
+      "target": {
+        "height_m": 0.1
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_plantain_rosette_dead_2_lod0.glb",
+          "tris": 20,
+          "kb": 3,
+          "pct": 100.0,
+          "elements": 5,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_plantain_rosette_dead_2_lod1.glb",
+          "tris": 20,
+          "kb": 3,
+          "pct": 100.0,
+          "elements": 5,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_plantain_rosette_dead_2_lod2.glb",
+          "tris": 20,
+          "kb": 3,
+          "pct": 100.0,
+          "elements": 5,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        600,
+        200,
+        60
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_plantain_rosette_healthy_0",
+      "species": "plantain",
+      "age": "rosette",
+      "health": "healthy",
+      "variant": 0,
+      "seed": 1009170720,
+      "kind": "weed",
+      "size_m": [
+        0.18,
+        0.12,
+        0.17
+      ],
+      "height_m": 0.12,
+      "crown_d_m": 0.17,
+      "target": {
+        "height_m": 0.11
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_plantain_rosette_healthy_0_lod0.glb",
+          "tris": 54,
+          "kb": 5,
+          "pct": 100.0,
+          "elements": 7,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_plantain_rosette_healthy_0_lod1.glb",
+          "tris": 42,
+          "kb": 5,
+          "pct": 77.8,
+          "elements": 7,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
         },
         {
           "lod": 2,
           "glb": "grass_plantain_rosette_healthy_0_lod2.glb",
-          "tris": 14,
-          "kb": 3,
-          "pct": 50.0,
+          "tris": 30,
+          "kb": 5,
+          "pct": 55.6,
           "elements": 7,
-          "keep_fit": 1.667,
-          "spread_pct": 101.5,
-          "height_pct": 79.0
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        600,
+        200,
+        60
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_plantain_rosette_healthy_1",
+      "species": "plantain",
+      "age": "rosette",
+      "health": "healthy",
+      "variant": 1,
+      "seed": 780730290,
+      "kind": "weed",
+      "size_m": [
+        0.24,
+        0.05,
+        0.22
+      ],
+      "height_m": 0.05,
+      "crown_d_m": 0.23,
+      "target": {
+        "height_m": 0.13
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_plantain_rosette_healthy_1_lod0.glb",
+          "tris": 32,
+          "kb": 5,
+          "pct": 100.0,
+          "elements": 8,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_plantain_rosette_healthy_1_lod1.glb",
+          "tris": 32,
+          "kb": 5,
+          "pct": 100.0,
+          "elements": 8,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_plantain_rosette_healthy_1_lod2.glb",
+          "tris": 32,
+          "kb": 5,
+          "pct": 100.0,
+          "elements": 8,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
         }
       ],
       "budget_tris": [
@@ -305,6 +3125,126 @@
       ],
       "over_budget": [],
       "base_y": 0.004
+    },
+    {
+      "tag": "grass_plantain_rosette_healthy_2",
+      "species": "plantain",
+      "age": "rosette",
+      "health": "healthy",
+      "variant": 2,
+      "seed": 1016114835,
+      "kind": "weed",
+      "size_m": [
+        0.15,
+        0.14,
+        0.18
+      ],
+      "height_m": 0.14,
+      "crown_d_m": 0.16,
+      "target": {
+        "height_m": 0.1
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_plantain_rosette_healthy_2_lod0.glb",
+          "tris": 58,
+          "kb": 6,
+          "pct": 100.0,
+          "elements": 8,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_plantain_rosette_healthy_2_lod1.glb",
+          "tris": 46,
+          "kb": 6,
+          "pct": 79.3,
+          "elements": 8,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_plantain_rosette_healthy_2_lod2.glb",
+          "tris": 34,
+          "kb": 5,
+          "pct": 58.6,
+          "elements": 8,
+          "keep_fit": 1.0,
+          "spread_pct": 100.1,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        600,
+        200,
+        60
+      ],
+      "over_budget": []
+    },
+    {
+      "tag": "grass_plantain_rosette_healthy_3",
+      "species": "plantain",
+      "age": "rosette",
+      "health": "healthy",
+      "variant": 3,
+      "seed": 233228861,
+      "kind": "weed",
+      "size_m": [
+        0.19,
+        0.15,
+        0.16
+      ],
+      "height_m": 0.15,
+      "crown_d_m": 0.17,
+      "target": {
+        "height_m": 0.1
+      },
+      "lods": [
+        {
+          "lod": 0,
+          "glb": "grass_plantain_rosette_healthy_3_lod0.glb",
+          "tris": 88,
+          "kb": 6,
+          "pct": 100.0,
+          "elements": 9,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 1,
+          "glb": "grass_plantain_rosette_healthy_3_lod1.glb",
+          "tris": 64,
+          "kb": 6,
+          "pct": 72.7,
+          "elements": 9,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        },
+        {
+          "lod": 2,
+          "glb": "grass_plantain_rosette_healthy_3_lod2.glb",
+          "tris": 40,
+          "kb": 6,
+          "pct": 45.5,
+          "elements": 9,
+          "keep_fit": 1.0,
+          "spread_pct": 100.0,
+          "height_pct": 100.0
+        }
+      ],
+      "budget_tris": [
+        600,
+        200,
+        60
+      ],
+      "over_budget": []
     }
   ],
   "proverki_proshli": false,

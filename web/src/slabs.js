@@ -39,7 +39,8 @@ export function slabLayout(d, trees = []) {
 		|| d.streets.some(s => inRect([x, z], streetRect(s), 0.3))
 		|| d.driveways.some(w => w.path.some((a, i) => i > 0 && segDist(x, z, w.path[i - 1], a) < w.width / 2 + 0.3))
 		|| d.areas.some(a => HARD.includes(a.kind) && a.rect && inRect([x, z], a.rect, 0.2));
-	const out = [], taken = [];
+	const out = [], taken = [], missing = [];
+	out.missing = missing;
 	const occupied = (x, z, r) => taken.some(t => Math.hypot(t[0] - x, t[1] - z) < r);
 	for (const [li, l] of lines.entries()) {
 		const size = l.width < S.narrowBelow ? S.narrowSize : S.size;
@@ -63,7 +64,7 @@ export function slabLayout(d, trees = []) {
 					if (occupied(x, z, size * 0.7) || blocked(x, z)) continue;
 					taken.push([x, z]);
 					const h1 = hash(x * 3.1, z * 1.7), h2 = hash(z * 2.3, x * 4.1), h3 = hash(x + z * 7.7, row + c);
-					if (h3 < S.missing) continue;                       // выпала — видна земля
+					if (h3 < S.missing) { missing.push({ x, z, size, rotY }); continue; }   // выпала — видна земля
 					let y = -(h1 * h1) * S.sink, tx = (h2 - 0.5) * 2 * S.tilt, tz = (h1 - 0.5) * 2 * S.tilt;
 					// корни: ближнее дерево вздувает плиту и наклоняет от ствола
 					let best = null;
@@ -293,4 +294,33 @@ export function buildSlabs(d, trees = []) {
 	}
 	console.log(`[улица] плиты: ${list.length}`);
 	return { group, update, count: list.length, material: mat, list };
+}
+/**
+ * Трава в швах (HoudiniCOP joint_grass) — экземпляры для trees.js: полоски вдоль
+ * швов (не во всех: пятнами), кустики и розетки на перекрестьях, заросшее место
+ * вместо выпавшей плиты. [x, z, r, {species, age, health, seed, rotY}].
+ */
+export function jointGrass(list, joint = 0.02) {
+	const out = [];
+	const add = (x, z, r, species, age, health, rotY, seed) =>
+		out.push([x, z, r, { species, age, health, seed, rotY, lean: 0, leanDir: 0, h: r }]);
+	for (const [n, p] of list.entries()) {
+		const ux = Math.cos(p.rotY), uz = -Math.sin(p.rotY), vx = Math.sin(p.rotY), vz = Math.cos(p.rotY);
+		const half = p.size / 2, h = hash(p.x * 2.9, p.z * 4.3), hh = hash(p.z * 1.3, p.x * 7.1);
+		const health = hh < 0.45 ? "dead" : "healthy";
+		const age = hh * 7 % 1 < 0.5 ? "sparse" : hh * 7 % 1 < 0.85 ? "medium" : "full";
+		// шов к следующей плите по ходу дорожки — поперёк хода
+		if (h < 0.35) add(p.x + ux * (half + joint / 2), p.z + uz * (half + joint / 2), p.size / 2, "joint_strip", age, health, p.rotY + Math.PI / 2, n * 7 + 1);
+		// шов вдоль хода (к соседней плите в ряду) — вдоль хода
+		if (hash(p.x, p.z) < 0.2) add(p.x + vx * (half + joint / 2), p.z + vz * (half + joint / 2), p.size / 2, "joint_strip", age, health, p.rotY, n * 7 + 2);
+		// перекрестье: кустик или розетка
+		const c = hash(p.x * 5.5, p.z * 0.7);
+		if (c < 0.14) {
+			const sp = c < 0.06 ? "bluegrass" : c < 0.1 ? "plantain" : "dandelion";
+			add(p.x + (ux + vx) * half, p.z + (uz + vz) * half, 0.1, sp, sp === "bluegrass" ? "tuft" : "rosette", health, hh * 6.28, n * 7 + 3);
+		}
+	}
+	for (const [n, m] of (list.missing || []).entries())
+		add(m.x, m.z, m.size / 2, "gap_patch", m.size >= 1 ? "big" : "small", hash(m.x, m.z) < 0.4 ? "dead" : "healthy", m.rotY, n * 11 + 5);
+	return out;
 }
