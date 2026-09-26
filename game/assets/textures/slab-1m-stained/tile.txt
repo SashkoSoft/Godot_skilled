@@ -1,0 +1,10 @@
+tile_m=1.00
+height_cm=0.68
+albedo_mean=#8d8880
+nscale=1.000
+normal_blue_mean=0.995
+px=1024
+size_m=1.00
+ne_tayl=odna plita, kromka po krayu kartinki
+mask=R treshchina, G pyatna (maslo/gryaz), B lishaynik/moh, A vybito (skol naskvoz - zemlya)
+opis=v pyatnah: maslo, gryaz, lishaynik u kraya

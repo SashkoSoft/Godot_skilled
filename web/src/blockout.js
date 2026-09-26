@@ -312,8 +312,31 @@ const BOX_MATERIALS = {
 	obj: "concrete",             // горки, качели — нейтрально, пока нет моделей
 	canopy: "concrete", entrance: "door_wood",
 };
+// Разметка: краска стёрта пятнами и вдоль колёс, пыльная — брошенная дорога.
+function wornPaint(m) {
+	m.color.setRGB(0.78, 0.77, 0.72);
+	m.onBeforeCompile = sh => {
+		sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vPW;")
+			.replace("#include <begin_vertex>", "#include <begin_vertex>\nvPW = (modelMatrix * vec4(transformed, 1.0)).xyz;");
+		sh.fragmentShader = sh.fragmentShader.replace("#include <common>", `#include <common>
+			varying vec3 vPW;
+			float pH(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+			float pN(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+				return mix(mix(pH(i), pH(i + vec2(1.0, 0.0)), f.x), mix(pH(i + vec2(0.0, 1.0)), pH(i + vec2(1.0, 1.0)), f.x), f.y); }`)
+			.replace("#include <map_fragment>", `#include <map_fragment>
+			{
+				float n = pN(vPW.xz * 3.1) * 0.5 + pN(vPW.xz * 11.0) * 0.3 + pN(vPW.xz * 0.6) * 0.2;
+				if (n < 0.36) discard;                                   // краска стёрлась до асфальта
+				diffuseColor.rgb *= mix(0.55, 1.0, smoothstep(0.36, 0.7, n));   // грязная, местами тонкая
+			}`);
+	};
+	m.customProgramCacheKey = () => "worn-paint";
+	m.needsUpdate = true;
+}
+
 /** Одеть коробки блок-аута в материалы зданий (трипланар по мировым осям). */
 export async function dressBoxes() {
+	wornPaint(mat("mark"));
 	const T = await houseTiles();
 	for (const [key, name] of Object.entries(BOX_MATERIALS)) {
 		const dir = T.set[name], tile = T.tile_m[name];

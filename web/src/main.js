@@ -236,9 +236,12 @@ if (LEVEL === "district") {
 		const t0 = performance.now();
 		// пол: слои по правилам ground в JSON; трава берёт из него, где её вытеснили
 		const groundMap = buildGroundMap(d, { piles: bo.piles, trees: bo.trees });
+		// твёрдые покрытия отражают небо — в лужах (шероховатость ~0) это и видно
+		const roadMats = hardMaterials();
+		{ const env = skyEnvMap(); for (const [mm] of roadMats) { mm.envMap = env; mm.envMapIntensity = 0.45; } }
 		setGrassMap(buildGrassMap(d, bo.piles, groundMap));
 		const gRes = +(q.get("gtex") || (matchMedia("(pointer: coarse)").matches ? 512 : 1024));
-		setupGround(d, groundMaterial(), groundMap, { res: gRes, debug: q.get("ground") === "debug", hard: hardMaterials(), trees: bo.trees })
+		setupGround(d, groundMaterial(), groundMap, { res: gRes, debug: q.get("ground") === "debug", hard: roadMats, trees: bo.trees })
 			.then(() => { if (slabs) hardify(slabs.material, 0, { lite: true }); })   // опад и камешки и на плитах
 			.catch(e => console.error("[улица] пол:", e));
 		loadRocks(groundMap, slabs ? slabs.list : []).then(R => { scene.add(R.group); rocks = R; }).catch(e => console.error("[улица] камешки:", e));
