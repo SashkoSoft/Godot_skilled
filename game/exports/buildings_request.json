@@ -1,0 +1,283 @@
+{
+ "note": "Здания квартала для hou: форма (footprint — прямоугольники в плане), размер (этажи, высота) и степень разрушения damage 0…1. Всё остальное — на её усмотрение. Оси: X восток, Z юг, Y вверх, метры. entrances_hint — где сейчас входы и дорожки к ним, если пригодится (side — стена, at — координата вдоль неё); не обязательство.",
+ "buildings": [
+  {
+   "id": "b1",
+   "name": "Дом 1",
+   "kind": "slab",
+   "footprint": [
+    [
+     -109.5,
+     -83,
+     -10.5,
+     -71
+    ]
+   ],
+   "floors": 9,
+   "height_m": 27.6,
+   "construction": "panel",
+   "damage": 0.35,
+   "entrances_hint": [
+    {
+     "side": "S",
+     "at": -99
+    },
+    {
+     "side": "S",
+     "at": -72
+    },
+    {
+     "side": "S",
+     "at": -48
+    },
+    {
+     "side": "S",
+     "at": -24
+    }
+   ]
+  },
+  {
+   "id": "b2",
+   "name": "Универсам",
+   "kind": "shop",
+   "footprint": [
+    [
+     10,
+     -78,
+     52,
+     -52
+    ]
+   ],
+   "floors": 1,
+   "height_m": 5.0,
+   "construction": "panel",
+   "damage": 0.5,
+   "entrances_hint": [
+    {
+     "side": "N",
+     "at": 31
+    },
+    {
+     "side": "E",
+     "at": -65
+    }
+   ]
+  },
+  {
+   "id": "b3",
+   "name": "Башня 1",
+   "kind": "tower",
+   "footprint": [
+    [
+     80,
+     -50,
+     116,
+     -31.5
+    ]
+   ],
+   "floors": 12,
+   "height_m": 36.6,
+   "construction": "panel",
+   "damage": 0.25,
+   "entrances_hint": [
+    {
+     "side": "S",
+     "at": 98
+    }
+   ]
+  },
+  {
+   "id": "b4",
+   "name": "Башня 2",
+   "kind": "tower",
+   "footprint": [
+    [
+     80,
+     14,
+     116,
+     32.5
+    ]
+   ],
+   "floors": 12,
+   "height_m": 36.6,
+   "construction": "panel",
+   "damage": 0.45,
+   "entrances_hint": [
+    {
+     "side": "S",
+     "at": 98
+    }
+   ]
+  },
+  {
+   "id": "b5",
+   "name": "Дом 5",
+   "kind": "slab",
+   "footprint": [
+    [
+     -116,
+     -46,
+     -104,
+     14
+    ]
+   ],
+   "floors": 5,
+   "height_m": 15.6,
+   "construction": "panel",
+   "damage": 0.3,
+   "entrances_hint": [
+    {
+     "side": "E",
+     "at": -38.5
+    },
+    {
+     "side": "E",
+     "at": -23.5
+    },
+    {
+     "side": "E",
+     "at": -8.5
+    },
+    {
+     "side": "E",
+     "at": 6.5
+    }
+   ]
+  },
+  {
+   "id": "b6",
+   "name": "Дом 6",
+   "kind": "slab",
+   "footprint": [
+    [
+     -96,
+     70,
+     -51,
+     82
+    ]
+   ],
+   "floors": 5,
+   "height_m": 15.6,
+   "construction": "brick",
+   "damage": 0.2,
+   "entrances_hint": [
+    {
+     "side": "N",
+     "at": -88.5
+    },
+    {
+     "side": "N",
+     "at": -73.5
+    },
+    {
+     "side": "N",
+     "at": -58.5
+    }
+   ]
+  },
+  {
+   "id": "b7",
+   "name": "Детский сад",
+   "kind": "public",
+   "footprint": [
+    [
+     -26,
+     58,
+     14,
+     70
+    ],
+    [
+     -26,
+     46,
+     -16,
+     58
+    ],
+    [
+     4,
+     46,
+     14,
+     58
+    ]
+   ],
+   "floors": 2,
+   "height_m": 6.6,
+   "construction": "brick",
+   "damage": 0.15,
+   "entrances_hint": [
+    {
+     "side": "N",
+     "at": -6
+    }
+   ]
+  },
+  {
+   "id": "b8",
+   "name": "ЦТП",
+   "kind": "utility",
+   "footprint": [
+    [
+     34,
+     -2,
+     50,
+     10
+    ]
+   ],
+   "floors": 1,
+   "height_m": 3.6,
+   "construction": "brick",
+   "damage": 0.05,
+   "entrances_hint": [
+    {
+     "side": "N",
+     "at": 42
+    }
+   ]
+  },
+  {
+   "id": "b9",
+   "name": "Трансформаторная",
+   "kind": "utility",
+   "footprint": [
+    [
+     -4,
+     -58,
+     2,
+     -53
+    ]
+   ],
+   "floors": 1,
+   "height_m": 3.6,
+   "construction": "brick",
+   "damage": 0.1,
+   "entrances_hint": [
+    {
+     "side": "N",
+     "at": -1
+    }
+   ]
+  },
+  {
+   "id": "b10",
+   "name": "Гаражи",
+   "kind": "garages",
+   "footprint": [
+    [
+     42,
+     78,
+     118,
+     86
+    ]
+   ],
+   "floors": 1,
+   "height_m": 2.6,
+   "construction": "brick",
+   "damage": 0.4,
+   "entrances_hint": [
+    {
+     "side": "N",
+     "at": 80
+    }
+   ]
+  }
+ ]
+}

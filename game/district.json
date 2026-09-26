@@ -1,0 +1,345 @@
+{
+	"about": "Квартал — первый уровень. Метры; X на восток, Z на юг (как в building.gd: sz=+1 южная сторона), Y вверх. Начало координат — середина квартала. Прямоугольники [x0, z0, x1, z1].",
+	"version": 1,
+	"bounds": [-160, -130, 160, 120],
+	"interior": [-128, -92, 127, 93],
+
+	"streets": [
+		{ "id": "prospekt", "name": "Проспект", "axis": "x", "at": -104, "from": -160, "to": 160, "roadHalf": 7.0, "walk": 4.0, "lanes": 4, "note": "главная улица, по ней игрок приходит; остановка, переход" },
+		{ "id": "south", "name": "Улица Южная", "axis": "x", "at": 100, "from": -160, "to": 160, "roadHalf": 3.6, "walk": 2.4, "lanes": 2, "note": "те же размеры, что в web/src/street.js" },
+		{ "id": "west", "name": "Переулок", "axis": "z", "at": -134, "from": -130, "to": 120, "roadHalf": 3.0, "walk": 2.0, "lanes": 2 },
+		{ "id": "east", "name": "Улица Восточная", "axis": "z", "at": 134, "from": -130, "to": 120, "roadHalf": 3.6, "walk": 2.4, "lanes": 2 }
+	],
+
+	"driveways": [
+		{ "id": "d1", "width": 5.5, "path": [[-128, -64], [6, -64], [6, -92]], "note": "вдоль дворового фасада дома 1, выезд на проспект у универсама" },
+		{ "id": "d2", "width": 5.5, "path": [[127, -8], [40, -8]], "note": "с Восточной к ЦТП" },
+		{ "id": "d3", "width": 5.5, "path": [[64, -66], [77, -66], [77, 74]], "note": "вдоль башен, от хоздвора универсама к гаражам" },
+		{ "id": "d4", "width": 5.5, "path": [[127, 74], [40, 74]], "note": "подъезд к гаражам" },
+		{ "id": "d5", "width": 5.5, "path": [[-44, 93], [-44, -64]], "note": "сквозной проезд с Южной во двор" },
+		{ "id": "d6", "width": 5.5, "path": [[-98, -64], [-98, 60], [-44, 60]], "note": "вдоль хрущёвок" }
+	],
+
+	"paths": [
+		{ "id": "p-t1", "width": 2.0, "path": [[98, -31.5], [98, -26], [79.5, -26]], "note": "от подъезда башни 1" },
+		{ "id": "p-t2", "width": 2.0, "path": [[98, 32.5], [98, 38], [79.5, 38]], "note": "от подъезда башни 2" },
+		{ "id": "p-sq1", "width": 1.5, "path": [[-41, -30], [-10, -6], [22, 10], [40, 18], [53, 18], [53, -8]], "trail": true, "note": "натоптанная тропа через сквер — к убежищу (ЦТП), выходит на проезд d2" },
+		{ "id": "p-sq2", "width": 1.5, "path": [[-41, 36], [-18, 18], [8, -10], [26, -22], [40, -38], [77, -38]], "trail": true, "note": "тропа через сквер к проезду у башен" },
+		{ "id": "p-kg", "width": 2.0, "path": [[-44, 42], [-6, 42], [-6, 58]], "note": "к детсаду: с проезда d5 через калитку в западном заборе ко входу" }
+	],
+
+	"buildings": [
+		{
+			"id": "b1", "name": "Дом 1", "kind": "slab", "floors": 9, "model": "b1", "construction": "panel", "damage": 0.35, "rect": [-109.5, -83, -10.5, -71],
+			"series": "панельная девятиэтажка, 4 подъезда, лифт, лоджии во двор; габарит и входы — по факту модели hou (33 × 4 пролёта по 3 м)",
+			"entrances": [
+				{ "side": "S", "at": -99, "label": "1" }, { "side": "S", "at": -72, "label": "2" },
+				{ "side": "S", "at": -48, "label": "3" }, { "side": "S", "at": -24, "label": "4" }
+			],
+			"shops": [
+				{ "name": "Аптека", "side": "N", "span": [-109.5, -100.5], "loot": "лекарства, бинты — почти вынесено" },
+				{ "name": "Продукты", "side": "N", "span": [-22.5, -10.5], "loot": "консервы, крупа — остатки" }
+			],
+			"role": "основной жилой дом; первый этаж со стороны проспекта — магазины",
+			"loot": "квартиры: быт, одежда, еда, домашние аптечки"
+		},
+		{
+			"id": "b2", "name": "Универсам", "kind": "shop", "floors": 1, "construction": "panel", "damage": 0.5, "rect": [10, -78, 52, -52],
+			"entrances": [{ "side": "N", "at": 31, "label": "вход" }, { "side": "E", "at": -65, "label": "рампа" }],
+			"role": "спорная территория: здесь работают надсмотрщики со связками слепых",
+			"loot": "еда, вода, бытовая химия — много, но охраняется"
+		},
+		{
+			"id": "b3", "name": "Башня 1", "kind": "tower", "floors": 12, "construction": "panel", "damage": 0.25, "rect": [80, -50, 116, -31.5],
+			"series": "II-67, план из game/plan_traced.json, 8 квартир на этаже, лифт",
+			"entrances": [{ "side": "S", "at": 98, "label": "подъезд" }],
+			"role": "главный дом для вылазок: этот корпус уже построен в игре",
+			"loot": "квартиры, крыша, машинное отделение лифта"
+		},
+		{
+			"id": "b4", "name": "Башня 2", "kind": "tower", "floors": 12, "construction": "panel", "damage": 0.45, "rect": [80, 14, 116, 32.5],
+			"series": "II-67, тот же корпус",
+			"entrances": [{ "side": "S", "at": 98, "label": "подъезд" }],
+			"role": "позже: верхние этажи заросли, нужен инструмент, чтобы пройти",
+			"loot": "квартиры; верх — редкие находки"
+		},
+		{
+			"id": "b5", "name": "Дом 5", "kind": "slab", "floors": 5, "model": "b5", "construction": "panel", "damage": 0.3, "rect": [-116, -46, -104, 14],
+			"series": "пятиэтажка-хрущёвка, 4 подъезда",
+			"entrances": [
+				{ "side": "E", "at": -38.5, "label": "1" }, { "side": "E", "at": -23.5, "label": "2" },
+				{ "side": "E", "at": -8.5, "label": "3" }, { "side": "E", "at": 6.5, "label": "4" }
+			],
+			"role": "первая вылазка: низкий дом без лифта, быстро обыскать",
+			"loot": "квартиры, подвал с кладовками"
+		},
+		{
+			"id": "b6", "name": "Дом 6", "kind": "slab", "floors": 5, "model": "b6", "construction": "brick", "damage": 0.2, "rect": [-96, 70, -51, 82],
+			"series": "пятиэтажка-хрущёвка, 3 подъезда",
+			"entrances": [
+				{ "side": "N", "at": -88.5, "label": "1" }, { "side": "N", "at": -73.5, "label": "2" },
+				{ "side": "N", "at": -58.5, "label": "3" }
+			],
+			"role": "жилой; окна на детсад",
+			"loot": "квартиры, подвал"
+		},
+		{
+			"id": "b7", "name": "Детский сад", "kind": "public", "floors": 2, "construction": "brick", "damage": 0.15,
+			"parts": [[-26, 58, 14, 70], [-26, 46, -16, 58], [4, 46, 14, 58]],
+			"entrances": [{ "side": "N", "at": -6, "z": 58, "label": "вход" }],
+			"role": "лагерь слепых: огороженный участок, тихо; к ним ходят за сведениями о районе",
+			"loot": "не грабить — торговля: ткани, медкабинет в обмен на еду"
+		},
+		{
+			"id": "b8", "name": "ЦТП", "kind": "utility", "floors": 1, "construction": "brick", "damage": 0.05, "rect": [34, -2, 50, 10],
+			"series": "тепловой пункт, кирпич, одна железная дверь",
+			"entrances": [{ "side": "N", "at": 42, "label": "дверь" }],
+			"role": "УБЕЖИЩЕ: крепкие стены, одна дверь, подвал с насосами — склад и верстак",
+			"loot": "трубы, металл, инструмент слесаря"
+		},
+		{
+			"id": "b9", "name": "Трансформаторная", "kind": "utility", "floors": 1, "construction": "brick", "damage": 0.1, "rect": [-4, -58, 2, -53],
+			"entrances": [{ "side": "N", "at": -1, "label": "дверь" }],
+			"role": "мелкая точка: закрыта, нужен лом",
+			"loot": "медный кабель"
+		},
+		{
+			"id": "b10", "name": "Гаражи", "kind": "garages", "floors": 1, "construction": "brick", "damage": 0.4, "rect": [42, 78, 118, 86], "boxes": 20,
+			"entrances": [{ "side": "N", "at": 80, "label": "ворота ×20" }],
+			"role": "ряд боксов, каждый закрыт отдельно — долгий обыск, шумно",
+			"loot": "инструменты, топливо, запчасти"
+		}
+	],
+
+	"areas": [
+		{ "id": "a-kg", "name": "Участок детсада", "kind": "fenced", "rect": [-36, 36, 24, 88], "gate": [-36, 42], "fence": "po2", "note": "забор по периметру (ПО-2), калитка с запада — к проезду, а не в заросший сквер" },
+		{ "id": "a-park1", "name": "Парковка универсама", "kind": "parking", "rect": [10, -90, 52, -81] },
+		{ "id": "a-yard", "name": "Хоздвор универсама", "kind": "fenced", "rect": [52, -74, 64, -56], "gate": [64, -66], "fence": "po2" },
+		{ "id": "a-park2", "name": "Парковка у башни 1", "kind": "parking", "rect": [62, -50, 74, -30] },
+		{ "id": "a-park3", "name": "Парковка у башни 2", "kind": "parking", "rect": [62, 14, 74, 34] },
+		{ "id": "a-play", "name": "Детская площадка", "kind": "playground", "rect": [-88, -52, -62, -30],
+			"equipment": [
+				{ "item": "ring_climber", "at": [-6, -6], "rot": 0 },
+				{ "item": "arch_ladder", "at": [5.5, -6.5], "rot": 8 },
+				{ "item": "carousel", "at": [6, 3.5], "scale": 2 },
+				{ "item": "swing", "at": [-7.5, 4], "rot": 90 },
+				{ "item": "swing", "at": [-7.5, 7], "rot": 90 },
+				{ "item": "sandbox", "at": [0.5, 5.5], "rot": 12 },
+				{ "item": "gribok", "at": [0.5, 5.5], "rot": 12 },
+				{ "item": "seesaw", "at": [0, -7], "rot": 0 }
+			], "note": "equipment: at — от центра площадки, м; rot — градусы по часовой на карте; scale — во сколько раз крупнее модели" },
+		{ "id": "a-box", "name": "Хоккейная коробка", "kind": "sport", "rect": [-36, -52, -6, -37] },
+		{ "id": "a-sq", "name": "Сквер", "kind": "green", "poly": [[-38, -24], [30, -26], [30, 26], [-38, 30]], "note": "бывший сквер, зарос — логово растений" },
+		{ "id": "a-bin1", "name": "Мусорка", "kind": "bins", "rect": [-62, -62, -56, -58] },
+		{ "id": "a-bin2", "name": "Мусорка", "kind": "bins", "rect": [66, -20, 72, -15] },
+		{ "id": "a-bin3", "name": "Мусорка", "kind": "bins", "rect": [-92, 40, -86, 45] }
+	],
+
+	"objects": [
+		{ "kind": "stop", "name": "Остановка", "at": [-56, -95], "size": [8, 2], "note": "у остановки брошенный автобус" },
+		{ "kind": "bus", "at": [-56, -100], "size": [12, 2.6] },
+		{ "kind": "car", "at": [-110, -108], "rot": 5 },
+		{ "kind": "car", "at": [30, -101], "rot": -8 },
+		{ "kind": "car", "at": [96, -106], "rot": 20 },
+		{ "kind": "car", "at": [22, -86], "rot": 0 },
+		{ "kind": "car", "at": [40, -85], "rot": 90 },
+		{ "kind": "car", "at": [68, -44], "rot": 90 },
+		{ "kind": "car", "at": [68, 20], "rot": 90 },
+		{ "kind": "car", "at": [134, 40], "rot": 3 },
+		{ "kind": "crossing", "at": [-30, -104], "size": [4, 14] },
+		{ "kind": "bench", "at": [-90, -68.5] },
+		{ "kind": "bench", "at": [-47.5, -68.5] },
+		{ "kind": "bench", "at": [-93, 0] },
+		{ "kind": "bench", "at": [98, -24] },
+		{ "kind": "bench", "at": [98, 40] },
+		{ "kind": "table", "at": [-75, -26], "note": "доминошный стол" },
+		{ "kind": "kiosk", "at": [-80, -94], "size": [4, 3], "note": "ларёк у остановки" }
+	],
+
+	"trash": {
+		"note": "Кучи мусора раскладываются правилами (web/src/district.js → trashPiles), детерминированно по seed — одинаково на карте и в игре. Каждая куча — габаритная коробка [x, z, w, d, h, поворот]. Мусор там, где его копят люди и ветер. У убежища и в лагере слепых чисто — там живут и убирают. На оси проезда, тропы или тротуара кучи не лежат: проход остаётся.",
+		"seed": 21,
+		"sizesNote": "строительный мусор: низкие широкие кучи, почти квадратные в плане; ratio — глубина как доля ширины",
+		"sizes": {
+			"small": { "w": [1.5, 3.0], "ratio": [0.75, 1.0], "h": [0.3, 0.6] },
+			"medium": { "w": [3.0, 5.0], "ratio": [0.75, 1.0], "h": [0.5, 0.9] },
+			"large": { "w": [5.0, 8.0], "ratio": [0.75, 1.0], "h": [0.7, 1.3] }
+		},
+		"mix": { "small": 0.6, "medium": 0.3, "large": 0.1 },
+		"materialsNote": "из чего куча; у каждой кучи 2–3 материала с долями (сумма 1), ведущий — по весам правила. Параметры считаются от координат кучи, раскладку они не двигают",
+		"materials": {
+			"concrete": "бетонный лом", "brick": "кирпичный бой", "rebar": "арматура, металлолом",
+			"wood": "доски, опалубка, поддоны", "asphalt": "куски асфальта", "tile": "плитка, керамика",
+			"plastic": "плёнка, пластик, мешки", "soil": "грунт, песок"
+		},
+		"materialMix": { "concrete": 0.3, "brick": 0.25, "soil": 0.2, "wood": 0.1, "rebar": 0.1, "plastic": 0.05 },
+		"rules": [
+			{ "near": "facades", "buildings": ["slab", "tower", "shop", "public", "utility", "garages"],
+				"density": 0.035, "piles": [3, 7], "size": "mix", "overlap": 0.55,
+				"note": "обрушение фасадов: скопления вдоль стен. Скоплений на дом = периметр × density × (0.5 + высота/30); центр скопления — у стены, на расстоянии 0.5…(2 + 0.2·высота) м; кучи вокруг центра в радиусе 1.5 + 0.08·высота м. Высокие дома — больше обломков и дальше от стены",
+				"materials": { "concrete": 0.4, "brick": 0.15, "rebar": 0.2, "tile": 0.1, "wood": 0.1, "plastic": 0.05 } },
+			{ "near": "entrances", "buildings": ["slab", "tower"], "count": [1, 3], "dist": [2.5, 7], "spread": 5, "size": "small", "note": "ремонт в квартирах, вынесено к подъезду",
+				"materials": { "brick": 0.25, "tile": 0.25, "wood": 0.2, "plastic": 0.2, "concrete": 0.1 } },
+			{ "near": "areas", "areaKind": "bins", "count": [3, 5], "spread": 5, "size": "medium", "note": "горы у контейнеров",
+				"materials": { "plastic": 0.5, "wood": 0.2, "concrete": 0.1, "brick": 0.1, "soil": 0.1 } },
+			{ "area": "a-yard", "count": 7, "size": "mix", "note": "хоздвор универсама: поддоны, тара",
+				"materials": { "wood": 0.45, "plastic": 0.35, "rebar": 0.2 } },
+			{ "rect": [42, 86.5, 124, 92.5], "count": 9, "size": "medium", "note": "за гаражами: железо, хлам",
+				"materials": { "rebar": 0.4, "wood": 0.2, "concrete": 0.2, "plastic": 0.2 } },
+			{ "area": "a-sq", "count": 12, "size": "mix", "note": "стихийная свалка в сквере — в опасной зоне",
+				"materials": { "soil": 0.3, "concrete": 0.3, "brick": 0.25, "rebar": 0.15 } },
+			{ "rect": [-88, -90.5, -40, -86], "count": 5, "size": "small", "note": "у остановки и ларька",
+				"materials": { "plastic": 0.5, "soil": 0.3, "concrete": 0.2 } },
+			{ "rect": [-128, -92, 127, 93], "count": 10, "size": "mix", "note": "редкая россыпь по двору — основное лежит у домов" },
+			{ "road": "prospekt", "count": 7, "size": "large", "note": "завалы на проезжей части проспекта",
+				"materials": { "asphalt": 0.5, "concrete": 0.3, "rebar": 0.2 } },
+			{ "road": "south", "count": 3, "size": "medium", "note": "на Южной",
+				"materials": { "asphalt": 0.5, "concrete": 0.3, "rebar": 0.2 } }
+		],
+		"doorClear": 2.5,
+		"doorClearNote": "радиус свободного места перед каждым входом, м — в дом должно быть можно войти",
+		"exclude": [
+			{ "building": "b8", "radius": 15, "note": "у убежища чисто" },
+			{ "area": "a-kg", "note": "лагерь слепых" },
+			{ "area": "a-box" },
+			{ "area": "a-play" }
+		]
+	},
+
+	"trees": {
+		"autumn": {
+			"note": "начало осени на кронах: amount — доля пожелтевших веток у самого «осеннего» дерева породы (у остальных меньше, по хешу дерева); colors — палитра веток (sRGB), тона сверены с опадом на земле; порода без записи не желтеет",
+			"maple":  { "amount": 0.75, "colors": ["#f0b21e", "#e8661a", "#c42a14"] },
+			"rowan":  { "amount": 0.7,  "colors": ["#e8801e", "#d2461a", "#a8201a"] },
+			"birch":  { "amount": 0.6,  "colors": ["#f2d03a", "#e6b420", "#d9982a"] },
+			"elm":    { "amount": 0.5,  "colors": ["#e6c03a", "#cfa22a", "#b8862e"] },
+			"linden": { "amount": 0.45, "colors": ["#e0b830", "#c89a2e", "#a8782a"] },
+			"poplar": { "amount": 0.45, "colors": ["#d8b43a", "#b88a30", "#8a6428"] },
+			"oak":    { "amount": 0.3,  "colors": ["#b8862e", "#946428", "#7a5022"] }
+		},
+		"note": "ряды и массивы; раскладка детерминированная по seed — одинаковая на карте и в игре. У каждого дерева параметры: порода, возраст (по радиусу кроны), состояние, высота, наклон — по ним игра выбирает вариант из библиотеки (task-0041). Параметры считаются от координат дерева, раскладку они не двигают",
+		"species": {
+			"linden": { "name": "липа", "hPerR": [2.6, 3.2] },
+			"poplar": { "name": "тополь", "hPerR": [3.6, 4.6] },
+			"birch": { "name": "берёза", "hPerR": [3.0, 3.8] },
+			"maple": { "name": "клён ясенелистный, самосев", "hPerR": [1.8, 2.4] },
+			"rowan": { "name": "рябина", "hPerR": [2.2, 2.8] },
+			"lilac": { "name": "сирень, куст", "hPerR": [0.9, 1.3] }
+		},
+		"ages": [
+			{ "id": "young", "name": "молодое", "rBelow": 2.3 },
+			{ "id": "mature", "name": "взрослое", "rBelow": 3.0 },
+			{ "id": "old", "name": "старое", "rBelow": 99 }
+		],
+		"health": { "healthy": 0.75, "sparse": 0.17, "dead": 0.08 },
+		"healthNames": { "healthy": "живое", "sparse": "редкая крона", "dead": "сухое" },
+		"leanMax": 6,
+		"mix": { "birch": 0.35, "linden": 0.25, "rowan": 0.2, "maple": 0.2 },
+		"rows": [
+			{ "from": [-126, -89], "to": [125, -89], "step": 9, "note": "вдоль проспекта", "mix": { "linden": 1 } },
+			{ "from": [-126, 90], "to": [38, 90], "step": 10, "note": "вдоль Южной", "mix": { "poplar": 1 } },
+			{ "from": [-125, -84], "to": [-125, 86], "step": 10, "note": "вдоль переулка", "mix": { "poplar": 1 } },
+			{ "from": [124, -84], "to": [124, 66], "step": 11, "note": "вдоль Восточной", "mix": { "linden": 1 } },
+			{ "from": [-38, 34], "to": [22, 34], "step": 6, "note": "живая изгородь детсада", "mix": { "lilac": 1 } }
+		],
+		"clusters": [
+			{ "area": "a-sq", "count": 70, "seed": 11, "note": "густо: сквер зарос самосевом",
+				"mix": { "maple": 0.5, "birch": 0.3, "poplar": 0.2 },
+				"health": { "healthy": 0.6, "sparse": 0.25, "dead": 0.15 }, "leanMax": 12 },
+			{ "rect": [-94, -26, -64, 50], "count": 14, "seed": 3 },
+			{ "rect": [-60, 40, -48, 66], "count": 5, "seed": 5 },
+			{ "rect": [84, -24, 116, 8], "count": 10, "seed": 7 },
+			{ "rect": [84, 40, 118, 70], "count": 9, "seed": 9, "note": "у зарослей за башней 2",
+				"health": { "healthy": 0.6, "sparse": 0.25, "dead": 0.15 }, "leanMax": 10 },
+			{ "rect": [-30, 72, 20, 86], "count": 8, "seed": 13, "mix": { "lilac": 0.4, "rowan": 0.3, "birch": 0.3 } },
+			{ "rect": [-120, 20, -104, 64], "count": 6, "seed": 17 }
+		]
+	},
+
+	"undergrowth": {
+		"note": "подлесок — кусты и бурьян. Раскладка правилами (web/src/district.js → undergrowthPositions), формат экземпляра как у деревьев [x, z, r, {species, age, health, h, lean, leanDir, seed}] — модели ставит тот же trees.js из game/assets/models/undergrowth/. age — размер: young/mature/old — нижняя/средняя/верхняя треть диапазона",
+		"seed": 31,
+		"species": {
+			"burdock": { "name": "лопух", "r": [0.4, 0.8], "h": [0.6, 1.2] },
+			"nettle": { "name": "крапива", "r": [0.4, 0.9], "h": [0.6, 1.4] },
+			"sedge": { "name": "бурьян, осока", "r": [0.3, 0.6], "h": [0.5, 1.0] },
+			"elder": { "name": "бузина", "r": [0.9, 1.6], "h": [1.5, 3.0] },
+			"rosehip": { "name": "шиповник", "r": [0.7, 1.3], "h": [1.0, 2.0] },
+			"sapling": { "name": "подрост клёна", "r": [0.4, 0.9], "h": [1.0, 2.5] }
+		},
+		"deadShare": { "burdock": 0.35, "nettle": 0.35, "sedge": 0.45, "elder": 0.1, "rosehip": 0.1, "sapling": 0.15 },
+		"rules": [
+			{ "near": "walls", "per10m": 2.0, "dist": [0.3, 1.8], "cluster": [2, 5], "spread": 1.6,
+				"mix": { "nettle": 0.4, "burdock": 0.3, "sedge": 0.2, "elder": 0.1 }, "note": "вдоль стен — бурьян из отмостки" },
+			{ "near": "fences", "per10m": 2.4, "dist": [0.2, 1.2], "cluster": [1, 3], "spread": 1.2,
+				"mix": { "rosehip": 0.3, "elder": 0.3, "nettle": 0.2, "sedge": 0.2 }, "note": "вдоль заборов — кусты" },
+			{ "near": "piles", "chance": 0.9, "cluster": [2, 5], "spread": 1.2,
+				"mix": { "burdock": 0.45, "nettle": 0.35, "sedge": 0.2 }, "note": "вокруг куч мусора — лопух и крапива" },
+			{ "near": "trees", "chance": 0.5, "cluster": [1, 4], "spread": 2.5,
+				"mix": { "sapling": 0.7, "sedge": 0.3 }, "note": "у стволов — подрост" },
+			{ "area": "a-sq", "count": 170, "mix": { "nettle": 0.3, "burdock": 0.2, "sedge": 0.2, "sapling": 0.2, "elder": 0.1 }, "note": "сквер зарос" },
+			{ "rect": [-128, -92, 127, 93], "count": 150, "mix": { "sedge": 0.5, "burdock": 0.3, "nettle": 0.2 }, "note": "редкая россыпь по двору" }
+		],
+		"exclude": [
+			{ "building": "b8", "radius": 10, "note": "у убежища выкошено" }
+		]
+	},
+
+	"ground": {
+		"about": "Пол квартала вне твёрдых покрытий. Слои — тайловые наборы textures/<pack> (albedo, normal, orm, height + tile.txt); вес каждого слоя считается правилами от данных квартала, шейдер смешивает по высоте. Почва — всё, что не заняли остальные. Нет набора — заглушка из почвы с оттенком (stand_in), в консоли помечено.",
+		"layers": {
+			"soil":   { "pack": "ground-soil", "rest": true },
+			"packed": { "pack": "ground-trodden", "antitile": "hex", "select": ["wet", 0, 0.55], "stand_in": { "tint": [1.25, 1.15, 1.02], "sat": 0.7, "height": 0.4 } },
+			"packed-wet": { "pack": "ground-trodden-wet", "antitile": "hex", "from": "packed", "select": ["wet", 0.5, 1], "note": "сырая утоптанная: тот же канал, что у packed, делят по сырости гранжа" },
+			"rubble": { "pack": "ground-debris", "stand_in": { "tint": [1.45, 1.05, 0.92], "sat": 0.8, "height": 1.3 } },
+			"gravel": { "pack": "ground-gravel", "stand_in": { "tint": [1.6, 1.6, 1.6], "sat": 0.1, "height": 1.2 } },
+			"sand":   { "pack": "ground-sand", "antitile": "hex",   "stand_in": { "tint": [2.3, 1.95, 1.45], "sat": 0.6, "height": 0.3 } },
+			"turf-fresh": { "pack": "turf-fresh", "grass": 1, "select": ["r", 0, 0.78], "note": "дёрн: вес от карты травы; варианты делят газон пятнами шума (канал, от, до)" },
+			"turf-dry":   { "pack": "turf-dry",   "grass": 0.8, "select": ["r", 0.72, 1] },
+			"turf-moss":  { "pack": "turf-moss",  "grass": 0.9, "select": ["g", 0.72, 1] }
+		},
+		"overlays": [
+			{ "id": "grass-green", "pack": "grass-overlay-green", "under": "turf", "grass": 0.9, "select": ["r", 0, 0.78], "note": "накладки под газоном: плотность от карты травы" },
+			{ "id": "grass-dry",   "pack": "grass-overlay-dry",   "under": "turf", "grass": 0.9, "select": ["r", 0.72, 1] },
+			{ "id": "grass-moss",  "pack": "grass-overlay-moss",  "under": "turf", "grass": 0.8, "select": ["g", 0.72, 1] },
+			{ "id": "pebbles", "pack": "pebbles-overlay", "ambient": 0.03, "edge": true, "note": "камешки: сшивают стыки — полосой по кромкам, ложатся и на дорожку" },
+			{ "id": "chunks",  "pack": "chunks-overlay", "note": "куски кирпича и бетона: расползаются от куч и фасадов" },
+			{ "id": "litter",  "pack": "litter-overlay", "ambient": 0.06, "note": "опад: 0.15 — отдельные листья, 1 — ковёр; ambient — редкие листья пятнами по всему кварталу" }
+		],
+		"rules": [
+			{ "layer": "packed", "near": "paths", "dist": 1.2, "weight": 0.8, "note": "край дорожки вытоптан" },
+			{ "layer": "packed", "near": "doors", "dist": 5, "weight": 1 },
+			{ "layer": "packed", "near": "objects:bench,table,kiosk,stop", "dist": 2.5, "weight": 0.9 },
+			{ "layer": "packed", "near": "areas:playground,sport", "dist": 2, "weight": 0.8 },
+			{ "layer": "rubble", "near": "piles", "dist": 2, "weight": 1, "note": "осыпь вокруг кучи" },
+			{ "layer": "rubble", "near": "facades", "dist": 0.8, "perDamage": 7, "weight": 0.9, "note": "под фасадом, шире у разрушенных" },
+			{ "overlay": "litter", "near": "trees", "dist": 1.6, "crown": true, "weight": 0.75, "note": "dist в радиусах кроны" },
+			{ "overlay": "litter", "near": "fences", "dist": 1.2, "weight": 0.7, "note": "ветер сносит к заборам" },
+			{ "layer": "gravel", "near": "areas:parking", "dist": 2, "weight": 0.9 },
+			{ "layer": "gravel", "near": "areas:bins", "dist": 1.5, "weight": 1 },
+			{ "layer": "gravel", "near": "buildings:utility,garages", "dist": 3, "weight": 0.9 },
+			{ "layer": "sand", "near": "areas:playground", "dist": 0, "weight": 1, "note": "внутри площадки" },
+			{ "overlay": "pebbles", "near": "paths", "edge": true, "dist": 0.7, "weight": 0.45, "note": "камешки по кромке дорожек — в обе стороны" },
+			{ "overlay": "pebbles", "near": "areas:parking,bins", "edge": true, "dist": 1.2, "weight": 0.6 },
+			{ "overlay": "pebbles", "near": "piles", "dist": 3, "weight": 0.5 },
+			{ "overlay": "chunks", "near": "piles", "dist": 2.5, "weight": 0.7 },
+			{ "overlay": "chunks", "near": "facades", "dist": 0.5, "perDamage": 5, "weight": 0.6 }
+		],
+		"grass": { "packed": 0.85, "rubble": 0.8, "gravel": 0.75, "sand": 1, "litter": 0.4, "chunks": 0.5, "pebbles": 0.15, "note": "насколько слой вытесняет траву" }
+	},
+
+	"wind": { "dirDeg": 60, "strength": 0.6, "flutter": 0.5, "note": "направление — откуда дует, в градусах от +X к +Z; сила 0 — штиль, 1 — сильный ветер (#wind=0.3); flutter — мелкая дрожь листьев, 1 — как было сначала (#flutter=0.3)" },
+
+	"gameplay": {
+		"entry": { "at": [-150, -99], "note": "игрок приходит по проспекту с запада" },
+		"shelter": "b8",
+		"zones": [
+			{ "kind": "danger", "area": "a-sq", "note": "растения-хищники; тропы через сквер — короткий, но опасный путь" },
+			{ "kind": "danger", "rect": [80, 60, 120, 76], "note": "за башней 2 заросль тянется к гаражам" },
+			{ "kind": "contested", "building": "b2", "note": "надсмотрщики днём у универсама" },
+			{ "kind": "camp", "area": "a-kg", "note": "слепые; безопасно, если не шуметь" }
+		],
+		"order": ["b5", "b6", "b1", "b3", "b10", "b2", "b4"],
+		"orderNote": "примерный порядок вылазок от простого к трудному"
+	}
+}

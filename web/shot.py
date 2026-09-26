@@ -86,6 +86,10 @@ def main() -> int:
     ap.add_argument("--debug", default="0", choices=["0", "1", "2"],
                     help="0 покрытие, 1 нормаль цветом, 2 поле высот")
     ap.add_argument("--no-bump", action="store_true")
+    ap.add_argument("--level", default="street", choices=["street", "district"],
+                    help="street — стенд покрытий, district — квартал коробками")
+    ap.add_argument("--extra", default="",
+                    help="дописать в хеш страницы, например follow=1&dist=12")
     args = ap.parse_args()
 
     w, h = (int(x) for x in args.size.lower().split("x"))
@@ -95,8 +99,11 @@ def main() -> int:
 
     # Страница читает начальное состояние из хеша — так харнесс не зависит от
     # эмуляции нажатий клавиш, которой в headless просто нет.
-    frag = "#view=%s&debug=%s%s" % (args.view, args.debug,
-                                    "&bump=0" if args.no_bump else "")
+    frag = "#view=%s&debug=%s%s%s" % (args.view, args.debug,
+                                      "&bump=0" if args.no_bump else "",
+                                      "&level=district" if args.level == "district" else "")
+    if args.extra:
+        frag += "&" + args.extra
     url = "http://127.0.0.1:%d/web/%s" % (args.port, frag)
 
     srv = serve(args.port)

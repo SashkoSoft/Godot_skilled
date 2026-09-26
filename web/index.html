@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Улица — веб</title>
 <style>
 :root {
@@ -16,7 +16,7 @@
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; background: var(--ground); }
-#view { display: block; width: 100vw; height: 100vh; cursor: grab; }
+#view { display: block; width: 100vw; height: 100vh; cursor: grab; touch-action: none; }
 #view:active { cursor: grabbing; }
 
 #hud {
@@ -38,6 +38,48 @@ html, body { height: 100%; margin: 0; background: var(--ground); }
 #status.bad { color: var(--warn); }
 #hud hr { border: none; border-top: 1px solid #2e3338; margin: 7px 0; }
 #hud kbd { color: var(--ink); }
+
+/* слои: включить/выключить деревья, траву, кусты, дома — и для замеров «с / без» */
+#layers {
+	position: fixed;
+	right: calc(10px + env(safe-area-inset-right, 0px));
+	top: calc(10px + env(safe-area-inset-top, 0px));
+	display: flex; flex-direction: column; gap: 6px;
+}
+#layers button {
+	font: 500 12.5px/1 var(--mono);
+	color: var(--dim);
+	background: rgba(12, 14, 16, 0.78);
+	border: 1px solid #2e3338; border-radius: 8px;
+	padding: 8px 12px; min-width: 96px; text-align: left;
+	-webkit-tap-highlight-color: transparent;
+}
+#layers button[aria-pressed="true"] { color: var(--ink); border-color: var(--accent); }
+#layers button[aria-pressed="true"]::before { content: "● "; color: var(--accent); }
+#layers button[aria-pressed="false"]::before { content: "○ "; }
+
+/* кнопки камеры — для пальцев; на компьютере те же действия на клавишах */
+#pad {
+	position: fixed;
+	left: 50%; transform: translateX(-50%);
+	bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+	display: none; gap: 8px;
+}
+#pad button {
+	font: 500 15px/1 var(--mono);
+	color: var(--ink);
+	background: rgba(12, 14, 16, 0.78);
+	border: 1px solid #2e3338; border-radius: 10px;
+	min-width: 52px; height: 48px; padding: 0 14px;
+	-webkit-tap-highlight-color: transparent;
+}
+#pad button:active { background: rgba(216, 144, 60, 0.35); }
+#hud { max-width: calc(100vw - 150px); box-sizing: border-box; overflow-wrap: anywhere; }   /* справа — кнопки слоёв */
+@media (pointer: coarse), (max-width: 700px) {
+	#pad { display: flex; }
+	#hud { font-size: 10.5px; padding: 6px 9px; top: calc(8px + env(safe-area-inset-top, 0px)); left: 8px; }
+	#hud .keys { display: none; }
+}
 </style>
 </head>
 <body>
@@ -45,11 +87,32 @@ html, body { height: 100%; margin: 0; background: var(--ground); }
 
 <div id="hud">
 	<b id="fps">—</b> к/с · рендер <b id="res">—</b> · камера <b id="pos">—</b><br>
-	<span id="status">загрузка…</span>
+	<span id="status">загрузка…</span><br>
+	<span id="perf"></span>
+	<div id="perf-table" hidden></div>
+	<div class="keys">
 	<hr>
 	<kbd>ЛКМ</kbd> обзор · <kbd>WASD</kbd> ходить · <kbd>Q</kbd>/<kbd>E</kbd> вверх-вниз<br>
-	<kbd>Shift</kbd> быстро · колесо — шаг · <kbd>1</kbd>…<kbd>4</kbd> ракурсы<br>
+	<kbd>Shift</kbd> ×10 · колесо — шаг · <kbd>1</kbd>…<kbd>4</kbd> ракурсы<br>
+	<kbd>F</kbd> за роботом · <kbd>R</kbd> следующий · <kbd>G</kbd> игровые зоны · <kbd>T</kbd> деревья<br>
+	<kbd>P</kbd> цена кадра по слоям · <code>#off=grass,bushes,trees,houses,robots,trash,shadows</code><br>
 	<kbd>N</kbd> отладочный вывод · <kbd>B</kbd> микрорельеф
+	</div>
+</div>
+
+<div id="layers" hidden>
+	<button type="button" data-layer="trees" aria-pressed="false">деревья</button>
+	<button type="button" data-layer="grass" aria-pressed="true">трава</button>
+	<button type="button" data-layer="bushes" aria-pressed="true">кусты</button>
+	<button type="button" data-layer="houses" aria-pressed="false">дома</button>
+	<button type="button" data-layer="robots" aria-pressed="true">роботы</button>
+</div>
+
+<div id="pad">
+	<button id="btn-prev" type="button" aria-label="предыдущий робот">◀</button>
+	<button id="btn-follow" type="button">камера</button>
+	<button id="btn-next" type="button" aria-label="следующий робот">▶</button>
+	<button id="btn-all" type="button" aria-label="весь квартал">обзор</button>
 </div>
 
 <script type="importmap">

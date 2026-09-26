@@ -9,6 +9,10 @@
 
     python web/serve.py            # http://127.0.0.1:8080/web/
     python web/serve.py 9000       # другой порт
+    python web/serve.py --lan      # видно из сети (телефон по Wi-Fi/Tailscale)
+
+--lan открывает весь репозиторий на чтение каждому в той же сети — дома это
+нормально, в чужом Wi-Fi не включать.
 
 Кэш выключен: правка шейдера должна быть видна по F5, а не после чистки кэша.
 """
@@ -21,7 +25,20 @@ import sys
 import webbrowser
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
+LAN = "--lan" in sys.argv
+_args = [a for a in sys.argv[1:] if a != "--lan"]
+PORT = int(_args[0]) if _args else 8080
+
+
+def lan_addresses() -> list:
+    """IPv4 этой машины, кроме петли — по ним заходят с телефона."""
+    import socket
+    out = []
+    for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+        ip = info[4][0]
+        if not ip.startswith(("127.", "169.254.")) and ip not in out:
+            out.append(ip)
+    return out
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -53,10 +70,13 @@ def main() -> int:
     # часть соединений просто отбивает. Симптом обманчивый — каждый раз
     # падают РАЗНЫЕ файлы, и это выглядит как битые ассеты, а не как сервер.
     socketserver.ThreadingTCPServer.allow_reuse_address = True
-    with socketserver.ThreadingTCPServer(("127.0.0.1", PORT), handler) as srv:
+    with socketserver.ThreadingTCPServer(("0.0.0.0" if LAN else "127.0.0.1", PORT), handler) as srv:
         url = "http://127.0.0.1:%d/web/" % PORT
         print("корень:  %s" % ROOT)
         print("страница: %s" % url)
+        if LAN:
+            for ip in lan_addresses():
+                print("из сети:  http://%s:%d/web/" % (ip, PORT))
         print("Ctrl+C — остановить")
         try:
             webbrowser.open(url)
