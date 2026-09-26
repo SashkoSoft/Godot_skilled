@@ -9,7 +9,7 @@ import * as THREE from "three";
 export const skyUniforms = {
 	uSunDir: { value: new THREE.Vector3(0, 1, 0) },
 	uZenith: { value: new THREE.Color(0x4a76a8) },
-	uHorizon: { value: new THREE.Color(0xaeb0aa) },
+	uHorizon: { value: new THREE.Color(0x9fa9b0) },
 	uSunCol: { value: new THREE.Color(0xffe1b8) },
 	uCloud: { value: 0.55 },          // облачность 0…1 (#clouds=)
 	uTime: { value: 0 },
@@ -43,7 +43,7 @@ void main() {
 	vec3 d = normalize(vDir);
 	float up = max(d.y, 0.0);
 	// градиент: у горизонта дымка, выше синева
-	vec3 col = mix(uHorizon, uZenith, pow(smoothstep(0.0, 0.75, up), 0.7));
+	vec3 col = mix(uHorizon, uZenith, pow(smoothstep(0.0, 0.45, up), 0.6));
 	// солнце: ореол и диск
 	float sd = max(dot(d, normalize(uSunDir)), 0.0);
 	col += uSunCol * (pow(sd, 8.0) * 0.25 + pow(sd, 64.0) * 0.4);
