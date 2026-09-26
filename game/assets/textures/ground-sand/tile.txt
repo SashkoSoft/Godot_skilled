@@ -1,0 +1,6 @@
+tile_m=2.00
+height_cm=1.52
+albedo_mean=#c0a176
+nscale=2.000
+normal_blue_mean=0.956
+opis=pesok: ploshchadka, pesochnica

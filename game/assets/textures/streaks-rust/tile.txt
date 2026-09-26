@@ -1,0 +1,7 @@
+version=1
+tile_u_m=1.00
+band_v_m=0.80
+px=1024x819
+tile_u=1m, lenta 0.8 m, V=1 verh (istochniki v verhnih 2-12 sm)
+mask=R plotnost; G nomer hvosta (porog G > 1-amount); B yadro u istochnika; A dlina-zatuhanie 1 u istochnika -> 0 na konce (porog A > 1-length ukorachivaet)
+opis=ryzhie hvosty ot tochki (armatura, krepezh), 9 hvostov

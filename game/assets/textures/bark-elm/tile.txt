@@ -1,0 +1,8 @@
+tile_m=0.50
+height_cm=1.76
+albedo_mean=#5a4c40
+cd=#5A4C40
+nscale=1.000
+normal_blue_mean=0.823
+uv=U po okruzhnosti (celoe chislo povtorov), V vdol vetvi; tayl po obeim osyam
+opis=vyaz: glubokaya perepletennaya borozda, probkovye grebni

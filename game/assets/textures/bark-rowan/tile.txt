@@ -1,0 +1,8 @@
+tile_m=0.50
+height_cm=0.28
+albedo_mean=#6a5e52
+cd=#6A5E52
+nscale=1.000
+normal_blue_mean=0.983
+uv=U po okruzhnosti (celoe chislo povtorov), V vdol vetvi; tayl po obeim osyam
+opis=ryabina: gladkaya seraya, poperechnye chechevichki

@@ -1,0 +1,6 @@
+tile_m=2.00
+height_cm=0.32
+albedo_mean=#766a5c
+nscale=2.000
+normal_blue_mean=0.994
+opis=utoptannaya zemlya, suhaya pylnaya

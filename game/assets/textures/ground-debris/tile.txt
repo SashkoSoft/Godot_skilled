@@ -1,0 +1,6 @@
+tile_m=3.00
+height_cm=3.64
+albedo_mean=#877e77
+nscale=2.000
+normal_blue_mean=0.921
+opis=stroitelnyy boy na zemle

@@ -1,0 +1,5 @@
+tile_m=3.00
+height_cm=4.00
+nscale=2.000
+mask=R poryadok v stopke (porog R > 1-density), G nomer predmeta, B svetoten (0.5 neytral), A vysota 0..1 ot height_cm
+opis=kuski: kirpich, beton, shtukaturka, steklo 3-12 sm, lezhat ploско

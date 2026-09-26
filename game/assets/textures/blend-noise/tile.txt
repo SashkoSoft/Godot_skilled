@@ -1,0 +1,1 @@
+blend-noise tile_m 32.00 RGBA raw: R krupnye pyatna ~16m, G ostrovki ~4m, B zerno ~0.5m, A rvanaya kromka

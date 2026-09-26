@@ -1,0 +1,8 @@
+tile_m=0.50
+height_cm=1.09
+albedo_mean=#5e5248
+cd=#5E5248
+nscale=1.000
+normal_blue_mean=0.885
+uv=U po okruzhnosti (celoe chislo povtorov), V vdol vetvi; tayl po obeim osyam
+opis=lipa: melkie prodolnye borozdy, serovato-korichnevaya
