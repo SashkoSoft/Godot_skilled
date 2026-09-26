@@ -1,13 +1,54 @@
 import * as THREE from "three";
 import { rectsOf, streetRect, areaById, treePositions, trashPiles, accessPaths } from "./district.js";
 import { houseTiles, boxify } from "./facades.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+
+// Статичные коробки блок-аута (дороги, тротуары, площадки, заборы…) — сотни
+// отрисовок. Сливаются в один меш на материал; здания (свои группы — их прячет
+// кнопка «дома»), экземпляры и всё с userData — не трогаются.
+function mergeStatic(g) {
+	const byMat = new Map(), gone = [];
+	for (const o of g.children) {
+		if (!o.isMesh || o.isInstancedMesh || Object.keys(o.userData).length) continue;
+		o.updateMatrix();
+		const geo = o.geometry.clone().applyMatrix4(o.matrix);
+		for (const k of Object.keys(geo.attributes)) if (!["position", "normal", "uv"].includes(k)) geo.deleteAttribute(k);
+		const key = o.material.uuid + (o.castShadow ? "s" : "");
+		if (!byMat.has(key)) byMat.set(key, { mat: o.material, cast: o.castShadow, geos: [] });
+		byMat.get(key).geos.push(geo.index ? geo.toNonIndexed() : geo);
+		gone.push(o);
+	}
+	for (const o of gone) g.remove(o);
+	for (const { mat, cast, geos } of byMat.values()) {
+		const m = new THREE.Mesh(mergeGeometries(geos, false), mat);
+		m.castShadow = cast; m.receiveShadow = true;
+		g.add(m);
+	}
+	return { before: gone.length, after: byMat.size };
+}
 
 // Квартал габаритными коробками (блок-аут) по game/district.json. Каждая вещь —
 // её bounding box в метрах: так проверяются масштаб, расстояния и то, что
 // откуда видно, до того как заказывать хоть одну модель. Цвет — по роли.
 
 const FLOOR_H = 3.0;     // как в building.gd
-const KERB_H = 0.14;     // как в street.js
+const KERB_H = 0.14;
+// Скругление углов тротуара на перекрёстках — радиус по лицу бордюра, как у дугового
+// камня БР R3 (curbs.js). Тротуары укорочены на R, угол — сектор круга, асфальт
+// заворачивает под ним.
+export const CORNER_R = 3.0;
+/** Углы перекрёстков: центр скругления C и знаки квадранта (sx, sz). */
+export function streetCorners(d) {
+	const out = [];
+	for (const a of d.streets) if (a.axis === "x") for (const b of d.streets) if (b.axis === "z") {
+		if (b.at < a.from || b.at > a.to || a.at < b.from || a.at > b.to) continue;
+		for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+			const px = b.at + sx * b.roadHalf, pz = a.at + sz * a.roadHalf;   // угол проезжих частей
+			out.push({ px, pz, cx: px + sx * CORNER_R, cz: pz + sz * CORNER_R, sx, sz });
+		}
+	}
+	return out;
+}     // как в street.js
 
 const COLORS = {
 	ground: 0x6f7560, green: 0x56663f, road: 0x3e4245, walk: 0x8e8f8a, drive: 0x55595a,
@@ -71,7 +112,8 @@ function buildStreets(g, d) {
 		boxRect(g, "road", road, -KERB_H - 0.3, 0.3);
 		// Тротуар режется там, где его пересекает проезжая часть поперечной улицы,
 		// иначе он лёг бы плитой поперёк перекрёстка.
-		const cuts = d.streets.filter(o => o.axis !== s.axis).map(o => [o.at - o.roadHalf, o.at + o.roadHalf]);
+		// тротуар кончается на радиус скругления раньше — угол закрывает сектор
+		const cuts = d.streets.filter(o => o.axis !== s.axis).map(o => [o.at - o.roadHalf - CORNER_R, o.at + o.roadHalf + CORNER_R]);
 		// первые 15 см от кромки занимает бортовой камень БР 100.30.15 (curbs.js) — тротуар вплотную к его тылу
 		const CURB_W = 0.15;
 		const walkW = KERB_H + s.walk - CURB_W;
@@ -90,6 +132,24 @@ function buildStreets(g, d) {
 			const r = s.axis === "x" ? [t, s.at - 0.07, t + 3, s.at + 0.07] : [s.at - 0.07, t, s.at + 0.07, t + 3];
 			boxRect(g, "mark", r, -KERB_H, 0.01);
 		}
+	}
+}
+
+// Углы: асфальт квадратом до центра скругления, поверх — сектор тротуара радиусом
+// R − толщина камня (камень дуговой, curbs.js).
+function buildCorners(g, d) {
+	for (const c of streetCorners(d)) {
+		boxRect(g, "road", [Math.min(c.px, c.cx), Math.min(c.pz, c.cz), Math.max(c.px, c.cx), Math.max(c.pz, c.cz)], -KERB_H - 0.3, 0.3);
+		// сектор: направления от C к углу — между (−sx, 0) и (0, −sz); θ в three: x = r·sinθ, z = r·cosθ
+		const t1 = Math.atan2(-c.sx, 0), t2 = Math.atan2(0, -c.sz);
+		let start = t1, len = Math.PI / 2;
+		const norm = a => ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+		if (Math.abs(norm(t1 + Math.PI / 2) - norm(t2)) > 1e-3) start = t2;
+		const geo = new THREE.CylinderGeometry(CORNER_R - 0.15, CORNER_R - 0.15, 0.3, 16, 1, false, start, len);
+		const m = new THREE.Mesh(geo, mat("walk"));
+		m.position.set(c.cx, -0.15, c.cz);
+		m.receiveShadow = true;
+		g.add(m);
 	}
 }
 
@@ -348,6 +408,7 @@ export function buildBlockout(d, { treeBoxes = true } = {}) {
 	boxRect(g, "ground", [bx0, bz0, bx1, bz1], -1.0, 1.0 - KERB_H - 0.25);
 	boxRect(g, "ground", d.interior, -0.5, 0.5 - 0.03);
 	buildStreets(g, d);
+	buildCorners(g, d);
 	buildAreas(g, d);
 	buildDriveways(g, d);
 	buildBuildings(g, d);
@@ -356,5 +417,7 @@ export function buildBlockout(d, { treeBoxes = true } = {}) {
 	const trash = buildTrash(g, d, trees);
 	const game = buildGameLayer(d);
 	g.add(game);
+	const merged = mergeStatic(g);
+	console.log(`[улица] блок-аут: ${merged.before} коробок слиты в ${merged.after} мешей`);
 	return { group: g, game, trees, piles: trash, stats: { buildings: d.buildings.length, trees: trees.length, trash: trash.length } };
 }

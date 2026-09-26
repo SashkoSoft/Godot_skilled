@@ -265,11 +265,32 @@ export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap
 			if (want < u.lodCur && dd > LOD_DIST[want] * 0.9) want = u.lodCur;   // ближе порога на 10% — только тогда вверх
 			if (want === u.lodCur) continue;
 			u.lodSets[u.lodCur].forEach(m => { m.visible = false; });
-			u.lodSets[want].forEach(m => { m.visible = true; });
+			u.lodSets[want].forEach(m => { m.visible = true; m.castShadow = want === 0; });   // тень — только у ближних
 			u.lodCur = want;
 		}
 	}
-	return { robots, V, measured: !!measured, nodes: graph.length, updateLod };
+	// Толпа: встречные расходятся вбок (до 0.7 м от оси), лоб в лоб ближе метра —
+	// изредка испуг и шаг назад. O(n²) на 50 роботах — пустяк.
+	function crowdStep() {
+		const n = robots.length;
+		for (let i = 0; i < n; i++) {
+			const a = robots[i], pa = a.object.position, ha = a.heading;
+			const fx = Math.sin(ha), fz = Math.cos(ha), rx = Math.cos(ha), rz = -Math.sin(ha);
+			let push = 0;
+			for (let j = 0; j < n; j++) {
+				if (i === j) continue;
+				const pb = robots[j].object.position, dx = pb.x - pa.x, dz = pb.z - pa.z, dd = Math.hypot(dx, dz);
+				if (dd > 2.4 || dd < 1e-3) continue;
+				const ahead = dx * fx + dz * fz, side = dx * rx + dz * rz;
+				if (ahead < -0.5) continue;                        // сзади — не наша забота
+				push -= Math.sign(side || (i < j ? 1 : -1)) * (2.4 - dd) / 2.4;
+				const facing = Math.cos(robots[j].heading - ha) < -0.6;
+				if (facing && dd < 1.0 && Math.random() < 0.004) a.startle();
+			}
+			a.setAvoid(Math.max(-0.7, Math.min(0.7, push * 0.9)));
+		}
+	}
+	return { robots, V, measured: !!measured, nodes: graph.length, updateLod, crowdStep };
 }
 
 function makeAgent(root, C, V, can, graph, rand, startNode) {
@@ -362,7 +383,9 @@ function makeAgent(root, C, V, can, graph, rand, startNode) {
 	active.time = rand() * C.walk.duration;   // разная фаза шага с первого кадра
 	let speed = V.walk;
 
+	let lat = 0, latTarget = 0, scare = false;
 	function chooseNext() {
+		if (scare && mode === "idle") { scare = false; return "back"; }
 		// Прямо из стойки в бег и из бега в стойку — если есть такие клипы; иначе через шаг.
 		if (mode === "idle") {
 			if (can.back && rand() < 0.06) return "back";
@@ -535,7 +558,9 @@ function makeAgent(root, C, V, can, graph, rand, startNode) {
 		heading += Math.sign(diff) * Math.min(Math.abs(diff), turn * dt);
 		pos.x += Math.sin(heading) * speed * dt;
 		pos.y += Math.cos(heading) * speed * dt;
-		root.position.set(pos.x, 0, pos.y);
+		// расхождение со встречными: плавный сдвиг вбок от оси дорожки (crowdStep задаёт цель)
+		lat += (latTarget - lat) * Math.min(1, dt * 2.5);
+		root.position.set(pos.x + Math.cos(heading) * lat, 0, pos.y - Math.sin(heading) * lat);
 		root.rotation.y = heading;
 	}
 	update(0);
@@ -549,6 +574,10 @@ function makeAgent(root, C, V, can, graph, rand, startNode) {
 
 	return {
 		object: root, update, offPath,
+		get heading() { return heading; }, get speed() { return speed; }, get mode() { return mode; },
+		setAvoid(v) { latTarget = v; },
+		// испуг от встречного: только стоя или на ходу, с шансом — отшатнуться и попятиться
+		startle() { if (mode === "walk" && !gesture && !trans && !pending && can.back) pending = "idle", scare = true; },
 		get state() { return fall ? "fall:" + fall.stage : gesture ? gesture.getClip().name : trans ? `${trans.from}→${trans.to}` : mode; },
 	};
 }

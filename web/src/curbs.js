@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+import { streetCorners, CORNER_R } from "./blockout.js";
 
 // Бортовой камень БР 100.30.15 (blend, game/assets/models/props/curb/) вдоль
 // кромки проезжей части — правилами от улиц district.json:
@@ -53,7 +54,8 @@ function layout(d) {
 	});
 
 	d.streets.forEach((s, si) => {
-		const cuts = d.streets.filter(o => o.axis !== s.axis).map(o => [o.at - o.roadHalf, o.at + o.roadHalf]);
+		// прямая бровка кончается там, где начинается дуга угла (R от кромки поперечной)
+		const cuts = d.streets.filter(o => o.axis !== s.axis).map(o => [o.at - o.roadHalf - CORNER_R, o.at + o.roadHalf + CORNER_R]);
 		for (const side of [-1, 1]) {
 			const face = s.at + side * s.roadHalf;
 			// тротуар в сторону side; модель −Z → туда. +X модели при этом:
@@ -89,6 +91,22 @@ function layout(d) {
 			}
 		}
 	});
+	// Углы: дуга R3 по лицу, 19.1° на камень; на 90° — 5 камней (95.5°), лишние
+	// 5.5° поровну заходят на прямые. Камень идёт по +X модели, тротуар — в −Z, то есть
+	// центр скругления слева по ходу: обход по убыванию угла φ (точка C + R(cos φ, sin φ)).
+	const STEP = 19.1 * Math.PI / 180;
+	for (const c of streetCorners(d)) {
+		const fa = Math.atan2(0, -c.sx), fb = Math.atan2(-c.sz, 0);   // направления на прямые кромки
+		const norm = a => ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+		let start = Math.abs(norm(fa - Math.PI / 2) - norm(fb)) < 1e-3 ? fa : fb;
+		start += (5 * STEP - Math.PI / 2) / 2;
+		for (let k = 0; k < 5; k++) {
+			const phi = start - k * STEP;
+			const x = c.cx + CORNER_R * Math.cos(phi), z = c.cz + CORNER_R * Math.sin(phi);
+			const tx = Math.sin(phi), tz = -Math.cos(phi);        // касательная по ходу (убывание φ)
+			out.push({ name: "curb_curve_r3", x, z, rot: Math.atan2(-tz, tx), jitter: false });
+		}
+	}
 	return out;
 }
 

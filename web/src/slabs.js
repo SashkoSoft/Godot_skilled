@@ -208,5 +208,5 @@ export function buildSlabs(d, trees = []) {
 		}
 	}
 	console.log(`[улица] плиты: ${list.length}`);
-	return { group, update, count: list.length };
+	return { group, update, count: list.length, material: mat, list };
 }

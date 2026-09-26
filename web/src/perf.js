@@ -10,7 +10,7 @@ import * as THREE from "three";
 
 // Слои, которые считаем отдельно; объект относится к ближайшему такому предку.
 const LAYERS = ["Trees", "Undergrowth", "UndergrowthBoxes", "GrassBlades", "Houses", "Robots",
-	"Trash", "Gameplay", "District", "Street", "Ground"];
+	"Trash", "Gameplay", "District", "Street", "Ground", "Curbs", "Poles", "Slabs", "Rocks", "Fences", "Playground"];
 
 function layerOf(o) {
 	for (let p = o; p; p = p.parent) if (LAYERS.includes(p.name)) return p.name;
@@ -58,6 +58,7 @@ export function applyOff(scene, renderer, list) {
 	const NAMES = {
 		grass: ["GrassBlades"], bushes: ["Undergrowth", "UndergrowthBoxes"], trees: ["Trees"],
 		houses: ["Houses"], robots: ["Robots"], trash: ["Trash"], blockout: ["District"],
+		curbs: ["Curbs"], poles: ["Poles"], slabs: ["Slabs"], rocks: ["Rocks"], fences: ["Fences"], playground: ["Playground"],
 	};
 	for (const [k, names] of Object.entries(NAMES)) {
 		if (!off.has(k)) continue;
@@ -65,4 +66,64 @@ export function applyOff(scene, renderer, list) {
 	}
 	if (off.has("shadows")) { renderer.shadowMap.enabled = false; scene.traverse(o => { if (o.material) o.material.needsUpdate = true; }); }
 	return [...off];
+}
+
+/* ── замер «со слоем / без» ──────────────────────────────────────────── */
+
+// Слои замера: имя в таблице → имена групп в сцене (особый — тени).
+export const BENCH = {
+	"трава": ["GrassBlades"], "кусты": ["Undergrowth", "UndergrowthBoxes"], "деревья": ["Trees"],
+	"роботы": ["Robots"], "дома": ["Houses"], "мусор": ["Trash"], "бордюр": ["Curbs"],
+	"опоры": ["Poles"], "плиты": ["Slabs"], "камешки": ["Rocks"], "заборы": ["Fences"],
+	"площадка": ["Playground"], "тени": null,
+};
+
+/**
+ * Цена кадра: frames раз render + gl.finish (ждём GPU, иначе меряется только
+ * отправка команд, а vsync прячет всё, что быстрее 16.7 мс). Медиана — устойчива
+ * к редким сборкам мусора.
+ */
+function frameMs(renderer, scene, camera, frames) {
+	const gl = renderer.getContext(), t = [];
+	renderer.render(scene, camera); gl.finish();   // прогрев: программы, загрузка буферов
+	for (let i = 0; i < frames; i++) {
+		const t0 = performance.now();
+		renderer.render(scene, camera);
+		gl.finish();
+		t.push(performance.now() - t0);
+	}
+	t.sort((a, b) => a - b);
+	return t[t.length >> 1];
+}
+
+/**
+ * Замер: весь кадр, затем без каждого слоя по очереди. Возвращает строки
+ * { слой, мс_без, экономия_мс }. Видимость и тени возвращаются как были.
+ */
+export async function runBench(scene, renderer, camera, { frames = 30, onStep } = {}) {
+	const groups = name => { const out = []; scene.traverse(o => { if (BENCH[name] && BENCH[name].includes(o.name)) out.push(o); }); return out; };
+	const pause = () => new Promise(r => setTimeout(r, 30));
+	const all = frameMs(renderer, scene, camera, frames);
+	const rows = [{ слой: "всё", мс: all.toFixed(2), экономия: "" }];
+	for (const name of Object.keys(BENCH)) {
+		if (onStep) onStep(name);
+		await pause();
+		let ms;
+		if (name === "тени") {
+			const was = renderer.shadowMap.enabled;
+			renderer.shadowMap.enabled = false;
+			scene.traverse(o => { if (o.material) [].concat(o.material).forEach(m => m.needsUpdate = true); });
+			ms = frameMs(renderer, scene, camera, frames);
+			renderer.shadowMap.enabled = was;
+			scene.traverse(o => { if (o.material) [].concat(o.material).forEach(m => m.needsUpdate = true); });
+		} else {
+			const gs = groups(name).filter(o => o.visible);
+			if (!gs.length) continue;   // слоя нет или он выключен кнопкой
+			gs.forEach(o => { o.visible = false; });
+			ms = frameMs(renderer, scene, camera, frames);
+			gs.forEach(o => { o.visible = true; });
+		}
+		rows.push({ слой: "без: " + name, мс: ms.toFixed(2), экономия: (all - ms).toFixed(2) });
+	}
+	return rows;
 }
