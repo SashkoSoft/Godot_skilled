@@ -658,6 +658,8 @@ function tick(now) {
 }
 
 applyView(VIEWS["Digit" + (q.get("view") || (LEVEL === "district" ? "5" : "1"))] || VIEWS.Digit1);
+// #cam=x,y,z,tx,ty,tz — ракурс точкой и целью (снимки)
+if (q.has("cam")) { const c = q.get("cam").split(",").map(Number); cam.p.set(c[0], c[1], c[2]); const dx = c[3] - c[0], dy = c[4] - c[1], dz = c[5] - c[2]; cam.yaw = Math.atan2(-dx, -dz) * 180 / Math.PI; cam.pitch = Math.atan2(dy, Math.hypot(dx, dz)) * 180 / Math.PI; }
 if (q.has("debug") && street) {
 	debugMode = parseInt(q.get("debug"), 10) || 0;
 	setSurfaceUniform(street, "debugMode", debugMode);

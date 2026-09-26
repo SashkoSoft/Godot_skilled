@@ -21,7 +21,10 @@ function hash(x, z) {
 
 /** Плиты: [{ x, z, y, sx, sz, rotY, tiltX, tiltZ, tone }] */
 export function slabLayout(d, trees = []) {
-	const S = d.slabs;
+	let S = d.slabs;
+	// #broken=0.4 — доля битых плит для проверки (по умолчанию из district.json)
+	const qb = typeof location !== "undefined" && new URLSearchParams(location.hash.slice(1)).get("broken");
+	if (qb) S = { ...S, broken: +qb };
 	if (!S) return [];
 	const lines = [];
 	if (S.on.includes("paths")) for (const p of d.paths) if (!p.trail) lines.push(p);
@@ -77,7 +80,19 @@ export function slabLayout(d, trees = []) {
 					}
 					const tone = 0.88 + 0.2 * hash(x * 9.3, z * 5.9);
 					const s = size - joint;
-					if (h3 < S.missing + S.broken) {
+					// битая плита 1×1 — целая по геометрии, трещины и выбоины из маски
+					// удара (HoudiniCOP, impact-*-1m-vN): номер маски в crack
+					if (h3 < S.missing + S.broken && size >= 1.0) {
+						out.push({ x, z, y: y - 0.004, sx: s, sz: s, rotY: rotY + Math.floor(h1 * 4) * Math.PI / 2, tiltX: tx, tiltZ: tz, tone, crack: Math.floor(h2 * 15) });
+						continue;
+					}
+					// битая плита 1×1 — целая по геометрии, трещины и выбоины из маски удара
+				// (HoudiniCOP, impact-*-1m-vN): номер маски в crack
+				if (h3 < S.missing + S.broken && size >= 1.0) {
+					out.push({ x, z, y: y - 0.004, sx: s, sz: s, rotY: rotY + Math.floor(h1 * 4) * Math.PI / 2, tiltX: tx, tiltZ: tz, tone, crack: Math.floor(h2 * 15) % 15 });
+					continue;
+				}
+				if (h3 < S.missing + S.broken) {
 						// расколота: две половинки вдоль, раздвинуты и перекошены по-разному
 						for (const side of [-1, 1]) {
 							const sh = side * (s / 4 + joint * 0.8);
@@ -134,6 +149,69 @@ function slabGeometry(sx, sz, h, bevel) {
 	return g;
 }
 
+/* ── маски удара и трава в трещинах (HoudiniCOP) ───────────────────── */
+const CRACK_SIZE = 1.0;
+const CRACK_SETS = [];
+for (const k of ["few", "web", "vor"]) for (let v = 0; v < 5; v++) CRACK_SETS.push(`${k}-1m-v${v}`);
+const emptyArr = () => { const t = new THREE.DataArrayTexture(new Uint8Array(4), 1, 1, 1); t.needsUpdate = true; return t; };
+async function loadCracks() {
+	const img = u => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = u; });
+	try {
+		const res = 512, S = res * res * 4, M = new Uint8Array(S * CRACK_SETS.length), N = new Uint8Array(S * CRACK_SETS.length);
+		const gl = document.createElement("canvas").getContext("webgl2");
+		// без премультипликации: альфа маски — «выбито», не прозрачность
+		const raw = (im, keepMax) => {
+			const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+			gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+			gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, im.width, im.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, im);
+			const fb = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+			const src = new Uint8Array(im.width * im.height * 4); gl.readPixels(0, 0, im.width, im.height, gl.RGBA, gl.UNSIGNED_BYTE, src);
+			gl.deleteFramebuffer(fb); gl.deleteTexture(t);
+			// 1k → 512: у маски максимум по блоку (тонкая трещина не пропадает), у нормали — среднее
+			const out = new Uint8Array(S), f = im.width / res;
+			for (let j = 0; j < res; j++) for (let i = 0; i < res; i++) for (let c = 0; c < 4; c++) {
+				let v = 0;
+				for (let y = 0; y < f; y++) for (let x = 0; x < f; x++) {
+					const s = src[((j * f + y) * im.width + i * f + x) * 4 + c];
+					v = keepMax ? Math.max(v, s) : v + s / (f * f);
+				}
+				out[(j * res + i) * 4 + c] = v;
+			}
+			return out;
+		};
+		for (const [i, s] of CRACK_SETS.entries()) {
+			const base = `../game/assets/textures/impact-${s}/impact_${s.replace(/-/g, "_")}_`;
+			const [m, n] = await Promise.all([img(base + "mask_1k.png"), img(base + "normal_1k.png")]);
+			M.set(raw(m, true), i * S); N.set(raw(n, false), i * S);
+		}
+		const arr = data => { const t = new THREE.DataArrayTexture(data, res, res, CRACK_SETS.length); t.magFilter = t.minFilter = THREE.LinearFilter; t.needsUpdate = true; return t; };
+		console.log(`[улица] трещины плит: ${CRACK_SETS.length} масок`);
+		return { m: arr(M), n: arr(N) };
+	} catch (e) { console.warn("[улица] трещины плит: нет масок", e); return null; }
+}
+// Кустики в трещинах: glb на маску, пивот — центр плиты на уровне верха, оси — как у маски.
+async function loadCrackGrass(group, broken) {
+	if (!broken.length) return;
+	const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
+	const { MeshoptDecoder } = await import("three/addons/libs/meshopt_decoder.module.js");
+	const L = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder), cache = {};
+	let n = 0;
+	for (const p of broken) {
+		const f = `../game/assets/models/joint_grass/grass_crack_${CRACK_SETS[p.crack]}_lod1.glb`;
+		try {
+			const g = await (cache[f] ||= L.loadAsync(f));
+			const o = g.scene.clone();
+			o.position.set(p.x, p.y + 0.03, p.z);
+			o.rotation.set(p.tiltX * Math.PI / 180, p.rotY, p.tiltZ * Math.PI / 180, "YXZ");
+			o.traverse(m => { if (m.isMesh) { m.castShadow = false; m.receiveShadow = true; } });
+			group.add(o); n++;
+		} catch { /* нет файла — плита без травы */ }
+	}
+	console.log(`[улица] трава в трещинах: ${n} плит`);
+}
+
 export function buildSlabs(d, trees = []) {
 	const S = d.slabs;
 	const list = slabLayout(d, trees);
@@ -148,9 +226,15 @@ export function buildSlabs(d, trees = []) {
 	// когда придут наборы HoudiniCOP.
 	const tex = textureSet("concrete"), TILE = 2.5;
 	const mat = new THREE.MeshStandardMaterial({ map: tex.map, normalMap: tex.normal, roughnessMap: tex.orm, roughness: 1, metalness: 0 });
+	// маски удара — массивом (15 вариантов 1 м), грузятся фоном
+	const crackU = { uCrackM: { value: emptyArr() }, uCrackN: { value: emptyArr() }, uCrackOn: { value: 0 } };
+	loadCracks().then(c => { if (c) { crackU.uCrackM.value = c.m; crackU.uCrackN.value = c.n; crackU.uCrackOn.value = 1; } });
+	// трава в трещинах — готовые кустики той же маски (HoudiniCOP joint_grass)
+	loadCrackGrass(group, list.filter(p => p.crack !== undefined));
 	mat.onBeforeCompile = (sh) => {
+		Object.assign(sh.uniforms, crackU);
 		sh.vertexShader = sh.vertexShader
-			.replace("#include <common>", "#include <common>\nattribute vec4 aSlab;")
+			.replace("#include <common>", "#include <common>\nattribute vec4 aSlab;\nattribute float aCrack;\nvarying vec3 vCrackUv;")
 			.replace("#include <uv_vertex>", `#include <uv_vertex>
 				{
 					vec2 su = uv;
@@ -158,9 +242,27 @@ export function buildSlabs(d, trees = []) {
 					if (r == 1) su = vec2(-su.y, su.x); else if (r == 2) su = -su; else if (r == 3) su = vec2(su.y, -su.x);
 					su = (su + aSlab.xy) / ${TILE.toFixed(1)};
 					vMapUv = su; vNormalMapUv = su; vRoughnessMapUv = su;
+					// маска удара: верх плиты 0..1 (uv — метры от центра), номер маски; −1 — целая
+					vCrackUv = vec3(uv / ${CRACK_SIZE.toFixed(2)} + 0.5, aCrack);
+				}`);
+		// Трещины по маске HoudiniCOP: R трещина (темнее), B оседание куска (тень),
+		// A выбито — пикселя нет, видна земля; нормаль с фаской по кромке куска.
+		sh.fragmentShader = sh.fragmentShader
+			.replace("#include <common>", "#include <common>\nvarying vec3 vCrackUv;\nuniform highp sampler2DArray uCrackM, uCrackN;\nuniform float uCrackOn;")
+			.replace("#include <map_fragment>", `#include <map_fragment>
+				vec4 ckM = vec4(0.0); float ckOn = 0.0;
+				if (uCrackOn > 0.5 && vCrackUv.z > -0.5 && all(greaterThan(vCrackUv.xy, vec2(0.0))) && all(lessThan(vCrackUv.xy, vec2(1.0)))) {
+					ckM = textureLod(uCrackM, vCrackUv, 0.0); ckOn = 1.0;
+					if (ckM.a > 0.5) discard;
+					diffuseColor.rgb *= (1.0 - 0.75 * smoothstep(0.1, 0.6, ckM.r)) * (1.0 - 0.25 * ckM.b);
+				}`)
+			.replace("#include <normal_fragment_maps>", `#include <normal_fragment_maps>
+				if (ckOn > 0.5) {
+					vec3 cn = textureLod(uCrackN, vCrackUv, 0.0).xyz * 2.0 - 1.0;
+					normal = normalize(normal + vec3(cn.x, cn.y, 0.0) * 0.8);
 				}`);
 	};
-	mat.customProgramCacheKey = () => "slab-concrete";
+	mat.customProgramCacheKey = () => "slab-concrete-crack";
 	const meshes = [];
 	for (const near of [true, false]) {
 		const bySize = {};
@@ -169,7 +271,7 @@ export function buildSlabs(d, trees = []) {
 			const full = parseFloat(k), half = k.endsWith("h");
 			const sx = half ? full / 2 : full, sz = full;
 			const geo = near ? slabGeometry(sx, sz, S.thick, 0.015) : slabGeometry(sx, sz, S.thick, 0.0005);
-			const a = new Float32Array(idx.length * 4);
+			const a = new Float32Array(idx.length * 4), ck = new Float32Array(idx.length).fill(-1);
 			const im = new THREE.InstancedMesh(geo, mat, idx.length);
 			const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), col = new THREE.Color();
 			idx.forEach((li, n) => {
@@ -182,8 +284,10 @@ export function buildSlabs(d, trees = []) {
 				const h1 = hash(p.x * 5.1, p.z * 2.7), h2 = hash(p.z * 3.3, p.x * 6.1);
 				im.setColorAt(n, col.setRGB(p.tone * (1.02 + 0.06 * (h2 - 0.5)), p.tone, p.tone * (0.98 - 0.08 * (h2 - 0.5))));
 				a.set([h1 * 10, h2 * 10, Math.floor(hash(p.x, p.z * 1.9) * 4), Math.floor(hash(p.z, p.x * 2.3) * 6)], n * 4);
+				if (p.crack !== undefined && !half) ck[n] = p.crack;
 			});
 			geo.setAttribute("aSlab", new THREE.InstancedBufferAttribute(a, 4));
+			geo.setAttribute("aCrack", new THREE.InstancedBufferAttribute(ck, 1));
 			im.castShadow = near; im.receiveShadow = true;
 			im.userData.near = near;
 			im.userData.pos = idx.map(li => new THREE.Vector3(list[li].x, 0, list[li].z));
