@@ -10,7 +10,7 @@ import { loadFences } from "./fences.js";
 import { loadPlayground } from "./playground.js";
 import { loadPoles } from "./poles.js";
 import { loadCurbs } from "./curbs.js";
-import { buildSlabs } from "./slabs.js";
+import { buildSlabs, jointGrass } from "./slabs.js";
 import { loadRocks } from "./rocks.js";
 import { buildSky, skyUniforms } from "./sky.js";
 import { breakdown, infoLine, applyOff, runBench } from "./perf.js";
@@ -192,7 +192,7 @@ function bushBoxes(bushes) {
 let grassBlades = null, grassNearHalf = 20;
 const grassCenter = new THREE.Vector3(), grassRay = new THREE.Vector3(), bottomRay = new THREE.Vector3();
 let robot = null;          // тот, за кем камера
-let crowd = [], followIdx = 0, robotLod = null, crowdStep = null, playground = null, curbs = null, slabs = null, rocks = null;
+let crowd = [], followIdx = 0, robotLod = null, crowdStep = null, playground = null, curbs = null, slabs = null, rocks = null, jointGrassL = null;
 // Камера за роботом: держит текущие поворот и наклон, дистанция — колесом мыши
 let follow = false, followDist = 34;
 if (LEVEL === "district") {
@@ -218,6 +218,10 @@ if (LEVEL === "district") {
 	loadPoles(d).then(P => P && scene.add(P.group)).catch(e => console.error("[улица] опоры:", e));
 	loadCurbs(d).then(C => { scene.add(C.group); curbs = C; }).catch(e => console.error("[улица] бордюр:", e));
 	{ const S = buildSlabs(d, bo.trees); if (S) { scene.add(S.group); slabs = S; } }
+	// трава в швах плит — экземплярами с LOD и ветром (как подлесок), рисуется только вблизи
+	if (slabs) buildHoudiniTrees(jointGrass(slabs.list), { base: "../game/assets/models/joint_grass/", name: "JointGrass",
+		minH: 1, lodDist: [80, 250], cull: [22, 0] }).then(J => { scene.add(J.group); jointGrassL = J; })
+		.catch(e => console.error("[улица] трава в швах:", e));
 	// Слой «дома»: выключен — зданий нет вовсе (пользователь: «дома пока уберём»);
 	// включён — модели hou там, где они есть, и коробки остальных зданий.
 	const buildingBoxes = [];
@@ -653,6 +657,7 @@ function tick(now) {
 	if (curbs) curbs.update(camera);
 	if (slabs) slabs.update(camera);
 	if (rocks) rocks.update(camera);
+	if (jointGrassL) jointGrassL.update(camera, now / 1000);
 	hud.pos.textContent =
 		`${cam.p.x.toFixed(1)} ${cam.p.y.toFixed(1)} ${cam.p.z.toFixed(1)}` +
 		(robot ? ` · робот: ${robot.state}` : "");

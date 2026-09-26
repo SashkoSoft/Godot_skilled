@@ -198,7 +198,8 @@ export async function buildHoudiniTrees(trees, { onProgress, base = BASE, name =
 		const tag = chosen[i], v = variants[tag];
 		// Вписываем крону в наш диаметр; варианты под квартал уже почти в размер.
 		const s = (2 * r) / v.crown;
-		q.setFromAxisAngle(up, ((p.seed % 3600) / 3600) * Math.PI * 2);
+		// rotY — заданный поворот (трава вдоль шва плит), иначе случайный по seed
+		q.setFromAxisAngle(up, p.rotY ?? ((p.seed % 3600) / 3600) * Math.PI * 2);
 		const dir = p.leanDir * Math.PI / 180;
 		ql.setFromAxisAngle(new THREE.Vector3(Math.cos(dir), 0, Math.sin(dir)), p.lean * Math.PI / 180);
 		const m = new THREE.Matrix4().compose(new THREE.Vector3(x, 0, z), ql.multiply(q), new THREE.Vector3(s, s, s));
