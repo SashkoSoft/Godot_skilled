@@ -133,10 +133,27 @@ export async function loadPoles(d) {
 			}
 		}
 	}
+	// Провода — крест из двух тонких лент (вертикальной и горизонтальной) шириной
+	// 2R: виден под любым углом и освещается, в отличие от линии в пиксель.
 	if (seg.length) {
-		const geo = new THREE.BufferGeometry().setFromPoints(seg);
-		const wireMesh = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: 0x1c1c1c }));
+		const R = 0.008, pos = [], nrm = [], up = new THREE.Vector3(0, 1, 0), dir = new THREE.Vector3(), side = new THREE.Vector3();
+		const quad = (a, b, off, n) => {
+			const a0 = a.clone().sub(off), a1 = a.clone().add(off), b0 = b.clone().sub(off), b1 = b.clone().add(off);
+			for (const v of [a0, b0, b1, a0, b1, a1]) { pos.push(v.x, v.y, v.z); nrm.push(n.x, n.y, n.z); }
+		};
+		for (let i = 0; i < seg.length; i += 2) {
+			const a = seg[i], b = seg[i + 1];
+			dir.subVectors(b, a).normalize();
+			side.crossVectors(dir, up).normalize();
+			quad(a, b, up.clone().multiplyScalar(R), side);             // вертикальная лента
+			quad(a, b, side.clone().multiplyScalar(R), up);             // горизонтальная
+		}
+		const geo = new THREE.BufferGeometry();
+		geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+		geo.setAttribute("normal", new THREE.Float32BufferAttribute(nrm, 3));
+		const wireMesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.6, metalness: 0.3, side: THREE.DoubleSide }));
 		wireMesh.name = "Wires";
+		wireMesh.castShadow = true;
 		group.add(wireMesh);
 	}
 	const count = group.children.filter(o => o.isLOD).length;

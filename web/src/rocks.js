@@ -20,7 +20,9 @@ function rng(seed) {
 	return () => ((seed = Math.imul(seed ^ (seed >>> 15), 0x2c1b3c6d) + 0x6d2b79f5 | 0) >>> 0) / 4294967296;
 }
 
-export async function loadRocks(map) {
+// slabs — плиты дорожек (slabs.js list): камешки вдоль кромки дорожки (до 25 см
+// от края) и мелкие в швах между плитами — у плит им самое место.
+export async function loadRocks(map, slabs = []) {
 	const { names, weights, W, H, origin } = map, CELL = map.size.x / W;
 	const rnd = rng(9173);
 	const pts = { pebble: [], rock: [] };
@@ -38,6 +40,21 @@ export async function loadRocks(map) {
 					n -= 1;
 				}
 			}
+		}
+	}
+	for (const s of slabs) {
+		const c = Math.cos(s.rotY), sn = Math.sin(s.rotY);
+		// оси плиты в мире: вдоль (u) и поперёк (v); rotY — поворот вокруг Y
+		const ux = c, uz = -sn, vx = sn, vz = c;
+		for (let k = 0; k < 16; k++) {
+			const r1 = rnd(), r2 = rnd(), side = rnd() < 0.5 ? -1 : 1;
+			// точка на краю плиты: половина — поперёк (кромка дорожки), половина — вдоль (шов)
+			let du, dv, joint;
+			if (k % 2) { du = (r1 - 0.5) * s.sx; dv = side * (s.sz / 2 + 0.02 + 0.23 * r2 * r2); joint = false; }
+			else { du = side * (s.sx / 2 + 0.008); dv = (r1 - 0.5) * s.sz; joint = true; }
+			if (rnd() > (joint ? 0.3 : 0.7)) continue;
+			const x = s.x + ux * du + vx * dv, z = s.z + uz * du + vz * dv;
+			pts.pebble.push([x, z, joint ? 0.1 + 0.2 * rnd() : 0.35 + 0.5 * rnd(), rnd(), rnd()]);
 		}
 	}
 	// корзины по 8 м

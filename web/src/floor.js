@@ -718,7 +718,15 @@ GroundS groundAt(vec2 xz, float near, float grassD) {
 
 const VERT_WORLD = (s) => s
 	.replace("#include <common>", "#include <common>\nvarying vec3 vGWorld;\nvarying float vGUp;")
-	.replace("#include <begin_vertex>", "#include <begin_vertex>\nvGWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvGUp = normalize(mat3(modelMatrix) * objectNormal).y;");
+	.replace("#include <begin_vertex>", `#include <begin_vertex>
+		{
+			mat4 gM = modelMatrix;
+			#ifdef USE_INSTANCING
+			gM = modelMatrix * instanceMatrix;   // экземпляры (плиты): мировая позиция с матрицей экземпляра
+			#endif
+			vGWorld = (gM * vec4(transformed, 1.0)).xyz;
+			vGUp = normalize(mat3(gM) * objectNormal).y;
+		}`);
 
 /**
  * Пол на материале земли: слои, накладки под газоном, газон, накладки сверху.
@@ -790,10 +798,15 @@ export function groundify(material) {
  * накладки «сверху» из той же карты. Так стык сшивается с обеих сторон:
  * камешки с кромки и опад лежат и на земле, и на дорожке.
  */
-export function hardify(material, asphalt = 0) {
-	const prev = material.color.getHex();
+// lite — без асфальта и лент стыков (материалы со своими картами, например плиты):
+// иначе под D3D программа превышает 16 текстур.
+export function hardify(material, asphalt = 0, { lite = false } = {}) {
 	const own = { uAMode: { value: asphalt } };   // 0 — нет, 1 — все варианты пятнами, 2 — только старый
-	material.onBeforeCompile = (shader) => {
+	// свой шейдер материала (плиты: развёртка кусков) — сохраняется, накладки поверх
+	const prevCB = material.onBeforeCompile, prevKey = material.customProgramCacheKey ? material.customProgramCacheKey() : "";
+	material.onBeforeCompile = (shader, r) => {
+		if (prevCB) prevCB.call(material, shader, r);
+		if (lite) shader.defines = { ...shader.defines, HARD_LITE: "" };
 		Object.assign(shader.uniforms, grassUniforms, groundUniforms, own);
 		shader.vertexShader = VERT_WORLD(shader.vertexShader);
 		shader.fragmentShader = shader.fragmentShader
@@ -809,6 +822,7 @@ export function hardify(material, asphalt = 0) {
 				// Асфальт: варианты пятнами (процедурный шум без тайла, границы рваные по
 				// высоте отсчёта): в основном старый, местами выкрошенный, изредка заплаты.
 				vec4 hAA = vec4(0.0), hAB = vec4(0.0, 0.0, 0.9, 1.0); float hAsph = 0.0;
+				#ifndef HARD_LITE
 				if (uAOn > 0.5 && uAMode > 0.5) {
 					float wc = uAMode > 1.5 ? 0.0 : smoothstep(0.58, 0.7, gNoise(hXZ * 0.045 + 2.2) * 0.7 + gNoise(hXZ * 0.19 + 8.1) * 0.3);
 					float wp = uAMode > 1.5 ? 0.0 : smoothstep(0.66, 0.74, gNoise(hXZ * 0.03 + 6.6)) * (1.0 - wc);
@@ -820,6 +834,7 @@ export function hardify(material, asphalt = 0) {
 					hAsph = hTop;
 					diffuseColor.rgb = mix(diffuseColor.rgb, hAA.rgb * mix(1.0, hAB.w, 0.6), hAsph);
 				}
+				#endif
 				// Гранж по покрытию: грязь пятнами, сырость (темнее, блестит), мох по
 				// швам там, где грязно, трещины. Вдали трещины гаснут — иначе муар.
 				// Грязь и сырость на асфальте — процедурным шумом без тайла: из маски 8 м
@@ -841,6 +856,7 @@ export function hardify(material, asphalt = 0) {
 				// Ленты переходов со стороны покрытия: рваная кромка — в выбоинах земля,
 				// вдоль кромки трещины, край чуть темнее (скруглён вниз); у тротуара —
 				// трава языками и кустиками заходит на плитку, по шву земля.
+				#ifndef HARD_LITE
 				{
 					GEdge hE = gEdge(hXZ);
 					if (hE.type > 0 && hE.d < 0.05 && hE.d > -0.5) {
@@ -858,6 +874,7 @@ export function hardify(material, asphalt = 0) {
 						}
 					}
 				}
+				#endif
 				overlays(hXZ, 0.0, gBlendN(hXZ), hGz, gCell(hXZ), true, hG);
 				float hMask = hG.leaf * hTop;
 				diffuseColor.rgb = mix(diffuseColor.rgb, hG.lalb, hMask);`)
@@ -873,7 +890,7 @@ export function hardify(material, asphalt = 0) {
 					normal = normalize(mix(normal, normalize((viewMatrix * vec4(wn, 0.0)).xyz), hTop));
 				}`);
 	};
-	material.customProgramCacheKey = () => "ground-hard";   // режим асфальта — униформа, программа общая
+	material.customProgramCacheKey = () => "ground-hard|" + (lite ? "lite|" : "") + prevKey;   // режим асфальта — униформа
 	material.needsUpdate = true;
 }
 

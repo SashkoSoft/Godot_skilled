@@ -12,9 +12,10 @@ import { loadPoles } from "./poles.js";
 import { loadCurbs } from "./curbs.js";
 import { buildSlabs } from "./slabs.js";
 import { loadRocks } from "./rocks.js";
-import { breakdown, infoLine, applyOff } from "./perf.js";
+import { buildSky, skyUniforms } from "./sky.js";
+import { breakdown, infoLine, applyOff, runBench } from "./perf.js";
 import { buildGrassMap, setGrassMap, buildGrassBlades, updateGrass } from "./grass.js";
-import { buildGroundMap, setupGround } from "./floor.js";
+import { buildGroundMap, setupGround, hardify } from "./floor.js";
 import { spawnRobots } from "./robot.js";
 import { buildHoudiniTrees } from "./trees.js";
 import { windUniforms, setWind } from "./wind.js";
@@ -80,8 +81,11 @@ const camera = new THREE.PerspectiveCamera(55, 1, 0.05, 500);
 // Квартал в сотни метров: туман отодвигается, иначе дальний край тонет в нём
 // целиком, а тень должна накрывать весь кадр общего вида, а не 80 м вокруг.
 if (LEVEL === "district") {
-	scene.fog.near = 260;
-	scene.fog.far = 900;
+	// небо-купол (sky.js); туман — цвета горизонта, дальнее тонет в дымке
+	FOG.copy(skyUniforms.uHorizon.value);
+	scene.background = null;
+	scene.fog.near = 220;
+	scene.fog.far = 850;
 	camera.far = 2000;
 	camera.near = 0.3;   // точность глубины на дальнем краю квартала; ближе 30 см смотреть не на что
 }
@@ -90,8 +94,9 @@ if (LEVEL === "district") {
 // Солнце низкое и сбоку: скользящий свет — единственное, на чём вообще
 // читается микрорельеф покрытия. В зенит его ставить нельзя, иначе вся
 // работа с нормалями пропадает.
-const sun = new THREE.DirectionalLight(0xfff3e6, 3.4);
-const SUN_AZ = 52, SUN_EL = 32;
+// осень: солнце ниже и теплее (в квартале)
+const sun = new THREE.DirectionalLight(LEVEL === "district" ? 0xffe2c0 : 0xfff3e6, 3.4);
+const SUN_AZ = 52, SUN_EL = LEVEL === "district" ? 27 : 32;
 // Солнце ставится на SUN_DIST от точки взгляда; в квартале башни по 37 м и
 // кадр на 300 м, поэтому и дистанция, и охват тени другие.
 const SUN_DIST = LEVEL === "district" ? 420 : 60;
@@ -120,6 +125,14 @@ sun.shadow.normalBias = LEVEL === "district" ? 0.12 : 0.03;
 sun.shadow.radius = +(new URLSearchParams(location.hash.slice(1)).get("shadowsoft") || 4);
 scene.add(sun);
 scene.add(sun.target);
+let skyDome = null;
+if (LEVEL === "district") {
+	skyDome = buildSky();
+	scene.add(skyDome.mesh);
+	skyUniforms.uSunDir.value.copy(sun.position).normalize();
+	skyUniforms.uSunCol.value.copy(sun.color);
+	if (new URLSearchParams(location.hash.slice(1)).has("clouds")) skyUniforms.uCloud.value = +new URLSearchParams(location.hash.slice(1)).get("clouds");
+}
 
 const sky = new THREE.HemisphereLight(0x9fb4c6, 0x4a4436, 1.6);
 scene.add(sky);
@@ -179,7 +192,7 @@ function bushBoxes(bushes) {
 let grassBlades = null, grassNearHalf = 20;
 const grassCenter = new THREE.Vector3(), grassRay = new THREE.Vector3(), bottomRay = new THREE.Vector3();
 let robot = null;          // тот, за кем камера
-let crowd = [], followIdx = 0, robotLod = null, playground = null, curbs = null, slabs = null, rocks = null;
+let crowd = [], followIdx = 0, robotLod = null, crowdStep = null, playground = null, curbs = null, slabs = null, rocks = null;
 // Камера за роботом: держит текущие поворот и наклон, дистанция — колесом мыши
 let follow = false, followDist = 34;
 if (LEVEL === "district") {
@@ -226,8 +239,9 @@ if (LEVEL === "district") {
 		setGrassMap(buildGrassMap(d, bo.piles, groundMap));
 		const gRes = +(q.get("gtex") || (matchMedia("(pointer: coarse)").matches ? 512 : 1024));
 		setupGround(d, groundMaterial(), groundMap, { res: gRes, debug: q.get("ground") === "debug", hard: hardMaterials(), trees: bo.trees })
+			.then(() => { if (slabs) hardify(slabs.material, 0, { lite: true }); })   // опад и камешки и на плитах
 			.catch(e => console.error("[улица] пол:", e));
-		loadRocks(groundMap).then(R => { scene.add(R.group); rocks = R; }).catch(e => console.error("[улица] камешки:", e));
+		loadRocks(groundMap, slabs ? slabs.list : []).then(R => { scene.add(R.group); rocks = R; }).catch(e => console.error("[улица] камешки:", e));
 		if (q.get("grass") !== "0") {
 			const phone = matchMedia("(pointer: coarse)").matches;
 			// LOD: ближний участок + кольцо реже и шире; дальше — только цвет земли
@@ -287,7 +301,7 @@ if (q.has("sss")) windUniforms.uSSS.value = +q.get("sss");   // сила про�
 	// #env=0 — без отражений на хроме (A/B и проверка, что тормозит именно оно)
 	const envMap = q.get("env") === "0" ? null : skyEnvMap();
 	const R = await spawnRobots(d, { count, start: [77, -26], envMap });
-	crowd = R.robots; robotLod = R.updateLod;
+	crowd = R.robots; robotLod = R.updateLod; crowdStep = R.crowdStep;
 	const robotsGroup = new THREE.Group();
 	robotsGroup.name = "Robots";   // отдельный слой в разбивке цены кадра и в #off=robots
 	for (const r of crowd) robotsGroup.add(r.object);
@@ -366,6 +380,7 @@ addEventListener("keydown", (e) => {
 		}
 		return;
 	}
+	if (e.code === "KeyM") { doBench(); return; }
 	if (e.code === "KeyG" && gameLayer) {
 		gameLayer.visible = !gameLayer.visible;
 		say(gameLayer.visible ? "игровые зоны показаны" : "игровые зоны скрыты");
@@ -393,7 +408,7 @@ let bumpOn = true;
 /* ── слои: деревья, трава, кусты, дома — кнопки справа вверху и клавиша T ── */
 const layerOn = { trees: false, grass: true, bushes: true, houses: false, robots: true };
 function syncLayerButtons() {
-	for (const b of document.querySelectorAll("#layers button"))
+	for (const b of document.querySelectorAll("#layers button[data-layer]"))
 		b.setAttribute("aria-pressed", String(!!layerOn[b.dataset.layer]));
 }
 async function toggleLayer(name) {
@@ -425,8 +440,27 @@ function saveLayers() {
 function savedLayers() {
 	try { return JSON.parse(localStorage.getItem(LAYER_KEY)) || {}; } catch { return {}; }
 }
-for (const b of document.querySelectorAll("#layers button"))
+for (const b of document.querySelectorAll("#layers button[data-layer]"))
 	b.addEventListener("click", () => toggleLayer(b.dataset.layer));
+
+/* ── замер цены кадра «со слоем / без» (клавиша M, кнопка «замер», #bench=1) ── */
+let benching = false;
+async function doBench() {
+	if (benching || !hud.perfTable) return;
+	benching = true;
+	hud.perfTable.hidden = false;
+	hud.perfTable.innerHTML = "замер…";
+	const rows = await runBench(scene, renderer, camera, { onStep: n => { hud.perfTable.innerHTML = "замер: без " + n + "…"; } });
+	console.table(rows);
+	for (const r of rows) console.log("[улица] BENCH " + JSON.stringify(r));
+	hud.perfTable.innerHTML = "<b>цена кадра, мс (медиана 30 кадров с ожиданием GPU)</b><br>" +
+		rows.map(r => `${r.слой} · ${r.мс}${r.экономия !== "" ? ` · −${r.экономия}` : ""}`).join("<br>");
+	benching = false;
+}
+{
+	const b = document.getElementById("btn-bench");
+	if (b) b.addEventListener("click", doBench);
+}
 
 /* ── действия камеры: общие для клавиш и кнопок на экране ─────────────── */
 function nextRobot(step) {
@@ -574,6 +608,7 @@ function tick(now) {
 
 	for (const r of crowd) r.update(dt);
 	if (robotLod) robotLod(camera);
+	if (crowdStep) crowdStep();
 	if (follow && robot) {
 		updateCamera();
 		camera.getWorldDirection(fwd);
@@ -609,6 +644,7 @@ function tick(now) {
 		updateGrass(grassCenter, near);
 	}
 	windUniforms.uTime.value = now / 1000;
+	if (skyDome) { skyDome.update(camera, now / 1000); skyUniforms.uWind.value.copy(windUniforms.uWindDir.value); }
 	if (playground) playground.update(now / 1000, dt);
 	if (curbs) curbs.update(camera);
 	if (slabs) slabs.update(camera);
@@ -691,3 +727,5 @@ if (q.get("perf") === "1") {
 }
 
 requestAnimationFrame(tick);
+// #bench=1 — замер сам через 8 с (догрузка фоновых слоёв), таблица в консоль
+if (q.get("bench") === "1") setTimeout(doBench, 8000);
