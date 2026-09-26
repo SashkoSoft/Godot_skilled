@@ -192,7 +192,7 @@ function buildAreas(g, d) {
 			boxRect(g, "sportFloor", a.rect, -0.1, 0.12);
 			fence(g, a.rect, null, 1.2);
 		}
-		if (a.kind === "bins") boxRect(g, "obj", [a.rect[0] + 0.5, a.rect[1] + 0.8, a.rect[2] - 0.5, a.rect[3] - 0.8], 0, 1.5);
+		// мусорные площадки — контейнеры-модели (streetprops.js), коробки нет
 		if (a.kind === "fenced" && !a.fence) fence(g, a.rect, a.gate);   // забор-модель (a.fence) ставит fences.js
 	}
 }
@@ -366,7 +366,7 @@ function buildObjects(g, d) {
 			case "bus": box(g, "bus", o.size[0], 3.0, o.size[1], x, -KERB_H, z); break;
 			case "stop": box(g, "canopy", o.size[0], 2.6, o.size[1], x, 0, z); break;
 			case "kiosk": box(g, "obj", o.size[0], 2.6, o.size[1], x, 0, z); break;
-			case "bench": box(g, "obj", 1.8, 0.8, 0.6, x, 0, z); break;
+			case "bench": break;   // скамейка-модель (streetprops.js)
 			case "table": box(g, "obj", 1.2, 0.75, 1.2, x, 0, z); break;
 			case "crossing":
 				for (let t = -o.size[1] / 2; t < o.size[1] / 2; t += 1.2)
