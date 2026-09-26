@@ -75,7 +75,7 @@ export const BENCH = {
 	"трава": ["GrassBlades"], "кусты": ["Undergrowth", "UndergrowthBoxes"], "деревья": ["Trees"],
 	"роботы": ["Robots"], "дома": ["Houses"], "мусор": ["Trash"], "бордюр": ["Curbs"],
 	"опоры": ["Poles"], "плиты": ["Slabs"], "камешки": ["Rocks"], "заборы": ["Fences"],
-	"площадка": ["Playground"], "тени": null,
+	"площадка": ["Playground"], "мелочи": ["StreetProps"], "плиты-трава": ["JointGrass"], "тени": null,
 };
 
 /**

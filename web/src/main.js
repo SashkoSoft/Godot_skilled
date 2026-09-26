@@ -9,6 +9,7 @@ import { loadHouses } from "./houses.js";
 import { loadFences } from "./fences.js";
 import { loadPlayground } from "./playground.js";
 import { loadPoles } from "./poles.js";
+import { loadStreetProps } from "./streetprops.js";
 import { loadCurbs } from "./curbs.js";
 import { buildSlabs, jointGrass } from "./slabs.js";
 import { loadRocks } from "./rocks.js";
@@ -216,6 +217,7 @@ if (LEVEL === "district") {
 	loadFences(d).then(P => scene.add(P.group)).catch(e => console.error("[улица] заборы:", e));
 	loadPlayground(d).then(P => { scene.add(P.group); playground = P; }).catch(e => console.error("[улица] площадки:", e));
 	loadPoles(d).then(P => P && scene.add(P.group)).catch(e => console.error("[улица] опоры:", e));
+	loadStreetProps(d).then(P => scene.add(P.group)).catch(e => console.error("[улица] уличные мелочи:", e));
 	loadCurbs(d).then(C => { scene.add(C.group); curbs = C; }).catch(e => console.error("[улица] бордюр:", e));
 	{ const S = buildSlabs(d, bo.trees); if (S) { scene.add(S.group); slabs = S; } }
 	// трава в швах плит — экземплярами с LOD и ветром (как подлесок), рисуется только вблизи
