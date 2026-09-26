@@ -1,0 +1,8 @@
+tile_m=2.00
+height_cm=0.36
+albedo_mean=#5c5953
+nscale=1.000
+normal_blue_mean=0.996
+px=2048
+variant_of=asphalt-walk (tile 2 m, odin masshtab i ton)
+opis=trotuar: melkozernistyy seryy, styortyy

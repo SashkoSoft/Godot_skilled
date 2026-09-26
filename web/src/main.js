@@ -15,7 +15,7 @@ import { loadRocks } from "./rocks.js";
 import { buildSky, skyUniforms } from "./sky.js";
 import { breakdown, infoLine, applyOff, runBench } from "./perf.js";
 import { buildGrassMap, setGrassMap, buildGrassBlades, updateGrass } from "./grass.js";
-import { buildGroundMap, setupGround, hardify } from "./floor.js";
+import { buildGroundMap, setupGround, hardify, loadPitGrass } from "./floor.js";
 import { spawnRobots } from "./robot.js";
 import { buildHoudiniTrees } from "./trees.js";
 import { windUniforms, setWind } from "./wind.js";
@@ -246,7 +246,10 @@ if (LEVEL === "district") {
 		setGrassMap(buildGrassMap(d, bo.piles, groundMap));
 		const gRes = +(q.get("gtex") || (matchMedia("(pointer: coarse)").matches ? 512 : 1024));
 		setupGround(d, groundMaterial(), groundMap, { res: gRes, debug: q.get("ground") === "debug", hard: roadMats, trees: bo.trees })
-			.then(() => { if (slabs) hardify(slabs.material, 0, { lite: true }); })   // опад и камешки и на плитах
+			.then(r => {
+				if (slabs) hardify(slabs.material, 0, { lite: true });
+				if (r && r.pits) loadPitGrass(r.pits).then(g => scene.add(g));
+			})   // опад и камешки и на плитах
 			.catch(e => console.error("[улица] пол:", e));
 		loadRocks(groundMap, slabs ? slabs.list : []).then(R => { scene.add(R.group); rocks = R; }).catch(e => console.error("[улица] камешки:", e));
 		if (q.get("grass") !== "0") {

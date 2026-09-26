@@ -1,0 +1,9 @@
+tile_m=2.00
+height_cm=0.96
+albedo_mean=#5c5953
+nscale=1.000
+normal_blue_mean=0.993
+px=2048
+variant_of=asphalt-walk (tile 2 m, odin masshtab i ton)
+opis=trotuar s treshchinami (kak u fraktury), trava - maskoy G
+mask=R treshchina, G trava v treshchinah (plotnost), B A svobodny
