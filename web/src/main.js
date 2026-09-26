@@ -332,6 +332,7 @@ if (new URLSearchParams(location.hash.slice(1)).get("props") === "1") {
 /* ── камера: те же ракурсы, что были в игре ─────────────────────────── */
 const VIEWS = LEVEL === "district" ? {
 	Digit1: { p: [-175, 120, 165], yaw: -45, pitch: -24, name: "весь квартал" },
+	Digit5: { p: [-39, 26, 37], yaw: -45, pitch: -27, name: "сквер (стартовый)" },
 	Digit2: { p: [58, 45, 8.5], yaw: -45, pitch: -38, name: "игровая камера у башни 1" },
 	Digit3: { p: [-145, 1.7, -95], yaw: -90, pitch: -3, name: "с проспекта глазами" },
 	Digit4: { p: [0, 330, 0], yaw: 0, pitch: -89.9, name: "сверху" },
@@ -656,7 +657,7 @@ function tick(now) {
 	requestAnimationFrame(tick);
 }
 
-applyView(VIEWS["Digit" + (q.get("view") || "1")] || VIEWS.Digit1);
+applyView(VIEWS["Digit" + (q.get("view") || (LEVEL === "district" ? "5" : "1"))] || VIEWS.Digit1);
 if (q.has("debug") && street) {
 	debugMode = parseInt(q.get("debug"), 10) || 0;
 	setSurfaceUniform(street, "debugMode", debugMode);
