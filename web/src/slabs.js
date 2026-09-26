@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { rectsOf, inRect, accessPaths, streetRect } from "./district.js";
-import { textureSet } from "./facades.js";
 
 // Дорожки из бетонных плит — процедурно, по правилам district.json → slabs.
 // Плиты кладутся рядами вдоль каждого отрезка дорожки: поперёк — сколько влезает
@@ -80,28 +79,14 @@ export function slabLayout(d, trees = []) {
 					}
 					const tone = 0.88 + 0.2 * hash(x * 9.3, z * 5.9);
 					const s = size - joint;
-					// битая плита 1×1 — целая по геометрии, трещины и выбоины из маски
-					// удара (HoudiniCOP, impact-*-1m-vN): номер маски в crack
-					if (h3 < S.missing + S.broken && size >= 1.0) {
-						out.push({ x, z, y: y - 0.004, sx: s, sz: s, rotY: rotY + Math.floor(h1 * 4) * Math.PI / 2, tiltX: tx, tiltZ: tz, tone, crack: Math.floor(h2 * 15) });
-						continue;
-					}
-					// битая плита 1×1 — целая по геометрии, трещины и выбоины из маски удара
-				// (HoudiniCOP, impact-*-1m-vN): номер маски в crack
-				if (h3 < S.missing + S.broken && size >= 1.0) {
-					out.push({ x, z, y: y - 0.004, sx: s, sz: s, rotY: rotY + Math.floor(h1 * 4) * Math.PI / 2, tiltX: tx, tiltZ: tz, tone, crack: Math.floor(h2 * 15) % 15 });
-					continue;
-				}
-				if (h3 < S.missing + S.broken) {
-						// расколота: две половинки вдоль, раздвинуты и перекошены по-разному
-						for (const side of [-1, 1]) {
-							const sh = side * (s / 4 + joint * 0.8);
-							out.push({ x: x + ux * sh, z: z + uz * sh, y: y - 0.01 * (side + 1), sx: s / 2 - joint, sz: s, rotY: rotY + side * 0.03,
-								tiltX: tx + side * 1.5, tiltZ: tz - side * 2, tone });
-						}
-						continue;
-					}
-					out.push({ x, z, y, sx: s, sz: s, rotY, tiltX: tx, tiltZ: tz, tone });
+					// Поверхность плиты — вариант HoudiniCOP (slab-<размер>-<вариант>): 0 свежая,
+					// 1 стёртая, 2 треснувшая, 3 со сколом (дыра — земля), 4 в пятнах. Битые —
+					// «треснувшая», редко «со сколом»; остальные — свежая/стёртая/в пятнах.
+					const hv = hash(x * 7.7 + 1.3, z * 3.9);
+					const v = h3 < S.missing + S.broken ? (hv < 0.8 ? 2 : 3)
+						: hv < 0.06 ? 3 : hv < 0.36 ? 0 : hv < 0.78 ? 1 : 4;
+					out.push({ x, z, y: v === 2 ? y - 0.004 : y, sx: s, sz: s, rotY, tiltX: tx, tiltZ: tz, tone,
+						v, size, rot: Math.floor(h1 * 4) });
 				}
 				t += size + joint; row++;
 			}
@@ -149,67 +134,58 @@ function slabGeometry(sx, sz, h, bevel) {
 	return g;
 }
 
-/* ── маски удара и трава в трещинах (HoudiniCOP) ───────────────────── */
-const CRACK_SIZE = 1.0;
-const CRACK_SETS = [];
-for (const k of ["few", "web", "vor"]) for (let v = 0; v < 5; v++) CRACK_SETS.push(`${k}-1m-v${v}`);
+/* ── поверхности плит (HoudiniCOP: slab-1m-*, slab-05m-*) ──────────────── */
+// Одна плита на картинку, кромка по краю. Массивы: A albedo+height, B normal.xy +
+// roughness + AO, M маска (R трещина, G пятна, B лишайник, A выбито). Слой =
+// размер×5 + вариант. Разрешение 512 — ~1–2 мм/пиксель, вблизи хватает.
+const SLAB_VARS = ["fresh", "worn", "cracked", "chipped", "stained"];
+const SLAB_SIZES = [["1m", "1k"], ["05m", "05k"]];
 const emptyArr = () => { const t = new THREE.DataArrayTexture(new Uint8Array(4), 1, 1, 1); t.needsUpdate = true; return t; };
-async function loadCracks() {
+async function loadSlabSets(res = 512) {
 	const img = u => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = u; });
-	try {
-		const res = 512, S = res * res * 4, M = new Uint8Array(S * CRACK_SETS.length), N = new Uint8Array(S * CRACK_SETS.length);
-		const gl = document.createElement("canvas").getContext("webgl2");
-		// без премультипликации: альфа маски — «выбито», не прозрачность
-		const raw = (im, keepMax) => {
-			const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
-			gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-			gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
-			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, im.width, im.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, im);
-			const fb = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
-			const src = new Uint8Array(im.width * im.height * 4); gl.readPixels(0, 0, im.width, im.height, gl.RGBA, gl.UNSIGNED_BYTE, src);
-			gl.deleteFramebuffer(fb); gl.deleteTexture(t);
-			// 1k → 512: у маски максимум по блоку (тонкая трещина не пропадает), у нормали — среднее
-			const out = new Uint8Array(S), f = im.width / res;
-			for (let j = 0; j < res; j++) for (let i = 0; i < res; i++) for (let c = 0; c < 4; c++) {
-				let v = 0;
-				for (let y = 0; y < f; y++) for (let x = 0; x < f; x++) {
-					const s = src[((j * f + y) * im.width + i * f + x) * 4 + c];
-					v = keepMax ? Math.max(v, s) : v + s / (f * f);
-				}
-				out[(j * res + i) * 4 + c] = v;
-			}
-			return out;
-		};
-		for (const [i, s] of CRACK_SETS.entries()) {
-			const base = `../game/assets/textures/impact-${s}/impact_${s.replace(/-/g, "_")}_`;
-			const [m, n] = await Promise.all([img(base + "mask_1k.png"), img(base + "normal_1k.png")]);
-			M.set(raw(m, true), i * S); N.set(raw(n, false), i * S);
+	const gl = document.createElement("canvas").getContext("webgl2");
+	// сырые байты без премультипликации (альфа — «выбито» и высота, не прозрачность)
+	const raw = im => {
+		const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+		gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, im.width, im.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, im);
+		const fb = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+		const src = new Uint8Array(im.width * im.height * 4); gl.readPixels(0, 0, im.width, im.height, gl.RGBA, gl.UNSIGNED_BYTE, src);
+		gl.deleteFramebuffer(fb); gl.deleteTexture(t);
+		if (im.width === res) return src;
+		const out = new Uint8Array(res * res * 4), f = im.width / res;
+		for (let j = 0; j < res; j++) for (let i = 0; i < res; i++) for (let c = 0; c < 4; c++) {
+			let v = 0;
+			for (let y = 0; y < f; y++) for (let x = 0; x < f; x++) v += src[((j * f + y) * im.width + i * f + x) * 4 + c];
+			out[(j * res + i) * 4 + c] = v / (f * f);
 		}
-		const arr = data => { const t = new THREE.DataArrayTexture(data, res, res, CRACK_SETS.length); t.magFilter = t.minFilter = THREE.LinearFilter; t.needsUpdate = true; return t; };
-		console.log(`[улица] трещины плит: ${CRACK_SETS.length} масок`);
-		return { m: arr(M), n: arr(N) };
-	} catch (e) { console.warn("[улица] трещины плит: нет масок", e); return null; }
-}
-// Кустики в трещинах: glb на маску, пивот — центр плиты на уровне верха, оси — как у маски.
-async function loadCrackGrass(group, broken) {
-	if (!broken.length) return;
-	const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
-	const { MeshoptDecoder } = await import("three/addons/libs/meshopt_decoder.module.js");
-	const L = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder), cache = {};
-	let n = 0;
-	for (const p of broken) {
-		const f = `../game/assets/models/joint_grass/grass_crack_${CRACK_SETS[p.crack]}_lod1.glb`;
-		try {
-			const g = await (cache[f] ||= L.loadAsync(f));
-			const o = g.scene.clone();
-			o.position.set(p.x, p.y + 0.03, p.z);
-			o.rotation.set(p.tiltX * Math.PI / 180, p.rotY, p.tiltZ * Math.PI / 180, "YXZ");
-			o.traverse(m => { if (m.isMesh) { m.castShadow = false; m.receiveShadow = true; } });
-			group.add(o); n++;
-		} catch { /* нет файла — плита без травы */ }
+		return out;
+	};
+	const N = SLAB_SIZES.length * SLAB_VARS.length, S = res * res * 4;
+	const A = new Uint8Array(S * N), B = new Uint8Array(S * N), M = new Uint8Array(S * N);
+	let li = 0;
+	for (const [sz, tag] of SLAB_SIZES) for (const v of SLAB_VARS) {
+		const base = `../game/assets/textures/slab-${sz}-${v}/slab_${sz}_${v}_`;
+		const [a, n, o, h, m] = await Promise.all(["albedo", "normal", "orm", "height", "mask"].map(k => img(`${base}${k}_${tag}.png`).then(raw)));
+		const off = li * S;
+		for (let k = 0; k < S; k += 4) {
+			A[off + k] = a[k]; A[off + k + 1] = a[k + 1]; A[off + k + 2] = a[k + 2]; A[off + k + 3] = h[k];
+			B[off + k] = n[k]; B[off + k + 1] = n[k + 1]; B[off + k + 2] = o[k + 1]; B[off + k + 3] = o[k];
+			M[off + k] = m[k]; M[off + k + 1] = m[k + 1]; M[off + k + 2] = m[k + 2]; M[off + k + 3] = m[k + 3];
+		}
+		li++;
 	}
-	console.log(`[улица] трава в трещинах: ${n} плит`);
+	const arr = (data, srgb) => {
+		const t = new THREE.DataArrayTexture(data, res, res, N);
+		t.wrapS = t.wrapT = THREE.RepeatWrapping;
+		t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter; t.generateMipmaps = true; t.anisotropy = 4;
+		t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace; t.needsUpdate = true;
+		return t;
+	};
+	console.log(`[улица] плиты: поверхности ${N} (${SLAB_VARS.join(",")})`);
+	return { A: arr(A, true), B: arr(B, false), M: arr(M, false) };
 }
 
 export function buildSlabs(d, trees = []) {
@@ -217,77 +193,82 @@ export function buildSlabs(d, trees = []) {
 	const list = slabLayout(d, trees);
 	if (!list.length) return null;
 	const joint = (S.joint[0] + S.joint[1]) / 2;
-	// размеры плит в раскладке: целая и половинка расколотой — на каждый размер своя геометрия
-	const nominal = s => Math.abs(s - (S.size - joint)) < Math.abs(s - (S.narrowSize - joint)) ? S.size - joint : S.narrowSize - joint;
 	const group = new THREE.Group();
 	group.name = "Slabs";
-	// Бетон: у каждой плиты свой кусок текстуры (сдвиг, поворот на 90°), свой оттенок.
-	// aSlab = (сдвиг u, сдвиг v, поворот 0…3, вариант) — вариант выберет текстуру плиты,
-	// когда придут наборы HoudiniCOP.
-	const tex = textureSet("concrete"), TILE = 2.5;
-	const mat = new THREE.MeshStandardMaterial({ map: tex.map, normalMap: tex.normal, roughnessMap: tex.orm, roughness: 1, metalness: 0 });
-	// маски удара — массивом (15 вариантов 1 м), грузятся фоном
-	const crackU = { uCrackM: { value: emptyArr() }, uCrackN: { value: emptyArr() }, uCrackOn: { value: 0 } };
-	loadCracks().then(c => { if (c) { crackU.uCrackM.value = c.m; crackU.uCrackN.value = c.n; crackU.uCrackOn.value = 1; } });
-	// трава в трещинах — готовые кустики той же маски (HoudiniCOP joint_grass)
-	loadCrackGrass(group, list.filter(p => p.crack !== undefined));
+	// Материал: верх плиты — её вариант (своя картинка на плиту, поворот ×90°),
+	// боковины — тот же вариант по развёртке граней. Оттенок экземпляра — поверх.
+	const U = { uSA: { value: emptyArr() }, uSB: { value: emptyArr() }, uSM: { value: emptyArr() }, uSOn: { value: 0 } };
+	loadSlabSets().then(s => { U.uSA.value = s.A; U.uSB.value = s.B; U.uSM.value = s.M; U.uSOn.value = 1; })
+		.catch(e => console.warn("[улица] плиты: нет поверхностей", e));
+	const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, metalness: 0 });
 	mat.onBeforeCompile = (sh) => {
-		Object.assign(sh.uniforms, crackU);
+		Object.assign(sh.uniforms, U);
 		sh.vertexShader = sh.vertexShader
-			.replace("#include <common>", "#include <common>\nattribute vec4 aSlab;\nattribute float aCrack;\nvarying vec3 vCrackUv;")
+			.replace("#include <common>", "#include <common>\nattribute vec4 aSlab;\nvarying vec3 vSUv;\nvarying float vSTop;")
 			.replace("#include <uv_vertex>", `#include <uv_vertex>
 				{
+					// aSlab = (размер плиты, 0, поворот 0…3, слой массива)
 					vec2 su = uv;
-					int r = int(aSlab.z + 0.5);
-					if (r == 1) su = vec2(-su.y, su.x); else if (r == 2) su = -su; else if (r == 3) su = vec2(su.y, -su.x);
-					su = (su + aSlab.xy) / ${TILE.toFixed(1)};
-					vMapUv = su; vNormalMapUv = su; vRoughnessMapUv = su;
-					// маска удара: верх плиты 0..1 (uv — метры от центра), номер маски; −1 — целая
-					vCrackUv = vec3(uv / ${CRACK_SIZE.toFixed(2)} + 0.5, aCrack);
+					vSTop = step(0.9, normal.y);
+					if (vSTop > 0.5) {
+						int r = int(aSlab.z + 0.5);
+						if (r == 1) su = vec2(-su.y, su.x); else if (r == 2) su = -su; else if (r == 3) su = vec2(su.y, -su.x);
+						su = su / aSlab.x + 0.5;
+					} else su = su / aSlab.x;
+					vSUv = vec3(su, aSlab.w);
 				}`);
-		// Трещины по маске HoudiniCOP: R трещина (темнее), B оседание куска (тень),
-		// A выбито — пикселя нет, видна земля; нормаль с фаской по кромке куска.
 		sh.fragmentShader = sh.fragmentShader
-			.replace("#include <common>", "#include <common>\nvarying vec3 vCrackUv;\nuniform highp sampler2DArray uCrackM, uCrackN;\nuniform float uCrackOn;")
-			.replace("#include <map_fragment>", `#include <map_fragment>
-				vec4 ckM = vec4(0.0); float ckOn = 0.0;
-				if (uCrackOn > 0.5 && vCrackUv.z > -0.5 && all(greaterThan(vCrackUv.xy, vec2(0.0))) && all(lessThan(vCrackUv.xy, vec2(1.0)))) {
-					ckM = textureLod(uCrackM, vCrackUv, 0.0); ckOn = 1.0;
-					if (ckM.a > 0.5) discard;
-					diffuseColor.rgb *= (1.0 - 0.75 * smoothstep(0.1, 0.6, ckM.r)) * (1.0 - 0.25 * ckM.b);
-				}`)
-			.replace("#include <normal_fragment_maps>", `#include <normal_fragment_maps>
-				if (ckOn > 0.5) {
-					vec3 cn = textureLod(uCrackN, vCrackUv, 0.0).xyz * 2.0 - 1.0;
-					normal = normalize(normal + vec3(cn.x, cn.y, 0.0) * 0.8);
-				}`);
+			.replace("#include <common>", "#include <common>\nvarying vec3 vSUv;\nvarying float vSTop;\nuniform highp sampler2DArray uSA, uSB, uSM;\nuniform float uSOn;")
+			// до map_fragment: накладки (hardify) ложатся поверх цвета плиты
+			.replace("#include <map_fragment>", `
+				vec4 sA = vec4(0.55, 0.53, 0.5, 0.5), sB = vec4(0.5, 0.5, 0.9, 1.0);
+				if (uSOn > 0.5) {
+					sA = texture(uSA, vSUv); sB = texture(uSB, vSUv);
+					vec4 sM = texture(uSM, vSUv);
+					if (vSTop > 0.5 && sM.a > 0.5) discard;          // скол насквозь — видна земля
+				}
+				diffuseColor.rgb *= sA.rgb * mix(1.0, sB.w, 0.7);
+				#include <map_fragment>`)
+			.replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>
+				roughnessFactor = sB.z;`)
+			// нормаль плиты: базис по производным uv (у каждой плиты свой поворот)
+			.replace("#include <normal_fragment_maps>", `{
+					vec3 mapN = vec3(sB.xy * 2.0 - 1.0, 0.0);
+					mapN.z = sqrt(max(0.0, 1.0 - dot(mapN.xy, mapN.xy)));
+					vec3 q0 = dFdx(-vViewPosition), q1 = dFdy(-vViewPosition);
+					vec2 st0 = dFdx(vSUv.xy), st1 = dFdy(vSUv.xy);
+					vec3 Nn = normal, q1p = cross(q1, Nn), q0p = cross(Nn, q0);
+					vec3 T = q1p * st0.x + q0p * st1.x, Bt = q1p * st0.y + q0p * st1.y;
+					float det = max(dot(T, T), dot(Bt, Bt));
+					float sc = det == 0.0 ? 0.0 : inversesqrt(det);
+					if (uSOn > 0.5) normal = normalize(T * sc * mapN.x + Bt * sc * mapN.y + Nn * mapN.z);
+				}
+				#include <normal_fragment_maps>`);
 	};
-	mat.customProgramCacheKey = () => "slab-concrete-crack";
+	mat.customProgramCacheKey = () => "slab-surface";
 	const meshes = [];
 	for (const near of [true, false]) {
 		const bySize = {};
-		list.forEach((p, i) => { const k = nominal(Math.max(p.sx, p.sz)).toFixed(3) + (p.sx < p.sz * 0.75 ? "h" : ""); (bySize[k] ||= []).push(i); });
+		list.forEach((p, i) => (bySize[p.size] ||= []).push(i));
 		for (const [k, idx] of Object.entries(bySize)) {
-			const full = parseFloat(k), half = k.endsWith("h");
-			const sx = half ? full / 2 : full, sz = full;
-			const geo = near ? slabGeometry(sx, sz, S.thick, 0.015) : slabGeometry(sx, sz, S.thick, 0.0005);
-			const a = new Float32Array(idx.length * 4), ck = new Float32Array(idx.length).fill(-1);
+			const size = parseFloat(k), sx = size - joint;
+			const geo = near ? slabGeometry(sx, sx, S.thick, 0.015) : slabGeometry(sx, sx, S.thick, 0.0005);
+			const a = new Float32Array(idx.length * 4);
 			const im = new THREE.InstancedMesh(geo, mat, idx.length);
 			const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), col = new THREE.Color();
+			const layerBase = size >= 1 ? 0 : SLAB_VARS.length;
 			idx.forEach((li, n) => {
 				const p = list[li];
 				e.set(p.tiltX * Math.PI / 180, p.rotY, p.tiltZ * Math.PI / 180, "YXZ");
 				q.setFromEuler(e);
-				m.compose(new THREE.Vector3(p.x, p.y, p.z), q, new THREE.Vector3(p.sx / sx, 1, p.sz / sz));
+				m.compose(new THREE.Vector3(p.x, p.y, p.z), q, new THREE.Vector3(p.sx / sx, 1, p.sz / sx));
 				im.setMatrixAt(n, m);
 				// оттенок: светлее/темнее и чуть теплее/холоднее
-				const h1 = hash(p.x * 5.1, p.z * 2.7), h2 = hash(p.z * 3.3, p.x * 6.1);
+				const h2 = hash(p.z * 3.3, p.x * 6.1);
 				im.setColorAt(n, col.setRGB(p.tone * (1.02 + 0.06 * (h2 - 0.5)), p.tone, p.tone * (0.98 - 0.08 * (h2 - 0.5))));
-				a.set([h1 * 10, h2 * 10, Math.floor(hash(p.x, p.z * 1.9) * 4), Math.floor(hash(p.z, p.x * 2.3) * 6)], n * 4);
-				if (p.crack !== undefined && !half) ck[n] = p.crack;
+				a.set([sx, 0, p.rot, layerBase + p.v], n * 4);
 			});
 			geo.setAttribute("aSlab", new THREE.InstancedBufferAttribute(a, 4));
-			geo.setAttribute("aCrack", new THREE.InstancedBufferAttribute(ck, 1));
 			im.castShadow = near; im.receiveShadow = true;
 			im.userData.near = near;
 			im.userData.pos = idx.map(li => new THREE.Vector3(list[li].x, 0, list[li].z));
@@ -296,10 +277,9 @@ export function buildSlabs(d, trees = []) {
 			group.add(im); meshes.push(im);
 		}
 	}
-	// LOD: ближе NEAR_M — плита с фаской, дальше — брусок
+	// LOD: ближе NEAR_M — плита с фаской, дальше — брусок. Экземпляры не
+	// переставляются: в ненужной ступени матрица нулевая.
 	const NEAR_M = 30, last = new THREE.Vector3(1e9, 0, 0);
-	// Экземпляры не переставляются (сдвиг текстуры и цвет привязаны к номеру):
-	// в ступени, где плита сейчас не нужна, её матрица — нулевая.
 	const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
 	function update(camera) {
 		if (camera.position.distanceToSquared(last) < 0.25) return;

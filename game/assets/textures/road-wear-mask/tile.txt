@@ -1,0 +1,5 @@
+tile_m=8.00
+px=2048
+os_dvizheniya=U (po gorizontali)
+mask=R koleya/protyortost (polosy vdol U), G maslo (kapli seriyami vdol U + luzhicy), B pyl/pesok, A krupnyy razbivatel 1-3 m
+kuda klast reshaet sheyder profilem poperyok dorogi: R po sledam koles, G mezhdu nimi, B u bordyura

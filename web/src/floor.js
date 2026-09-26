@@ -199,6 +199,83 @@ export function buildEdgeField(d) {
 	return { tex, origin: new THREE.Vector2(x0, z0), size: new THREE.Vector2(W * ECELL, H * ECELL) };
 }
 
+/* ── карта дороги: где колеи, пыль, выкрошено, заплаты, лужи ─────────── */
+
+/**
+ * Карта дорог квартала (0.5 м, на весь участок bounds), два слоя в массиве:
+ *  0: R колеи (по полосам движения, две на полосу), G пыль у кромки, B выкрошенность,
+ *     A заплата (поперечные полосы-траншеи и прямоугольники в полосах);
+ *  1: RG направление движения (для маски износа), B середина полосы (масло между
+ *     колёсами), A низины (лужи: колеи, лотки у бордюра, осевшие заплаты).
+ * Всё — правилами от улиц и проездов, детерминированно.
+ */
+const RCELL = 0.5;
+export function buildRoadMap(d) {
+	const [x0, z0, x1, z1] = d.bounds || d.interior;
+	const W = Math.ceil((x1 - x0) / RCELL), H = Math.ceil((z1 - z0) / RCELL), N = W * H;
+	const L0 = new Float32Array(N * 4), L1 = new Float32Array(N * 4);
+	const rnd = (a, b) => { const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return s - Math.floor(s); };
+	const g = (x, s) => Math.exp(-(x * x) / (s * s));
+	// дорожное полотно: ось a→b, полуширина, полос; пишет в ячейки внутри полотна
+	function lane(a, b, half, lanes, kerb) {
+		const dx = b[0] - a[0], dz = b[1] - a[1], len = Math.hypot(dx, dz);
+		if (len < 0.5) return;
+		const tx = dx / len, tz = dz / len, nx = -tz, nz = tx;
+		const pad = half + 0.5;
+		const i0 = Math.max(0, Math.floor((Math.min(a[0], b[0]) - pad - x0) / RCELL)), i1 = Math.min(W - 1, Math.floor((Math.max(a[0], b[0]) + pad - x0) / RCELL));
+		const j0 = Math.max(0, Math.floor((Math.min(a[1], b[1]) - pad - z0) / RCELL)), j1 = Math.min(H - 1, Math.floor((Math.max(a[1], b[1]) + pad - z0) / RCELL));
+		const lw = 2 * half / lanes;
+		for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+			const x = x0 + (i + 0.5) * RCELL, z = z0 + (j + 0.5) * RCELL;
+			const u = (x - a[0]) * tx + (z - a[1]) * tz, c = (x - a[0]) * nx + (z - a[1]) * nz;
+			if (u < -half || u > len + half || Math.abs(c) > half) continue;
+			const k = (j * W + i) * 4;
+			// полоса и позиция в ней
+			const lc = (c + half) / lw, li = Math.min(lanes - 1, Math.floor(lc)), inLane = (lc - li - 0.5) * lw;
+			const rut = Math.max(g(inLane - 0.8, 0.3), g(inLane + 0.8, 0.3)) * (0.7 + 0.3 * rnd(Math.floor(u / 30), li));
+			const mid = g(inLane, 0.45);
+			const edge = half - Math.abs(c);
+			const gutter = kerb ? 1 - Math.min(1, edge / 0.9) : 0;
+			// выкрошено: у края полотна и пятнами вдоль (участки по 15 м)
+			const crumble = Math.max((1 - Math.min(1, edge / 0.8)) * 0.8, 0.25 * rnd(Math.floor(u / 15) + 3, Math.floor(c) + 7));
+			// заплаты: поперечная траншея раз в 30–70 м (на всю ширину или одну полосу),
+			// прямоугольники 2×3 м в полосах
+			const seg = Math.floor(u / 50), su = u - seg * 50, tw = 1.2 + rnd(seg, 11) * 1.2, tpos = 10 + rnd(seg, 5) * 30;
+			const trench = rnd(seg, 19) < 0.6 && Math.abs(su - tpos) < tw / 2 && (rnd(seg, 23) < 0.5 || li === Math.floor(rnd(seg, 29) * lanes));
+			const rs = Math.floor(u / 9), rc = rnd(rs, li * 13 + 1);
+			const rect = rc < 0.12 && Math.abs(u - (rs * 9 + 4.5)) < 1.5 && Math.abs(inLane) < 1.2;
+			const patch = trench || rect ? 1 : 0;
+			const low = Math.max(rut * 0.8, gutter * 0.9, patch * 0.5);
+			if (rut >= L0[k] || edge < 0.9) {
+				L0[k] = Math.max(L0[k], rut); L0[k + 1] = Math.max(L0[k + 1], gutter);
+				L0[k + 2] = Math.max(L0[k + 2], crumble); L0[k + 3] = Math.max(L0[k + 3], patch);
+			}
+			// направление — у той полосы, чья ось ближе (на перекрёстках)
+			if (L1[k + 3] === 0 || Math.abs(c) < half * 0.9) { L1[k] = tx; L1[k + 1] = tz; }
+			L1[k + 2] = Math.max(L1[k + 2], mid); L1[k + 3] = Math.max(L1[k + 3], low, 0.01);
+		}
+	}
+	for (const s of d.streets) {
+		const a = s.axis === "x" ? [s.from, s.at] : [s.at, s.from], b = s.axis === "x" ? [s.to, s.at] : [s.at, s.to];
+		lane(a, b, s.roadHalf, s.lanes || 2, true);
+	}
+	for (const w of d.driveways) for (let k = 1; k < w.path.length; k++) lane(w.path[k - 1], w.path[k], w.width / 2, 1, true);
+	for (const ar of d.areas) if (ar.kind === "parking" && ar.rect) {
+		const [a0, b0, a1, b1] = ar.rect, cz = (b0 + b1) / 2;
+		lane([a0, cz], [a1, cz], (b1 - b0) / 2, Math.max(1, Math.round((b1 - b0) / 5)), false);
+	}
+	const data = new Uint8Array(N * 4 * 2);
+	for (let k = 0; k < N * 4; k++) {
+		data[k] = Math.round(Math.min(1, L0[k]) * 255);
+		const v = (k % 4) < 2 ? L1[k] * 0.5 + 0.5 : Math.min(1, L1[k]);
+		data[N * 4 + k] = Math.round(v * 255);
+	}
+	const tex = new THREE.DataArrayTexture(data, W, H, 2);
+	tex.magFilter = tex.minFilter = THREE.LinearFilter;
+	tex.needsUpdate = true;
+	return { tex, origin: new THREE.Vector2(x0, z0), size: new THREE.Vector2(W * RCELL, H * RCELL) };
+}
+
 /** Веса в две RGBA-текстуры (каналы 0–3, 4–7), с размытием 3×3 — без ступенек по ячейке. */
 function weightTextures(map) {
 	const { W, H, weights } = map;
@@ -394,6 +471,7 @@ export const groundUniforms = {
 	// асфальт (HoudiniCOP): массивы как у слоёв — A albedo+height, B normal.xy+roughness+AO;
 	// слои 0 старый, 1 выкрошенный, 2 в заплатах
 	uAA: { value: null }, uAB: { value: null }, uATile: { value: 4 }, uAOn: { value: 0 },
+	uRoad: { value: null }, uROrigin: { value: new THREE.Vector2() }, uRSize: { value: new THREE.Vector2(1, 1) },
 	uHardCol: { value: new THREE.Color(0.3, 0.3, 0.3) },   // цвет асфальта дорожек — для отколотых кусков на земле
 	uEdgeFloor: { value: 0 },                              // слой пола, что проступает в выбоинах и по шву
 	uOvEdge: { value: -1 },                                // накладка, которой лента задаёт плотность крошки
@@ -415,7 +493,9 @@ const NOISE_TILE = 32.0;
 
 const GLSL_GROUND = /* glsl */`
 uniform sampler2D uGW0, uGW1;
-uniform highp sampler2DArray uNoise, uBands, uAA, uAB;
+uniform highp sampler2DArray uNoise, uBands, uAA, uAB, uRoad;
+uniform vec2 uROrigin, uRSize;
+vec4 gRoad(vec2 xz, float layer) { return textureLod(uRoad, vec3((xz - uROrigin) / uRSize, layer), 0.0); }
 uniform float uATile, uAOn, uAMode;
 vec4 gNoise4(vec2 uv, float layer) { return texture(uNoise, vec3(uv, layer)); }
 // Шум смешивания (32 м) на весь уровень повторялся сеткой — сверху видно сразу.
@@ -822,17 +902,50 @@ export function hardify(material, asphalt = 0, { lite = false } = {}) {
 				// Асфальт: варианты пятнами (процедурный шум без тайла, границы рваные по
 				// высоте отсчёта): в основном старый, местами выкрошенный, изредка заплаты.
 				vec4 hAA = vec4(0.0), hAB = vec4(0.0, 0.0, 0.9, 1.0); float hAsph = 0.0;
+				float hRut = 0.0, hOil = 0.0, hDust = 0.0, hPud = 0.0, hDamp = 0.0, hSeam = 0.0, hPch = 0.0;
 				#ifndef HARD_LITE
 				if (uAOn > 0.5 && uAMode > 0.5) {
-					float wc = uAMode > 1.5 ? 0.0 : smoothstep(0.58, 0.7, gNoise(hXZ * 0.045 + 2.2) * 0.7 + gNoise(hXZ * 0.19 + 8.1) * 0.3);
-					float wp = uAMode > 1.5 ? 0.0 : smoothstep(0.66, 0.74, gNoise(hXZ * 0.03 + 6.6)) * (1.0 - wc);
-					float wo = 1.0 - max(wc, wp);
-					vec4 a0, b0; gAsphHex(0.0, hXZ, a0, b0);
-					hAA = a0 * wo; hAB = b0 * wo;
-					if (wc > 0.01) { vec4 a1, b1; gAsphHex(1.0, hXZ, a1, b1); hAA += a1 * wc; hAB += b1 * wc; }
-					if (wp > 0.01) { vec4 a2, b2; gAsphHex(2.0, hXZ, a2, b2); hAA += a2 * wp; hAB += b2 * wp; }
+					// Карта дороги (правила от улиц) + маска износа HoudiniCOP вдоль движения:
+					// колеи, масло между колёс, пыль у бордюра, выкрошенность, заплаты, лужи.
+					vec4 r0 = gRoad(hXZ, 0.0), r1 = gRoad(hXZ, 1.0);
+					vec2 rt = normalize(r1.xy * 2.0 - 1.0 + vec2(1e-4, 0.0));
+					vec4 wm = gNoise4(vec2(dot(hXZ, rt), dot(hXZ, vec2(-rt.y, rt.x))) / 8.0, 4.0);
+					float brk = 0.6 + 0.8 * wm.a;
+					hRut = r0.r * wm.r * brk;
+					hOil = r1.z * wm.g;
+					hDust = r0.g * wm.b * brk;
+					float wc = uAMode > 1.5 ? 0.0 : smoothstep(0.35, 0.65, r0.b + (gNoise(hXZ * 0.19 + 8.1) - 0.5) * 0.5);
+					hPch = uAMode > 1.5 ? 0.0 : smoothstep(0.4, 0.6, r0.a);
+					hSeam = uAMode > 1.5 ? 0.0 : smoothstep(0.15, 0.45, r0.a) * (1.0 - smoothstep(0.55, 0.85, r0.a));
+					// вблизи — шестиугольное расслоение, дальше 30 м — один отсчёт
+					float far = step(30.0, length(cameraPosition - vGWorld));
+					vec4 a0, b0;
+					if (far > 0.5) { gAsphTap(0.0, hXZ / uATile, gDX / uATile, gDY / uATile, vec2(0.0), false, a0, b0); }
+					else gAsphHex(0.0, hXZ, a0, b0);
+					hAA = a0 * (1.0 - wc); hAB = b0 * (1.0 - wc);
+					if (wc > 0.01) {
+						vec4 a1, b1;
+						if (far > 0.5) gAsphTap(1.0, hXZ / uATile, gDX / uATile, gDY / uATile, vec2(0.0), false, a1, b1);
+						else gAsphHex(1.0, hXZ, a1, b1);
+						hAA += a1 * wc; hAB += b1 * wc;
+					}
 					hAsph = hTop;
-					diffuseColor.rgb = mix(diffuseColor.rgb, hAA.rgb * mix(1.0, hAB.w, 0.6), hAsph);
+					// выгоревший битум светлее и серее; заплата — свежее и темнее, шов битума
+					vec3 ac = hAA.rgb * mix(1.0, hAB.w, 0.6) * vec3(1.1, 1.08, 1.05);
+					ac = mix(ac, ac * vec3(0.62, 0.62, 0.64), hPch);
+					ac = mix(ac, vec3(0.035), hSeam * 0.8);
+					ac *= 1.0 + 0.12 * hRut;                                  // колея — отполирована
+					ac = mix(ac, ac * 0.55, hOil * 0.8);                      // масло
+					ac = mix(ac, vec3(0.42, 0.38, 0.31), hDust * 0.55);      // пыль и песок у бордюра
+					// лужи: низины + сырость пятнами; вокруг — тёмная сырая кайма
+					float wet = gNoise(hXZ * 0.11 + 4.4) * 0.6 + hGz.g * 0.4;
+					// край лужи — не по клеткам карты, а по мелкому шуму: органичная форма
+					float lowv = r1.a * 0.85 + (wet - 0.5) * 0.7 + (gNoise(hXZ * 1.7 + 2.1) - 0.5) * 0.3;
+					hPud = smoothstep(0.57, 0.61, lowv) * hTop;
+					hDamp = smoothstep(0.44, 0.57, lowv) * hTop;
+					ac *= 1.0 - 0.3 * hDamp;
+					ac = mix(ac, ac * 0.45, hPud);
+					diffuseColor.rgb = mix(diffuseColor.rgb, ac, hAsph);
 				}
 				#endif
 				// Гранж по покрытию: грязь пятнами, сырость (темнее, блестит), мох по
@@ -880,12 +993,20 @@ export function hardify(material, asphalt = 0, { lite = false } = {}) {
 				diffuseColor.rgb = mix(diffuseColor.rgb, hG.lalb, hMask);`)
 			.replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>
 				roughnessFactor = mix(roughnessFactor, hAB.z, hAsph);
+				roughnessFactor *= 1.0 - 0.2 * hRut - 0.35 * hOil - 0.25 * hDamp;
+				roughnessFactor = mix(roughnessFactor, 0.97, hDust * 0.5);
+				roughnessFactor = mix(roughnessFactor, 0.55, hSeam);
+				roughnessFactor = mix(roughnessFactor, 0.04, hPud);   // вода: зеркало неба`)
+			// небо в отражении: сухой асфальт почти не отражает (иначе сереет весь),
+			// лужа — в полную силу
+			.replace("#include <lights_fragment_end>", `#include <lights_fragment_end>
+				reflectedLight.indirectSpecular *= mix(0.25, 2.5, hPud);
 				roughnessFactor *= 1.0 - 0.5 * hWet;
 				roughnessFactor = mix(roughnessFactor, 0.95, hMoss);
 				roughnessFactor = mix(roughnessFactor, 0.75, hMask);`)
 			.replace("#include <normal_fragment_maps>", `#include <normal_fragment_maps>
 				{
-					vec2 txy = mix(mix(gDetail(hXZ) * 0.6, hAB.xy, hAsph), hG.lnxz, hMask) * hNear;
+					vec2 txy = mix(mix(gDetail(hXZ) * 0.6, hAB.xy, hAsph), hG.lnxz, hMask) * hNear * (1.0 - hPud);
 					vec3 wn = normalize(vec3(txy.x, sqrt(max(0.0, 1.0 - dot(txy, txy))), txy.y));
 					normal = normalize(mix(normal, normalize((viewMatrix * vec4(wn, 0.0)).xyz), hTop));
 				}`);
@@ -945,10 +1066,12 @@ export async function setupGround(d, material, map, { res = 1024, debug = false,
 	};
 	const [noisePx, bandPx] = await Promise.all([
 		imgs(["blend-noise/blend_noise_rgba_1k.png", "grunge-mask/grunge_mask_rgba_1k.png",
-			"noise-cellular-soft/noise_cellular_soft_rgba_1k.png", "detail-normal/detail_normal_normal_1k.png"], 1024),
+			"noise-cellular-soft/noise_cellular_soft_rgba_1k.png", "detail-normal/detail_normal_normal_1k.png",
+			"road-wear-mask/road_wear_mask_2k.png"], 1024),   // слой 4 — износ дороги (HoudiniCOP), U вдоль движения
 		imgs(["band-asphalt-soil/band_asphalt_soil_rgba_1k.png", "band-paving-grass/band_paving_grass_rgba_1k.png"], 512),
 	]);
 	U.uNoise.value = packArr(noisePx, 1024, THREE.RepeatWrapping);
+	{ const R = buildRoadMap(d); U.uRoad.value = R.tex; U.uROrigin.value.copy(R.origin); U.uRSize.value.copy(R.size); }
 	U.uBands.value = packArr(bandPx, 512, THREE.ClampToEdgeWrapping);
 	const hard0 = Array.isArray(hard[0]) ? hard[0][0] : hard[0];
 	if (hard0) U.uHardCol.value.copy(hard0.color);
@@ -987,6 +1110,7 @@ export async function setupGround(d, material, map, { res = 1024, debug = false,
 		console.log(`ground: опад пород ${sp.join(",")}`);
 	} else U.uSpMap.value = new THREE.DataTexture(new Uint8Array(4), 1, 1);
 	if (!U.uAA.value) { const e = () => arrayTex(new Uint8Array(4), 1, 1, false); U.uAA.value = e(); U.uAB.value = e(); }
+	if (!U.uRoad.value) U.uRoad.value = arrayTex(new Uint8Array(8), 1, 1, false);
 	if (O.OA) { U.uOA.value = O.OA; U.uOB.value = O.OB; }
 	else {   // накладок нет — пустые массивы, чтобы шейдеру было что привязать
 		const empty = () => arrayTex(new Uint8Array(4), 1, 1, false);
