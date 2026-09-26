@@ -1,0 +1,8 @@
+tile_m=4.00
+height_cm=0.77
+albedo_mean=#514e49
+nscale=1.000
+normal_blue_mean=0.997
+px=2048
+variant_of=asphalt-road (tile 4 m, odin masshtab i ton)
+opis=staryy rovnyy: shcheben prostupil skvoz vyvetrennyy bitum, redkie volosyanye treshchiny

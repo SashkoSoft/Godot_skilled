@@ -243,12 +243,12 @@ function parseTile(txt) {
 	return { tile: num("tile_m", 2), heightCm: num("height_cm", 1.5), status: st ? st[1] : "",
 		species: sp ? sp[1].split(",").map(s => s.trim()).filter(Boolean) : null };
 }
-async function loadSet(name, kinds) {
+async function loadSet(name, kinds, suffix = "1k") {
 	const base = TEX + name + "/", file = name.replace(/-/g, "_");
 	const r = await fetch(base + "tile.txt");
 	if (!r.ok) return null;
 	const meta = parseTile(await r.text());
-	const imgs = await Promise.all(kinds.map(k => loadImage(`${base}${file}_${k}_1k.png`)));
+	const imgs = await Promise.all(kinds.map(k => loadImage(`${base}${file}_${k}_${suffix}.png`)));
 	return { meta, ...Object.fromEntries(kinds.map((k, i) => [k, imgs[i]])) };
 }
 
@@ -391,6 +391,9 @@ export const groundUniforms = {
 	// ленты переходов
 	uEdge: { value: null }, uEOrigin: { value: new THREE.Vector2() }, uESize: { value: new THREE.Vector2(1, 1) },
 	uBands: { value: null },   // ленты переходов: 0 асфальт → земля, 1 плитка → трава
+	// асфальт (HoudiniCOP): массивы как у слоёв — A albedo+height, B normal.xy+roughness+AO;
+	// слои 0 старый, 1 выкрошенный, 2 в заплатах
+	uAA: { value: null }, uAB: { value: null }, uATile: { value: 4 }, uAOn: { value: 0 },
 	uHardCol: { value: new THREE.Color(0.3, 0.3, 0.3) },   // цвет асфальта дорожек — для отколотых кусков на земле
 	uEdgeFloor: { value: 0 },                              // слой пола, что проступает в выбоинах и по шву
 	uOvEdge: { value: -1 },                                // накладка, которой лента задаёт плотность крошки
@@ -412,8 +415,19 @@ const NOISE_TILE = 32.0;
 
 const GLSL_GROUND = /* glsl */`
 uniform sampler2D uGW0, uGW1;
-uniform highp sampler2DArray uNoise, uBands;
+uniform highp sampler2DArray uNoise, uBands, uAA, uAB;
+uniform float uATile, uAOn, uAMode;
 vec4 gNoise4(vec2 uv, float layer) { return texture(uNoise, vec3(uv, layer)); }
+// Шум смешивания (32 м) на весь уровень повторялся сеткой — сверху видно сразу.
+// Две копии: вторая повёрнута и с несоизмеримым шагом (45.7 м); какая действует —
+// выбирает процедурный шум без повтора (~80 м). Переход между ними узкий: почти
+// везде значение одной копии, контраст порогов не падает.
+const mat2 BN_R = mat2(0.6, 0.8, -0.8, 0.6);
+vec4 gBlendN(vec2 xz) {
+	vec4 a = gNoise4(xz / 32.0, 0.0), b = gNoise4(BN_R * xz / 45.7 + vec2(0.19, 0.53), 0.0);
+	float s = smoothstep(0.42, 0.58, gNoise(xz * 0.0125 + 5.3) * 0.7 + gNoise(xz * 0.031 + 1.7) * 0.3);
+	return mix(a, b, s);
+}
 uniform vec2 uGOrigin, uGSize;
 uniform highp sampler2DArray uGA, uGB, uOA, uOB;
 uniform float uGTile[${MAX_LAYERS}], uGH[${MAX_LAYERS}], uGGrass[${MAX_LAYERS}];
@@ -462,7 +476,7 @@ vec4 gGrunge(vec2 xz) {
 // Клеточный шум — узор чёткий (многоугольники, прямые рёбра): выборка искажена
 // другим шумом, чтобы рёбра не были прямыми; порогом по нему одному не резать.
 vec4 gCell(vec2 xz) {
-	vec2 warp = (gNoise4(xz / 32.0, 0.0).rg - 0.5) * 0.025;   // мягкая версия уже искажена внутри — поверх слабее
+	vec2 warp = (gBlendN(xz).rg - 0.5) * 0.025;   // мягкая версия уже искажена внутри — поверх слабее
 	return gNoise4(xz / 32.0 + warp, 2.0);
 }
 // детальная нормаль: вблизи (до ~15 м), иначе только муар
@@ -473,8 +487,15 @@ vec2 gDetail(vec2 xz) {
 uniform int uOvCh[${MAX_OV}], uOvUnder[${MAX_OV}];
 uniform float uOvTile[${MAX_OV}], uOvAmb[${MAX_OV}], uOvGrass[${MAX_OV}];
 uniform vec4 uOvSel[${MAX_OV}];
-const vec3 G_DEBUG[10] = vec3[10](vec3(0.35,0.22,0.1), vec3(0.85,0.75,0.5), vec3(0.8,0.2,0.15), vec3(0.55,0.55,0.6),
-	vec3(1.0,0.9,0.45), vec3(0.2,0.7,0.2), vec3(0.8,0.7,0.3), vec3(0.1,0.4,0.25), vec3(0.2,0.6,0.9), vec3(0.8,0.3,0.8));
+// Отладочные цвета слоёв. Без конструктора массива vec3[10](…): мобильные
+// компиляторы GLSL ES (телефон) требуют у него явную точность и не собирают шейдер.
+vec3 gDebugCol(int i) {
+	if (i == 0) return vec3(0.35, 0.22, 0.1);  if (i == 1) return vec3(0.85, 0.75, 0.5);
+	if (i == 2) return vec3(0.8, 0.2, 0.15);   if (i == 3) return vec3(0.55, 0.55, 0.6);
+	if (i == 4) return vec3(1.0, 0.9, 0.45);   if (i == 5) return vec3(0.2, 0.7, 0.2);
+	if (i == 6) return vec3(0.8, 0.7, 0.3);    if (i == 7) return vec3(0.1, 0.4, 0.25);
+	if (i == 8) return vec3(0.2, 0.6, 0.9);    return vec3(0.8, 0.3, 0.8);
+}
 // выбор по шуму: варианты делят площадь пятнами (канал, от, до);
 // каналы 0–3 — blend-noise, 4–7 — гранж, 8–11 — клеточный
 float gSelect(vec4 sel, vec4 nz, vec4 gz, vec4 cz) {
@@ -498,6 +519,16 @@ float gWeight(vec2 xz, int ch) {
 // усилением по высоте — повтор исчезает, шва нет. Для однородных покрытий
 // (песок, утоптанная земля), где второй отсчёт пятнами не спасает.
 vec2 gHash2(vec2 p) { return fract(sin(vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)))) * 43758.5453); }
+// один отсчёт шестиугольника: тайл повёрнут и сдвинут по хешу вершины сетки
+void gHexTap(int li, vec2 uv, vec2 dx, vec2 dy, vec2 vtx, out vec4 a, out vec4 b) {
+	vec2 h = gHash2(vtx);
+	float ang = h.x * 6.2831853, c = cos(ang), s = sin(ang);
+	mat2 R = mat2(c, s, -s, c);
+	vec2 u = R * uv + h * 7.31;
+	a = textureGrad(uGA, vec3(u, float(li)), R * dx, R * dy);
+	b = textureGrad(uGB, vec3(u, float(li)), R * dx, R * dy);
+	b.xy = transpose(R) * (b.xy * 2.0 - 1.0);   // нормаль повёрнутого отсчёта — обратно в мир
+}
 void gHexSample(int li, vec2 uv, out vec4 a, out vec4 b) {
 	vec2 st = uv * 1.2;   // ячейка ~ тайл
 	vec2 sk = vec2(st.x, -0.57735027 * st.x + 1.15470054 * st.y) * 1.7320508;
@@ -506,22 +537,44 @@ void gHexSample(int li, vec2 uv, out vec4 a, out vec4 b) {
 	if (z > 0.0) { w = vec3(z, f.y, f.x); v1 = base; v2 = base + vec2(0.0, 1.0); v3 = base + vec2(1.0, 0.0); }
 	else { w = vec3(-z, 1.0 - f.y, 1.0 - f.x); v1 = base + vec2(1.0, 1.0); v2 = base + vec2(1.0, 0.0); v3 = base + vec2(0.0, 1.0); }
 	vec2 dx = gDX / uGTile[li], dy = gDY / uGTile[li];
-	vec4 A3[3]; vec4 B3[3]; vec2 V[3] = vec2[3](v1, v2, v3);
-	float wsum = 0.0; vec3 k;
-	for (int j = 0; j < 3; j++) {
-		vec2 h = gHash2(V[j]);
-		float ang = h.x * 6.2831853, c = cos(ang), s = sin(ang);
-		mat2 R = mat2(c, s, -s, c);
-		vec2 u = R * uv + h * 7.31;
-		A3[j] = textureGrad(uGA, vec3(u, float(li)), R * dx, R * dy);
-		B3[j] = textureGrad(uGB, vec3(u, float(li)), R * dx, R * dy);
-		B3[j].xy = transpose(R) * (B3[j].xy * 2.0 - 1.0);   // нормаль повёрнутого отсчёта — обратно в мир
-	}
+	vec4 a1, b1, a2, b2, a3, b3;
+	gHexTap(li, uv, dx, dy, v1, a1, b1);
+	gHexTap(li, uv, dx, dy, v2, a2, b2);
+	gHexTap(li, uv, dx, dy, v3, a3, b3);
 	// усиление по высоте: на стыке сверху то, что выше, — стык рвётся по рельефу
-	for (int j = 0; j < 3; j++) k[j] = pow(w[j], 3.0) * pow(0.25 + A3[j].a, 4.0);
+	vec3 k = vec3(pow(w.x, 3.0) * pow(0.25 + a1.a, 4.0), pow(w.y, 3.0) * pow(0.25 + a2.a, 4.0), pow(w.z, 3.0) * pow(0.25 + a3.a, 4.0));
 	k /= max(k.x + k.y + k.z, 1e-5);
-	a = A3[0] * k.x + A3[1] * k.y + A3[2] * k.z;
-	b = B3[0] * k.x + B3[1] * k.y + B3[2] * k.z;
+	a = a1 * k.x + a2 * k.y + a3 * k.z;
+	b = b1 * k.x + b2 * k.y + b3 * k.z;
+}
+
+// Асфальт: шестиугольное расслоение, как у слоёв; quant — повороты только кратно 90°
+// (у заплат прямоугольники, наискось они выглядели бы нелепо).
+void gAsphTap(float li, vec2 uv, vec2 dx, vec2 dy, vec2 vtx, bool quant, out vec4 a, out vec4 b) {
+	vec2 h = gHash2(vtx + li * 17.0);
+	float ang = quant ? floor(h.x * 4.0) * 1.5707963 : h.x * 6.2831853, c = cos(ang), s = sin(ang);
+	mat2 R = mat2(c, s, -s, c);
+	vec2 u = R * uv + h * 7.31;
+	a = textureGrad(uAA, vec3(u, li), R * dx, R * dy);
+	b = textureGrad(uAB, vec3(u, li), R * dx, R * dy);
+	b.xy = transpose(R) * (b.xy * 2.0 - 1.0);
+}
+void gAsphHex(float li, vec2 xz, out vec4 a, out vec4 b) {
+	vec2 uv = xz / uATile, dx = gDX / uATile, dy = gDY / uATile;
+	vec2 sk = vec2(uv.x * 1.2, -0.57735027 * uv.x * 1.2 + 1.15470054 * uv.y * 1.2) * 1.7320508;
+	vec2 base = floor(sk); vec2 f = fract(sk); float z = 1.0 - f.x - f.y;
+	vec3 w; vec2 v1, v2, v3;
+	if (z > 0.0) { w = vec3(z, f.y, f.x); v1 = base; v2 = base + vec2(0.0, 1.0); v3 = base + vec2(1.0, 0.0); }
+	else { w = vec3(-z, 1.0 - f.y, 1.0 - f.x); v1 = base + vec2(1.0, 1.0); v2 = base + vec2(1.0, 0.0); v3 = base + vec2(0.0, 1.0); }
+	bool q = li > 1.5;
+	vec4 a1, b1, a2, b2, a3, b3;
+	gAsphTap(li, uv, dx, dy, v1, q, a1, b1);
+	gAsphTap(li, uv, dx, dy, v2, q, a2, b2);
+	gAsphTap(li, uv, dx, dy, v3, q, a3, b3);
+	vec3 k = vec3(pow(w.x, 3.0) * pow(0.25 + a1.a, 4.0), pow(w.y, 3.0) * pow(0.25 + a2.a, 4.0), pow(w.z, 3.0) * pow(0.25 + a3.a, 4.0));
+	k /= max(k.x + k.y + k.z, 1e-5);
+	a = a1 * k.x + a2 * k.y + a3 * k.z;
+	b = b1 * k.x + b2 * k.y + b3 * k.z;
 }
 
 // Отсчёт слоя: вблизи два (второй повёрнут на 90° и сдвинут), смешаны по островкам
@@ -596,7 +649,7 @@ void overlays(vec2 xz, float grassD, vec4 nz, vec4 gz, vec4 cz, bool hard, inout
 			float keep = mix(0.3, 1.0, share);                   // чужой лист — 30%, «занесло ветром»
 			if (fract(m.b * 97.31) > keep) continue;             // решение на весь лист: порядок в стопке у листа один
 		}
-		vec3 col = uGDebug == 1 ? G_DEBUG[(i + 4) % 10] : a.rgb;
+		vec3 col = uGDebug == 1 ? gDebugCol((i + 4) % 10) : a.rgb;
 		if (under) {
 			g.alb = mix(g.alb, col, hit); g.nxz = mix(g.nxz, n, hit);
 			g.rough = mix(g.rough, 0.8, hit); g.ao = mix(g.ao, 1.0, hit);
@@ -614,7 +667,7 @@ GroundS groundAt(vec2 xz, float near, float grassD) {
 	vec4 w0 = texture(uGW0, uv), w1 = texture(uGW1, uv);
 	// за пределами карты (земля за улицами) правил нет — только почва и дёрн, без размазанного края карты
 	if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) { w0 = vec4(0.0); w1 = vec4(0.0); }
-	vec4 nz = gNoise4(xz / ${NOISE_TILE.toFixed(1)}, 0.0);
+	vec4 nz = gBlendN(xz);
 	vec4 gz = gGrunge(xz), cz = gCell(xz);
 	float mixW = smoothstep(0.35, 0.65, nz.g);
 	bool two = near > 0.0;
@@ -648,7 +701,7 @@ GroundS groundAt(vec2 xz, float near, float grassD) {
 		if (sc[i] < 0.0) continue;
 		float k = max(sc[i] - top + 0.12, 0.0);   // 0.12 — ширина перехода
 		if (k <= 0.0) continue;
-		g.alb += (uGDebug == 1 ? G_DEBUG[i] : A[i].rgb) * k;
+		g.alb += (uGDebug == 1 ? gDebugCol(i) : A[i].rgb) * k;
 		g.h += A[i].a * k; g.nxz += B[i].xy * k; g.rough += B[i].z * k; g.ao += B[i].w * k;
 		sum += k;
 	}
@@ -684,7 +737,7 @@ export function groundify(material) {
 				float gTop = smoothstep(-0.2, -0.05, vGWorld.y);                   // только верх плиты
 				float gNear = 1.0 - smoothstep(20.0, 60.0, length(cameraPosition.xz - gXZ));
 				GroundS gG = groundAt(gXZ, gNear, gMap.r);
-				vec4 gNz = gNoise4(gXZ / ${NOISE_TILE.toFixed(1)}, 0.0);
+				vec4 gNz = gBlendN(gXZ);
 				// Проплешины в газоне — по рельефу пола и рваной кромке; где трава
 				// по карте слабее (вытоптана, вытеснена) — пол виден сильнее.
 				float gField = gG.h * 0.45 + gNz.a * 0.35 + gNz.g * 0.2;
@@ -737,10 +790,11 @@ export function groundify(material) {
  * накладки «сверху» из той же карты. Так стык сшивается с обеих сторон:
  * камешки с кромки и опад лежат и на земле, и на дорожке.
  */
-export function hardify(material) {
+export function hardify(material, asphalt = 0) {
 	const prev = material.color.getHex();
+	const own = { uAMode: { value: asphalt } };   // 0 — нет, 1 — все варианты пятнами, 2 — только старый
 	material.onBeforeCompile = (shader) => {
-		Object.assign(shader.uniforms, grassUniforms, groundUniforms);
+		Object.assign(shader.uniforms, grassUniforms, groundUniforms, own);
 		shader.vertexShader = VERT_WORLD(shader.vertexShader);
 		shader.fragmentShader = shader.fragmentShader
 			.replace("#include <common>", `#include <common>\nvarying vec3 vGWorld;\nvarying float vGUp;\n${GLSL_COMMON}\n${GLSL_GROUND}`)
@@ -752,18 +806,38 @@ export function hardify(material) {
 				hG.under = 0.0; hG.leaf = 0.0; hG.lalb = vec3(0.0); hG.lnxz = vec2(0.0);
 				gDeriv(hXZ);
 				vec4 hGz = gGrunge(hXZ);
+				// Асфальт: варианты пятнами (процедурный шум без тайла, границы рваные по
+				// высоте отсчёта): в основном старый, местами выкрошенный, изредка заплаты.
+				vec4 hAA = vec4(0.0), hAB = vec4(0.0, 0.0, 0.9, 1.0); float hAsph = 0.0;
+				if (uAOn > 0.5 && uAMode > 0.5) {
+					float wc = uAMode > 1.5 ? 0.0 : smoothstep(0.58, 0.7, gNoise(hXZ * 0.045 + 2.2) * 0.7 + gNoise(hXZ * 0.19 + 8.1) * 0.3);
+					float wp = uAMode > 1.5 ? 0.0 : smoothstep(0.66, 0.74, gNoise(hXZ * 0.03 + 6.6)) * (1.0 - wc);
+					float wo = 1.0 - max(wc, wp);
+					vec4 a0, b0; gAsphHex(0.0, hXZ, a0, b0);
+					hAA = a0 * wo; hAB = b0 * wo;
+					if (wc > 0.01) { vec4 a1, b1; gAsphHex(1.0, hXZ, a1, b1); hAA += a1 * wc; hAB += b1 * wc; }
+					if (wp > 0.01) { vec4 a2, b2; gAsphHex(2.0, hXZ, a2, b2); hAA += a2 * wp; hAB += b2 * wp; }
+					hAsph = hTop;
+					diffuseColor.rgb = mix(diffuseColor.rgb, hAA.rgb * mix(1.0, hAB.w, 0.6), hAsph);
+				}
 				// Гранж по покрытию: грязь пятнами, сырость (темнее, блестит), мох по
 				// швам там, где грязно, трещины. Вдали трещины гаснут — иначе муар.
-				float hDirt = smoothstep(0.1, 0.6, hGz.r) * hTop;
-				float hWet = smoothstep(0.45, 0.85, hGz.g) * hTop;
+				// Грязь и сырость на асфальте — процедурным шумом без тайла: из маски 8 м
+				// на однотонном асфальте одни и те же кляксы шли рядом, шаг читался сверху.
+				float hN1 = gNoise(hXZ * 0.21 + 3.7) * 0.6 + gNoise(hXZ * 0.83 + 1.1) * 0.4;
+				float hN2 = gNoise(hXZ * 0.07 + 9.3) * 0.7 + gNoise(hXZ * 0.29 + 4.4) * 0.3;
+				float hDirt = smoothstep(0.55, 0.85, hN1) * hTop;
+				float hWet = smoothstep(0.62, 0.9, hN2) * hTop;
 				// трещины и мох — не узором по всей площади, а пятнами там, где грязно и по шуму
-				float hPatch = smoothstep(0.35, 0.75, 0.6 * gNoise4(hXZ / ${NOISE_TILE.toFixed(1)}, 0.0).a + 0.6 * hGz.r);
+				float hPatch = smoothstep(0.35, 0.75, 0.6 * gBlendN(hXZ).a + 0.6 * hGz.r);
 				float hMoss = smoothstep(0.35, 0.8, hGz.b) * smoothstep(0.15, 0.5, hGz.r) * hPatch * hTop;
 				float hCrack = smoothstep(0.25, 0.7, hGz.a) * hPatch * hNear * hTop;
-				diffuseColor.rgb *= mix(vec3(1.0), vec3(0.72, 0.66, 0.58), hDirt * 0.7);
-				diffuseColor.rgb *= 1.0 - 0.3 * hWet;
-				diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.07, 0.10, 0.035), hMoss * 0.75);
-				diffuseColor.rgb *= 1.0 - 0.6 * hCrack;
+				// Трещины и мох из общего гранжа на асфальте читались одинаковыми «рогатками»
+				// (маска одна на весь квартал) — выключены до текстур асфальта HoudiniCOP,
+				// где трещины свои, в рельефе. Грязь и сырость — слабее.
+				hMoss = 0.0; hCrack = 0.0;
+				diffuseColor.rgb *= mix(vec3(1.0), vec3(0.78, 0.73, 0.66), hDirt * 0.5);
+				diffuseColor.rgb *= 1.0 - 0.2 * hWet;
 				// Ленты переходов со стороны покрытия: рваная кромка — в выбоинах земля,
 				// вдоль кромки трещины, край чуть темнее (скруглён вниз); у тротуара —
 				// трава языками и кустиками заходит на плитку, по шву земля.
@@ -784,21 +858,22 @@ export function hardify(material) {
 						}
 					}
 				}
-				overlays(hXZ, 0.0, gNoise4(hXZ / ${NOISE_TILE.toFixed(1)}, 0.0), hGz, gCell(hXZ), true, hG);
+				overlays(hXZ, 0.0, gBlendN(hXZ), hGz, gCell(hXZ), true, hG);
 				float hMask = hG.leaf * hTop;
 				diffuseColor.rgb = mix(diffuseColor.rgb, hG.lalb, hMask);`)
 			.replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>
+				roughnessFactor = mix(roughnessFactor, hAB.z, hAsph);
 				roughnessFactor *= 1.0 - 0.5 * hWet;
 				roughnessFactor = mix(roughnessFactor, 0.95, hMoss);
 				roughnessFactor = mix(roughnessFactor, 0.75, hMask);`)
 			.replace("#include <normal_fragment_maps>", `#include <normal_fragment_maps>
 				{
-					vec2 txy = mix(gDetail(hXZ) * 0.6, hG.lnxz, hMask) * hNear;
+					vec2 txy = mix(mix(gDetail(hXZ) * 0.6, hAB.xy, hAsph), hG.lnxz, hMask) * hNear;
 					vec3 wn = normalize(vec3(txy.x, sqrt(max(0.0, 1.0 - dot(txy, txy))), txy.y));
 					normal = normalize(mix(normal, normalize((viewMatrix * vec4(wn, 0.0)).xyz), hTop));
 				}`);
 	};
-	material.customProgramCacheKey = () => "ground-hard-" + prev;
+	material.customProgramCacheKey = () => "ground-hard";   // режим асфальта — униформа, программа общая
 	material.needsUpdate = true;
 }
 
@@ -858,7 +933,8 @@ export async function setupGround(d, material, map, { res = 1024, debug = false,
 	]);
 	U.uNoise.value = packArr(noisePx, 1024, THREE.RepeatWrapping);
 	U.uBands.value = packArr(bandPx, 512, THREE.ClampToEdgeWrapping);
-	if (hard[0]) U.uHardCol.value.copy(hard[0].color);
+	const hard0 = Array.isArray(hard[0]) ? hard[0][0] : hard[0];
+	if (hard0) U.uHardCol.value.copy(hard0.color);
 	U.uGDebug.value = debug ? 1 : 0;
 	const layerNames = map.layers, GL = d.ground.layers;
 	const [L, O] = await Promise.all([buildLayerArrays(d, layerNames, res), buildOverlayArrays(d.ground.overlays || [], res)]);
@@ -893,13 +969,30 @@ export async function setupGround(d, material, map, { res = 1024, debug = false,
 		U.uSpMap.value = speciesField(map, trees, sp);
 		console.log(`ground: опад пород ${sp.join(",")}`);
 	} else U.uSpMap.value = new THREE.DataTexture(new Uint8Array(4), 1, 1);
+	if (!U.uAA.value) { const e = () => arrayTex(new Uint8Array(4), 1, 1, false); U.uAA.value = e(); U.uAB.value = e(); }
 	if (O.OA) { U.uOA.value = O.OA; U.uOB.value = O.OB; }
 	else {   // накладок нет — пустые массивы, чтобы шейдеру было что привязать
 		const empty = () => arrayTex(new Uint8Array(4), 1, 1, false);
 		U.uOA.value = empty(); U.uOB.value = empty();
 	}
 	groundify(material);
-	for (const m of hard) hardify(m);
+	for (const h of hard) Array.isArray(h) ? hardify(h[0], h[1]) : hardify(h);
+	// асфальт — фоном: пока грузится, покрытие прежнее
+	const ASPH = ["asphalt-road-old", "asphalt-road-crumbled", "asphalt-road-patched"];
+	Promise.all(ASPH.map(n => loadSet(n, ["albedo", "normal", "orm", "height"], "2k"))).then(sets => {
+		if (sets.some(s => !s)) { console.warn("ground: асфальт — нет наборов"); return; }
+		const r = res, S = r * r * 4, A = new Uint8Array(S * sets.length), B = new Uint8Array(S * sets.length);
+		sets.forEach((s, li) => {
+			const alb = rawPixels(s.albedo, r), nrm = rawPixels(s.normal, r), orm = rawPixels(s.orm, r), hgt = rawPixels(s.height, r), o = li * S;
+			for (let k = 0; k < S; k += 4) {
+				A[o + k] = alb[k]; A[o + k + 1] = alb[k + 1]; A[o + k + 2] = alb[k + 2]; A[o + k + 3] = hgt[k];
+				B[o + k] = nrm[k]; B[o + k + 1] = nrm[k + 1]; B[o + k + 2] = orm[k + 1]; B[o + k + 3] = orm[k];
+			}
+		});
+		U.uAA.value = arrayTex(A, r, sets.length, true); U.uAB.value = arrayTex(B, r, sets.length, false);
+		U.uATile.value = sets[0].meta.tile; U.uAOn.value = 1;
+		console.log(`ground: асфальт ${ASPH.join(",")} · ${r}px`);
+	}).catch(e => console.warn("ground: асфальт", e));
 	console.log(`ground: слои ${layerNames.join(",")} · накладки ${O.ready.map(x => x.o.id).join(",") || "—"} · ${res}px` +
 		(L.stand.length ? ` · заглушки: ${L.stand.join(",")}` : ""));
 	return { stand: L.stand, overlays: O.ready.map(x => x.o.id) };

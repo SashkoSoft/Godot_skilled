@@ -72,9 +72,11 @@ function buildStreets(g, d) {
 		// Тротуар режется там, где его пересекает проезжая часть поперечной улицы,
 		// иначе он лёг бы плитой поперёк перекрёстка.
 		const cuts = d.streets.filter(o => o.axis !== s.axis).map(o => [o.at - o.roadHalf, o.at + o.roadHalf]);
-		const walkW = KERB_H + s.walk;
+		// первые 15 см от кромки занимает бортовой камень БР 100.30.15 (curbs.js) — тротуар вплотную к его тылу
+		const CURB_W = 0.15;
+		const walkW = KERB_H + s.walk - CURB_W;
 		for (const side of [-1, 1]) {
-			const c0 = s.at + side * (h + walkW / 2);
+			const c0 = s.at + side * (h + CURB_W + walkW / 2);
 			for (const [u, v] of subtract(s.from, s.to, cuts)) {
 				const r = s.axis === "x"
 					? [u, c0 - walkW / 2, v, c0 + walkW / 2]
@@ -138,7 +140,10 @@ function buildAreas(g, d) {
 function buildDriveways(g, d) {
 	for (const w of d.driveways)
 		for (let i = 1; i < w.path.length; i++) segment(g, "drive", w.path[i - 1], w.path[i], w.width, -0.3, 0.3 - 0.005);
-	for (const w of [...d.paths, ...accessPaths(d)])   // тропы и подходы к дверям
+	// тропы и подходы к дверям; где лежат плиты (slabs.js) — коробки нет: в швах земля пола
+	const on = d.slabs ? d.slabs.on : [];
+	const slabbed = w => !w.trail && (d.paths.includes(w) ? on.includes("paths") : on.includes("access"));
+	for (const w of [...d.paths, ...accessPaths(d)]) if (!slabbed(w))
 		for (let i = 1; i < w.path.length; i++) segment(g, "path", w.path[i - 1], w.path[i], w.width, -0.3, 0.3 + (w.trail ? -0.01 : 0.005));
 }
 
@@ -260,7 +265,8 @@ export async function dressBoxes() {
 
 /** Материалы твёрдых покрытий — на них ложатся накладки пола (floor.js hardify). */
 export function hardMaterials() {
-	return ["path", "drive", "walk", "parking", "road"].map(k => mat(k));
+	// [материал, асфальт]: 1 — все варианты пятнами (дорога), 2 — только старый (пока нет своего)
+	return [["road", 1], ["drive", 1], ["parking", 1], ["walk", 2], ["path", 2]].map(([k, a]) => [mat(k), a]);
 }
 
 /** Материал земли двора — трава красит его в grass.js. */

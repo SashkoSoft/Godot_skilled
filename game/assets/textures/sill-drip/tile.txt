@@ -1,0 +1,7 @@
+version=1
+tile_u_m=1.60
+band_v_m=1.50
+px=1638x1536
+NE tayl: lenta 1.6 m x 1.5 m, otliv 1.2 m na U 0.125..0.875, V=1 otliv
+mask=R plotnost; G nomer (usy u kraev pervye; razmyv G=1); B temnee u kraev otliva; A vlazhnost
+opis=gryaz pod podokonnym otlivom: usy u kraev + razmyv po centru

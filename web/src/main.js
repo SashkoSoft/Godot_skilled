@@ -8,6 +8,10 @@ import { undergrowthPositions } from "./district.js";
 import { loadHouses } from "./houses.js";
 import { loadFences } from "./fences.js";
 import { loadPlayground } from "./playground.js";
+import { loadPoles } from "./poles.js";
+import { loadCurbs } from "./curbs.js";
+import { buildSlabs } from "./slabs.js";
+import { loadRocks } from "./rocks.js";
 import { breakdown, infoLine, applyOff } from "./perf.js";
 import { buildGrassMap, setGrassMap, buildGrassBlades, updateGrass } from "./grass.js";
 import { buildGroundMap, setupGround } from "./floor.js";
@@ -175,7 +179,7 @@ function bushBoxes(bushes) {
 let grassBlades = null, grassNearHalf = 20;
 const grassCenter = new THREE.Vector3(), grassRay = new THREE.Vector3(), bottomRay = new THREE.Vector3();
 let robot = null;          // тот, за кем камера
-let crowd = [], followIdx = 0, robotLod = null, playground = null;
+let crowd = [], followIdx = 0, robotLod = null, playground = null, curbs = null, slabs = null, rocks = null;
 // Камера за роботом: держит текущие поворот и наклон, дистанция — колесом мыши
 let follow = false, followDist = 34;
 if (LEVEL === "district") {
@@ -198,13 +202,19 @@ if (LEVEL === "district") {
 	// заборы-модели по данным — фоном, коробочные заборы там не строятся
 	loadFences(d).then(P => scene.add(P.group)).catch(e => console.error("[улица] заборы:", e));
 	loadPlayground(d).then(P => { scene.add(P.group); playground = P; }).catch(e => console.error("[улица] площадки:", e));
+	loadPoles(d).then(P => P && scene.add(P.group)).catch(e => console.error("[улица] опоры:", e));
+	loadCurbs(d).then(C => { scene.add(C.group); curbs = C; }).catch(e => console.error("[улица] бордюр:", e));
+	{ const S = buildSlabs(d, bo.trees); if (S) { scene.add(S.group); slabs = S; } }
+	// Слой «дома»: выключен — зданий нет вовсе (пользователь: «дома пока уберём»);
+	// включён — модели hou там, где они есть, и коробки остальных зданий.
+	const buildingBoxes = [];
+	bo.group.traverse(o => { if (o.userData.building) buildingBoxes.push(o); });
+	for (const o of buildingBoxes) o.visible = false;
 	layerObjs.houses = { show: [], hide: [], load: async () => {
 		const H = await loadHouses(d);
 		scene.add(H.group);
-		// коробки зданий, у которых есть модель: прячутся, пока дома включены
-		const boxes = [];
-		bo.group.traverse(o => { if (o.userData.building && H.ids.includes(o.userData.building)) boxes.push(o); });
-		layerObjs.houses.show = [H.group]; layerObjs.houses.hide = boxes; layerObjs.houses.load = null;
+		const rest = buildingBoxes.filter(o => !H.ids.includes(o.userData.building));
+		layerObjs.houses.show = [H.group, ...rest]; layerObjs.houses.load = null;
 		if (H.ids.length) console.log(`[улица] дома-модели: ${H.ids.join(", ")}`);
 	} };
 	// Трава: карта «где растёт» из данных квартала → цвет земли + травинки у камеры.
@@ -217,6 +227,7 @@ if (LEVEL === "district") {
 		const gRes = +(q.get("gtex") || (matchMedia("(pointer: coarse)").matches ? 512 : 1024));
 		setupGround(d, groundMaterial(), groundMap, { res: gRes, debug: q.get("ground") === "debug", hard: hardMaterials(), trees: bo.trees })
 			.catch(e => console.error("[улица] пол:", e));
+		loadRocks(groundMap).then(R => { scene.add(R.group); rocks = R; }).catch(e => console.error("[улица] камешки:", e));
 		if (q.get("grass") !== "0") {
 			const phone = matchMedia("(pointer: coarse)").matches;
 			// LOD: ближний участок + кольцо реже и шире; дальше — только цвет земли
@@ -599,6 +610,9 @@ function tick(now) {
 	}
 	windUniforms.uTime.value = now / 1000;
 	if (playground) playground.update(now / 1000, dt);
+	if (curbs) curbs.update(camera);
+	if (slabs) slabs.update(camera);
+	if (rocks) rocks.update(camera);
 	hud.pos.textContent =
 		`${cam.p.x.toFixed(1)} ${cam.p.y.toFixed(1)} ${cam.p.z.toFixed(1)}` +
 		(robot ? ` · робот: ${robot.state}` : "");

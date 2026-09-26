@@ -328,6 +328,23 @@
 		"grass": { "packed": 0.85, "rubble": 0.8, "gravel": 0.75, "sand": 1, "litter": 0.4, "chunks": 0.5, "pebbles": 0.15, "note": "насколько слой вытесняет траву" }
 	},
 
+	"slabs": {
+		"about": "дворовые дорожки и подходы к подъездам — бетонные плиты (slabs.js); тропы (trail) остаются земляными. Каждая плита своя: просадка, перекос, вздутие от корней у деревьев, выпавшая, расколотая; шов шире там, где плиты старее",
+		"on": ["paths", "access"],
+		"size": 1.0, "narrowSize": 0.5, "narrowBelow": 1.2, "thick": 0.08,
+		"joint": [0.012, 0.035],
+		"sink": 0.03, "tilt": 1.2,
+		"missing": 0.025, "broken": 0.05,
+		"roots": { "dist": 2.8, "lift": 0.07, "tilt": 4 }
+	},
+
+	"poles": {
+		"about": "опоры и фонари (blend, props/poles). Линии: опоры вдоль улицы/проезда с шагом step у кромки со стороны двора; перекрёстки и дома рвут линию; на концах линии — концевая (anchor); провода — цепной линией между соседними опорами (провис sag доли пролёта)",
+		"streets": { "pole": "pole_sv95", "lamp": "pole_sv95_lamp", "anchor": "pole_sv95_anchor", "lampEvery": 2, "step": 35, "offset": 0.7, "sag": 0.015, "except": ["prospekt"] },
+		"masts": { "pole": "lamp_post_steel", "streets": ["prospekt"], "step": 32, "offset": 0.8, "note": "стальные мачты без проводов, две «кобры»" },
+		"yards": { "pole": "pole_wood", "step": 30, "offset": 1.1, "sag": 0.02, "note": "деревянные опоры вдоль проездов" }
+	},
+
 	"wind": { "dirDeg": 60, "strength": 0.6, "flutter": 0.5, "note": "направление — откуда дует, в градусах от +X к +Z; сила 0 — штиль, 1 — сильный ветер (#wind=0.3); flutter — мелкая дрожь листьев, 1 — как было сначала (#flutter=0.3)" },
 
 	"gameplay": {
