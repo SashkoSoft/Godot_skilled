@@ -728,5 +728,10 @@ if (q.get("perf") === "1") {
 }
 
 requestAnimationFrame(tick);
+// #clean=1 — без HUD и кнопок (снимки для показа)
+if (q.get("clean") === "1") {
+	for (const id of ["hud", "layers", "pad"]) { const el = document.getElementById(id); if (el) el.style.display = "none"; }
+	if (gameLayer) gameLayer.visible = false;   // контуры игровых зон
+}
 // #bench=1 — замер сам через 8 с (догрузка фоновых слоёв), таблица в консоль
 if (q.get("bench") === "1") setTimeout(doBench, 8000);
