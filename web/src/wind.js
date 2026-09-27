@@ -18,6 +18,15 @@ export const windUniforms = {
 	uSSS: { value: 1 },   // сила просвета листвы против солнца (#sss=)
 };
 
+// Выключатель ветра — для замера его цены (perf.js, строка «ветер»): смещение
+// вершин не считается вовсе, программы пересобираются.
+let windOn = true;
+const windMats = [];
+export function setWindEnabled(on) {
+	windOn = on;
+	for (const m of windMats) m.needsUpdate = true;
+}
+
 export function setWind({ dirDeg = 60, strength = 0.6, flutter = 0.5 } = {}) {
 	const a = dirDeg * Math.PI / 180;
 	windUniforms.uWindDir.value.set(Math.cos(a), Math.sin(a));
@@ -37,8 +46,20 @@ attribute vec4 _wind;
 #endif
 // Растворение при смене LOD: 1 — видно целиком; 0…1 — проявляется;
 // 2…3 — исчезает (дополняющие пиксели к проявляющейся ступени).
-attribute float aFade;
 varying float vLodFade;
+// VEG_BATCH — растения в BatchedMesh (все варианты одной ступени — один вызов):
+// параметры варианта и растворение — не униформами и атрибутом, а из текстур по
+// номеру экземпляра. uVegData: 6 текселей на экземпляр, 256 экземпляров в строке
+// (0: высота, доля осени; 1: центр кроны; 2: полуоси кроны; 3–5: палитра осени).
+// uVegFade: растворение, 1024 в строке.
+#ifdef VEG_BATCH
+uniform highp sampler2D uVegData, uVegFade;
+#else
+attribute float aFade;
+#endif
+// параметры варианта для текущей вершины (из униформ или из текстуры — см. PROJECT)
+float gTreeH, gAutAmt;
+vec3 gCrownC, gCrownR, gAut0, gAut1, gAut2;
 #ifdef WIND_TINT
 varying vec3 vLeafTint;
 // Глубина в кроне: 1 — на поверхности, 0 — в сердцевине; нормаль кроны (вид).
@@ -60,10 +81,13 @@ float windHash(vec3 p) { return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719)))
 
 // local — вершина в координатах дерева (до экземпляра), world — после.
 vec3 windOffset(vec3 local, vec3 world, vec3 root) {
+#ifdef NO_WIND
+	return vec3(0.0);
+#endif
 #ifdef WIND_ATTR
 	float bend = _wind.x, phase = _wind.y, flut = _wind.z, order = _wind.w;
 #else
-	float h = clamp(local.y / uTreeH, 0.0, 1.0);
+	float h = clamp(local.y / gTreeH, 0.0, 1.0);
 	float bend = h * h;
 	float phase = windHash(floor(local * 0.8));         // «ветка» — ячейка кроны
 	float flut = 1.0;
@@ -76,7 +100,7 @@ vec3 windOffset(vec3 local, vec3 world, vec3 root) {
 	float gust = 0.55 + 0.45 * sin(uTime * 0.45 - along * 0.035) * sin(uTime * 0.17 - along * 0.011 + 1.3);
 	vec3 off = vec3(0.0);
 	// ствол: медленный наклон по ветру + качание, амплитуда в метрах от высоты дерева
-	float trunk = bend * uTreeH * 0.035 * s;
+	float trunk = bend * gTreeH * 0.035 * s;
 	float sway = gust + 0.25 * sin(uTime * 1.3 + treePhase);
 	off.xz += uWindDir * trunk * sway;
 	// ветки: вразнобой, тонкие быстрее
@@ -93,8 +117,32 @@ vec3 windOffset(vec3 local, vec3 world, vec3 root) {
 `;
 
 const PROJECT = /* glsl */`
+#ifdef VEG_BATCH
+{
+	int vi = int( getIndirectIndex( gl_DrawID ) );
+	ivec2 vb = ivec2( ( vi % 256 ) * 6, vi / 256 );
+	vec4 vd = texelFetch( uVegData, vb, 0 );
+	gTreeH = vd.x; gAutAmt = vd.y;
+	gCrownC = texelFetch( uVegData, vb + ivec2( 1, 0 ), 0 ).xyz;
+	gCrownR = texelFetch( uVegData, vb + ivec2( 2, 0 ), 0 ).xyz;
+	gAut0 = texelFetch( uVegData, vb + ivec2( 3, 0 ), 0 ).xyz;
+	gAut1 = texelFetch( uVegData, vb + ivec2( 4, 0 ), 0 ).xyz;
+	gAut2 = texelFetch( uVegData, vb + ivec2( 5, 0 ), 0 ).xyz;
+	vLodFade = texelFetch( uVegFade, ivec2( vi % 1024, vi / 1024 ), 0 ).r;
+}
+#else
+gTreeH = uTreeH;
+#ifdef WIND_TINT
+gCrownC = uCrownC; gCrownR = uCrownR; gAut0 = uAut0; gAut1 = uAut1; gAut2 = uAut2; gAutAmt = uAutAmt;
+#endif
+vLodFade = aFade;
+#endif
 vec4 mvPosition = vec4( transformed, 1.0 );
 vec3 windRoot = vec3( 0.0 );
+#ifdef USE_BATCHING
+	mvPosition = batchingMatrix * mvPosition;
+	windRoot = batchingMatrix[ 3 ].xyz;
+#endif
 #ifdef USE_INSTANCING
 	mvPosition = instanceMatrix * mvPosition;
 	windRoot = instanceMatrix[ 3 ].xyz;
@@ -102,7 +150,6 @@ vec3 windRoot = vec3( 0.0 );
 mvPosition.xyz += windOffset( transformed, mvPosition.xyz, windRoot );
 mvPosition = modelViewMatrix * mvPosition;
 gl_Position = projectionMatrix * mvPosition;
-vLodFade = aFade;
 #ifdef WIND_TINT
 {
 	// Разнотон листвы в три уровня: дерево (от желтовато- до сизо-зелёного,
@@ -113,7 +160,7 @@ vLodFade = aFade;
 	float tV = windHash(floor(windRoot * 0.37) + 5.3);
 	float bH = windHash(floor(transformed * 0.8) + floor(windRoot));
 	float cH = windHash(floor(transformed * 6.0) + floor(windRoot));
-	float h = clamp(transformed.y / uTreeH, 0.0, 1.0);
+	float h = clamp(transformed.y / gTreeH, 0.0, 1.0);
 	vec3 yellowish = vec3(1.18, 1.08, 0.62), bluish = vec3(0.82, 0.98, 1.02);
 	vec3 tint = mix(bluish, yellowish, tH) * (0.78 + 0.4 * tV);
 	tint *= 0.86 + 0.28 * bH;
@@ -127,11 +174,14 @@ vLodFade = aFade;
 	// был «наружным» (яркость кроны как прежде), а тёмной осталась только сердцевина
 	vec3 cn = _crown.xyz; vCrownDepth = clamp(_crown.w / 0.72, 0.0, 1.0);
 #else
-	vec3 cq = (transformed - uCrownC) / uCrownR;
+	vec3 cq = (transformed - gCrownC) / gCrownR;
 	vCrownDepth = clamp(length(cq), 0.0, 1.0);
 	vec3 cn = cq;
 #endif
 	vec3 cw = cn;
+#ifdef USE_BATCHING
+	cw = mat3(batchingMatrix) * cn;
+#endif
 #ifdef USE_INSTANCING
 	cw = mat3(instanceMatrix) * cn;
 #endif
@@ -139,13 +189,13 @@ vLodFade = aFade;
 	// Начало осени: у каждого дерева породы своя степень (от половины до полной
 	// доли породы), желтеют ветки целиком, первыми — наружные и верхние.
 	float autTree = windHash(floor(windRoot * 0.37) + 9.1);
-	float amt = uAutAmt * (0.5 + 0.5 * autTree);
+	float amt = gAutAmt * (0.5 + 0.5 * autTree);
 	float bAut = windHash(floor(transformed * 0.8) + floor(windRoot) + 2.9);
 	float turn = smoothstep(1.0 - amt - 0.06, 1.0 - amt + 0.06, bAut * 0.8 + h * 0.12 + vCrownDepth * 0.08);
 	// цвет ветки по палитре породы: у дерева свой уклон (один клён краснее, другой желтее)
 	float tb = windHash(floor(windRoot * 0.37) + 4.4);
 	float x = clamp(windHash(floor(transformed * 0.8) + floor(windRoot) + 7.7) * 0.7 + tb * 0.5 - 0.1, 0.0, 1.0);
-	vec3 ac = x < 0.5 ? mix(uAut0, uAut1, x * 2.0) : mix(uAut1, uAut2, x * 2.0 - 1.0);
+	vec3 ac = x < 0.5 ? mix(gAut0, gAut1, x * 2.0) : mix(gAut1, gAut2, x * 2.0 - 1.0);
 	vAut = vec4(ac, turn);
 }
 #endif
@@ -173,7 +223,7 @@ const FRAG_FADE = /* glsl */`
 }
 `;
 
-function inject(material, { leaf, height, attr, tint = false, crown = null, crownAttr = false, autumn = null, barkCd = null }) {
+function inject(material, { leaf, height, attr, tint = false, crown = null, crownAttr = false, autumn = null, barkCd = null, batch = null }) {
 	material.onBeforeCompile = (shader) => {
 		// Кора (HoudiniCOP): развёрнуты только ствол и толстые ветви; у тонких U = 0 —
 		// там fwidth(u) = 0. Где развёрнуто: цвет = текстура × COLOR_0 / cd (средний
@@ -202,10 +252,16 @@ function inject(material, { leaf, height, attr, tint = false, crown = null, crow
 			uAutAmt: { value: autumn ? autumn.amount : 0 },
 			uCrownC: { value: crown ? crown.c : new THREE.Vector3(0, height * 0.6, 0) },
 			uCrownR: { value: crown ? crown.r : new THREE.Vector3(height * 0.4, height * 0.4, height * 0.4) } });
+		if (batch) {
+			shader.uniforms.uVegData = { value: batch.data };
+			shader.uniforms.uVegFade = { value: batch.fade };
+			shader.defines = { ...shader.defines, VEG_BATCH: "" };
+		}
 		if (tint && crownAttr) shader.defines = { ...shader.defines, CROWN_ATTR: "" };
 		if (leaf) shader.defines = { ...shader.defines, WIND_LEAF: "" };
 		if (tint) shader.defines = { ...shader.defines, WIND_TINT: "" };
 		if (attr) shader.defines = { ...shader.defines, WIND_ATTR: "" };
+		if (!windOn) shader.defines = { ...shader.defines, NO_WIND: "" };
 		shader.vertexShader = shader.vertexShader
 			.replace("#include <common>", "#include <common>\n" + HEAD)
 			.replace("#include <project_vertex>", PROJECT);
@@ -255,7 +311,8 @@ function inject(material, { leaf, height, attr, tint = false, crown = null, crow
 				#endif`);
 	};
 	// Иначе three.js переиспользует программу без ветра от похожего материала.
-	material.customProgramCacheKey = () => `wind-${leaf ? "leaf" : "bark"}-${attr ? "attr" : "est"}${tint ? "-tint" : ""}${crownAttr ? "-crown" : ""}${barkCd && material.map ? "-barktex" : ""}`;
+	windMats.push(material);
+	material.customProgramCacheKey = () => `wind${windOn ? "" : "-off"}${batch ? "-batch" : ""}-${leaf ? "leaf" : "bark"}-${attr ? "attr" : "est"}${tint ? "-tint" : ""}${crownAttr ? "-crown" : ""}${barkCd && material.map ? "-barktex" : ""}`;
 	material.needsUpdate = true;
 }
 
@@ -263,14 +320,15 @@ function inject(material, { leaf, height, attr, tint = false, crown = null, crow
  * Включить ветер на материале дерева и выдать материал для теней с тем же
  * смещением — без него крона качается, а тень стоит.
  */
-export function windify(material, { leaf = false, height = 10, attr = false, crown = null, crownAttr = false, autumn = null, barkCd = null } = {}) {
-	inject(material, { leaf, height, attr, tint: leaf, crown, crownAttr, autumn, barkCd });   // тени коры текстура не нужна   // разнотон, объём и просвет — только цвету, не тени
+// batch — { data, fade }: материал BatchedMesh (VEG_BATCH), параметры варианта — из текстур
+export function windify(material, { leaf = false, height = 10, attr = false, crown = null, crownAttr = false, autumn = null, barkCd = null, batch = null } = {}) {
+	inject(material, { leaf, height, attr, tint: leaf, crown, crownAttr, autumn, barkCd, batch });   // тени коры текстура не нужна   // разнотон, объём и просвет — только цвету, не тени
 	const depth = new THREE.MeshDepthMaterial({
 		depthPacking: THREE.RGBADepthPacking,
 		map: leaf ? material.map : null,
 		alphaTest: leaf ? material.alphaTest : 0,
 		side: material.side,
 	});
-	inject(depth, { leaf, height, attr });
+	inject(depth, { leaf, height, attr, batch });
 	return depth;
 }
