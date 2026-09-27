@@ -21,6 +21,7 @@ import { buildGrassMap, setGrassMap, buildGrassBlades, updateGrass } from "./gra
 import { buildGroundMap, setupGround, hardify, loadPitGrass } from "./floor.js";
 import { spawnRobots } from "./robot.js";
 import { spawnDrones } from "./drones.js";
+import { instanceLods } from "./instlod.js";
 import { buildHoudiniTrees } from "./trees.js";
 import { windUniforms, setWind } from "./wind.js";
 
@@ -131,6 +132,9 @@ sun.shadow.normalBias = LEVEL === "district" ? 0.12 : 0.03;
 sun.shadow.radius = +(new URLSearchParams(location.hash.slice(1)).get("shadowsoft") || 4);
 scene.add(sun);
 scene.add(sun.target);
+const sunDir = sun.position.clone().normalize();   // на солнце (солнце за сеанс не двигается)
+// #cull=0 — растения без отсечения по кадру (A/B замер)
+const plantCull = new URLSearchParams(location.hash.slice(1)).get("cull") === "0" ? { viewCull: false } : {};
 let skyDome = null;
 if (LEVEL === "district") {
 	skyDome = buildSky();
@@ -204,6 +208,7 @@ let grassBlades = null, grassNearHalf = 20;
 const grassCenter = new THREE.Vector3(), grassRay = new THREE.Vector3(), bottomRay = new THREE.Vector3();
 let robot = null;          // тот, за кем камера
 let drones = null;
+const instLods = [];
 let crowd = [], followIdx = 0, robotLod = null, crowdStep = null, playground = null, curbs = null, slabs = null, rocks = null, jointGrassL = null;
 // Камера за роботом: держит текущие поворот и наклон, дистанция — колесом мыши
 let follow = false, followDist = 34;
@@ -227,14 +232,16 @@ if (LEVEL === "district") {
 	// заборы-модели по данным — фоном, коробочные заборы там не строятся
 	loadFences(d).then(P => scene.add(P.group)).catch(e => console.error("[улица] заборы:", e));
 	loadPlayground(d).then(P => { scene.add(P.group); playground = P; }).catch(e => console.error("[улица] площадки:", e));
-	loadPoles(d).then(P => P && scene.add(P.group)).catch(e => console.error("[улица] опоры:", e));
-	loadStreetProps(d).then(P => scene.add(P.group)).catch(e => console.error("[улица] уличные мелочи:", e));
+	// опоры и уличные мелочи — экземплярами (instlod.js): вызов на деталь, а не на предмет; #inst=0 — как было (A/B)
+	const toInst = (P, what) => { if (!P) return; scene.add(P.group); if (q.get("inst") === "0") return; const I = instanceLods(P.group, { sun: sunDir }); if (I) { instLods.push(I); console.log(`[улица] ${what}: ${I.stats.items} предметов → ${I.stats.calls} вызовов`); } };
+	loadPoles(d).then(P => toInst(P, "опоры")).catch(e => console.error("[улица] опоры:", e));
+	loadStreetProps(d).then(P => toInst(P, "уличные мелочи")).catch(e => console.error("[улица] уличные мелочи:", e));
 	loadCurbs(d).then(C => { scene.add(C.group); curbs = C; }).catch(e => console.error("[улица] бордюр:", e));
 	{ const S = buildSlabs(d, bo.trees); if (S) { scene.add(S.group); slabs = S; } }
 	const paving = buildPaving(d);
 	if (paving) scene.add(paving.mesh);
 	// трава в швах плит — экземплярами с LOD и ветром (как подлесок), рисуется только вблизи
-	if (slabs) buildHoudiniTrees(jointGrass(slabs.list), { base: "../game/assets/models/joint_grass/", name: "JointGrass",
+	if (slabs) buildHoudiniTrees(jointGrass(slabs.list), { sun: sunDir, ...plantCull, base: "../game/assets/models/joint_grass/", name: "JointGrass",
 		minH: 1, lodDist: [80, 250], cull: [22, 0] }).then(J => { scene.add(J.group); jointGrassL = J; })
 		.catch(e => console.error("[улица] трава в швах:", e));
 	// Слой «дома»: выключен — зданий нет вовсе (пользователь: «дома пока уберём»);
@@ -290,7 +297,7 @@ if (LEVEL === "district") {
 	});
 if (q.has("sss")) windUniforms.uSSS.value = +q.get("sss");   // сила просвета листвы, 1 — по умолчанию
 	loadTrees = async () => {
-		const T = await buildHoudiniTrees(bo.trees, { autumn: d.trees.autumn, lodDist: treeLod,
+		const T = await buildHoudiniTrees(bo.trees, { sun: sunDir, ...plantCull, autumn: d.trees.autumn, lodDist: treeLod,
 			onProgress: (s) => {
 				if (s.loaded[0] === s.total) say(`деревья загружены целиком: ${s.total} вариантов × 3 LOD`);
 				else if (s.loaded[1] % 10 === 0 || s.loaded[0] % 10 === 0)
@@ -312,7 +319,7 @@ if (q.has("sss")) windUniforms.uSSS.value = +q.get("sss");   // сила про�
 		let kit = null;
 		try { const r = await fetch(UB + "kit.json", { cache: "no-store" }); if (r.ok) kit = await r.json(); } catch { /* ещё нет */ }
 		if (kit && (kit.trees || []).some(t => t.species && t.age)) {
-			const U = await buildHoudiniTrees(bushes, { base: UB, name: "Undergrowth", minH: 4, autumn: d.trees.autumn, cull: [45, 20], lodDist: treeLod });
+			const U = await buildHoudiniTrees(bushes, { sun: sunDir, ...plantCull, base: UB, name: "Undergrowth", minH: 4, autumn: d.trees.autumn, cull: [45, 20], lodDist: treeLod });
 			scene.add(U.group);
 			undergrowth = U;
 			layerObjs.bushes = { show: [U.group], hide: [] };
@@ -482,9 +489,10 @@ async function doBench() {
 	benching = true;
 	hud.perfTable.hidden = false;
 	hud.perfTable.innerHTML = "замер…";
-	const rows = await runBench(scene, renderer, camera, { onStep: n => { hud.perfTable.innerHTML = "замер: без " + n + "…"; } });
+	const rows = await runBench(scene, renderer, camera, { onStep: n => { hud.perfTable.innerHTML = "замер: без " + n + "…"; console.log("[улица] замер: без " + n); } });
 	console.table(rows);
 	for (const r of rows) console.log("[улица] BENCH " + JSON.stringify(r));
+		for (const r of breakdown(scene)) console.log("[улица] PERF " + JSON.stringify(r));
 	hud.perfTable.innerHTML = "<b>цена кадра, мс (медиана 30 кадров с ожиданием GPU)</b><br>" +
 		rows.map(r => `${r.слой} · ${r.мс}${r.экономия !== "" ? ` · −${r.экономия}` : ""}`).join("<br>");
 	benching = false;
@@ -683,6 +691,7 @@ function tick(now) {
 	if (slabs) slabs.update(camera);
 	if (rocks) rocks.update(camera);
 	if (jointGrassL) jointGrassL.update(camera, now / 1000);
+	for (const I of instLods) I.update(camera);
 	hud.pos.textContent =
 		`${cam.p.x.toFixed(1)} ${cam.p.y.toFixed(1)} ${cam.p.z.toFixed(1)}` +
 		(robot ? ` · робот: ${robot.state}` : "");
@@ -768,5 +777,5 @@ if (q.get("clean") === "1") {
 	for (const id of ["hud", "layers", "pad"]) { const el = document.getElementById(id); if (el) el.style.display = "none"; }
 	if (gameLayer) gameLayer.visible = false;   // контуры игровых зон
 }
-// #bench=1 — замер сам через 8 с (догрузка фоновых слоёв), таблица в консоль
-if (q.get("bench") === "1") setTimeout(doBench, 8000);
+// #bench=1 — замер сам через 8 с, #bench=N (N > 1) — через N с (догрузка фоновых слоёв), таблица в консоль
+if (q.get("bench")) setTimeout(doBench, (+q.get("bench") > 1 ? +q.get("bench") : 8) * 1000);

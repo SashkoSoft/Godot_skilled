@@ -117,7 +117,9 @@ function makePicker(kit) {
 // autumn — district.json trees.autumn: { порода: { amount, colors: [sRGB ×3] } }
 // cull — [база м, м на метр высоты]: дальше растение не рисуется вовсе (растворяется,
 // как между ступенями). Для подлеска: метровый бурьян вдали — пятнышко в пиксель.
-export async function buildHoudiniTrees(trees, { onProgress, base = BASE, name = "Trees", minH = 0, autumn = null, cull = null, lodDist = LOD_DIST } = {}) {
+// sun — единичный вектор на солнце: отсечение по кадру оставляет и тех, чья тень
+// в кадр падает (на закате метровый куст бросает её на 8 м).
+export async function buildHoudiniTrees(trees, { onProgress, base = BASE, name = "Trees", minH = 0, autumn = null, cull = null, lodDist = LOD_DIST, sun = null, viewCull = true } = {}) {
 	const loader = new GLTFLoader();
 	let kit = null;
 	try { kit = await (await fetch(base + "kit.json", { cache: "no-store" })).json(); } catch { /* манифеста нет — таблица */ }
@@ -236,9 +238,27 @@ export async function buildHoudiniTrees(trees, { onProgress, base = BASE, name =
 		}
 	}
 
+	// Отсечение по кадру: экземпляры сами по себе камерой не отсекаются (одна
+	// InstancedMesh на весь квартал), и без этого каждый куст за спиной рисовался
+	// дважды — в кадр и в карту тени. Проверяются две сферы: само растение и конец
+	// его тени (длина h / tg(высоты солнца), от солнца по земле).
+	const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), sph = new THREE.Sphere();
+	const shadowK = sun ? new THREE.Vector2(-sun.x, -sun.z).normalize().multiplyScalar(1 / Math.max(Math.tan(Math.asin(sun.y)), 0.05)) : null;
+	function inView(it) {
+		sph.center.copy(it.pos); sph.radius = it.h * 0.75;
+		if (frustum.intersectsSphere(sph)) return true;
+		if (!shadowK) return false;
+		sph.center.set(it.pos.x + shadowK.x * it.h, 0, it.pos.z + shadowK.y * it.h);
+		sph.radius = it.h * 0.6;
+		return frustum.intersectsSphere(sph);
+	}
+
 	function update(camera, time = performance.now() / 1000) {
 		stats.lod = [0, 0, 0, 0];
 		stats.fading = 0;
+		stats.culled = 0;
+		camera.updateMatrixWorld();
+		frustum.setFromProjectionMatrix(pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
 		for (const t of tags) {
 			const L = meshes[t];
 			for (const l of L) if (l) for (const im of Object.values(l)) im.count = 0;
@@ -256,6 +276,7 @@ export async function buildHoudiniTrees(trees, { onProgress, base = BASE, name =
 					it.fade = { from: it.cur, start: time };
 					it.cur = want;
 				}
+				if (viewCull && !inView(it)) { stats.culled++; continue; }   // ступень и растворение идут своим чередом
 				if (it.fade) {
 					const f = (time - it.fade.start) / FADE_S;
 					if (f >= 1) it.fade = null;
