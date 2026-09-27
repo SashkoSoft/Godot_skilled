@@ -76,17 +76,42 @@ export const BENCH = {
 	"роботы": ["Robots"], "дома": ["Houses"], "мусор": ["Trash"], "бордюр": ["Curbs"],
 	"опоры": ["Poles"], "плиты": ["Slabs"], "камешки": ["Rocks"], "заборы": ["Fences"],
 	"площадка": ["Playground"], "мелочи": ["StreetProps"], "плиты-трава": ["JointGrass"], "тени": null,
+	"пол": null,   // шейдер пола (floor.js): на время замера — простой материал того же цвета
 };
 
 /**
- * Цена кадра: frames раз render + gl.finish (ждём GPU, иначе меряется только
- * отправка команд, а vsync прячет всё, что быстрее 16.7 мс). Медиана — устойчива
- * к редким сборкам мусора.
+ * Цена кадра, медиана по frames кадрам. Если есть таймер GPU
+ * (EXT_disjoint_timer_query_webgl2) — время самой видеокарты: без CPU-части
+ * three.js, которая шумит на миллисекунды и прячет цену шейдеров. Иначе —
+ * render + gl.finish (ждём GPU, иначе меряется только отправка команд).
  */
-function frameMs(renderer, scene, camera, frames) {
-	const gl = renderer.getContext(), t = [];
+let timerExt;
+async function frameMs(renderer, scene, camera, frames) {
+	const gl = renderer.getContext();
+	if (timerExt === undefined) timerExt = gl.getExtension("EXT_disjoint_timer_query_webgl2");
 	renderer.render(scene, camera); gl.finish();   // прогрев: программы, загрузка буферов
-	for (let i = 0; i < frames; i++) {
+	const t = [];
+	if (timerExt) {
+		const qs = [];
+		for (let i = 0; i < frames; i++) {
+			const q = gl.createQuery();
+			gl.beginQuery(timerExt.TIME_ELAPSED_EXT, q);
+			renderer.render(scene, camera);
+			gl.endQuery(timerExt.TIME_ELAPSED_EXT);
+			qs.push(q);
+		}
+		gl.finish();
+		// результаты приходят не сразу (ANGLE отдаёт их к следующим кадрам): ждём последний
+		const last = qs[qs.length - 1];
+		for (let k = 0; k < 60 && !gl.getQueryParameter(last, gl.QUERY_RESULT_AVAILABLE); k++) await new Promise(r => requestAnimationFrame(r));
+		const ok = gl.getQueryParameter(last, gl.QUERY_RESULT_AVAILABLE) && !gl.getParameter(timerExt.GPU_DISJOINT_EXT);
+		for (const q of qs) {
+			if (ok && gl.getQueryParameter(q, gl.QUERY_RESULT_AVAILABLE)) t.push(gl.getQueryParameter(q, gl.QUERY_RESULT) / 1e6);
+			gl.deleteQuery(q);
+		}
+		if (!ok) { console.warn("[замер] таймер GPU не отвечает — меряю render + finish"); timerExt = null; }
+	}
+	if (!t.length) for (let i = 0; i < frames; i++) {
 		const t0 = performance.now();
 		renderer.render(scene, camera);
 		gl.finish();
@@ -96,6 +121,18 @@ function frameMs(renderer, scene, camera, frames) {
 	return t[t.length >> 1];
 }
 
+// Разница «со слоем / без»: попеременно rounds раз (частоты GPU и фон плавают —
+// два замера подряд в разное время дают разброс больше самого эффекта), медианы.
+async function abMs(renderer, scene, camera, frames, off, on, rounds = 5) {
+	const a = [], b = [];
+	for (let i = 0; i < rounds; i++) {
+		a.push(await frameMs(renderer, scene, camera, frames));
+		off(); b.push(await frameMs(renderer, scene, camera, frames)); on();
+	}
+	const med = v => v.sort((x, y) => x - y)[v.length >> 1];
+	return [med(a), med(b)];
+}
+
 /**
  * Замер: весь кадр, затем без каждого слоя по очереди. Возвращает строки
  * { слой, мс_без, экономия_мс }. Видимость и тени возвращаются как были.
@@ -103,27 +140,40 @@ function frameMs(renderer, scene, camera, frames) {
 export async function runBench(scene, renderer, camera, { frames = 30, onStep } = {}) {
 	const groups = name => { const out = []; scene.traverse(o => { if (BENCH[name] && BENCH[name].includes(o.name)) out.push(o); }); return out; };
 	const pause = () => new Promise(r => setTimeout(r, 30));
-	const all = frameMs(renderer, scene, camera, frames);
-	const rows = [{ слой: "всё", мс: all.toFixed(2), экономия: "" }];
+	// Прогрев: видеокарта в простое сбрасывает частоту (у RTX — до 210 МГц) и
+	// разгоняется секунды; без прогрева первые замеры втрое дольше последних.
+	const gl = renderer.getContext();
+	for (const t0 = performance.now(); performance.now() - t0 < 3000;) { renderer.render(scene, camera); gl.finish(); }
+	const all = await frameMs(renderer, scene, camera, frames);
+	const rows = [{ слой: "всё", мс: all.toFixed(2), экономия: "", таймер: timerExt ? "GPU" : "CPU+finish" }];
 	for (const name of Object.keys(BENCH)) {
 		if (onStep) onStep(name);
 		await pause();
-		let ms;
+		let off, on;
 		if (name === "тени") {
 			const was = renderer.shadowMap.enabled;
-			renderer.shadowMap.enabled = false;
-			scene.traverse(o => { if (o.material) [].concat(o.material).forEach(m => m.needsUpdate = true); });
-			ms = frameMs(renderer, scene, camera, frames);
-			renderer.shadowMap.enabled = was;
-			scene.traverse(o => { if (o.material) [].concat(o.material).forEach(m => m.needsUpdate = true); });
+			const touch = () => scene.traverse(o => { if (o.material) [].concat(o.material).forEach(m => m.needsUpdate = true); });
+			off = () => { renderer.shadowMap.enabled = false; touch(); };
+			on = () => { renderer.shadowMap.enabled = was; touch(); };
+		} else if (name === "пол") {
+			// материалы пола опознаются по ключу программы (groundify / hardify)
+			const swap = [];
+			scene.traverse(o => {
+				if (!o.isMesh) return;
+				const m = o.material, key = m && m.customProgramCacheKey ? m.customProgramCacheKey() : "";
+				if (/^ground-/.test(key)) swap.push([o, m, new THREE.MeshStandardMaterial({ color: m.color, roughness: 1 })]);
+			});
+			if (!swap.length) continue;
+			off = () => swap.forEach(([o, , p]) => { o.material = p; });
+			on = () => swap.forEach(([o, m]) => { o.material = m; });
 		} else {
 			const gs = groups(name).filter(o => o.visible);
 			if (!gs.length) continue;   // слоя нет или он выключен кнопкой
-			gs.forEach(o => { o.visible = false; });
-			ms = frameMs(renderer, scene, camera, frames);
-			gs.forEach(o => { o.visible = true; });
+			off = () => gs.forEach(o => { o.visible = false; });
+			on = () => gs.forEach(o => { o.visible = true; });
 		}
-		rows.push({ слой: "без: " + name, мс: ms.toFixed(2), экономия: (all - ms).toFixed(2) });
+		const [a, b] = await abMs(renderer, scene, camera, frames, off, on);
+		rows.push({ слой: "без: " + name, мс: b.toFixed(2), экономия: (a - b).toFixed(2) });
 	}
 	return rows;
 }
