@@ -26,6 +26,46 @@ export function pavingPads(d) {
 	return out;
 }
 
+// 4 раскладки (HoudiniCOP paving-05m-v0..v3): сетка и швы по краю у всех общие —
+// раскладка выбирается на каждый блок 2×2 м без шва. Массивы (цвет, нормаль, ORM) —
+// три сэмплера на все четыре (лимит 16 текстур под D3D).
+async function pavingArrays(res = 1024) {
+	const img = u => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = u; });
+	const gl = document.createElement("canvas").getContext("webgl2");
+	const raw = im => {
+		const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+		gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, im.width, im.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, im);
+		const fb = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+		const src = new Uint8Array(im.width * im.height * 4); gl.readPixels(0, 0, im.width, im.height, gl.RGBA, gl.UNSIGNED_BYTE, src);
+		gl.deleteFramebuffer(fb); gl.deleteTexture(t);
+		if (im.width === res) return src;
+		const out = new Uint8Array(res * res * 4), f = im.width / res;
+		for (let j = 0; j < res; j++) for (let i = 0; i < res; i++) for (let c = 0; c < 4; c++) {
+			let s = 0;
+			for (let y = 0; y < f; y++) for (let x = 0; x < f; x++) s += src[((j * f + y) * im.width + i * f + x) * 4 + c];
+			out[(j * res + i) * 4 + c] = s / (f * f);
+		}
+		return out;
+	};
+	const S = res * res * 4, N = 4, K = ["albedo", "normal", "orm"];
+	const data = K.map(() => new Uint8Array(S * N));
+	await Promise.all([0, 1, 2, 3].map(async v => {
+		const px = await Promise.all(K.map(k => img(`${TEX}paving-05m-v${v}/paving_05m_v${v}_${k}_2k.png`).then(raw)));
+		px.forEach((p, k) => data[k].set(p, v * S));
+	}));
+	return data.map((d, k) => {
+		const t = new THREE.DataArrayTexture(d, res, res, N);
+		t.wrapS = t.wrapT = THREE.RepeatWrapping;
+		t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter; t.generateMipmaps = true; t.anisotropy = 4;
+		t.colorSpace = k === 0 ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+		t.needsUpdate = true;
+		return t;
+	});
+}
+
 function tex(path, srgb) {
 	const t = new THREE.TextureLoader().load(TEX + path);
 	t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -52,25 +92,28 @@ export function buildPaving(d) {
 	geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
 	geo.setAttribute("normal", new THREE.Float32BufferAttribute(nrm, 3));
 	// две раскладки плиток — пятнами; UV — мировые xz / 2 м (сетка на всех площадках одна)
-	const v0 = ["albedo", "normal", "orm"].map((k, i) => tex(`paving-05m-v0/paving_05m_v0_${k}_2k.png`, i === 0));
-	const v1 = ["albedo", "normal", "orm"].map((k, i) => tex(`paving-05m-v1/paving_05m_v1_${k}_2k.png`, i === 0));
+	const empty = () => { const t = new THREE.DataArrayTexture(new Uint8Array([140, 136, 128, 255]), 1, 1, 1); t.needsUpdate = true; return t; };
+	const PU = { uPA: { value: empty() }, uPN: { value: empty() }, uPO: { value: empty() } };
+	pavingArrays().then(([a, n, o]) => { PU.uPA.value = a; PU.uPN.value = n; PU.uPO.value = o; })
+		.catch(e => console.warn("[улица] плитка: нет текстур", e));
 	const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, metalness: 0 });
 	mat.onBeforeCompile = sh => {
-		Object.assign(sh.uniforms, { uPA0: { value: v0[0] }, uPN0: { value: v0[1] }, uPO0: { value: v0[2] },
-			uPA1: { value: v1[0] }, uPN1: { value: v1[1] }, uPO1: { value: v1[2] } });
+		Object.assign(sh.uniforms, PU);
 		sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vPvW;\nvarying float vPvUp;")
 			.replace("#include <begin_vertex>", "#include <begin_vertex>\nvPvW = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvPvUp = step(0.5, normalize(mat3(modelMatrix) * objectNormal).y);");
 		sh.fragmentShader = sh.fragmentShader.replace("#include <common>", `#include <common>
 				varying vec3 vPvW;
 				varying float vPvUp;
-				uniform sampler2D uPA0, uPN0, uPO0, uPA1, uPN1, uPO1;
+				uniform highp sampler2DArray uPA, uPN, uPO;
 				float pvH(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }`)
 			.replace("#include <map_fragment>", `
 				vec2 pvUv = vPvW.xz / 2.0;
-				float pvK = step(0.5, pvH(floor(vPvW.xz / 6.0)));   // раскладка — кусками 6 м
-				vec4 pvA = mix(texture2D(uPA0, pvUv), texture2D(uPA1, pvUv), pvK);
-				vec4 pvO = mix(texture2D(uPO0, pvUv), texture2D(uPO1, pvUv), pvK);
-				vec3 pvN = mix(texture2D(uPN0, pvUv), texture2D(uPN1, pvUv), pvK).xyz * 2.0 - 1.0;
+				// раскладка — своя на каждый блок 2×2 м (швы по краю блока у всех общие)
+				float pvL = floor(pvH(floor(pvUv)) * 4.0);
+				vec2 pdx = dFdx(pvUv), pdy = dFdy(pvUv);
+				vec4 pvA = textureGrad(uPA, vec3(pvUv, pvL), pdx, pdy);
+				vec4 pvO = textureGrad(uPO, vec3(pvUv, pvL), pdx, pdy);
+				vec3 pvN = textureGrad(uPN, vec3(pvUv, pvL), pdx, pdy).xyz * 2.0 - 1.0;
 				diffuseColor.rgb *= pvA.rgb * mix(1.0, pvO.r, 0.7);
 				#include <map_fragment>`)
 			.replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = pvO.g;")
