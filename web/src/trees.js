@@ -199,9 +199,10 @@ export async function buildHoudiniTrees(trees, { onProgress, base = BASE, name =
 					barkCd = b.cd; barkKey = b.map.uuid;
 				}
 				if (!geo.index) geo.setIndex([...Array(geo.attributes.position.count).keys()]);
-				// Касательные — не нужны (базис карты нормалей строится по производным) и
-				// у части травы в швах битые: 486 значений на 324 вершины — BatchedMesh на
-				// таком падает. Без них ещё и варианты с касательными и без садятся в один батч.
+				// Касательные не нужны (базис карты нормалей — по производным). Были битые у
+				// травы в швах (486 значений на 324 вершины, ROP gltf писал их на вершину
+				// треугольника) — BatchedMesh на таком падает. HoudiniCOP их больше не пишет;
+				// проверка остаётся: атрибут с чужим числом значений выбрасывается.
 				geo.deleteAttribute("tangent");
 				for (const [n, a] of Object.entries(geo.attributes)) if (a.count !== geo.attributes.position.count) {
 					console.warn(`[улица] ${t} LOD${l} ${k}: атрибут ${n} — ${a.count} значений на ${geo.attributes.position.count} вершин, убран`);
