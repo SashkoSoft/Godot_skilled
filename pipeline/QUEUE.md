@@ -5,48 +5,8 @@
 
 | ID | Задание | Кому | Тип | Ревизия | Статус | Папка | Создано | Закрыто |
 |---|---|---|---|---|---|---|---|---|
-| task-0038 | Локомоция мокапом на SMPL-риге | **aimocap** | animation | v1 | open | open/ | 2026-09-12 | — |
-| task-0039 | Персонаж-выживший — модель на эталонном скелете | **houdini-assets** | model | v2 | open | open/ | 2026-09-12 | — |
-| task-0041 | Деревья на улицу | **houdini-assets** | model | v1 | open | open/ | 2026-09-13 | — |
-| task-0040 | Зелень с настоящей альфой взамен набора task-0011 | **houdini-assets** | texture | v1 | in_progress | in_progress/ | 2026-09-13 | — |
-| task-0001 | Локомоция на эталонном риге | **aimocap** | animation | v1 | cancelled | done/ | 2026-08-23 | 2026-09-12 |
-| task-0002 | Бетонная панель: стены и перекрытия | **comfyui** | texture | v2 | accepted | done/ | 2026-08-27 | 2026-08-27 |
-| task-0003 | Плитка и бетон лестничной клетки | **comfyui** | texture | v1 | accepted | done/ | 2026-08-27 | 2026-08-27 |
-| task-0004 | Грязь и разводы на стекло | **comfyui** | texture | v1 | accepted | done/ | 2026-08-27 | 2026-08-27 |
-| task-0005 | Дверные блоки: межкомнатные и входные | **houdini-assets** | model | v1 | accepted | done/ | 2026-08-28 | 2026-08-28 |
-| task-0006 | Оконные и балконные блоки | **houdini-assets** | model | v1 | accepted | done/ | 2026-08-28 | 2026-08-28 |
-| task-0007 | Перила и ограждения лестницы | **houdini-assets** | model | v1 | accepted | done/ | 2026-08-28 | 2026-09-03 |
-| task-0008 | Двери лифта и обрамление шахты | **houdini-assets** | model | v2 | accepted | done/ | 2026-08-28 | 2026-08-31 |
-| task-0009 | Полы в квартирах: линолеум и паркет | **comfyui** | texture | v1 | cancelled | done/ | 2026-08-28 | 2026-08-31 |
-| task-0010 | Обои и потолок в квартирах | **comfyui** | texture | v1 | cancelled | done/ | 2026-08-28 | 2026-08-31 |
-| task-0011 | Зелень: плети, мох, трава | **comfyui** | texture | v2 | accepted | done/ | 2026-08-28 | 2026-08-31 |
-| task-0012 | Сантехника и кухонная плита | **houdini-assets** | model | v1 | accepted | done/ | 2026-08-30 | 2026-08-31 |
-| task-0013 | Плитка санузла: стены и пол | **comfyui** | texture | v1 | cancelled | done/ | 2026-08-30 | 2026-08-31 |
-| task-0014 | Материалы квартиры: полы, стены, потолок, плитка | **houdini-assets** | texture | v2 | accepted | done/ | 2026-08-30 | 2026-08-31 |
-| task-0015 | Мебель квартиры: кухня, шкафы, батареи | **houdini-assets** | model | v1 | accepted | done/ | 2026-08-30 | 2026-08-31 |
-| task-0016 | Дверцы кладовок 1а, 2а, 6а | **houdini-assets** | model | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
-| task-0017 | Остекление лоджии: парапет и переплёт | **houdini-assets** | model | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
-| task-0018 | Декали износа: потёки, плесень, вытертые тропы | **houdini-assets** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
-| task-0019 | Бумага на стенах: плакаты, календарь, обрывки | **comfyui** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
-| task-0020 | Звук пустой квартиры: шаги, двери, гул | **comfyui** | audio | v1 | accepted | done/ | 2026-08-31 | 2026-09-03 |
-| task-0021 | Обои: четыре разных рисунка на выбор | **houdini-assets** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
-| task-0022 | Полы: паркет ёлочкой и второй линолеум | **houdini-assets** | texture | v3 | accepted | done/ | 2026-08-31 | 2026-09-06 |
-| task-0023 | Краска кухни и прихожей: убавить выбоины, два состояния | **houdini-assets** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
-| task-0024 | Балконная дверь под проём 1.13 | **houdini-assets** | model | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
-| task-0025 | Плитка пола санузла и фартук кухни | **houdini-assets** | texture | v2 | accepted | done/ | 2026-08-31 | 2026-08-31 |
-| task-0026 | Шторы, занавески и карнизы | **houdini-assets** | model | v5 | accepted | done/ | 2026-08-31 | 2026-09-01 |
-| task-0027 | Обои с орнаментом: четыре рисунка | **houdini-assets** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
-| task-0028 | Плитка: шов тоньше на стене и на полу | **houdini-assets** | texture | v1 | accepted | done/ | 2026-08-31 | 2026-08-31 |
-| task-0029 | Кровать, тумбочка, комод для жилых комнат | **houdini-assets** | model | v1 | accepted | done/ | 2026-09-01 | 2026-09-01 |
-| task-0030 | Обеденный стол и стулья, холодильник | **houdini-assets** | model | v1 | accepted | done/ | 2026-09-01 | 2026-09-01 |
-| task-0031 | Плинтус вдоль пола во всех помещениях | **houdini-assets** | model | v2 | accepted | done/ | 2026-09-01 | 2026-09-01 |
-| task-0032 | Абажуры и битые плафоны для потолочных ламп | **houdini-assets** | model | v2 | done | done/ | 2026-09-01 | 2026-09-06 |
-| task-0033 | Плитка — маска шва для процедурного нойза | **houdini-assets** | texture | v1 | accepted | done/ | 2026-09-01 | 2026-09-01 |
-| task-0034 | Дверь room: полотно бликует металлом/стеклом | **houdini-assets** | model | v1 | done | done/ | 2026-09-01 | 2026-09-06 |
-| task-0035 | Одеяло: плоская часть без фактуры текстуры | **houdini-assets** | model | v1 | cancelled | done/ | 2026-09-02 | 2026-09-02 |
-| task-0036 | Кровать: сетка одеяла x10 для настоящих складок | **houdini-assets** | model | v1 | accepted | done/ | 2026-09-06 | 2026-09-06 |
-| task-0037 | Плинтус: имена текстур в .glb не совпадают со сданными файлами | **houdini-assets** | model | v1 | cancelled | done/ | 2026-09-06 | 2026-09-06 |
+| — | заданий пока нет | — | — | — | — | — | — | — |
 
 ## Следующий свободный номер
 
-**task-0042**
+**task-0001**

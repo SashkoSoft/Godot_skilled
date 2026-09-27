@@ -1,2 +1,0 @@
-wall-paint-kitchen 3.00 krashenaya stena kuhni, celoe sostoyanie
-wall-paint-kitchen-2 3.00 to zhe, sostoyanie bitoe
