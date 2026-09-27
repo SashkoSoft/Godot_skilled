@@ -8,3 +8,4 @@ size_m=0.50
 ne_tayl=odna plita, kromka po krayu kartinki
 mask=R treshchina, G pyatna (maslo/gryaz), B lishaynik/moh, A vybito (skol naskvoz - zemlya)
 opis=svezhaya, chut sherohovataya
+orm_b=vysota 0..1 (8 bit, kak _height_; perepad height_cm), metal=0

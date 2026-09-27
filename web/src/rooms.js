@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { loadWearNoise, makeWearMaterial, randomWear } from "./wear_furniture.js";
+import { lodManifest, texUrl, texPx } from "./texlod.js";
 
 // Стенд мебели: квартира из четырёх комнат (гостиная, спальня, кухня, детская),
 // в ней вся мебель blend (game/assets/models/furniture/*_web.glb) — у каждого
@@ -135,10 +136,11 @@ for (const w of windows) {
 	w.top = WIN[0]; w.depthZ = w.z + w.n[1] * 0.13;
 }
 
+const LOD = await lodManifest();
 function parquet(kind) {
-	const set = kind === "mosaic" ? "parquet-mosaic-v0/parquet_mosaic_v0" : "parquet-herring-v0/parquet_herring_v0";
+	const set = kind === "mosaic" ? "parquet-mosaic-v0" : "parquet-herring-v0";
 	const L = new THREE.TextureLoader(), ld = (m, srgb) => {
-		const t = L.load(`${TEX}${set}_${m}_2k.png`);
+		const t = L.load(texUrl(LOD, set, m, texPx, "2k"));   // ступень под устройство (texlod.js)
 		t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
 		t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
 		return t;

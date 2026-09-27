@@ -4,3 +4,4 @@ albedo_mean=#5d623a
 nscale=2.000
 normal_blue_mean=0.856
 opis=dern syroy s mhom
+orm_b=vysota 0..1 (8 bit, kak _height_; perepad height_cm), metal=0

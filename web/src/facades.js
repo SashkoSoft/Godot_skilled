@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { lodManifest, texUrl, texPx, ormHeight } from "./texlod.js";
 
 // Материалы зданий от HoudiniCOP (game/assets/textures/house_tiles.json:
 // имя материала → набор и шаг тайла в метрах). Одна таблица на два применения:
@@ -10,24 +11,27 @@ import * as THREE from "three";
 const TEX = "../game/assets/textures/";
 let tablePromise = null;
 
-/** { tile_m: {имя: м}, set: {имя: папка} } — одна загрузка на страницу. */
+/** { tile_m: {имя: м}, set: {имя: папка} } — одна загрузка на страницу (вместе с манифестом ступеней). */
+let M = {};
 export function houseTiles() {
-	return tablePromise || (tablePromise = fetch(TEX + "house_tiles.json").then(r => r.json()));
+	return tablePromise || (tablePromise = Promise.all([fetch(TEX + "house_tiles.json").then(r => r.json()), lodManifest()])
+		.then(([t, m]) => { M = m; return t; }));
 }
 
 const cache = {};
-/** Карты набора: albedo (sRGB), normal, ORM (R — затенение, G — шероховатость, B — металл). */
+/** Карты набора ступени texPx: albedo (sRGB), normal, ORM (R — затенение, G — шероховатость,
+ *  B — металл, а у наборов с ormHeight — высота: металличность из карты тогда не брать). */
 export function textureSet(dir) {
 	if (cache[dir]) return cache[dir];
-	const L = new THREE.TextureLoader(), name = dir.replace(/-/g, "_");
+	const L = new THREE.TextureLoader();
 	const load = (suffix, srgb) => {
-		const t = L.load(`${TEX}${dir}/${name}_${suffix}_1k.png`);
+		const t = L.load(texUrl(M, dir, suffix, texPx, "1k"));
 		t.wrapS = t.wrapT = THREE.RepeatWrapping;
 		t.anisotropy = 4;
 		t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
 		return t;
 	};
-	return (cache[dir] = { map: load("albedo", true), normal: load("normal", false), orm: load("orm", false) });
+	return (cache[dir] = { map: load("albedo", true), normal: load("normal", false), orm: load("orm", false), ormHeight: ormHeight(M, dir) });
 }
 
 /**

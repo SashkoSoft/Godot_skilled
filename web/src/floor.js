@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { rectsOf, walkLines, entrancePoint } from "./district.js";
 import { GLSL_COMMON, grassUniforms } from "./grass.js";
+import { lodManifest, texUrl, ormHeight } from "./texlod.js";
 
 // Пол квартала вне твёрдых покрытий.
 //  • Карта весов (шаг 0.5 м) считается ПРАВИЛАМИ от данных квартала:
@@ -323,9 +324,10 @@ async function loadPitArray(bands, res = 256) {
 		}
 		return out;
 	};
+	const M = await lodManifest();
 	await Promise.all(PIT_SETS.map(async (s, i) => {
-		const sz = +s.match(/-(\d)m-/)[1], tag = sz === 1 ? "1k" : "2k", base = `${TEX}${s}/${s.replace(/-/g, "_")}_`;
-		const [m, n] = await Promise.all([loadImage(base + `mask_${tag}.png`), loadImage(base + `normal_${tag}.png`)]);
+		const sz = +s.match(/-(\d)m-/)[1], tag = sz === 1 ? "1k" : "2k";
+		const [m, n] = await Promise.all([loadImage(texUrl(M, s, "mask", 2 * res, tag)), loadImage(texUrl(M, s, "normal", 2 * res, tag))]);
 		data.set(down(rawPixels(m, m.width), m.width, true), (2 + i) * S);
 		data.set(down(rawPixels(n, n.width), n.width, false), (2 + PIT_SETS.length + i) * S);
 	}));
@@ -378,14 +380,19 @@ function parseTile(txt) {
 	return { tile: num("tile_m", 2), heightCm: num("height_cm", 1.5), status: st ? st[1] : "",
 		species: sp ? sp[1].split(",").map(s => s.trim()).filter(Boolean) : null };
 }
-async function loadSet(name, kinds, suffix = "1k") {
-	const base = TEX + name + "/", file = name.replace(/-/g, "_");
-	const r = await fetch(base + "tile.txt");
+// Набор карт ступени px (texlod.js: файл ровно нужного размера, альбедо .webp).
+// Высота у наборов с orm_b — синий канал ORM: height = null, отдельный файл не качается.
+async function loadSet(name, kinds, suffix = "1k", px = 1024) {
+	const base = TEX + name + "/";
+	const [r, M] = await Promise.all([fetch(base + "tile.txt"), lodManifest()]);
 	if (!r.ok) return null;
 	const meta = parseTile(await r.text());
-	const imgs = await Promise.all(kinds.map(k => loadImage(`${base}${file}_${k}_${suffix}.png`)));
-	return { meta, ...Object.fromEntries(kinds.map((k, i) => [k, imgs[i]])) };
+	const ks = ormHeight(M, name) ? kinds.filter(k => k !== "height") : kinds;
+	const imgs = await Promise.all(ks.map(k => loadImage(texUrl(M, name, k, px, suffix))));
+	return { meta, height: null, ...Object.fromEntries(ks.map((k, i) => [k, imgs[i]])) };
 }
+// высота слоя: отдельная карта (R) или синий канал ORM
+const hgtOf = (hgt, orm, k) => hgt ? hgt[k] : orm[k + 2];
 
 // Сырые байты картинки через WebGL: без премультипликации альфы и без цветовых
 // преобразований. Canvas 2D хранит цвет умноженным на альфу — у маски, где альфа
@@ -441,14 +448,14 @@ function arrayTex(data, res, n, srgb) {
 async function buildLayerArrays(d, names, res) {
 	const L = d.ground.layers;
 	const kinds = ["albedo", "normal", "orm", "height"];
-	const packs = await Promise.all(names.map(n => loadSet(L[n].pack, kinds).catch(e => { console.warn("ground:", e.message); return null; })));
+	const packs = await Promise.all(names.map(n => loadSet(L[n].pack, kinds, "1k", res).catch(e => { console.warn("ground:", e.message); return null; })));
 	const rest = names.find(n => L[n].rest) || names[0];
 	const soil = packs[names.indexOf(rest)];
 	if (!soil) throw new Error("ground: нет набора почвы " + L[rest]?.pack);
 	const N = names.length, S = res * res * 4;
 	const A = new Uint8Array(S * N), B = new Uint8Array(S * N);
 	const tile = [], hScale = [];
-	const px = (p) => ({ alb: rawPixels(p.albedo, res), nrm: rawPixels(p.normal, res), orm: rawPixels(p.orm, res), hgt: rawPixels(p.height, res) });
+	const px = (p) => ({ alb: rawPixels(p.albedo, res), nrm: rawPixels(p.normal, res), orm: rawPixels(p.orm, res), hgt: p.height ? rawPixels(p.height, res) : null });
 	const soilPx = px(soil);
 	names.forEach((n, li) => {
 		const p = packs[li], st = L[n].stand_in;
@@ -471,7 +478,7 @@ async function buildLayerArrays(d, names, res) {
 				g = Math.min(255, (y + (g - y) * sat) * tint[1]);
 				b = Math.min(255, (y + (b - y) * sat) * tint[2]);
 			}
-			A[o + k] = r; A[o + k + 1] = g; A[o + k + 2] = b; A[o + k + 3] = P.hgt[k];
+			A[o + k] = r; A[o + k + 1] = g; A[o + k + 2] = b; A[o + k + 3] = hgtOf(P.hgt, P.orm, k);
 			B[o + k] = P.nrm[k]; B[o + k + 1] = P.nrm[k + 1]; B[o + k + 2] = P.orm[k + 1]; B[o + k + 3] = P.orm[k];
 		}
 	});
@@ -486,7 +493,7 @@ async function buildLayerArrays(d, names, res) {
  */
 async function buildOverlayArrays(list, res) {
 	const kinds = ["albedo", "normal", "mask"];
-	const sets = await Promise.all(list.map(o => loadSet(o.pack, kinds).catch(e => { console.warn("ground:", e.message); return null; })));
+	const sets = await Promise.all(list.map(o => loadSet(o.pack, kinds, "1k", res).catch(e => { console.warn("ground:", e.message); return null; })));
 	const ready = list.map((o, i) => ({ o, s: sets[i] })).filter(x => {
 		if (!x.s) console.warn(`ground: накладка ${x.o.id} — ждём ${x.o.pack}`);
 		return x.s;
@@ -1178,7 +1185,10 @@ export async function setupGround(d, material, map, { res = 1024, debug = false,
 	if (hard0) U.uHardCol.value.copy(hard0.color);
 	U.uGDebug.value = debug ? 1 : 0;
 	const layerNames = map.layers, GL = d.ground.layers;
-	const [L, O] = await Promise.all([buildLayerArrays(d, layerNames, res), buildOverlayArrays(d.ground.overlays || [], res)]);
+	// Ступени: сначала 512 — пол появляется быстро; потом (res > 512) — фоном res,
+	// текстуры подменяются в тех же униформах (см. refine ниже).
+	const res0 = Math.min(res, 512);
+	const [L, O] = await Promise.all([buildLayerArrays(d, layerNames, res0), buildOverlayArrays(d.ground.overlays || [], res0)]);
 	U.uGA.value = L.A; U.uGB.value = L.B;
 	const SEL = { r: 0, g: 1, b: 2, a: 3, dirt: 4, wet: 5, moss: 6, crack: 7, cellSpot: 8, cell: 9, cellEdge: 10, cellRidge: 11 };
 	L.tile.forEach((t, i) => {
@@ -1223,22 +1233,34 @@ export async function setupGround(d, material, map, { res = 1024, debug = false,
 	// слои: 0 дорога старая, 1 выкрошенная, 2 в заплатах (не используется — заплаты из карты),
 	// 3 тротуар мелкозернистый, 4 тротуар с трещинами (тайл 2 м)
 	const ASPH = ["asphalt-road-old", "asphalt-road-crumbled", "asphalt-road-patched", "asphalt-walk-fine", "asphalt-walk-cracked"];
-	Promise.all(ASPH.map(n => loadSet(n, ["albedo", "normal", "orm", "height"], "2k"))).then(sets => {
+	const asphalt = r => Promise.all(ASPH.map(n => loadSet(n, ["albedo", "normal", "orm", "height"], "2k", r))).then(sets => {
 		if (sets.some(s => !s)) { console.warn("ground: асфальт — нет наборов"); return; }
-		const r = res, S = r * r * 4, A = new Uint8Array(S * sets.length), B = new Uint8Array(S * sets.length);
+		const S = r * r * 4, A = new Uint8Array(S * sets.length), B = new Uint8Array(S * sets.length);
 		sets.forEach((s, li) => {
-			const alb = rawPixels(s.albedo, r), nrm = rawPixels(s.normal, r), orm = rawPixels(s.orm, r), hgt = rawPixels(s.height, r), o = li * S;
+			const alb = rawPixels(s.albedo, r), nrm = rawPixels(s.normal, r), orm = rawPixels(s.orm, r), hgt = s.height ? rawPixels(s.height, r) : null, o = li * S;
 			for (let k = 0; k < S; k += 4) {
-				A[o + k] = alb[k]; A[o + k + 1] = alb[k + 1]; A[o + k + 2] = alb[k + 2]; A[o + k + 3] = hgt[k];
+				A[o + k] = alb[k]; A[o + k + 1] = alb[k + 1]; A[o + k + 2] = alb[k + 2]; A[o + k + 3] = hgtOf(hgt, orm, k);
 				B[o + k] = nrm[k]; B[o + k + 1] = nrm[k + 1]; B[o + k + 2] = orm[k + 1]; B[o + k + 3] = orm[k];
 			}
 		});
-		U.uAA.value = arrayTex(A, r, sets.length, true); U.uAB.value = arrayTex(B, r, sets.length, false);
+		swap(U.uAA, arrayTex(A, r, sets.length, true)); swap(U.uAB, arrayTex(B, r, sets.length, false));
 		U.uATile.value = sets[0].meta.tile; U.uAOn.value = 1;
 		console.log(`ground: асфальт ${ASPH.join(",")} · ${r}px`);
 	}).catch(e => console.warn("ground: асфальт", e));
-	console.log(`ground: слои ${layerNames.join(",")} · накладки ${O.ready.map(x => x.o.id).join(",") || "—"} · ${res}px` +
-		(L.stand.length ? ` · заглушки: ${L.stand.join(",")}` : ""));
+	// Подмена текстуры в униформе: прежнюю — из видеопамяти (заглушки 1×1 — тоже)
+	function swap(u, t) { const old = u.value; u.value = t; if (old && old !== t) old.dispose(); }
+	// Ступени: асфальт, слои и накладки — сначала res0, затем фоном res
+	const refine = async () => {
+		await asphalt(res0);
+		if (res <= res0) return;
+		const [L2, O2] = await Promise.all([buildLayerArrays(d, layerNames, res), buildOverlayArrays(d.ground.overlays || [], res), asphalt(res)]);
+		swap(U.uGA, L2.A); swap(U.uGB, L2.B);
+		if (O2.OA) { swap(U.uOA, O2.OA); swap(U.uOB, O2.OB); }
+		console.log(`ground: слои и накладки — ступень ${res}px`);
+	};
+	refine().catch(e => console.warn("ground: ступени", e));
+	console.log(`ground: слои ${layerNames.join(",")} · накладки ${O.ready.map(x => x.o.id).join(",") || "—"} · ${res0}px` +
+		(res > res0 ? `, догружается ${res}px` : "") + (L.stand.length ? ` · заглушки: ${L.stand.join(",")}` : ""));
 	return { stand: L.stand, overlays: O.ready.map(x => x.o.id), pits: roadMap.pits };
 }
 

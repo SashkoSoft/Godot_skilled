@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { windify } from "./wind.js";
+import { lodManifest, texUrl, texPx } from "./texlod.js";
 
 // Кора по породам (HoudiniCOP, textures/bark-<набор>/, тайл 0.5 м): порода → набор;
 // сухое дерево — bark-dead. Кусты (сирень, бузина, шиповник) развёртки не имеют.
@@ -9,12 +10,12 @@ const barkSets = {};
 function barkSet(name) {
 	return barkSets[name] ||= (async () => {
 		const base = `../game/assets/textures/bark-${name}/`, f = `bark_${name}`;
-		const r = await fetch(base + "tile.txt");
+		const [r, M] = await Promise.all([fetch(base + "tile.txt"), lodManifest()]);
 		if (!r.ok) return null;
 		const cd = ((await r.text()).match(/cd=#?([0-9a-fA-F]{6})/) || [])[1];
 		const L = new THREE.TextureLoader();
 		const ld = (s, srgb) => {
-			const t = L.load(`${base}${f}_${s}_1k.png`);
+			const t = L.load(texUrl(M, `bark-${name}`, s, texPx, "1k"));   // ступень под устройство
 			t.wrapS = t.wrapT = THREE.RepeatWrapping;
 			t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
 			t.anisotropy = 4;

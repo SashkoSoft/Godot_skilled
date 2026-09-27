@@ -19,7 +19,7 @@ function tiled(dir, tile) {
 	const key = dir + tile;
 	if (repCache[key]) return repCache[key];
 	const s = textureSet(dir), rep = t => { const c = t.clone(); c.repeat.set(1 / tile, 1 / tile); c.needsUpdate = true; return c; };
-	return (repCache[key] = { map: rep(s.map), normalMap: rep(s.normal), orm: rep(s.orm) });
+	return (repCache[key] = { map: rep(s.map), normalMap: rep(s.normal), orm: rep(s.orm), ormHeight: s.ormHeight });
 }
 
 function dress(root, T) {
@@ -32,7 +32,10 @@ function dress(root, T) {
 			if (!dir || !tile || !m.isMeshStandardMaterial) continue;
 			const t = tiled(dir, tile);
 			m.map = t.map; m.normalMap = t.normalMap;
-			m.aoMap = t.orm; m.roughnessMap = t.orm; m.metalnessMap = t.orm;
+			m.aoMap = t.orm; m.roughnessMap = t.orm;
+			// у наборов с высотой в ORM.B металла в карте нет — и металличность 0 (в glTF по умолчанию 1)
+			m.metalnessMap = t.ormHeight ? null : t.orm;
+			if (t.ormHeight) m.metalness = 0;
 			m.color.set(0xffffff);
 			m.needsUpdate = true;
 		}

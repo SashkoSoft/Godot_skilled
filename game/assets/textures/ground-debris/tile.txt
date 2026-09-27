@@ -4,3 +4,4 @@ albedo_mean=#877e77
 nscale=2.000
 normal_blue_mean=0.921
 opis=stroitelnyy boy na zemle
+orm_b=vysota 0..1 (8 bit, kak _height_; perepad height_cm), metal=0

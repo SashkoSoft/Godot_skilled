@@ -4,3 +4,4 @@ albedo_mean=#616e42
 nscale=2.000
 normal_blue_mean=0.855
 opis=dern svezhiy
+orm_b=vysota 0..1 (8 bit, kak _height_; perepad height_cm), metal=0

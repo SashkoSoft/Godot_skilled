@@ -4,3 +4,4 @@ albedo_mean=#795e3c
 nscale=2.000
 normal_blue_mean=0.927
 opis=opad: listya, vetki, hvoya
+orm_b=vysota 0..1 (8 bit, kak _height_; perepad height_cm), metal=0
