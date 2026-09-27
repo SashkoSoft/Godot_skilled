@@ -67,6 +67,13 @@ const PLAN = [
 	["front", "desk_pedestal", "chair_ladder"], ["front", "desk_legs", "chair_vienna"],
 	["sill", 0, ["pot_tall", "pot_classic", "pot_ribbed"]],
 	["sill", 2, ["pot_bowl", "pot_classic"]], ["sill", 3, ["pot_ribbed", "pot_tall"]],
+	// отопление: батарея под каждым окном, стояк наращивается трубами до потолка;
+	// rise — что ставить на стояк снизу вверх (floor — проход через пол)
+	["rad", 0, "rad_7_riser_left", ["pipe_floor_pass", "pipe_straight_1m", "pipe_straight_1m", "pipe_bend_90"]],
+	["rad", 1, "rad_10_two_pipe", ["pipe_floor_pass", "pipe_straight_1m", "pipe_straight_1m"]],
+	["rad", 2, "rad_4_short", ["pipe_floor_pass", "pipe_tee", "pipe_straight_1m"]],
+	["rad", 3, "rad_6_bypass_right", ["pipe_floor_pass", "pipe_straight_1m", "pipe_straight_1m"]],
+	["radwall", "kitchen", "N", 1.95, "rad_8_bare"],
 ];
 
 /* ── сцена ──────────────────────────────────────────────────────────── */
@@ -163,7 +170,8 @@ const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 // маска: без премультипликации и без переворота (A — класс материала; UV как у атласа glb)
 const bmp = new THREE.ImageBitmapLoader().setOptions({ premultiplyAlpha: "none", colorSpaceConversion: "none" });
 const names = [...new Set(PLAN.flatMap(p => p[0] === "wall" ? p[3].map(e => e.m || e) : p[0] === "table" ? [p[1], ...p[5].map(c => c[0])] :
-	p[0] === "sill" ? p[2] : p[0] === "top" ? [p[2]] : p[0] === "front" ? [p[2]] : []))];
+	p[0] === "sill" ? p[2] : p[0] === "top" ? [p[2]] : p[0] === "front" ? [p[2]] : p[0] === "rad" ? [p[2], ...p[3]] :
+	p[0] === "radwall" ? [p[4]] : []))];
 const noise = await loadWearNoise(`${FURN}textures/wear_noise.png`);
 const models = {};
 await Promise.all(names.map(async n => {
@@ -229,6 +237,51 @@ for (const p of PLAN) {
 	} else if (p[0] === "top") {
 		const [, base, n, f] = p, b = placed[base];
 		put(n, make(n, [0, 1]), b.min.x + (b.max.x - b.min.x) * f, (b.min.z + b.max.z) / 2, b.max.y); count++;
+	} else if (p[0] === "rad" || p[0] === "radwall") {
+		// Батарея: начало модели — на полу в плоскости стены (не центр габарита):
+		// ставится началом на внутреннюю грань стены, по высоте — как есть; вдоль стены —
+		// по центру окна (rad) или от угла комнаты (radwall).
+		const name = p[0] === "rad" ? p[2] : p[4];
+		let face, wallAt, alongAt;   // нормаль, координата грани стены (по нормали), центр вдоль стены
+		const it0 = { face: null };
+		if (p[0] === "rad") {
+			const w = windows[p[1]];
+			face = w.n; wallAt = w.z + w.n[1] * T / 2; alongAt = w.x;   // окна — на стенах вдоль X
+		} else {
+			const [, room, side, from] = p, S = SIDES[side], [cx, cz] = S.c(ROOMS[room].rect);
+			face = S.n;
+			wallAt = Math.abs(S.n[1]) ? cz + S.n[1] * T / 2 : cx + S.n[0] * T / 2;
+			alongAt = (Math.abs(S.t[0]) ? cx : cz) + (S.t[0] + S.t[1]) * (from + inset);   // начало, центр — ниже
+			it0.start = true; it0.sign = S.t[0] + S.t[1];
+		}
+		const it = make(name, face), onX = Math.abs(face[1]) > 0;   // стена вдоль X?
+		const lo = onX ? it.bb.min.x : it.bb.min.z, hi = onX ? it.bb.max.x : it.bb.max.z;
+		const center = it0.start ? alongAt + it0.sign * (hi - lo) / 2 : alongAt;
+		const shift = center - (lo + hi) / 2;
+		it.o.position.set(onX ? shift : wallAt, 0, onX ? wallAt : shift);
+		scene.add(it.o); it.o.updateMatrixWorld(true); count++;
+		const along = onX ? 0 : 2;		// стояки — по геометрии: вершины выше 0.8 м — трубы (батарея ниже); кучки по оси вдоль стены
+		if (p[0] === "rad") {
+			const xs = [], v = new THREE.Vector3();
+			it.o.traverse(m => { if (!m.isMesh) return; const a = m.geometry.attributes.position;
+				for (let i = 0; i < a.count; i += 3) { v.fromBufferAttribute(a, i).applyMatrix4(m.matrixWorld); if (v.y > 0.85) xs.push([v.x, v.z]); } });
+			xs.sort((a, b) => a[along ? 1 : 0] - b[along ? 1 : 0]);
+			const risers = [];
+			for (const q of xs) { const r = risers[risers.length - 1], k = along ? 1 : 0;
+				if (r && q[k] - r.last < 0.04) { r.s[0] += q[0]; r.s[1] += q[1]; r.n++; r.last = q[k]; } else risers.push({ s: [q[0], q[1]], n: 1, last: q[k] }); }
+			for (const r of risers) {
+				const rx = r.s[0] / r.n, rz = r.s[1] / r.n;
+				let y = 0;
+				for (const pn of p[3]) {
+					// труба — центр её габарита на ось стояка; проход через пол — от пола, остальное — стык в стык
+					const pi = make(pn, face), h = pi.bb.max.y - pi.bb.min.y;
+					const y0 = pn === "pipe_floor_pass" ? 0 : Math.max(y, 1.0);
+					put(pn, pi, rx, rz, y0);
+					if (pn !== "pipe_floor_pass") y = y0 + h;
+					count++;
+				}
+			}
+		}
 	} else if (p[0] === "sill") {
 		const [, i, list] = p, w = windows[i];
 		list.forEach((n, k) => { put(n, make(n, [0, 1]), w.x - w.w / 2 + w.w * (k + 0.5) / list.length, w.depthZ, w.top); count++; });
