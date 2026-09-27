@@ -22,21 +22,21 @@ const H = 2.6, T = 0.1, CUT = 0.9;   // высота стен, толщина, �
 
 // комнаты — прямоугольники по осям стен [x0, z0, x1, z1]
 const ROOMS = {
-	living: { name: "гостиная", rect: [0, 0, 5.2, 4], floor: "herring" },
-	bedroom: { name: "спальня", rect: [5.2, 0, 9, 4], floor: "mosaic" },
-	kitchen: { name: "кухня", rect: [0, 4, 3.2, 6.8], floor: "mosaic" },
-	kids: { name: "детская", rect: [3.2, 4, 9, 6.8], floor: "herring" },
+	living: { name: "гостиная", rect: [0, 0, 5.6, 4.3], floor: "herring" },
+	bedroom: { name: "спальня", rect: [5.6, 0, 10, 4.3], floor: "mosaic" },
+	kitchen: { name: "кухня", rect: [0, 4.3, 3.4, 7.3], floor: "mosaic" },
+	kids: { name: "детская", rect: [3.4, 4.3, 10, 7.3], floor: "herring" },
 };
 // стены: отрезок по оси, проёмы — {c: середина от начала, w, door | window}
 const DOOR = [0, 2.05], WIN = [0.86, 2.2];
 const WALLS = [
-	{ a: [0, 0], b: [9, 0], open: [{ c: 4.3, w: 1.3, y: WIN }, { c: 7.2, w: 1.3, y: WIN }] },
-	{ a: [0, 0], b: [0, 6.8] },
-	{ a: [0, 6.8], b: [9, 6.8], open: [{ c: 1.6, w: 1.2, y: WIN }, { c: 6.1, w: 1.4, y: WIN }] },
-	{ a: [9, 0], b: [9, 6.8] },
-	{ a: [5.2, 0], b: [5.2, 4], open: [{ c: 2.45, w: 0.9, y: DOOR }] },
-	{ a: [0, 4], b: [9, 4], open: [{ c: 1.45, w: 0.9, y: DOOR }, { c: 4.45, w: 0.9, y: DOOR }, { c: 8.45, w: 0.9, y: DOOR }] },
-	{ a: [3.2, 4], b: [3.2, 6.8] },
+	{ a: [0, 0], b: [10, 0], open: [{ c: 4.4, w: 1.3, y: WIN }, { c: 7.8, w: 1.3, y: WIN }] },
+	{ a: [0, 0], b: [0, 7.3] },
+	{ a: [0, 7.3], b: [10, 7.3], open: [{ c: 1.7, w: 1.2, y: WIN }, { c: 6.7, w: 1.4, y: WIN }] },
+	{ a: [10, 0], b: [10, 7.3] },
+	{ a: [5.6, 0], b: [5.6, 4.3], open: [{ c: 2.7, w: 0.9, y: DOOR }] },
+	{ a: [0, 4.3], b: [10, 4.3], open: [{ c: 1.5, w: 0.9, y: DOOR }, { c: 4.6, w: 0.9, y: DOOR }, { c: 9.3, w: 0.9, y: DOOR }] },
+	{ a: [3.4, 4.3], b: [3.4, 7.3] },
 ];
 
 // Расстановка. wall(комната, сторона, [модели], от угла м) — ряд спиной к стене;
@@ -44,27 +44,26 @@ const WALLS = [
 // sill(окно №, [модели]) — на подоконник; top(предмет, модель, доля) — сверху на предмет.
 const PLAN = [
 	// гостиная: «стенка» по северной стене до окна, шкаф и буфет по западной
-	["wall", "living", "N", ["sideboard_tall", "sideboard_bar", "bookcase_glass"], 0.05],
-	["wall", "living", "W", ["sideboard", "wardrobe_legs"], 0.05],
-	["wall", "living", "S", ["table_book_closed"], 2.35],
-	["table", "table_extending", 2.55, 2.2, [0, -1], [["chair_vienna", "N", 0.5], ["chair_vienna", "S", 0.5], ["chair_leather", "W", 0.5], ["chair_leather", "E", 0.5]]],
-	["table", "table_round", 4.35, 1.15, [0, -1], [["chair_ladder", "S", 0.5], ["chair_spindle", "W", 0.5]]],
+	["wall", "living", "N", ["sideboard_tall", "sideboard_bar"], 0.05],
+	["wall", "living", "W", ["sideboard", "wardrobe_legs", "bookcase_glass"], 0.05],
+	["wall", "living", "S", ["table_book"], 0.05],
+	["table", "table_extending", 2.75, 2.2, [0, -1], [["chair_vienna", "N", 0.5], ["chair_vienna", "S", 0.5], ["chair_leather", "W", 0.5], ["chair_leather", "E", 0.5]]],
+	["table", "table_round", 4.75, 1.35, [0, -1], [["chair_ladder", "S", 0.5], ["chair_spindle", "W", 0.5]]],
 	["top", "sideboard", "pot_bowl", 0.3], ["top", "sideboard_bar", "pot_classic", 0.7],
 	// спальня: две кровати изголовьем к восточной стене, шифоньер у двери, рабочий стол у южной
-	["wall", "bedroom", "E", ["bed_double", { m: "bed_polished", gap: 0.5 }], 0.1],
-	["wall", "bedroom", "W", ["wardrobe_mirror"], 2.55],
-	["wall", "bedroom", "N", ["chair_bent"], 0.2],
-	["table", "table_book", 6.35, 3.45, [0, -1], [["chair_bent", "N", 0.35], ["stool_cream", "N", 0.75]]],
+	["wall", "bedroom", "E", ["bed_double", { m: "bed_polished", gap: 0.3 }], 0.1],
+	["wall", "bedroom", "W", ["wardrobe_mirror"], 2.8],
+	["wall", "bedroom", "S", ["table_book_closed", "chair_bent", "stool_cream"], 1.2],
 	["sill", 1, ["pot_ribbed", "pot_bowl", "pot_tall"]],
 	// кухня: плита и мойки по западной стене, стол с табуретами
 	["wall", "kitchen", "W", ["stove_gas", "sink_cabinet", "sink_backsplash"], 0.1],
-	["table", "table_kitchen", 2.0, 5.65, [0, -1], [["stool_cream", "N", 0.5], ["stool_marble", "S", 0.3], ["stool_green", "S", 0.75], ["chair_spindle", "E", 0.5]]],
+	["table", "table_kitchen", 2.15, 5.9, [0, -1], [["stool_cream", "N", 0.5], ["stool_marble", "S", 0.3], ["stool_green", "S", 0.75], ["chair_spindle", "E", 0.5]]],
 	["top", "table_kitchen", "pot_classic", 0.5],
 	// детская: кровати по стенам, два письменных стола между дверями
 	["wall", "kids", "E", ["bed_metal"], 0.25],
 	["wall", "kids", "W", ["bed_pine_metal"], 0.15],
-	["wall", "kids", "S", [{ m: "folding_cot", side: true }], 1.9],
-	["wall", "kids", "N", ["desk_pedestal", "desk_legs"], 1.8],
+	["wall", "kids", "S", [{ m: "folding_cot", side: true }], 0.1],
+	["wall", "kids", "N", ["desk_pedestal", "desk_legs"], 1.95],
 	["front", "desk_pedestal", "chair_ladder"], ["front", "desk_legs", "chair_vienna"],
 	["sill", 0, ["pot_tall", "pot_classic", "pot_ribbed"]],
 	["sill", 2, ["pot_bowl", "pot_classic"]], ["sill", 3, ["pot_ribbed", "pot_tall"]],
@@ -78,10 +77,11 @@ const PLAN = [
 	// Шторы: на окне два карниза, оба дальше подоконника (он 0.26 м): тюль у стекла,
 	// плотные шторы перед ним; на каждом — пара, левая и правая (правая — зеркало).
 	// Штора на кольцах: начало — край карниза, полотно — к центру окна.
-	["drape", 0, { tulle: "curtain_rings_w140_g100_114_lod0", heavy: ["curtain_rings_w100_g20_30_lod0", "curtain_rings_w100_g45_55_lod0"], color: 0x7a2e2a }],
-	["drape", 1, { tulle: "curtain_rings_w140_g100_114_lod0", heavy: ["curtain_rings_w100_g45_55_lod0", "curtain_rings_w100_g20_30_lod0"], color: 0x5f6b3a }],
-	["drape", 2, { tulle: "curtain_rings_w140_g100_114_lod0", heavy: ["curtain_rings_w100_g20_30_lod0", "curtain_rings_w100_g20_30_lod0"], color: 0xa9803a }],
-	["drape", 3, { tulle: "curtain_rings_w140_g100_114_lod0", heavy: ["curtain_rings_w100_g45_55_lod0", "curtain_rings_w100_g45_55_lod0"], color: 0x3f4f6b }],
+	// тюль задёрнут (g100), плотные — раздвинуты по-разному (g — доля полкарниза под полотном)
+	["drape", 0, { tulle: "curtain_rings_w100_g100_110_lod0", heavy: ["curtain_rings_w100_g20_30_lod0", "curtain_rings_w100_g30_40_lod0"], color: 0x7a2e2a }],
+	["drape", 1, { tulle: "curtain_rings_w100_g100_110_lod0", heavy: ["curtain_rings_w100_g45_55_lod0", "curtain_rings_w100_g60_70_lod0"], color: 0x5f6b3a }],
+	["drape", 2, { tulle: "curtain_rings_w100_g100_110_lod0", heavy: ["curtain_rings_w100_g20_30_lod0", "curtain_rings_w100_g20_30_lod0"], color: 0xa9803a }],
+	["drape", 3, { tulle: "curtain_rings_w100_g100_110_lod0", heavy: ["curtain_rings_w100_g30_40_lod0", "curtain_rings_w100_g45_55_lod0"], color: 0x3f4f6b }],
 ];
 
 /* ── сцена ──────────────────────────────────────────────────────────── */
@@ -97,11 +97,11 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xa9b6c2);   // небо в окнах
 {
 	const g = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ color: 0x5d6150, roughness: 1 }));
-	g.rotation.x = -Math.PI / 2; g.position.set(4.5, -0.02, 3.4); g.receiveShadow = true; scene.add(g);   // земля за окнами
+	g.rotation.x = -Math.PI / 2; g.position.set(5, -0.02, 3.65); g.receiveShadow = true; scene.add(g);   // земля за окнами
 }
 scene.add(new THREE.HemisphereLight(0xe4ecf5, 0x6b5a48, 1.25));
 const sun = new THREE.DirectionalLight(0xfff1dc, 2.4);
-sun.position.set(-3, 10, -6); sun.target.position.set(4.5, 0, 3.4);
+sun.position.set(-3, 10, -6); sun.target.position.set(5, 0, 3.65);
 sun.castShadow = true;
 sun.shadow.mapSize.set(4096, 4096);
 Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 1, far: 30 });
@@ -118,6 +118,7 @@ function box(w, h, d, x, y, z, mat) {
 	scene.add(m); return m;
 }
 const windows = [];   // центры окон для подоконников
+const doorZones = [];   // проходы у дверей — мебель туда не ставится
 const wallPieces = [];   // куски стен: для среза — линия стены (нормаль, смещение) и высоты
 for (const W of WALLS) {
 	const [ax, az] = W.a, [bx, bz] = W.b, len = Math.hypot(bx - ax, bz - az);
@@ -134,10 +135,14 @@ for (const W of WALLS) {
 		const o0 = o.c - o.w / 2, o1 = o.c + o.w / 2;
 		along(s, o0, 0, h);
 		along(o0, o1, 0, o.y[0]); along(o0, o1, o.y[1], h);
+		if (o.y === DOOR) {   // проход: полоса 0.9 м по обе стороны двери
+			const x = ax + ux * o.c, z = az + uz * o.c, hw = o.w / 2 + 0.05, dd = 0.9;
+			doorZones.push(new THREE.Box3(new THREE.Vector3(x - (ux ? hw : dd), 0, z - (uz ? hw : dd)), new THREE.Vector3(x + (ux ? hw : dd), DOOR[1], z + (uz ? hw : dd))));
+		}
 		if (o.y === WIN) {
 			const x = ax + ux * o.c, z = az + uz * o.c;
 			let n = [-uz, ux];
-			if (n[0] * (4.5 - x) + n[1] * (3.4 - z) < 0) n = [uz, -ux];   // нормаль — внутрь квартиры
+			if (n[0] * (5 - x) + n[1] * (3.65 - z) < 0) n = [uz, -ux];   // нормаль — внутрь квартиры
 			windows.push({ x, z, w: o.w, n });
 		}
 		s = o1;
@@ -211,34 +216,58 @@ function make(n, face) {
 	o.updateMatrixWorld(true);
 	return { o, bb: new THREE.Box3().setFromObject(o) };
 }
-// поставить так, чтобы центр габарита был в (cx, cz), низ — на высоте y
-function put(n, { o, bb }, cx, cz, y = 0) {
+// Занятое место: габариты поставленного (мировые). Ряд у стены обходит занятое;
+// намеренные наложения (стул под столом, горшок на подоконнике, трубы на батарее)
+// в проверку не идут. Прочие пересечения — в консоль.
+const occ = doorZones.map(box => ({ box, n: "проход у двери" })), clashes = [];
+const hit = b => { const s = b.clone().expandByScalar(-0.015); return occ.find(o => o.box.intersectsBox(s)); };
+// поставить так, чтобы центр габарита был в (cx, cz), низ — на высоте y; reg — занять место
+function put(n, { o, bb }, cx, cz, y = 0, reg = true) {
 	o.position.set(cx - (bb.min.x + bb.max.x) / 2, y - bb.min.y, cz - (bb.min.z + bb.max.z) / 2);
 	scene.add(o); o.updateMatrixWorld(true);
 	const w = new THREE.Box3().setFromObject(o);
 	placed[n] = w;
+	if (reg) occ.push({ box: w, n });
 	return w;
 }
+// где окажется габарит, если поставить центром в (cx, cz) на пол
+const boxAt = (bb, cx, cz, y = 0) => bb.clone().translate(new THREE.Vector3(cx - (bb.min.x + bb.max.x) / 2, y - bb.min.y, cz - (bb.min.z + bb.max.z) / 2));
 const SIDES = { N: { n: [0, 1], t: [1, 0], c: r => [r[0], r[1]] }, E: { n: [-1, 0], t: [0, 1], c: r => [r[2], r[1]] },
 	S: { n: [0, -1], t: [-1, 0], c: r => [r[2], r[3]] }, W: { n: [1, 0], t: [0, -1], c: r => [r[0], r[3]] } };
 const inset = T / 2 + 0.02;
 let count = 0;
-for (const p of PLAN) {
+// сначала всё, что у окон (батареи, шторы) — оно занимает место; потом мебель
+const FIRST = new Set(["rad", "radwall", "drape"]);
+for (const p of [...PLAN.filter(p => FIRST.has(p[0])), ...PLAN.filter(p => !FIRST.has(p[0]))]) {
 	if (p[0] === "wall") {
-		const [, room, side, list, from] = p, S = SIDES[side], [cx, cz] = S.c(ROOMS[room].rect);
+		const [, room, side, list, from] = p, S = SIDES[side], [cx, cz] = S.c(ROOMS[room].rect), R = ROOMS[room].rect;
+		const wallLen = Math.abs(S.t[0]) ? R[2] - R[0] : R[3] - R[1];
 		let cur = from + inset;
 		for (const e of list) {
 			// side — боком к стене (раскладушка вдоль стены): лицо вдоль стены; gap — отступ перед предметом
 			if (e.gap) cur += e.gap;
 			const n = e.m || e, it = make(n, e.side ? S.t : S.n), sx = it.bb.max.x - it.bb.min.x, sz = it.bb.max.z - it.bb.min.z;
 			const L = Math.abs(S.t[0]) * sx + Math.abs(S.t[1]) * sz, D = Math.abs(S.n[0]) * sx + Math.abs(S.n[1]) * sz;
-			const a = cur + L / 2, d = inset + D / 2;
-			put(n, it, cx + S.t[0] * a + S.n[0] * d, cz + S.t[1] * a + S.n[1] * d);
+			// занято — перепрыгнуть препятствие вдоль стены
+			let px, pz, last = null;
+			for (let guard = 0; ; guard++) {
+				const a = cur + L / 2, d = inset + D / 2;
+				px = cx + S.t[0] * a + S.n[0] * d; pz = cz + S.t[1] * a + S.n[1] * d;
+				const o = hit(boxAt(it.bb, px, pz));
+				if (!o || guard > 20) break;
+				last = o.n;
+				const far = S.t[0] > 0 ? o.box.max.x - cx : S.t[0] < 0 ? cx - o.box.min.x : S.t[1] > 0 ? o.box.max.z - cz : cz - o.box.min.z;
+				cur = Math.max(cur + 0.05, far + 0.04);
+			}
+			if (cur + L > wallLen) clashes.push(`${n}: не влез у стены ${room}/${side}${last ? " (мешает " + last + ")" : ""}`);
+			put(n, it, px, pz);
 			cur += L + 0.04; count++;
 		}
 	} else if (p[0] === "table") {
 		const [, n, x, z, face, chairs] = p;
-		const tb = put(n, make(n, face), x, z); count++;
+		const ti = make(n, face), tob = hit(boxAt(ti.bb, x, z));
+		if (tob) clashes.push(`${n} задевает ${tob.n}`);
+		const tb = put(n, ti, x, z); count++;
 		for (const [c, side, f] of chairs) {
 			// стул лицом к столу; сиденье наполовину задвинуто
 			const S = { N: [0, 1], S: [0, -1], W: [1, 0], E: [-1, 0] }[side];
@@ -254,7 +283,7 @@ for (const p of PLAN) {
 		put(c, it, (b.min.x + b.max.x) / 2, b.max.z + d * 0.45); count++;
 	} else if (p[0] === "top") {
 		const [, base, n, f] = p, b = placed[base];
-		put(n, make(n, [0, 1]), b.min.x + (b.max.x - b.min.x) * f, (b.min.z + b.max.z) / 2, b.max.y); count++;
+		put(n, make(n, [0, 1]), b.min.x + (b.max.x - b.min.x) * f, (b.min.z + b.max.z) / 2, b.max.y, false); count++;
 	} else if (p[0] === "rad" || p[0] === "radwall") {
 		// Батарея: начало модели — на полу в плоскости стены (не центр габарита):
 		// ставится началом на внутреннюю грань стены, по высоте — как есть; вдоль стены —
@@ -278,6 +307,7 @@ for (const p of PLAN) {
 		const shift = center - (lo + hi) / 2;
 		it.o.position.set(onX ? shift : wallAt, 0, onX ? wallAt : shift);
 		scene.add(it.o); it.o.updateMatrixWorld(true); count++;
+		occ.push({ box: new THREE.Box3().setFromObject(it.o), n: name });
 		const along = onX ? 0 : 2;		// стояки — по геометрии: вершины выше 0.8 м — трубы (батарея ниже); кучки по оси вдоль стены
 		if (p[0] === "rad") {
 			const xs = [], v = new THREE.Vector3();
@@ -299,7 +329,7 @@ for (const p of PLAN) {
 						if (pn !== "pipe_straight_1m") break;
 						pi.o.scale.y = (H - y0) / h; pi.o.updateMatrixWorld(true); pi.bb.setFromObject(pi.o);
 					}
-					put(pn, pi, rx, rz, y0);
+					put(pn, pi, rx, rz, y0, false);
 					if (pn !== "pipe_floor_pass") y = y0 + h * pi.o.scale.y;
 					count++;
 				}
@@ -320,8 +350,11 @@ for (const p of PLAN) {
 			hang(pair[0], -1, off, mat); hang(pair[1], 1, off, mat);
 			// карниз: центр по окну, на высоте колец (2.545 м), на том же отступе
 			const r = make("curtain_rail_bare", w.n), d = r.bb.max.z - r.bb.min.z;
-			put("curtain_rail_bare", r, w.x, zf + w.n[1] * off, 2.545 - (r.bb.max.y - r.bb.min.y) / 2); count++;
-		}	} else if (p[0] === "sill") {
+			put("curtain_rail_bare", r, w.x, zf + w.n[1] * off, 2.545 - (r.bb.max.y - r.bb.min.y) / 2, false); count++;
+		}
+		// место штор: ширина карниза, от стены до плотных штор с запасом, от пола до потолка
+		const z1 = zf + w.n[1] * (HEAVY_Z + 0.12);
+		occ.push({ box: new THREE.Box3(new THREE.Vector3(w.x - ROD - 0.05, 0, Math.min(zf, z1)), new THREE.Vector3(w.x + ROD + 0.05, H, Math.max(zf, z1))), n: "шторы окна " + wi });	} else if (p[0] === "sill") {
 		const [, i, list] = p, w = windows[i];
 		list.forEach((n, k) => { put(n, make(n, [0, 1]), w.x - w.w / 2 + w.w * (k + 0.5) / list.length, w.depthZ, w.top); count++; });
 	}
@@ -329,10 +362,11 @@ for (const p of PLAN) {
 status.textContent = `${count} предметов, ${names.length} моделей, износ у каждого свой`;
 console.log("[квартира] габариты, м (ш × г × в): " + names.map(n => { const s = new THREE.Box3().setFromObject(models[n].scene).getSize(new THREE.Vector3()); return `${n} ${s.x.toFixed(2)}×${s.z.toFixed(2)}×${s.y.toFixed(2)}`; }).join(", "));
 console.log(`[квартира] ${count} предметов из ${names.length} моделей`);
+console.log(clashes.length ? `[квартира] пересечения: ${clashes.join("; ")}` : "[квартира] пересечений нет");
 
 /* ── камера: вращение вокруг точки ──────────────────────────────────── */
 const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 100);
-const VIEWS = { all: { t: [4.5, 0.4, 3.4], d: 12.5, yaw: 20, pitch: 55, name: "вся квартира" } };
+const VIEWS = { all: { t: [5, 0.4, 3.65], d: 13.5, yaw: 20, pitch: 55, name: "вся квартира" } };
 for (const [id, R] of Object.entries(ROOMS)) {
 	const [x0, z0, x1, z1] = R.rect;
 	VIEWS[id] = { t: [(x0 + x1) / 2, 0.6, (z0 + z1) / 2], d: Math.max(x1 - x0, z1 - z0) * 1.15 + 1.5, yaw: 25, pitch: 50, name: R.name };
