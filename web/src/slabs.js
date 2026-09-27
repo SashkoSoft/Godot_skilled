@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { rectsOf, inRect, accessPaths, streetRect } from "./district.js";
+import { pavingPads } from "./paving.js";
 
 // Дорожки из бетонных плит — процедурно, по правилам district.json → slabs.
 // Плиты кладутся рядами вдоль каждого отрезка дорожки: поперёк — сколько влезает
@@ -35,7 +36,9 @@ export function slabLayout(d, trees = []) {
 		return Math.hypot(x - a[0] - t * dx, z - a[1] - t * dz);
 	};
 	const HARD = ["parking", "sport", "playground", "bins"];
+	const pads = pavingPads(d);   // площадки плитки у входов — плиты подходов начинаются за ними
 	const blocked = (x, z) => d.buildings.some(b => rectsOf(b).some(r => inRect([x, z], r, 0.2)))
+		|| pads.some(r => inRect([x, z], r, 0.3))
 		|| d.streets.some(s => inRect([x, z], streetRect(s), 0.3))
 		|| d.driveways.some(w => w.path.some((a, i) => i > 0 && segDist(x, z, w.path[i - 1], a) < w.width / 2 + 0.3))
 		|| d.areas.some(a => HARD.includes(a.kind) && a.rect && inRect([x, z], a.rect, 0.2));

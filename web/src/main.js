@@ -12,6 +12,7 @@ import { loadPoles } from "./poles.js";
 import { loadStreetProps } from "./streetprops.js";
 import { loadCurbs } from "./curbs.js";
 import { buildSlabs, jointGrass } from "./slabs.js";
+import { buildPaving } from "./paving.js";
 import { loadRocks } from "./rocks.js";
 import { buildSky, skyUniforms } from "./sky.js";
 import { breakdown, infoLine, applyOff, runBench } from "./perf.js";
@@ -220,6 +221,8 @@ if (LEVEL === "district") {
 	loadStreetProps(d).then(P => scene.add(P.group)).catch(e => console.error("[улица] уличные мелочи:", e));
 	loadCurbs(d).then(C => { scene.add(C.group); curbs = C; }).catch(e => console.error("[улица] бордюр:", e));
 	{ const S = buildSlabs(d, bo.trees); if (S) { scene.add(S.group); slabs = S; } }
+	const paving = buildPaving(d);
+	if (paving) scene.add(paving.mesh);
 	// трава в швах плит — экземплярами с LOD и ветром (как подлесок), рисуется только вблизи
 	if (slabs) buildHoudiniTrees(jointGrass(slabs.list), { base: "../game/assets/models/joint_grass/", name: "JointGrass",
 		minH: 1, lodDist: [80, 250], cull: [22, 0] }).then(J => { scene.add(J.group); jointGrassL = J; })
@@ -250,6 +253,7 @@ if (LEVEL === "district") {
 		setupGround(d, groundMaterial(), groundMap, { res: gRes, debug: q.get("ground") === "debug", hard: roadMats, trees: bo.trees })
 			.then(r => {
 				if (slabs) hardify(slabs.material, 0, { lite: true });
+				if (paving) hardify(paving.material, 0, { lite: true });
 				if (r && r.pits) loadPitGrass(r.pits).then(g => scene.add(g));
 			})   // опад и камешки и на плитах
 			.catch(e => console.error("[улица] пол:", e));
@@ -291,7 +295,9 @@ if (q.has("sss")) windUniforms.uSSS.value = +q.get("sss");   // сила про�
 	// Подлесок: раскладка правилами; модели — из game/assets/models/undergrowth/,
 	// пока их нет — габаритные коробки, как весь блок-аут.
 	{
-		const bushes = undergrowthPositions(d, bo.trees, bo.piles);
+		const bushes = undergrowthPositions(d, bo.trees, bo.piles)
+			// на площадках плитки у входов кусты не растут
+			.filter(([x, z]) => !(paving && paving.pads.some(r => x > r[0] - 0.5 && x < r[2] + 0.5 && z > r[1] - 0.5 && z < r[3] + 0.5)));
 		const UB = "../game/assets/models/undergrowth/";
 		let kit = null;
 		try { const r = await fetch(UB + "kit.json", { cache: "no-store" }); if (r.ok) kit = await r.json(); } catch { /* ещё нет */ }
