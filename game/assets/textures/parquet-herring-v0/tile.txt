@@ -1,0 +1,11 @@
+tile_m=0.849
+height_cm=0.20
+pattern=herring
+orm_b=vysota 0..1 (s podyomom planok po umolchaniyu)
+mask=R nomer planki 0..1 (vybor cveta iz palitry), G nomer shchita, B shov, A suchok
+maskb=R podyom planki 0..1 (0.5 net; v vysote +-(R-0.5)*0.22), G PORYADOK IZNOSA (menshe - stiraetsya ranshe), B vdol planki 0..1, A poperyok planki 0..1
+maskc=R gryaz (shvy, pory, suchki, kraya), G volokno 0..1, B napravlenie planki /pi, A 1
+albedo_worn=lak soshyol: svetlee, seree, gryaz v porah; smeshivat s albedo po iznosu
+iznos: worn = smoothstep(o-0.05, o+0.05, traffic*amount), o = maskb.G; rough -> 0.75 v stertom
+varianty v0..v4 odnoy geometrii - mozhno menyat po taylam bez shva; mozaika eshche povorot 90
+opis=parket herring, COP OpenCL, po foto polzovatelya
