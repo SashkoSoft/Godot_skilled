@@ -302,11 +302,11 @@ function inject(material, { leaf, height, attr, tint = false, crown = null, crow
 				{
 					vec3 Ls = directionalLights[0].direction;
 					vec3 Vw = normalize(vViewPosition);
-					float back = pow(clamp(dot(-Vw, Ls), 0.0, 1.0), 4.0);   // контровой свет — сквозь лист
+					float back = pow(clamp(dot(-Vw, Ls), 0.0, 1.0), 5.0);   // контровой свет — сквозь лист
 					float wrap = clamp(dot(-normal, Ls) * 0.5 + 0.5, 0.0, 1.0);
-					float thin = smoothstep(0.35, 0.95, vCrownDepth);       // наружный слой кроны
+					float thin = smoothstep(0.45, 0.95, vCrownDepth);       // наружный слой кроны
 					vec3 trans = diffuseColor.rgb * vec3(1.1, 1.15, 0.5) * directionalLights[0].color;   // свет, прошедший сквозь лист, — жёлто-зелёный
-					reflectedLight.directDiffuse += trans * (back * 0.75 + wrap * 0.05) * thin * uSSS;
+					reflectedLight.directDiffuse += trans * (back * 0.38 + wrap * 0.03) * thin * uSSS;   // 0.75 — светилось слишком
 				}
 				#endif`);
 	};
