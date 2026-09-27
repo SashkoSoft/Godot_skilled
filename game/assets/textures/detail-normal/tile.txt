@@ -1,4 +1,0 @@
-tile_m=1.00
-height_cm=0.25
-nscale=5.0
-opis=detalnaya normal: mikrorelef dlya lyubyh pokrytiy vblizi

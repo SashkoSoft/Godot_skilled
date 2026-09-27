@@ -1,7 +1,0 @@
-version=1
-tile_u_m=2.00
-band_v_m=0.50
-px=2048x512
-tile_u=2m, lenta 0.5 m, V=0 zemlya
-mask=R gryaz (plotnaya u zemli + tochki bryzg vyshe); G moh pyatnami u samoy zemli; B vysoly (belaya liniya priliva nad gryazyu); A rvanaya granica: 1 u zemli, porog A > 1-amount daet rvanuyu kromku na raznoy vysote
-opis=zabryzg ot zemli: gryaz, tochki bryzg, moh, vysoly

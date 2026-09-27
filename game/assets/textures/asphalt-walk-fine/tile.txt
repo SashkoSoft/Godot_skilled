@@ -6,3 +6,4 @@ normal_blue_mean=0.996
 px=2048
 variant_of=asphalt-walk (tile 2 m, odin masshtab i ton)
 opis=trotuar: melkozernistyy seryy, styortyy
+orm_b=vysota 0..1 (8 bit, kak _height_; perepad height_cm), metal=0

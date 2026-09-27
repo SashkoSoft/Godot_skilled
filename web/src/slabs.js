@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { lodManifest, texUrl, ormHeight } from "./texlod.js";
 import { rectsOf, inRect, accessPaths, streetRect } from "./district.js";
 import { pavingPads } from "./paving.js";
 
@@ -170,9 +171,12 @@ async function loadSlabSets(res = 512) {
 	const N = SLAB_SIZES.length * SLAB_VARS.length, S = res * res * 4;
 	const A = new Uint8Array(S * N), B = new Uint8Array(S * N), M = new Uint8Array(S * N);
 	let li = 0;
+	const MF = await lodManifest();
 	for (const [sz, tag] of SLAB_SIZES) for (const v of SLAB_VARS) {
-		const base = `../game/assets/textures/slab-${sz}-${v}/slab_${sz}_${v}_`;
-		const [a, n, o, h, m] = await Promise.all(["albedo", "normal", "orm", "height", "mask"].map(k => img(`${base}${k}_${tag}.png`).then(raw)));
+		// ступень res (texlod.js); высота — из ORM.B, где она там есть
+		const set = `slab-${sz}-${v}`, oh = ormHeight(MF, set);
+		const [a, n, o, hh, m] = await Promise.all(["albedo", "normal", "orm", oh ? null : "height", "mask"].map(k => k ? img(texUrl(MF, set, k, res, tag)).then(raw) : null));
+		const h = hh || o.map((_, k) => o[k - (k % 4) + 2]);   // из ORM: B каждого пикселя в R
 		const off = li * S;
 		for (let k = 0; k < S; k += 4) {
 			A[off + k] = a[k]; A[off + k + 1] = a[k + 1]; A[off + k + 2] = a[k + 2]; A[off + k + 3] = h[k];

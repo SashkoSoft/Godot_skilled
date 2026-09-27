@@ -1,5 +1,0 @@
-tile_u_m=4.00
-band_v_m=1.00
-res=1024x256
-format=RGBA dannye, lineynye; po U taylitsya, po V net
-channels=R pokrytie travoy (trava=1), G vysota travyanogo pokrova, B polosa zemli po granice, A kustiki travy na plitke. V: 0 plitka, 1 trava

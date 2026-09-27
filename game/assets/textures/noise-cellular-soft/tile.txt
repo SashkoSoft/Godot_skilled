@@ -1,3 +1,0 @@
-tile_m=32.00
-format=RGBA dannye, lineynye, alfa - dannye
-channels=MYAGKIY: uv iskazheny shumom. R pyatna + fbm, G NOMER YACHEYKI (postoyanen v yacheyke, granica rvanaya), B granicy myagkie, mestami gasnut, A ridged priglushen. Vsyo ravno - v smesi s drugimi maskami

@@ -1,8 +1,9 @@
 tile_m=4.00
-height_cm=6.16
-albedo_mean=#514e48
+height_cm=7.00
+albedo_mean=#514e49
 nscale=1.000
-normal_blue_mean=0.969
+normal_blue_mean=0.968
 px=2048
 variant_of=asphalt-road (tile 4 m, odin masshtab i ton)
-opis=vykroshennyy: setka treshchin krokodilovoy kozhey, vyboiny 3-6 sm so shchebnem osnovaniya
+opis=vykroshennyy: krokodilova kozha pyatnami vdol kolei, dlinnye treshchiny, 3 vyboiny 3.5-6 sm s raskroshennoy kromkoy i luzhey
+orm_b=vysota 0..1 (8 bit, kak _height_; perepad height_cm), metal=0

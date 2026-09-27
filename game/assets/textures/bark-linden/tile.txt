@@ -6,3 +6,4 @@ nscale=1.000
 normal_blue_mean=0.885
 uv=U po okruzhnosti (celoe chislo povtorov), V vdol vetvi; tayl po obeim osyam
 opis=lipa: melkie prodolnye borozdy, serovato-korichnevaya
+orm_b=vysota 0..1 (8 bit, kak _height_; perepad height_cm), metal=0

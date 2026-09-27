@@ -1,6 +1,0 @@
-tile_m=2.00
-height_cm=2.21
-albedo_mean=#795e3c
-nscale=2.000
-normal_blue_mean=0.927
-opis=opad: listya, vetki, hvoya

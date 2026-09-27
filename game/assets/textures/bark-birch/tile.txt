@@ -6,3 +6,4 @@ nscale=1.000
 normal_blue_mean=0.992
 uv=U po okruzhnosti (celoe chislo povtorov), V vdol vetvi; tayl po obeim osyam
 opis=bereza: belaya beresta, temnye poperechnye chechevichki, chernye razryvy
+orm_b=vysota 0..1 (8 bit, kak _height_; perepad height_cm), metal=0

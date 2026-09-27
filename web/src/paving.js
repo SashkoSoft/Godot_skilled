@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { entrancePoint } from "./district.js";
+import { lodManifest, texUrl, texPx } from "./texlod.js";
 
 // Тротуарная плитка 0.5×0.5 (HoudiniCOP paving-05m-v0/v1: тайл 2 м = 4×4 плитки,
 // у каждой своя просадка, скол, пятна) — площадки у входов:
@@ -52,8 +53,9 @@ async function pavingArrays(res = 1024) {
 	};
 	const S = res * res * 4, N = 4, K = ["albedo", "normal", "orm"];
 	const data = K.map(() => new Uint8Array(S * N));
+	const M = await lodManifest();
 	await Promise.all([0, 1, 2, 3].map(async v => {
-		const px = await Promise.all(K.map(k => img(`${TEX}paving-05m-v${v}/paving_05m_v${v}_${k}_2k.png`).then(raw)));
+		const px = await Promise.all(K.map(k => img(texUrl(M, `paving-05m-v${v}`, k, res, "2k")).then(raw)));
 		px.forEach((p, k) => data[k].set(p, v * S));
 	}));
 	return data.map((d, k) => {
@@ -94,7 +96,10 @@ export function buildPaving(d) {
 	// две раскладки плиток — пятнами; UV — мировые xz / 2 м (сетка на всех площадках одна)
 	const empty = () => { const t = new THREE.DataArrayTexture(new Uint8Array([140, 136, 128, 255]), 1, 1, 1); t.needsUpdate = true; return t; };
 	const PU = { uPA: { value: empty() }, uPN: { value: empty() }, uPO: { value: empty() } };
-	pavingArrays().then(([a, n, o]) => { PU.uPA.value = a; PU.uPN.value = n; PU.uPO.value = o; })
+	// ступени: сначала 512 (быстро), затем texPx; прежние массивы — из видеопамяти
+	const apply = ([a, n, o]) => { for (const [u, t] of [[PU.uPA, a], [PU.uPN, n], [PU.uPO, o]]) { const old = u.value; u.value = t; old.dispose(); } };
+	pavingArrays(Math.min(512, texPx)).then(apply)
+		.then(() => texPx > 512 ? pavingArrays(texPx).then(apply) : null)
 		.catch(e => console.warn("[улица] плитка: нет текстур", e));
 	const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, metalness: 0 });
 	mat.onBeforeCompile = sh => {

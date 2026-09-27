@@ -1,9 +1,0 @@
-size_m=3.00
-NE tayl: pyatno udara, centr udara na U,V = 0.50,0.50
-height_cm=5.50
-height=0 zemlya pod plitoy, 1 verh celoy plity (tolshchina 6 sm)
-mode=voronoi
-kuskov=16
-vybito=0.059
-mask=R treshchina (kray kuska, shchel), G nomer kuska 0..1, B prosadka kuska 0..1, A vybito (pod kuskom pusto - vidna zemlya)
-normal=OpenGL, s faskoy po kromke 2-3 mm

@@ -4,3 +4,4 @@ albedo_mean=#c0a176
 nscale=2.000
 normal_blue_mean=0.956
 opis=pesok: ploshchadka, pesochnica
+orm_b=vysota 0..1 (8 bit, kak _height_; perepad height_cm), metal=0

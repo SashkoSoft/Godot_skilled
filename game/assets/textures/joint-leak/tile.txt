@@ -1,7 +1,0 @@
-version=1
-tile_u_m=0.40
-band_v_m=1.00
-px=410x1024
-shirina 0.4 m poperek shva (shov po centru U=0.5), 1 m po V; tayl po V TOZHE
-mask=R potyok; G nomer (porog G > 1-amount); B temnaya syrost u shva; A vlazhnost
-opis=podtyoki iz vertikalnogo shva mezhdu plitami, 14 shtuk
