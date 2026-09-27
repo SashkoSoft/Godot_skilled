@@ -15,10 +15,12 @@ import { buildSlabs, jointGrass } from "./slabs.js";
 import { buildPaving } from "./paving.js";
 import { loadRocks } from "./rocks.js";
 import { buildSky, skyUniforms } from "./sky.js";
+import { MOODS, installAerialFog, addVignette } from "./atmos.js";
 import { breakdown, infoLine, applyOff, runBench } from "./perf.js";
 import { buildGrassMap, setGrassMap, buildGrassBlades, updateGrass } from "./grass.js";
 import { buildGroundMap, setupGround, hardify, loadPitGrass } from "./floor.js";
 import { spawnRobots } from "./robot.js";
+import { spawnDrones } from "./drones.js";
 import { buildHoudiniTrees } from "./trees.js";
 import { windUniforms, setWind } from "./wind.js";
 
@@ -54,7 +56,9 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.35;
+// настроение квартала: закат по умолчанию, #mood=day — дневной свет
+const MOOD = LEVEL === "district" ? (MOODS[new URLSearchParams(location.hash.slice(1)).get("mood")] || MOODS.sunset) : null;
+renderer.toneMappingExposure = MOOD ? MOOD.exposure : 1.35;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 
@@ -97,8 +101,8 @@ if (LEVEL === "district") {
 // читается микрорельеф покрытия. В зенит его ставить нельзя, иначе вся
 // работа с нормалями пропадает.
 // осень: солнце ниже и теплее (в квартале)
-const sun = new THREE.DirectionalLight(LEVEL === "district" ? 0xffe2c0 : 0xfff3e6, 3.4);
-const SUN_AZ = 52, SUN_EL = LEVEL === "district" ? 27 : 32;
+const sun = new THREE.DirectionalLight(MOOD ? MOOD.sunColor : 0xfff3e6, MOOD ? MOOD.sunIntensity : 3.4);
+const SUN_AZ = MOOD ? MOOD.sunAz : 52, SUN_EL = MOOD ? MOOD.sunEl : 32;
 // Солнце ставится на SUN_DIST от точки взгляда; в квартале башни по 37 м и
 // кадр на 300 м, поэтому и дистанция, и охват тени другие.
 const SUN_DIST = LEVEL === "district" ? 420 : 60;
@@ -133,10 +137,15 @@ if (LEVEL === "district") {
 	scene.add(skyDome.mesh);
 	skyUniforms.uSunDir.value.copy(sun.position).normalize();
 	skyUniforms.uSunCol.value.copy(sun.color);
+	skyUniforms.uZenith.value.set(MOOD.zenith);
+	skyUniforms.uHorizon.value.set(MOOD.fogColor);
+	skyUniforms.uGlow.value.set(MOOD.fogSun);
+	installAerialFog(MOOD, skyUniforms.uSunDir.value);   // до первой сборки шейдеров
+	if (new URLSearchParams(location.hash.slice(1)).get("vignette") !== "0") addVignette();
 	if (new URLSearchParams(location.hash.slice(1)).has("clouds")) skyUniforms.uCloud.value = +new URLSearchParams(location.hash.slice(1)).get("clouds");
 }
 
-const sky = new THREE.HemisphereLight(0x9fb4c6, 0x4a4436, 1.6);
+const sky = MOOD ? new THREE.HemisphereLight(MOOD.hemiSky, MOOD.hemiGround, MOOD.hemiIntensity) : new THREE.HemisphereLight(0x9fb4c6, 0x4a4436, 1.6);
 scene.add(sky);
 
 /* ── улица ──────────────────────────────────────────────────────────── */
@@ -194,6 +203,7 @@ function bushBoxes(bushes) {
 let grassBlades = null, grassNearHalf = 20;
 const grassCenter = new THREE.Vector3(), grassRay = new THREE.Vector3(), bottomRay = new THREE.Vector3();
 let robot = null;          // тот, за кем камера
+let drones = null;
 let crowd = [], followIdx = 0, robotLod = null, crowdStep = null, playground = null, curbs = null, slabs = null, rocks = null, jointGrassL = null;
 // Камера за роботом: держит текущие поворот и наклон, дистанция — колесом мыши
 let follow = false, followDist = 34;
@@ -326,6 +336,9 @@ if (q.has("sss")) windUniforms.uSSS.value = +q.get("sss");   // сила про�
 	scene.add(robotsGroup);
 	layerObjs.robots = { show: [robotsGroup], hide: [] };
 	robot = crowd[0];
+	// #drones=N — военные разведчики над кварталом; по умолчанию 3
+	spawnDrones(d, { count: Math.max(0, parseInt(q.get("drones") ?? "3", 10) || 0), robots: () => crowd })
+		.then(D => { drones = D; scene.add(D.group); }).catch(e => console.error("[дроны]", e));
 	console.log(`[улица] роботов ${crowd.length}: шаг ${R.V.walk.toFixed(3)} м/с ${R.measured ? "измерен по анимации" : "ПО УМОЛЧАНИЮ"}, ` +
 		`бег ${R.V.run ? R.V.run.toFixed(2) + " м/с" : "нет"}, узлов в графе ${R.nodes}`);
 	say(`квартал: ${bo.stats.buildings} зданий, ${bo.stats.trees} деревьев, ${bo.stats.trash} куч мусора · роботов ${crowd.length} · F — камера за роботом, R — следующий, T — большие деревья`);
@@ -628,6 +641,7 @@ function tick(now) {
 	for (const r of crowd) r.update(dt);
 	if (robotLod) robotLod(camera);
 	if (crowdStep) crowdStep();
+	if (drones) drones.update(dt, now / 1000);
 	if (follow && robot) {
 		updateCamera();
 		camera.getWorldDirection(fwd);

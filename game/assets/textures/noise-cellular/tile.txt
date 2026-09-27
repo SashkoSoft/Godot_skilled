@@ -1,0 +1,3 @@
+tile_m=32.00
+format=RGBA dannye, lineynye, alfa - dannye
+channels=R pyatna voronogo (1-F1), G NOMER YACHEYKI (vybor varianta), B granicy yacheek (F2-F1), A ridged
