@@ -11,6 +11,7 @@ export const skyUniforms = {
 	uZenith: { value: new THREE.Color(0x4a76a8) },
 	uHorizon: { value: new THREE.Color(0x9fa9b0) },
 	uSunCol: { value: new THREE.Color(0xffe1b8) },
+	uGlow: { value: new THREE.Color(0xffb27a) },   // цвет горизонта у солнца (как у дымки к солнцу)
 	uCloud: { value: 0.55 },          // облачность 0…1 (#clouds=)
 	uTime: { value: 0 },
 	uWind: { value: new THREE.Vector2(1, 0) },
@@ -25,7 +26,7 @@ void main() {
 }`;
 
 const FRAG = /* glsl */`
-uniform vec3 uSunDir, uZenith, uHorizon, uSunCol;
+uniform vec3 uSunDir, uZenith, uHorizon, uSunCol, uGlow;
 uniform float uCloud, uTime;
 uniform vec2 uWind;
 varying vec3 vDir;
@@ -43,7 +44,11 @@ void main() {
 	vec3 d = normalize(vDir);
 	float up = max(d.y, 0.0);
 	// градиент: у горизонта дымка, выше синева
-	vec3 col = mix(uHorizon, uZenith, pow(smoothstep(0.0, 0.45, up), 0.6));
+	// горизонт: у солнца тёплое зарево, от солнца — холодный воздух (как у дымки)
+	vec3 sh = normalize(vec3(uSunDir.x, 0.0, uSunDir.z)), dh = normalize(vec3(d.x, 0.0, d.z) + 1e-5);
+	float toward = pow(max(dot(dh, sh), 0.0), 3.0);
+	vec3 hor = mix(uHorizon, uGlow, toward * 0.9);
+	vec3 col = mix(hor, uZenith, pow(smoothstep(0.0, 0.45 + 0.25 * toward, up), 0.6));
 	// солнце: ореол и диск
 	float sd = max(dot(d, normalize(uSunDir)), 0.0);
 	col += uSunCol * (pow(sd, 8.0) * 0.25 + pow(sd, 64.0) * 0.4);
@@ -54,12 +59,13 @@ void main() {
 		float n = fbm(cp) * 0.75 + fbm(cp * 3.1 + 4.0) * 0.25;
 		float c = smoothstep(1.0 - uCloud, 1.0 - uCloud + 0.35, n);
 		float lit = 0.75 + 0.35 * pow(sd, 3.0) + 0.15 * (fbm(cp * 2.0 + 1.3) - 0.5);
-		vec3 cc = mix(vec3(0.62, 0.63, 0.66), vec3(1.0, 0.97, 0.92), lit - 0.4) * mix(vec3(1.0), uSunCol, 0.25);
+		// облака: снизу/в тени — холодные, к солнцу — подсвечены зарёй
+		vec3 cc = mix(uHorizon * 0.8, mix(vec3(1.0, 0.97, 0.92), uGlow * 1.3, 0.6), clamp(lit - 0.4 + toward * 0.4, 0.0, 1.0));
 		c *= smoothstep(0.01, 0.2, d.y);   // у горизонта облака растворяются в дымке
 		col = mix(col, cc, c * 0.9);
 	}
 	// ниже горизонта — цвет дымки (туман земли)
-	col = mix(col, uHorizon, smoothstep(0.02, -0.05, d.y));
+	col = mix(col, hor, smoothstep(0.02, -0.05, d.y));
 	gl_FragColor = vec4(col, 1.0);
 	#include <tonemapping_fragment>
 	#include <colorspace_fragment>

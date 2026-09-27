@@ -108,12 +108,24 @@ export function buildPaving(d) {
 				float pvH(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }`)
 			.replace("#include <map_fragment>", `
 				vec2 pvUv = vPvW.xz / 2.0;
-				// раскладка — своя на каждый блок 2×2 м (швы по краю блока у всех общие)
-				float pvL = floor(pvH(floor(pvUv)) * 4.0);
+				// блок 2×2 м: своя раскладка (4) и свой поворот на 90° (4) — 16 видов; сетка
+				// квадратная, швы по краю блока — стыка нет. Производные поворачиваются с uv,
+				// XY нормали — обратно в мир.
+				vec2 pvC = floor(pvUv), pvF = fract(pvUv);
+				float pvHs = pvH(pvC);
+				float pvL = floor(pvHs * 4.0);
+				int pvR = int(fract(pvHs * 7.13) * 4.0);
 				vec2 pdx = dFdx(pvUv), pdy = dFdy(pvUv);
-				vec4 pvA = textureGrad(uPA, vec3(pvUv, pvL), pdx, pdy);
-				vec4 pvO = textureGrad(uPO, vec3(pvUv, pvL), pdx, pdy);
-				vec3 pvN = textureGrad(uPN, vec3(pvUv, pvL), pdx, pdy).xyz * 2.0 - 1.0;
+				vec2 pvT = pvF;
+				if (pvR == 1) { pvT = vec2(1.0 - pvF.y, pvF.x); pdx = vec2(-pdx.y, pdx.x); pdy = vec2(-pdy.y, pdy.x); }
+				else if (pvR == 2) { pvT = 1.0 - pvF; pdx = -pdx; pdy = -pdy; }
+				else if (pvR == 3) { pvT = vec2(pvF.y, 1.0 - pvF.x); pdx = vec2(pdx.y, -pdx.x); pdy = vec2(pdy.y, -pdy.x); }
+				vec4 pvA = textureGrad(uPA, vec3(pvT, pvL), pdx, pdy);
+				vec4 pvO = textureGrad(uPO, vec3(pvT, pvL), pdx, pdy);
+				vec3 pvN = textureGrad(uPN, vec3(pvT, pvL), pdx, pdy).xyz * 2.0 - 1.0;
+				if (pvR == 1) pvN.xy = vec2(pvN.y, -pvN.x);
+				else if (pvR == 2) pvN.xy = -pvN.xy;
+				else if (pvR == 3) pvN.xy = vec2(-pvN.y, pvN.x);
 				diffuseColor.rgb *= pvA.rgb * mix(1.0, pvO.r, 0.7);
 				#include <map_fragment>`)
 			.replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = pvO.g;")
