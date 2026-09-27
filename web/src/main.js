@@ -280,12 +280,16 @@ if (LEVEL === "district") {
 		loadRocks(groundMap, slabs ? slabs.list : []).then(R => { scene.add(R.group); rocks = R; }).catch(e => console.error("[улица] камешки:", e));
 		if (q.get("grass") !== "0") {
 			const phone = matchMedia("(pointer: coarse)").matches;
-			// LOD: ближний участок + кольцо реже и шире; дальше — только цвет земли
-			const nearCfg = phone ? { grid: 120, spacing: 0.22 } : { grid: 200, spacing: 0.2 };
+			// LOD: ближний участок + кольцо реже и шире; дальше — только цвет земли.
+			// GRASS_DENS — во сколько раз гуще базовой сетки при той же площади участков
+			// (шаг / √k, рядов × √k); #grassdens= — подобрать.
+			const GRASS_DENS = +(q.get("grassdens") || 2), k = Math.sqrt(GRASS_DENS);
+			const dense = ({ grid, spacing, ...o }) => ({ grid: Math.round(grid * k), spacing: grid * spacing / Math.round(grid * k), ...o });
+			const nearCfg = dense(phone ? { grid: 120, spacing: 0.22 } : { grid: 200, spacing: 0.2 });
 			const nearHalf = nearCfg.grid * nearCfg.spacing / 2;
 			const gb = buildGrassBlades(nearCfg);
-			const gr = buildGrassBlades(phone ? { grid: 110, spacing: 0.6, ring: true, nearHalf, widthMul: 2.8 }
-				: { grid: 180, spacing: 0.6, ring: true, nearHalf, widthMul: 2.8 });
+			const gr = buildGrassBlades(dense(phone ? { grid: 110, spacing: 0.6, ring: true, nearHalf, widthMul: 2.8 }
+				: { grid: 180, spacing: 0.6, ring: true, nearHalf, widthMul: 2.8 }));
 			scene.add(gb.mesh, gr.mesh);
 			grassBlades = gb; grassNearHalf = nearHalf;
 			layerObjs.grass = { show: [gb.mesh, gr.mesh], hide: [] };
