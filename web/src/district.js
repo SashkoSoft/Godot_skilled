@@ -2,6 +2,11 @@
 // Модуль без three.js — его же берёт карта (web/map.html), и дерево на карте
 // стоит ровно там, где оно будет стоять в игре.
 
+/** Высота дома — как её строит блок-аут (этажи × 3 м, одноэтажные по типу). */
+export function heightOf(b) {
+	return b.kind === "garages" ? 2.6 : b.kind === "shop" ? 5 : b.floors === 1 ? 3.6 : b.floors * 3 + 0.6;
+}
+
 export function rectsOf(b) {
 	return b.parts ? b.parts : [b.rect];
 }
@@ -290,8 +295,6 @@ export function trashPiles(d, trees = []) {
 	const inR = r => () => [r[0] + rnd() * (r[2] - r[0]), r[1] + rnd() * (r[3] - r[1])];
 	const count = c => Array.isArray(c) ? Math.round(lerp(c)) : c;
 
-	// Высота дома — как её строит блок-аут (этажи × 3 м, одноэтажные по типу).
-	const heightOf = b => b.kind === "garages" ? 2.6 : b.kind === "shop" ? 5 : b.floors === 1 ? 3.6 : b.floors * 3 + 0.6;
 
 	for (const rule of T.rules) {
 		if (rule.near === "facades") {

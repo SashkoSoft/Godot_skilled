@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+import { rectsOf, heightOf } from "./district.js";
 
 // Военные дроны-разведчики (blend, drone_recon, 3 LOD) патрулируют квартал:
 //  • облёт по кругу маршрутных точек на высоте 15–25 м, крен по ускорению;
@@ -63,6 +64,11 @@ export async function spawnDrones(d, { count = 3, robots = () => [] } = {}) {
 		});
 	}
 
+	// Облёт домов: башни по 37 м выше маршрута (15–25 м). Высота над точкой — крыша
+	// ближайшего дома (с запасом 8 м по плану) + 6 м; смотрим на 14 и 28 м вперёд к цели.
+	// Ниже нужного — сначала подъём на месте, потом вперёд.
+	const roofs = d.buildings.flatMap(b => rectsOf(b).map(r => [r[0] - 8, r[1] - 8, r[2] + 8, r[3] + 8, heightOf(b) + 6]));
+	const clearAt = (x, z) => { let h = 0; for (const r of roofs) if (x > r[0] && x < r[2] && z > r[1] && z < r[3]) h = Math.max(h, r[4]); return h; };
 	const want = new THREE.Vector3(), tmp = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), q = new THREE.Quaternion();
 	const euler = new THREE.Euler(0, 0, 0, "YXZ"), inv = new THREE.Matrix4();
 
@@ -87,6 +93,13 @@ export async function spawnDrones(d, { count = 3, robots = () => [] } = {}) {
 				want.copy(D.route[D.wp]);
 				if (want.distanceTo(p) < 6) D.wp = (D.wp + 1) % D.route.length;
 			}
+			// «впереди» — к цели, а не по скорости: зависнув, дрон иначе решил бы, что путь свободен
+			const ax = want.x - p.x, az = want.z - p.z, al = Math.hypot(ax, az) || 1, ux = ax / al, uz = az / al;
+			const need = Math.max(clearAt(p.x, p.z), clearAt(p.x + ux * Math.min(al, 14), p.z + uz * Math.min(al, 14)), clearAt(p.x + ux * Math.min(al, 28), p.z + uz * Math.min(al, 28)));
+			want.y = Math.max(want.y, need, clearAt(want.x, want.z));
+			// впереди крыша выше нас — зависнуть и сначала подняться (вперёд лететь, набирая
+			// высоту, не успевает: упирается в стену)
+			if (p.y < need - 1) { want.x = p.x; want.z = p.z; }
 			// скорость — к желаемой, с плавным разгоном; у цели — торможение
 			tmp.subVectors(want, p);
 			const dist = tmp.length();

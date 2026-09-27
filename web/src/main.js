@@ -83,7 +83,7 @@ const FOG = new THREE.Color(0x9fa3a2);
 scene.fog = new THREE.Fog(FOG, 55, 150);
 scene.background = FOG;
 
-const camera = new THREE.PerspectiveCamera(55, 1, 0.05, 500);
+const camera = new THREE.PerspectiveCamera(55, 1, 0.05, 500);   // угол — FOV / RIDE_FOV (в дроне)
 
 // Квартал в сотни метров: туман отодвигается, иначе дальний край тонет в нём
 // целиком, а тень должна накрывать весь кадр общего вида, а не 80 м вокруг.
@@ -208,6 +208,8 @@ let grassBlades = null, grassNearHalf = 20;
 const grassCenter = new THREE.Vector3(), grassRay = new THREE.Vector3(), bottomRay = new THREE.Vector3();
 let robot = null;          // тот, за кем камера
 let drones = null;
+const FOV = 55, RIDE_FOV = 100;   // угол камеры: обычный и в дроне (setRide)
+let ride = -1, rideHeading = 0;
 const cpuMs = { anim: 0, plants: 0, render: 0 };
 const instLods = [];
 let crowd = [], followIdx = 0, robotLod = null, crowdStep = null, playground = null, curbs = null, slabs = null, rocks = null, jointGrassL = null;
@@ -346,7 +348,10 @@ if (q.has("sss")) windUniforms.uSSS.value = +q.get("sss");   // сила про�
 	robot = crowd[0];
 	// #drones=N — военные разведчики над кварталом; по умолчанию 3
 	spawnDrones(d, { count: Math.max(0, parseInt(q.get("drones") ?? "3", 10) || 0), robots: () => crowd })
-		.then(D => { drones = D; scene.add(D.group); }).catch(e => console.error("[дроны]", e));
+		.then(D => {
+		drones = D; scene.add(D.group);
+		if (q.get("ride")) setRide(+q.get("ride") - 1);   // #ride=N — сразу в дроне N (снимки)
+	}).catch(e => console.error("[дроны]", e));
 	console.log(`[улица] роботов ${crowd.length}: шаг ${R.V.walk.toFixed(3)} м/с ${R.measured ? "измерен по анимации" : "ПО УМОЛЧАНИЮ"}, ` +
 		`бег ${R.V.run ? R.V.run.toFixed(2) + " м/с" : "нет"}, узлов в графе ${R.nodes}`);
 	say(`квартал: ${bo.stats.buildings} зданий, ${bo.stats.trees} деревьев, ${bo.stats.trash} куч мусора · роботов ${crowd.length} · F — камера за роботом, R — следующий, T — большие деревья`);
@@ -407,6 +412,7 @@ addEventListener("keydown", (e) => {
 	if (VIEWS[e.code]) { applyView(VIEWS[e.code]); say("ракурс: " + VIEWS[e.code].name); return; }
 	if (e.code === "KeyR" && crowd.length) { nextRobot(1); return; }
 	if (e.code === "KeyF" && robot) { toggleFollow(); return; }
+	if (e.code === "KeyV") { nextRide(); return; }
 	if (e.code === "KeyT" && loadTrees) { toggleLayer("trees"); return; }
 	if (e.code === "KeyP" && hud.perfTable) {
 		// разбивка цены кадра по слоям — что дорогое; время — только A/B на устройстве
@@ -512,14 +518,39 @@ function nextRobot(step) {
 	if (!follow) { follow = true; cam.yaw = -45; cam.pitch = -35; }
 	say(`камера за роботом №${followIdx + 1} из ${crowd.length}`);
 }
+// Сесть в дрон: камера под турелью, поворачивается вместе с дроном, мышью —
+// оглядеться; широкий угол, как у настоящей курсовой камеры. V / кнопка «дрон»:
+// первый → второй → … → выйти. Свой дрон прячем — иначе смотрим изнутри корпуса.
+function setRide(i) {
+	const list = drones ? drones.drones : [];
+	if (ride >= 0 && list[ride]) list[ride].lod.visible = true;
+	ride = i < list.length ? i : -1;
+	if (ride >= 0) {
+		const D = list[ride];
+		D.lod.visible = false;
+		follow = false;
+		rideHeading = D.heading;
+		cam.yaw = D.heading * 180 / Math.PI; cam.pitch = -25;
+	}
+	camera.fov = ride >= 0 ? RIDE_FOV : FOV;
+	camera.updateProjectionMatrix();
+}
+function nextRide() {
+	if (!drones || !drones.drones.length) { say("дронов нет"); return; }
+	setRide(ride + 1);
+	say(ride >= 0 ? `в дроне №${ride + 1} из ${drones.drones.length} · мышь — оглядеться, V — следующий, WASD — выйти` : "свободная камера");
+}
+const rideSeat = new THREE.Vector3();
 function toggleFollow() {
 	if (!robot) return;
+	if (ride >= 0) setRide(-1);
 	follow = !follow;
 	if (follow) { cam.yaw = -45; cam.pitch = -35; }
 	say(follow ? "камера за роботом" : "свободная камера");
 }
 function overview() {
 	follow = false;
+	if (ride >= 0) setRide(-1);
 	applyView(VIEWS.Digit1);
 	say("весь квартал");
 }
@@ -595,7 +626,7 @@ canvas.addEventListener("pointermove", (e) => {
 
 // Кнопки на экране (для телефона; на компьютере те же действия на клавишах)
 for (const [id, fn] of [["btn-prev", () => nextRobot(-1)], ["btn-next", () => nextRobot(1)],
-	["btn-follow", toggleFollow], ["btn-all", overview]]) {
+	["btn-follow", toggleFollow], ["btn-all", overview], ["btn-drone", nextRide]]) {
 	const b = document.getElementById(id);
 	if (b) b.addEventListener("click", fn);
 }
@@ -643,6 +674,7 @@ function tick(now) {
 	if (keys.has("KeyQ")) move.y -= 1;
 	if (move.lengthSq() > 1e-6) {
 		follow = false;   // пошёл сам — отпускаем робота
+		if (ride >= 0) setRide(-1);   // и выходим из дрона
 		const fast = keys.has("ShiftLeft") || keys.has("ShiftRight");
 		const sp = cam.speed * (fast ? 10 : 1) * dt;
 		cam.p.addScaledVector(move.normalize(), sp);
@@ -654,6 +686,15 @@ function tick(now) {
 	if (crowdStep) crowdStep();
 	if (drones) drones.update(dt, now / 1000);
 	const cpu1 = performance.now();
+	if (ride >= 0 && drones) {
+		// камера на 12 см под турелью; курс дрона добавляется к взгляду — поворачиваемся с ним
+		const D = drones.drones[ride];
+		D.turrets[0].o.getWorldPosition(rideSeat);
+		cam.p.copy(rideSeat).y -= 0.12;
+		let dh = D.heading - rideHeading; dh = Math.atan2(Math.sin(dh), Math.cos(dh));
+		cam.yaw += dh * 180 / Math.PI;
+		rideHeading = D.heading;
+	}
 	if (follow && robot) {
 		updateCamera();
 		camera.getWorldDirection(fwd);
