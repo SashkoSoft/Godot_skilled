@@ -18,7 +18,13 @@ GAME = os.path.join(ROOT, "game", "assets", "textures")
 SRC = sys.argv[1] if len(sys.argv) > 1 else r"C:\Users\Papa\Documents\HoudiniCOP\export\textures"
 RX = re.compile(r"^(?P<map>[a-z_]+?)_(?P<tier>1k|512|256)\.(?P<ext>png|webp)$")
 
-manifest, copied = {}, 0
+# наборы других поставщиков (обои comfy и т. п.) в манифесте сохраняются — пересчитываются только наборы HoudiniCOP
+try:
+    manifest = {k: v for k, v in json.load(open(os.path.join(GAME, "lod.json"), encoding="utf-8")).items()
+                if not os.path.isdir(os.path.join(SRC, k, "lod"))}
+except FileNotFoundError:
+    manifest = {}
+copied = 0
 for s in sorted(os.listdir(GAME)):
     lod = os.path.join(SRC, s, "lod")
     if not os.path.isdir(os.path.join(GAME, s)) or not os.path.isdir(lod):

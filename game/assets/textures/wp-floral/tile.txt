@@ -1,0 +1,3 @@
+tile_m=1.06
+height_cm=0.05
+source=comfy wallpaper_floral (2048, раппорт — README поставщика)
