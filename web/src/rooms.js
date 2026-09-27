@@ -17,6 +17,7 @@ import { lodManifest, texUrl, texPx } from "./texlod.js";
 // дом») — с любой стороны, куда ни повернуть.
 
 const FURN = "../game/assets/models/furniture/", TEX = "../game/assets/textures/";
+const CURT = "../game/assets/models/curtains/";   // шторы HoudiniCOP (ткань — Vellum), износа мебели на них нет
 const H = 2.6, T = 0.1, CUT = 0.9;   // высота стен, толщина, срез
 
 // комнаты — прямоугольники по осям стен [x0, z0, x1, z1]
@@ -74,6 +75,13 @@ const PLAN = [
 	["rad", 2, "rad_4_short", ["pipe_floor_pass", "pipe_tee", "pipe_straight_1m"]],
 	["rad", 3, "rad_6_bypass_right", ["pipe_floor_pass", "pipe_straight_1m", "pipe_straight_1m"]],
 	["radwall", "kitchen", "N", 1.95, "rad_8_bare"],
+	// Шторы: на окне два карниза, оба дальше подоконника (он 0.26 м): тюль у стекла,
+	// плотные шторы перед ним; на каждом — пара, левая и правая (правая — зеркало).
+	// Штора на кольцах: начало — край карниза, полотно — к центру окна.
+	["drape", 0, { tulle: "curtain_rings_w140_g100_114_lod0", heavy: ["curtain_rings_w100_g20_30_lod0", "curtain_rings_w100_g45_55_lod0"], color: 0x7a2e2a }],
+	["drape", 1, { tulle: "curtain_rings_w140_g100_114_lod0", heavy: ["curtain_rings_w100_g45_55_lod0", "curtain_rings_w100_g20_30_lod0"], color: 0x5f6b3a }],
+	["drape", 2, { tulle: "curtain_rings_w140_g100_114_lod0", heavy: ["curtain_rings_w100_g20_30_lod0", "curtain_rings_w100_g20_30_lod0"], color: 0xa9803a }],
+	["drape", 3, { tulle: "curtain_rings_w140_g100_114_lod0", heavy: ["curtain_rings_w100_g45_55_lod0", "curtain_rings_w100_g45_55_lod0"], color: 0x3f4f6b }],
 ];
 
 /* ── сцена ──────────────────────────────────────────────────────────── */
@@ -172,6 +180,10 @@ const bmp = new THREE.ImageBitmapLoader().setOptions({ premultiplyAlpha: "none",
 const names = [...new Set(PLAN.flatMap(p => p[0] === "wall" ? p[3].map(e => e.m || e) : p[0] === "table" ? [p[1], ...p[5].map(c => c[0])] :
 	p[0] === "sill" ? p[2] : p[0] === "top" ? [p[2]] : p[0] === "front" ? [p[2]] : p[0] === "rad" ? [p[2], ...p[3]] :
 	p[0] === "radwall" ? [p[4]] : []))];
+const curtainNames = [...new Set(PLAN.filter(p => p[0] === "drape").flatMap(p => [p[2].tulle, ...p[2].heavy]).concat("curtain_rail_bare"))];
+const TULLE_Z = 0.36, HEAVY_Z = 0.48, ROD = 1.0;   // от внутренней грани стены, м; полкарниза
+// тюль — полупрозрачный (кружево ждём у HoudiniCOP: текстура с альфой по узору)
+const tulleMat = new THREE.MeshStandardMaterial({ color: 0xf1eee6, roughness: 0.9, transparent: true, opacity: 0.42, side: THREE.DoubleSide, depthWrite: false });
 const noise = await loadWearNoise(`${FURN}textures/wear_noise.png`);
 const models = {};
 await Promise.all(names.map(async n => {
@@ -181,6 +193,12 @@ await Promise.all(names.map(async n => {
 	models[n] = { scene: g.scene, mask };
 	status.textContent = `загружено ${Object.keys(models).length} из ${names.length}`;
 }));
+// шторы — без масок износа; текстуры простых штор лежат рядом с glb
+await Promise.all(curtainNames.map(async n => {
+	const g = await loader.loadAsync(`${CURT}${n}.glb`);
+	g.scene.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; o.material.side = THREE.DoubleSide; } });
+	models[n] = { scene: g.scene, mask: null };
+}));
 
 let seed = 1;
 const placed = {};   // имя → последние габариты (для «стулья к столу», «сверху»)
@@ -188,7 +206,7 @@ const placed = {};   // имя → последние габариты (для �
 function make(n, face) {
 	const M = models[n], o = M.scene.clone(true);
 	const params = randomWear(seed++ * 7919 + 13);
-	o.traverse(m => { if (m.isMesh && m.material.map && !m.material.transparent) m.material = makeWearMaterial(m.material, M.mask, noise, params); });
+	if (M.mask) o.traverse(m => { if (m.isMesh && m.material.map && !m.material.transparent) m.material = makeWearMaterial(m.material, M.mask, noise, params); });
 	o.rotation.y = Math.atan2(-face[0], -face[1]);
 	o.updateMatrixWorld(true);
 	return { o, bb: new THREE.Box3().setFromObject(o) };
@@ -276,13 +294,34 @@ for (const p of PLAN) {
 					// труба — центр её габарита на ось стояка; проход через пол — от пола, остальное — стык в стык
 					const pi = make(pn, face), h = pi.bb.max.y - pi.bb.min.y;
 					const y0 = pn === "pipe_floor_pass" ? 0 : Math.max(y, 1.0);
+					if (y0 >= H - 0.05) break;   // стояк — до потолка, не выше стены
+					if (y0 + h > H) {   // последняя прямая — укоротить по потолок; фасонное — не ставить
+						if (pn !== "pipe_straight_1m") break;
+						pi.o.scale.y = (H - y0) / h; pi.o.updateMatrixWorld(true); pi.bb.setFromObject(pi.o);
+					}
 					put(pn, pi, rx, rz, y0);
-					if (pn !== "pipe_floor_pass") y = y0 + h;
+					if (pn !== "pipe_floor_pass") y = y0 + h * pi.o.scale.y;
 					count++;
 				}
 			}
 		}
-	} else if (p[0] === "sill") {
+	} else if (p[0] === "drape") {
+		const [, wi, D] = p, w = windows[wi], zf = w.z + w.n[1] * T / 2;   // внутренняя грань стены
+		// ткань плотных штор — своего цвета на окно (материал ткани из glb — однотонный)
+		const heavyMat = new THREE.MeshStandardMaterial({ color: D.color, roughness: 0.95, side: THREE.DoubleSide });
+		const hang = (n, side, off, mat) => {
+			const it = make(n, w.n);
+			if (Math.sign((it.bb.min.x + it.bb.max.x) / 2) !== -side) it.o.scale.x = -1;   // полотно — к центру окна
+			it.o.traverse(m => { if (m.isMesh && /fabric/i.test(m.material.name)) { m.material = mat; if (mat === tulleMat) m.castShadow = false; } });
+			it.o.position.set(w.x + side * ROD, 0, zf + w.n[1] * off);
+			scene.add(it.o); it.o.updateMatrixWorld(true); count++;
+		};
+		for (const [off, pair, mat] of [[TULLE_Z, [D.tulle, D.tulle], tulleMat], [HEAVY_Z, D.heavy, heavyMat]]) {
+			hang(pair[0], -1, off, mat); hang(pair[1], 1, off, mat);
+			// карниз: центр по окну, на высоте колец (2.545 м), на том же отступе
+			const r = make("curtain_rail_bare", w.n), d = r.bb.max.z - r.bb.min.z;
+			put("curtain_rail_bare", r, w.x, zf + w.n[1] * off, 2.545 - (r.bb.max.y - r.bb.min.y) / 2); count++;
+		}	} else if (p[0] === "sill") {
 		const [, i, list] = p, w = windows[i];
 		list.forEach((n, k) => { put(n, make(n, [0, 1]), w.x - w.w / 2 + w.w * (k + 0.5) / list.length, w.depthZ, w.top); count++; });
 	}
