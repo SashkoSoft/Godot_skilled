@@ -22,10 +22,10 @@ const H = 2.6, T = 0.1, CUT = 0.9;   // высота стен, толщина, �
 
 // комнаты — прямоугольники по осям стен [x0, z0, x1, z1]
 const ROOMS = {
-	living: { name: "гостиная", rect: [0, 0, 6.6, 4.8], floor: "herring" },
-	bedroom: { name: "спальня", rect: [6.6, 0, 13, 4.8], floor: "mosaic" },
-	kitchen: { name: "кухня", rect: [0, 4.8, 3.6, 8], floor: "mosaic" },
-	kids: { name: "детская", rect: [3.6, 4.8, 13, 8], floor: "herring" },
+	living: { name: "гостиная", rect: [0, 0, 6.6, 4.8], floor: "herring", paper: "wp-damask-green" },
+	bedroom: { name: "спальня", rect: [6.6, 0, 13, 4.8], floor: "mosaic", paper: "wp-roses-vine" },
+	kitchen: { name: "кухня", rect: [0, 4.8, 3.6, 8], floor: "mosaic", paper: "wp-fans" },
+	kids: { name: "детская", rect: [3.6, 4.8, 13, 8], floor: "herring", paper: "wp-sprigs" },
 };
 // Стены: отрезок по оси (внутренняя грань — на T/2 от оси), t — толщина (наружные 0.3:
 // окна blend утоплены в стену до 0.2; толщина добавляется наружу, комнаты не меняются).
@@ -122,7 +122,48 @@ const status = document.getElementById("status");
 const q = new URLSearchParams(location.hash.slice(1));
 
 /* ── стены и полы ───────────────────────────────────────────────────── */
-const wallMat = new THREE.MeshStandardMaterial({ color: 0xd8d2c4, roughness: 0.93 });   // побелка
+const wallMat = new THREE.MeshStandardMaterial({ color: 0xd8d2c4, roughness: 0.93 });   // побелка: торцы, наружная сторона
+// Обои comfy: у всех наборов тайл 1.06 м — UV стены в метрах / 1.06, любые обои без правки UV.
+// Сторона стены получает обои той комнаты, в которую смотрит.
+const PAPER_TILE = 1.06;
+const LODM = await lodManifest();
+const paperMats = {};
+function paperMat(set) {
+	if (paperMats[set]) return paperMats[set];
+	const L = new THREE.TextureLoader(), ld = (m, srgb) => {
+		const t = L.load(texUrl(LODM, set, m, texPx, "2k"));
+		t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
+		t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+		return t;
+	};
+	// ORM: G — шероховатость (бумага ~0.8); металл — 0
+	return (paperMats[set] = new THREE.MeshStandardMaterial({ map: ld("albedo", true), normalMap: ld("normal"), roughnessMap: ld("orm"),
+		normalScale: new THREE.Vector2(0.6, 0.6), roughness: 1, metalness: 0 }));
+}
+const roomAt = (x, z) => Object.values(ROOMS).find(R => x > R.rect[0] && x < R.rect[2] && z > R.rect[1] && z < R.rect[3]);
+// Коробка стены: грани, смотрящие в комнату, — в её обои, UV в метрах (по мировым осям);
+// остальные — побелка. BoxGeometry: группы граней +x −x +y −y +z −z.
+function wallMesh(w, h, d, x, y, z) {
+	const g = new THREE.BoxGeometry(w, h, d), pos = g.attributes.position, uv = g.attributes.uv;
+	const mats = [wallMat];
+	const N = [[1, 0], [-1, 0], null, null, [0, 1], [0, -1]];
+	g.groups.forEach((gr, i) => {
+		const n = N[i];
+		if (!n) return;
+		const fx = x + n[0] * w / 2, fz = z + n[1] * d / 2, R = roomAt(fx + n[0] * 0.05, fz + n[1] * 0.05);
+		if (!R || !R.paper) return;
+		let mi = mats.indexOf(paperMat(R.paper)); if (mi < 0) { mats.push(paperMat(R.paper)); mi = mats.length - 1; }
+		gr.materialIndex = mi;
+		for (let k = gr.start; k < gr.start + gr.count; k++) {
+			const vi = g.index.getX(k), wx = pos.getX(vi) + x, wy = pos.getY(vi) + y, wz = pos.getZ(vi) + z;
+			uv.setXY(vi, (n[0] ? wz : wx) / PAPER_TILE, wy / PAPER_TILE);
+		}
+	});
+	g.groups.forEach((gr, i) => { if (!N[i]) gr.materialIndex = 0; else if (gr.materialIndex > mats.length - 1) gr.materialIndex = 0; });
+	const m = new THREE.Mesh(g, mats);
+	m.position.set(x, y, z); m.castShadow = m.receiveShadow = true;
+	scene.add(m); return m;
+}
 function box(w, h, d, x, y, z, mat) {
 	const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
 	m.position.set(x, y, z); m.castShadow = m.receiveShadow = true;
@@ -142,8 +183,12 @@ for (const W of WALLS) {
 		if (s1 - s0 < 1e-3 || y1 - y0 < 1e-3) return;
 		// у концов стены — продлить до наружной грани соседней: углы сходятся без щели
 		const ext = t / 2 + (t - T) / 2, e0 = s0 === 0 ? ext : 0, e1 = s1 === len ? ext : 0, l = s1 - s0 + e0 + e1, m = (s0 + s1) / 2 + (e1 - e0) / 2;
-		const b = box(ux ? l : t, y1 - y0, uz ? l : t, ax + ux * m + nIn[0] * sh, (y0 + y1) / 2, az + uz * m + nIn[1] * sh, wallMat);
-		wallPieces.push({ b, n: [-uz, ux], c: -uz * ax + ux * az, y0, y1 });
+		// полный кусок и готовый срезанный (до CUT): при срезе включается второй — рисунок обоев не сжимается
+		const cx = ax + ux * m + nIn[0] * sh, cz = az + uz * m + nIn[1] * sh, W = ux ? l : t, D = uz ? l : t;
+		const b = wallMesh(W, y1 - y0, D, cx, (y0 + y1) / 2, cz);
+		const low = y0 < CUT - 1e-3 ? wallMesh(W, Math.min(y1, CUT) - y0, D, cx, (y0 + Math.min(y1, CUT)) / 2, cz) : null;
+		if (low) low.visible = false;
+		wallPieces.push({ b, low, n: [-uz, ux], c: -uz * ax + ux * az, y0, y1 });
 	};
 	let s = 0;
 	for (const o of (W.open || []).slice().sort((p, r) => p.c - r.c)) {
@@ -493,10 +538,8 @@ function frame() {
 	for (const P of wallPieces) {
 		const dc = P.n[0] * camera.position.x + P.n[1] * camera.position.z - P.c, dt = P.n[0] * cam.t.x + P.n[1] * cam.t.z - P.c;
 		const cut = dc * dt < 0;
-		const top = cut ? Math.min(P.y1, CUT) : P.y1;
-		P.b.visible = top > P.y0 + 1e-3;
-		P.b.scale.y = P.b.visible ? (top - P.y0) / (P.y1 - P.y0) : 1;
-		P.b.position.y = (P.y0 + top) / 2;
+		P.b.visible = !cut;
+		if (P.low) P.low.visible = cut;
 	}
 	for (const A of attached) {
 		const dc = A.n[0] * camera.position.x + A.n[1] * camera.position.z - A.c, dt = A.n[0] * cam.t.x + A.n[1] * cam.t.z - A.c;

@@ -1,4 +1,188 @@
 {
+ "wp-damask-blue": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false
+ },
+ "wp-damask-emboss": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false
+ },
+ "wp-damask-green": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false
+ },
+ "wp-fans": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false
+ },
+ "wp-floral": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false
+ },
+ "wp-rose-stripe": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false
+ },
+ "wp-roses-vine": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false
+ },
+ "wp-sprigs": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false
+ },
  "asphalt-road-crumbled": {
   "src": "2k",
   "tiers": [
