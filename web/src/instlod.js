@@ -45,7 +45,7 @@ export function instanceLods(group, { sun = null } = {}) {
 		// габарит — по ближней ступени
 		const box = new THREE.Box3().setFromObject(lod.levels[0].object);
 		const sph = box.getBoundingSphere(new THREE.Sphere());
-		items.push({ levels, center: sph.center, r: sph.radius, h: Math.max(box.max.y - box.min.y, 0.5), cur: -1 });
+		items.push({ id: items.length, levels, center: sph.center, r: sph.radius, h: Math.max(box.max.y - box.min.y, 0.5), cur: -1 });
 		group.remove(lod);
 	}
 	for (const b of buckets.values()) {
@@ -53,6 +53,7 @@ export function instanceLods(group, { sun = null } = {}) {
 		b.im.castShadow = b.cast; b.im.receiveShadow = b.recv;
 		b.im.frustumCulled = false;   // отсечение — по предметам, в update
 		b.im.count = 0;
+		b.ids = new Int32Array(b.n).fill(-1);   // что лежит в ячейке: не поменялось — не отправляем
 		group.add(b.im);
 	}
 
@@ -81,10 +82,19 @@ export function instanceLods(group, { sun = null } = {}) {
 			while (l < L.length - 1 && d > L[l + 1].distance * (1 + HYST)) l++;
 			while (l > 0 && d < L[l].distance * (1 - HYST)) l--;
 			it.cur = l;
-			for (const { b, m } of L[l].parts) b.im.setMatrixAt(b.im.count++, m);
+			for (const { b, m } of L[l].parts) {
+				const i = b.im.count++, id = it.id * 4 + l;
+				if (b.ids[i] !== id) { b.ids[i] = id; b.im.setMatrixAt(i, m); b.dirty = true; }
+			}
 			stats.drawn++;
 		}
-		for (const b of buckets.values()) b.im.instanceMatrix.needsUpdate = true;
+		for (const b of buckets.values()) {
+			b.im.visible = b.im.count > 0;   // пустые — мимо рендера (программа, униформы)
+			if (!b.dirty) continue;
+			b.dirty = false;
+			const a = b.im.instanceMatrix;
+			a.clearUpdateRanges(); a.addUpdateRange(0, b.im.count * 16); a.needsUpdate = true;
+		}
 	}
 	return { update, stats };
 }

@@ -208,6 +208,7 @@ let grassBlades = null, grassNearHalf = 20;
 const grassCenter = new THREE.Vector3(), grassRay = new THREE.Vector3(), bottomRay = new THREE.Vector3();
 let robot = null;          // тот, за кем камера
 let drones = null;
+const cpuMs = { anim: 0, plants: 0, render: 0 };
 const instLods = [];
 let crowd = [], followIdx = 0, robotLod = null, crowdStep = null, playground = null, curbs = null, slabs = null, rocks = null, jointGrassL = null;
 // Камера за роботом: держит текущие поворот и наклон, дистанция — колесом мыши
@@ -241,9 +242,9 @@ if (LEVEL === "district") {
 	const paving = buildPaving(d);
 	if (paving) scene.add(paving.mesh);
 	// трава в швах плит — экземплярами с LOD и ветром (как подлесок), рисуется только вблизи
-	if (slabs) buildHoudiniTrees(jointGrass(slabs.list), { sun: sunDir, ...plantCull, base: "../game/assets/models/joint_grass/", name: "JointGrass",
+	if (slabs) buildHoudiniTrees(jointGrass(slabs.list), { ...plantCull, base: "../game/assets/models/joint_grass/", name: "JointGrass",
 		minH: 1, lodDist: [80, 250], cull: [22, 0] }).then(J => { scene.add(J.group); jointGrassL = J; })
-		.catch(e => console.error("[улица] трава в швах:", e));
+		.catch(e => console.error("[улица] трава в швах:", e, e.stack));
 	// Слой «дома»: выключен — зданий нет вовсе (пользователь: «дома пока уберём»);
 	// включён — модели hou там, где они есть, и коробки остальных зданий.
 	const buildingBoxes = [];
@@ -297,7 +298,7 @@ if (LEVEL === "district") {
 	});
 if (q.has("sss")) windUniforms.uSSS.value = +q.get("sss");   // сила просвета листвы, 1 — по умолчанию
 	loadTrees = async () => {
-		const T = await buildHoudiniTrees(bo.trees, { sun: sunDir, ...plantCull, autumn: d.trees.autumn, lodDist: treeLod,
+		const T = await buildHoudiniTrees(bo.trees, { ...plantCull, autumn: d.trees.autumn, lodDist: treeLod,
 			onProgress: (s) => {
 				if (s.loaded[0] === s.total) say(`деревья загружены целиком: ${s.total} вариантов × 3 LOD`);
 				else if (s.loaded[1] % 10 === 0 || s.loaded[0] % 10 === 0)
@@ -319,7 +320,7 @@ if (q.has("sss")) windUniforms.uSSS.value = +q.get("sss");   // сила про�
 		let kit = null;
 		try { const r = await fetch(UB + "kit.json", { cache: "no-store" }); if (r.ok) kit = await r.json(); } catch { /* ещё нет */ }
 		if (kit && (kit.trees || []).some(t => t.species && t.age)) {
-			const U = await buildHoudiniTrees(bushes, { sun: sunDir, ...plantCull, base: UB, name: "Undergrowth", minH: 4, autumn: d.trees.autumn, cull: [45, 20], lodDist: treeLod });
+			const U = await buildHoudiniTrees(bushes, { ...plantCull, base: UB, name: "Undergrowth", minH: 4, autumn: d.trees.autumn, cull: [45, 20], lodDist: treeLod });
 			scene.add(U.group);
 			undergrowth = U;
 			layerObjs.bushes = { show: [U.group], hide: [] };
@@ -489,9 +490,10 @@ async function doBench() {
 	benching = true;
 	hud.perfTable.hidden = false;
 	hud.perfTable.innerHTML = "замер…";
-	const rows = await runBench(scene, renderer, camera, { onStep: n => { hud.perfTable.innerHTML = "замер: без " + n + "…"; console.log("[улица] замер: без " + n); } });
+	const rows = await runBench(scene, renderer, camera, { only: q.get("benchonly"), onStep: n => { hud.perfTable.innerHTML = "замер: без " + n + "…"; console.log("[улица] замер: без " + n); } });
 	console.table(rows);
 	for (const r of rows) console.log("[улица] BENCH " + JSON.stringify(r));
+	console.log(`[улица] CPU кадра, мс: анимация ${cpuMs.anim.toFixed(2)} · раскладка растений/LOD ${cpuMs.plants.toFixed(2)} · отправка рендера ${cpuMs.render.toFixed(2)}`);
 		for (const r of breakdown(scene)) console.log("[улица] PERF " + JSON.stringify(r));
 	hud.perfTable.innerHTML = "<b>цена кадра, мс (медиана 30 кадров с ожиданием GPU)</b><br>" +
 		rows.map(r => `${r.слой} · ${r.мс}${r.экономия !== "" ? ` · −${r.экономия}` : ""}`).join("<br>");
@@ -646,10 +648,12 @@ function tick(now) {
 		cam.p.addScaledVector(move.normalize(), sp);
 	}
 
+	const cpu0 = performance.now();
 	for (const r of crowd) r.update(dt);
 	if (robotLod) robotLod(camera);
 	if (crowdStep) crowdStep();
 	if (drones) drones.update(dt, now / 1000);
+	const cpu1 = performance.now();
 	if (follow && robot) {
 		updateCamera();
 		camera.getWorldDirection(fwd);
@@ -692,10 +696,17 @@ function tick(now) {
 	if (rocks) rocks.update(camera);
 	if (jointGrassL) jointGrassL.update(camera, now / 1000);
 	for (const I of instLods) I.update(camera);
+	const cpu2 = performance.now();
+	// время процессора (скользящее среднее): анимация (роботы, дроны), раскладка
+	// растений и предметов по LOD — GPU-таймер замера его не видит
+	cpuMs.anim += (cpu1 - cpu0 - cpuMs.anim) * 0.05;
+	cpuMs.plants += (cpu2 - cpu1 - cpuMs.plants) * 0.05;
 	hud.pos.textContent =
 		`${cam.p.x.toFixed(1)} ${cam.p.y.toFixed(1)} ${cam.p.z.toFixed(1)}` +
 		(robot ? ` · робот: ${robot.state}` : "");
+	const cpu3 = performance.now();
 	renderer.render(scene, camera);
+	cpuMs.render += (performance.now() - cpu3 - cpuMs.render) * 0.05;   // отправка команд three.js (обход сцены, вызовы)
 	requestAnimationFrame(tick);
 }
 

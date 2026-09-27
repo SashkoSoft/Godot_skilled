@@ -28,13 +28,13 @@ function barkSet(name) {
 
 // Деревья квартала из библиотеки HoudiniCOP: у каждого варианта три LOD
 // отдельными файлами, в каждом узлы <tag>_lodN_bark и <tag>_lodN_leaf.
-// Одна InstancedMesh на (вариант, LOD, часть) — отрисовок столько, сколько
-// вариантов × 3 × 2, независимо от числа деревьев. LOD выбирается каждый кадр
-// по дистанции до камеры, делённой на размер дерева.
+// Один BatchedMesh на (LOD, часть, набор атрибутов, материал) — все варианты с общим
+// атласом рисуются одним вызовом, независимо от числа вариантов и деревьев. LOD
+// выбирается каждый кадр по дистанции до камеры, делённой на размер дерева.
 //
 // Грузится поэтапно: сначала все LOD2 (~4 МБ на 50 вариантов) — и деревья уже
-// стоят; LOD1 и LOD0 (~15 и ~42 МБ) догружаются фоном. Пока нужной ступени
-// нет, дерево рисуется ближайшей загруженной, более грубой.
+// стоят; LOD1 и LOD0 (~15 и ~42 МБ) догружаются фоном и включаются, когда ступень
+// собрана у всех вариантов. До того дерево рисуется более грубой.
 
 const BASE = "../game/assets/models/trees/houdinicop/";
 
@@ -53,11 +53,41 @@ const LOD_REF_H = 14, LOD_DIST = [40, 110];
 // на 10 % ближе. Без него дерево на самой границе мигает от дрожи камеры.
 const HYST = 0.1;
 // Смена ступени — растворением за полсекунды: обе ступени рисуются
-// дополняющими пикселями (см. wind.js, aFade), скачка нет.
+// дополняющими пикселями (см. wind.js, vLodFade), скачка нет.
 const FADE_S = 1.2;
+
+// Общие текстуры по URI картинки. Все варианты набора ссылаются на один атлас
+// (leaf_atlas.png), но GLTFLoader на каждый файл заводит свою текстуру — и в
+// видеопамять уходила копия атласа на каждый файл ступени (75 кустов × 3 ступени,
+// ~5.6 МБ на копию с мипами). Здесь копия заменяется первой загруженной.
+const sharedTex = new Map();
+const SHARE = new URLSearchParams(location.hash.slice(1)).get("sharetex") !== "0";   // #sharetex=0 — как было (A/B)
+function shareTextures(g, base) {
+	const P = g.parser, json = P.json;
+	const uriOf = t => {
+		const a = P.associations.get(t);
+		const src = a && a.textures !== undefined ? json.textures[a.textures].source : undefined;
+		const uri = src !== undefined ? json.images[src].uri : null;
+		return uri ? base + uri : null;
+	};
+	g.scene.traverse(o => {
+		if (!o.isMesh) return;
+		for (const k of ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap", "emissiveMap", "alphaMap"]) {
+			const t = o.material[k];
+			if (!t) continue;
+			const key = uriOf(t);
+			if (!key) continue;
+			const full = key + "|" + t.colorSpace + "|" + t.flipY;
+			const have = sharedTex.get(full);
+			if (have && have !== t) { o.material[k] = have; t.dispose(); }
+			else sharedTex.set(full, t);
+		}
+	});
+}
 
 async function loadLod(loader, base, tag, l) {
 	const g = await loader.loadAsync(`${base}${tag}_lod${l}.glb`);
+	if (SHARE) shareTextures(g, base);
 	const parts = {};
 	g.scene.traverse(o => {
 		if (!o.isMesh) return;
@@ -117,9 +147,8 @@ function makePicker(kit) {
 // autumn — district.json trees.autumn: { порода: { amount, colors: [sRGB ×3] } }
 // cull — [база м, м на метр высоты]: дальше растение не рисуется вовсе (растворяется,
 // как между ступенями). Для подлеска: метровый бурьян вдали — пятнышко в пиксель.
-// sun — единичный вектор на солнце: отсечение по кадру оставляет и тех, чья тень
-// в кадр падает (на закате метровый куст бросает её на 8 м).
-export async function buildHoudiniTrees(trees, { onProgress, base = BASE, name = "Trees", minH = 0, autumn = null, cull = null, lodDist = LOD_DIST, sun = null, viewCull = true } = {}) {
+// viewCull = false — без отсечения экземпляров по кадру и камере тени (A/B, #cull=0).
+export async function buildHoudiniTrees(trees, { onProgress, base = BASE, name = "Trees", minH = 0, autumn = null, cull = null, lodDist = LOD_DIST, viewCull = true } = {}) {
 	const loader = new GLTFLoader();
 	let kit = null;
 	try { kit = await (await fetch(base + "kit.json", { cache: "no-store" })).json(); } catch { /* манифеста нет — таблица */ }
@@ -143,48 +172,95 @@ export async function buildHoudiniTrees(trees, { onProgress, base = BASE, name =
 
 	const group = new THREE.Group();
 	group.name = name;
-	const variants = {}, meshes = {}, inst = {};
-	for (const t of tags) { meshes[t] = [null, null, null]; inst[t] = []; }
+	const variants = {}, items = [];
+	const partsOf = Object.fromEntries(tags.map(t => [t, [null, null, null]]));
+	const ready = [false, false, false];   // ступень собрана
+	const batches = [];
 
-	// Ступень LOD варианта → InstancedMesh коры и листвы с ветром.
-	function addLod(t, l, parts) {
-		const out = {};
-		for (const [k, { geo, mat }] of Object.entries(parts)) {
-			const cap = Math.max(1, inst[t].length);
-			geo.setAttribute("aFade", new THREE.InstancedBufferAttribute(new Float32Array(cap).fill(1), 1));
-			const im = new THREE.InstancedMesh(geo, mat, cap);
-			im.count = 0;
-			im.castShadow = true; im.receiveShadow = true;
-			// Ветер: маски _wind из генератора, если есть, иначе оценка по высоте.
-			// Крона для объёма и просвета: атрибут _crown из генератора, иначе эллипсоид
-			// по габариту листвы этой ступени.
-			let crown = null;
-			// карта нормалей листа (жилки, выгиб): на дальней ступени жилки — только рябь
-			if (k === "leaf" && mat.normalMap) mat.normalScale.setScalar(l === 2 ? 0.5 : 1);
-			if (k === "leaf") {
-				geo.computeBoundingBox();
-				const bb = geo.boundingBox;
-				crown = { c: bb.getCenter(new THREE.Vector3()), r: bb.getSize(new THREE.Vector3()).multiplyScalar(0.5).max(new THREE.Vector3(0.3, 0.3, 0.3)) };
+	// Ступень l всех вариантов → BatchedMesh на группу «часть × набор атрибутов ×
+	// материал». Вариантов десятки (кустов 75), и по InstancedMesh на вариант, ступень
+	// и часть выходило ~130 объектов в кадре и столько же в тени: цена была не в
+	// пикселях, а в процессоре — three.js на каждый объект ставит программу и шлёт
+	// униформы (~15 мкс). Все варианты делят один атлас листвы — значит, их можно
+	// рисовать одним вызовом. Отсечение по кадру и по камере тени BatchedMesh делает
+	// сам, по каждому экземпляру.
+	function buildLod(l) {
+		const groups = new Map();
+		for (const t of tags) {
+			const parts = partsOf[t][l];
+			if (!parts) continue;
+			for (const [k, { geo, mat }] of Object.entries(parts)) {
+				// кора: текстура породы, если у ступени есть развёртка
+				let barkCd = null, barkKey = "plain";
+				if (k === "bark" && geo.attributes.uv && bark[t]) {
+					const b = bark[t];
+					mat.map = b.map; mat.normalMap = b.normal; mat.roughnessMap = b.orm;
+					mat.roughness = 1; mat.metalness = 0;   // шероховатость — из карты (кора матовая)
+					barkCd = b.cd; barkKey = b.map.uuid;
+				}
+				if (!geo.index) geo.setIndex([...Array(geo.attributes.position.count).keys()]);
+				// Касательные — не нужны (базис карты нормалей строится по производным) и
+				// у части травы в швах битые: 486 значений на 324 вершины — BatchedMesh на
+				// таком падает. Без них ещё и варианты с касательными и без садятся в один батч.
+				geo.deleteAttribute("tangent");
+				for (const [n, a] of Object.entries(geo.attributes)) if (a.count !== geo.attributes.position.count) {
+					console.warn(`[улица] ${t} LOD${l} ${k}: атрибут ${n} — ${a.count} значений на ${geo.attributes.position.count} вершин, убран`);
+					geo.deleteAttribute(n);
+				}
+				const attrSig = Object.entries(geo.attributes).map(([n, a]) => `${n}:${a.itemSize}`).sort().join(",");
+				const matSig = k === "leaf" ? `${mat.map?.uuid}|${mat.normalMap?.uuid}|${mat.alphaTest}|${mat.side}` : `${barkKey}|${mat.vertexColors}`;
+				const key = `${k}|${attrSig}|${matSig}`;
+				let g = groups.get(key);
+				if (!g) groups.set(key, g = { k, mat, barkCd, attr: !!geo.attributes._wind, crownAttr: !!geo.attributes._crown, list: new Map() });
+				// крона для объёма и просвета — эллипсоид по габариту листвы (если нет _crown)
+				let crown = null;
+				if (k === "leaf") {
+					geo.computeBoundingBox();
+					const bb = geo.boundingBox;
+					crown = { c: bb.getCenter(new THREE.Vector3()), r: bb.getSize(new THREE.Vector3()).multiplyScalar(0.5).max(new THREE.Vector3(0.3, 0.3, 0.3)) };
+				}
+				g.list.set(t, { geo, crown });
 			}
-			// кора: текстура породы, если у ступени есть развёртка
-			let barkCd = null;
-			if (k === "bark" && geo.attributes.uv && bark[t]) {
-				const b = bark[t];
-				mat.map = b.map; mat.normalMap = b.normal; mat.roughnessMap = b.orm;
-				mat.roughness = 1; mat.metalness = 0;   // шероховатость — из карты (кора матовая)
-				barkCd = b.cd;
-			}
-			im.customDepthMaterial = windify(mat, {
-				barkCd,
-				leaf: k === "leaf", height: variants[t].height, attr: !!geo.attributes._wind,
-				crown, crownAttr: !!geo.attributes._crown,
-				autumn: k === "leaf" ? autumnOf(t) : null,
-			});
-			im.frustumCulled = false;   // экземпляры переезжают между LOD каждый кадр
-			group.add(im);
-			out[k] = im;
+			partsOf[t][l] = null;   // геометрия уходит в батч, исходник не нужен
 		}
-		meshes[t][l] = out;
+		for (const g of groups.values()) {
+			const its = items.filter(it => g.list.has(it.tag) && (g.k !== "leaf" || it.leaves));
+			if (!its.length) continue;
+			let nv = 0, ni = 0;
+			for (const { geo } of g.list.values()) { nv += geo.attributes.position.count; ni += geo.index.count; }
+			const cap = its.length;
+			const bm = new THREE.BatchedMesh(cap, nv, ni, g.mat);
+			const gid = new Map([...g.list].map(([t, { geo }]) => [t, bm.addGeometry(geo)]));
+			// параметры варианта на экземпляр (см. wind.js, VEG_BATCH)
+			const rowsD = Math.ceil(cap / 256), D = new Float32Array(1536 * rowsD * 4);
+			const rowsF = Math.ceil(cap / 1024), F = new Float32Array(1024 * rowsF).fill(1);
+			const dataTex = new THREE.DataTexture(D, 1536, rowsD, THREE.RGBAFormat, THREE.FloatType);
+			const fadeTex = new THREE.DataTexture(F, 1024, rowsF, THREE.RedFormat, THREE.FloatType);
+			dataTex.needsUpdate = fadeTex.needsUpdate = true;
+			const rec = { bm, F, fadeTex, dirty: false };
+			for (const it of its) {
+				const id = bm.addInstance(gid.get(it.tag));
+				bm.setMatrixAt(id, it.m);
+				bm.setVisibleAt(id, false);
+				const o = ((id % 256) * 6 + Math.floor(id / 256) * 1536) * 4;
+				const e = g.list.get(it.tag), aut = g.k === "leaf" ? autumnOf(it.tag) : null;
+				D[o] = variants[it.tag].height; D[o + 1] = aut ? aut.amount : 0;
+				if (e.crown) { e.crown.c.toArray(D, o + 4); e.crown.r.toArray(D, o + 8); }
+				if (aut) aut.colors.forEach((c, j) => c.toArray(D, o + 12 + j * 4));
+				it.slots[l].push({ rec, id, vis: false });
+			}
+			bm.castShadow = true; bm.receiveShadow = true;
+			bm.perObjectFrustumCulled = viewCull;
+			// карта нормалей листа (жилки, выгиб): на дальней ступени жилки — только рябь
+			if (g.k === "leaf" && g.mat.normalMap) g.mat.normalScale.setScalar(l === 2 ? 0.5 : 1);
+			bm.customDepthMaterial = windify(g.mat, {
+				barkCd: g.barkCd, leaf: g.k === "leaf", attr: g.attr, crownAttr: g.crownAttr,
+				batch: { data: dataTex, fade: fadeTex },
+			});
+			group.add(bm);
+			batches.push(rec);
+		}
+		ready[l] = true;
 	}
 
 	// 1) все LOD2 — габарит из манифеста, без него — замер по LOD2
@@ -192,6 +268,7 @@ export async function buildHoudiniTrees(trees, { onProgress, base = BASE, name =
 	tags.forEach((t, i) => {
 		const m = meta[t] && meta[t].crown ? meta[t] : measure(lod2[i]);
 		variants[t] = { tag: t, crown: m.crown, height: m.height };
+		partsOf[t][2] = lod2[i];
 	});
 
 	// Экземпляры: матрица и «масштаб дерева» для LOD, по варианту.
@@ -207,97 +284,71 @@ export async function buildHoudiniTrees(trees, { onProgress, base = BASE, name =
 		const m = new THREE.Matrix4().compose(new THREE.Vector3(x, 0, z), ql.multiply(q), new THREE.Vector3(s, s, s));
 		// minH — нижняя граница высоты для LOD: метровый куст иначе грубел бы уже с 5 м
 		const hr = v.height * s;
-		inst[tag].push({ m, pos: new THREE.Vector3(x, hr * 0.5, z), h: Math.max(minH, hr),
+		items.push({ tag, m, pos: new THREE.Vector3(x, hr * 0.5, z), h: Math.max(minH, hr),
 			far: cull ? cull[0] + cull[1] * hr : Infinity,   // дальше — не рисуется
 			// листву прячем, только если сухому экземпляру достался живой вариант;
 			// у сухого варианта листва — это само растение (сухая осока — одна «листва»)
-			leaves: !(p.health === "dead" && (meta[tag] ? meta[tag].health : "healthy") !== "dead") });
+			leaves: !(p.health === "dead" && (meta[tag] ? meta[tag].health : "healthy") !== "dead"),
+			slots: [[], [], []] });   // экземпляры в батчах каждой ступени
 	}
-	tags.forEach((t, i) => addLod(t, 2, lod2[i]));
+	buildLod(2);
 
-	// 2) фоном: LOD1 всех вариантов, потом LOD0
+	// 2) фоном: LOD1 всех вариантов, потом LOD0; ступень включается, когда собрана целиком
 	const stats = { lod: [0, 0, 0], loaded: [0, 0, tags.length], total: tags.length };
 	(async () => {
 		for (const l of [1, 0]) {
 			for (const t of tags) {
-				try { addLod(t, l, await loadLod(loader, base, t, l)); stats.loaded[l]++; }
+				try { partsOf[t][l] = await loadLod(loader, base, t, l); stats.loaded[l]++; }
 				catch (e) { console.warn(`[улица] дерево ${t} LOD${l} не загрузилось: ${e}`); }
 				if (onProgress) onProgress(stats);
 			}
+			buildLod(l);
 		}
 	})();
 
-	// Поставить дерево в ступень l с растворением f (1 — целиком).
-	function put(L, l, it, f) {
-		if (l === 3) return;   // ступень «нет» — за дальней границей
-		for (const [k, im] of Object.entries(L[l])) {
-			if (k === "leaf" && !it.leaves) continue;
-			const i = im.count++;
-			im.setMatrixAt(i, it.m);
-			im.geometry.attributes.aFade.array[i] = f;
+	// Показ ступени l экземпляра с растворением f (null — скрыт). Видимость и
+	// растворение трогаются, только если поменялись: в видеокарту — лишь изменения.
+	function show(it, l, f) {
+		for (const s of it.slots[l]) {
+			const vis = f !== null;
+			if (s.vis !== vis) { s.vis = vis; s.rec.bm.setVisibleAt(s.id, vis); }
+			if (vis && s.rec.F[s.id] !== f) { s.rec.F[s.id] = f; s.rec.dirty = true; }
 		}
 	}
 
-	// Отсечение по кадру: экземпляры сами по себе камерой не отсекаются (одна
-	// InstancedMesh на весь квартал), и без этого каждый куст за спиной рисовался
-	// дважды — в кадр и в карту тени. Проверяются две сферы: само растение и конец
-	// его тени (длина h / tg(высоты солнца), от солнца по земле).
-	const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), sph = new THREE.Sphere();
-	const shadowK = sun ? new THREE.Vector2(-sun.x, -sun.z).normalize().multiplyScalar(1 / Math.max(Math.tan(Math.asin(sun.y)), 0.05)) : null;
-	function inView(it) {
-		sph.center.copy(it.pos); sph.radius = it.h * 0.75;
-		if (frustum.intersectsSphere(sph)) return true;
-		if (!shadowK) return false;
-		sph.center.set(it.pos.x + shadowK.x * it.h, 0, it.pos.z + shadowK.y * it.h);
-		sph.radius = it.h * 0.6;
-		return frustum.intersectsSphere(sph);
-	}
-
+	const fl = [null, null, null];
 	function update(camera, time = performance.now() / 1000) {
 		stats.lod = [0, 0, 0, 0];
 		stats.fading = 0;
-		stats.culled = 0;
-		camera.updateMatrixWorld();
-		frustum.setFromProjectionMatrix(pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
-		for (const t of tags) {
-			const L = meshes[t];
-			for (const l of L) if (l) for (const im of Object.values(l)) im.count = 0;
-			for (const it of inst[t]) {
-				const dist = it.pos.distanceTo(camera.position), k = dist / (it.h / LOD_REF_H);
-				// желаемая ступень от текущей, с запасом между порогами; 3 — не рисуется
-				let want = it.cur ?? (k < lodDist[0] ? 0 : k < lodDist[1] ? 1 : 2);
-				if (want === 3) want = 2;
-				while (want < 2 && k > lodDist[want] * (1 + HYST)) want++;
-				while (want > 0 && k < lodDist[want - 1] * (1 - HYST)) want--;
-				while (want < 2 && !L[want]) want++;   // нужной ступени ещё нет — грубее
-				if (dist > it.far * (it.cur === 3 ? 1 - HYST : 1 + HYST)) want = 3;
-				if (it.cur === undefined) it.cur = want;
-				else if (want !== it.cur && !it.fade) {
-					it.fade = { from: it.cur, start: time };
-					it.cur = want;
-				}
-				if (viewCull && !inView(it)) { stats.culled++; continue; }   // ступень и растворение идут своим чередом
-				if (it.fade) {
-					const f = (time - it.fade.start) / FADE_S;
-					if (f >= 1) it.fade = null;
-					else {
-						put(L, it.cur, it, Math.max(0, f));        // проявляется
-						put(L, it.fade.from, it, 2 + Math.max(0, f)); // исчезает в дополняющих пикселях
-						stats.fading++;
-						stats.lod[it.cur]++;
-						continue;
-					}
-				}
-				put(L, it.cur, it, 1);
-				stats.lod[it.cur]++;
+		for (const it of items) {
+			const dist = it.pos.distanceTo(camera.position), k = dist / (it.h / LOD_REF_H);
+			// желаемая ступень от текущей, с запасом между порогами; 3 — не рисуется
+			let want = it.cur ?? (k < lodDist[0] ? 0 : k < lodDist[1] ? 1 : 2);
+			if (want === 3) want = 2;
+			while (want < 2 && k > lodDist[want] * (1 + HYST)) want++;
+			while (want > 0 && k < lodDist[want - 1] * (1 - HYST)) want--;
+			while (want < 2 && !ready[want]) want++;   // нужной ступени ещё нет — грубее
+			if (dist > it.far * (it.cur === 3 ? 1 - HYST : 1 + HYST)) want = 3;
+			if (it.cur === undefined) it.cur = want;
+			else if (want !== it.cur && !it.fade) {
+				it.fade = { from: it.cur, start: time };
+				it.cur = want;
 			}
-			for (const l of L) if (l) for (const im of Object.values(l)) {
-				im.instanceMatrix.needsUpdate = true;
-				im.geometry.attributes.aFade.needsUpdate = true;
-			}
+			fl[0] = fl[1] = fl[2] = null;
+			const f = it.fade ? (time - it.fade.start) / FADE_S : 1;
+			if (it.fade && f >= 1) it.fade = null;
+			if (it.fade) {
+				if (it.cur < 3) fl[it.cur] = Math.max(0, f);                 // проявляется
+				if (it.fade.from < 3) fl[it.fade.from] = 2 + Math.max(0, f);  // исчезает в дополняющих пикселях
+				stats.fading++;
+			} else if (it.cur < 3) fl[it.cur] = 1;
+			for (let l = 0; l < 3; l++) show(it, l, fl[l]);
+			stats.lod[it.cur]++;
 		}
+		for (const r of batches) if (r.dirty) { r.dirty = false; r.fadeTex.needsUpdate = true; }
 	}
 
-	const counts = Object.fromEntries(tags.map(t => [t, inst[t].length]));
+	const counts = {};
+	for (const it of items) counts[it.tag] = (counts[it.tag] || 0) + 1;
 	return { group, update, stats, counts, variants };
 }

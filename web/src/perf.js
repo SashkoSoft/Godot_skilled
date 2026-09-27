@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { setWindEnabled } from "./wind.js";
 
 // Учёт цены кадра. Два источника, и важно не путать, что каждый значит:
 //  - renderer.info — что реально ушло в GPU за кадр (вызовы и треугольники,
@@ -77,7 +78,13 @@ export const BENCH = {
 	"опоры": ["Poles"], "плиты": ["Slabs"], "камешки": ["Rocks"], "заборы": ["Fences"],
 	"площадка": ["Playground"], "мелочи": ["StreetProps"], "плиты-трава": ["JointGrass"], "тени": null,
 	"пол": null,   // шейдер пола (floor.js): на время замера — простой материал того же цвета
+	// карта теней не перерисовывается (читается прежняя) — цена прохода в тень
+	"перерисовка теней": null,
+	"ветер": null,   // смещение вершин растений не считается (в кадре и в тени)
 };
+// «тень X» (только в #benchonly) — слой X не отбрасывает тень: его доля в проходе теней.
+// Слои, которые прятать целиком бессмысленно (блок-аут — это и земля), — только для тени.
+const SHADOW_ONLY = { "блок-аут": ["District"], "дроны": ["Drones"] };
 
 /**
  * Цена кадра, медиана по frames кадрам. Если есть таймер GPU
@@ -85,18 +92,25 @@ export const BENCH = {
  * three.js, которая шумит на миллисекунды и прячет цену шейдеров. Иначе —
  * render + gl.finish (ждём GPU, иначе меряется только отправка команд).
  */
-let timerExt;
+// cpu — время самого вызова render на процессоре (обход сцены, вызовы WebGL,
+// кости): таймер GPU его не видит, а при сотнях вызовов оно и есть узкое место.
+// Медиана — в lastCpu после каждого frameMs.
+let timerExt, lastCpu = 0;
+const cpu = [];
 async function frameMs(renderer, scene, camera, frames) {
 	const gl = renderer.getContext();
 	if (timerExt === undefined) timerExt = gl.getExtension("EXT_disjoint_timer_query_webgl2");
 	renderer.render(scene, camera); gl.finish();   // прогрев: программы, загрузка буферов
 	const t = [];
+	cpu.length = 0;
 	if (timerExt) {
 		const qs = [];
 		for (let i = 0; i < frames; i++) {
 			const q = gl.createQuery();
 			gl.beginQuery(timerExt.TIME_ELAPSED_EXT, q);
+			const c0 = performance.now();
 			renderer.render(scene, camera);
+			cpu.push(performance.now() - c0);
 			gl.endQuery(timerExt.TIME_ELAPSED_EXT);
 			qs.push(q);
 		}
@@ -118,35 +132,44 @@ async function frameMs(renderer, scene, camera, frames) {
 		t.push(performance.now() - t0);
 	}
 	t.sort((a, b) => a - b);
+	cpu.sort((a, b) => a - b);
+	lastCpu = cpu.length ? cpu[cpu.length >> 1] : 0;
 	return t[t.length >> 1];
 }
 
 // Разница «со слоем / без»: попеременно rounds раз (частоты GPU и фон плавают —
 // два замера подряд в разное время дают разброс больше самого эффекта), медианы.
 async function abMs(renderer, scene, camera, frames, off, on, rounds = 5) {
-	const a = [], b = [];
+	const a = [], b = [], ca = [], cb = [];
 	for (let i = 0; i < rounds; i++) {
-		a.push(await frameMs(renderer, scene, camera, frames));
-		off(); b.push(await frameMs(renderer, scene, camera, frames)); on();
+		a.push(await frameMs(renderer, scene, camera, frames)); ca.push(lastCpu);
+		off(); b.push(await frameMs(renderer, scene, camera, frames)); cb.push(lastCpu); on();
 	}
 	const med = v => v.sort((x, y) => x - y)[v.length >> 1];
-	return [med(a), med(b)];
+	return [med(a), med(b), med(ca), med(cb)];
 }
 
 /**
  * Замер: весь кадр, затем без каждого слоя по очереди. Возвращает строки
  * { слой, мс_без, экономия_мс }. Видимость и тени возвращаются как были.
  */
-export async function runBench(scene, renderer, camera, { frames = 30, onStep } = {}) {
-	const groups = name => { const out = []; scene.traverse(o => { if (BENCH[name] && BENCH[name].includes(o.name)) out.push(o); }); return out; };
+// only — имена строк через запятую (#benchonly=…): замер только их
+export async function runBench(scene, renderer, camera, { frames = 30, onStep, only = null } = {}) {
+	const groups = name => { const L = BENCH[name] || SHADOW_ONLY[name], out = []; scene.traverse(o => { if (L && L.includes(o.name)) out.push(o); }); return out; };
 	const pause = () => new Promise(r => setTimeout(r, 30));
 	// Прогрев: видеокарта в простое сбрасывает частоту (у RTX — до 210 МГц) и
 	// разгоняется секунды; без прогрева первые замеры втрое дольше последних.
 	const gl = renderer.getContext();
 	for (const t0 = performance.now(); performance.now() - t0 < 3000;) { renderer.render(scene, camera); gl.finish(); }
 	const all = await frameMs(renderer, scene, camera, frames);
-	const rows = [{ слой: "всё", мс: all.toFixed(2), экономия: "", таймер: timerExt ? "GPU" : "CPU+finish" }];
-	for (const name of Object.keys(BENCH)) {
+	const rows = [{ слой: "всё", мс: all.toFixed(2), экономия: "", "cpu мс": lastCpu.toFixed(2), таймер: timerExt ? "GPU" : "CPU+finish",
+		вызовов: renderer.info.render.calls, программ: renderer.info.programs.length, текстур: renderer.info.memory.textures, геометрий: renderer.info.memory.geometries,
+		// видимых мешей — столько объектов three.js обходит и готовит (программа, униформы)
+		// в каждом проходе, даже если рисовать им нечего (count = 0)
+		мешей: (() => { let n = 0; scene.traverseVisible(o => { if (o.isMesh) n++; }); return n; })() }];
+	const shadowOf = n => /^тень /.test(n) && (BENCH[n.slice(5)] || SHADOW_ONLY[n.slice(5)]) ? n.slice(5) : null;
+	const names = only ? only.split(",").map(s => s.trim()).filter(n => n in BENCH || shadowOf(n)) : Object.keys(BENCH);
+	for (const name of names) {
 		if (onStep) onStep(name);
 		await pause();
 		let off, on;
@@ -155,6 +178,17 @@ export async function runBench(scene, renderer, camera, { frames = 30, onStep } 
 			const touch = () => scene.traverse(o => { if (o.material) [].concat(o.material).forEach(m => m.needsUpdate = true); });
 			off = () => { renderer.shadowMap.enabled = false; touch(); };
 			on = () => { renderer.shadowMap.enabled = was; touch(); };
+		} else if (name === "ветер") {
+			off = () => setWindEnabled(false);
+			on = () => setWindEnabled(true);
+		} else if (name === "перерисовка теней") {
+			off = () => { renderer.shadowMap.autoUpdate = false; };
+			on = () => { renderer.shadowMap.autoUpdate = true; };
+		} else if (shadowOf(name)) {
+			const ms = []; for (const g of groups(shadowOf(name))) g.traverse(o => { if (o.isMesh && o.castShadow) ms.push(o); });
+			if (!ms.length) continue;
+			off = () => ms.forEach(o => { o.castShadow = false; });
+			on = () => ms.forEach(o => { o.castShadow = true; });
 		} else if (name === "пол") {
 			// материалы пола опознаются по ключу программы (groundify / hardify)
 			const swap = [];
@@ -172,8 +206,8 @@ export async function runBench(scene, renderer, camera, { frames = 30, onStep } 
 			off = () => gs.forEach(o => { o.visible = false; });
 			on = () => gs.forEach(o => { o.visible = true; });
 		}
-		const [a, b] = await abMs(renderer, scene, camera, frames, off, on);
-		rows.push({ слой: "без: " + name, мс: b.toFixed(2), экономия: (a - b).toFixed(2) });
+		const [a, b, ca, cb] = await abMs(renderer, scene, camera, frames, off, on);
+		rows.push({ слой: "без: " + name, мс: b.toFixed(2), экономия: (a - b).toFixed(2), "cpu экономия": (ca - cb).toFixed(2) });
 	}
 	return rows;
 }
