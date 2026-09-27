@@ -1,8 +1,8 @@
 tile_m=2.00
-height_cm=2.39
-albedo_mean=#89857d
+height_cm=2.88
+albedo_mean=#88847c
 nscale=1.000
-normal_blue_mean=0.975
+normal_blue_mean=0.977
 px=2048
 plitka_m=0.50
 setka=4x4

@@ -1,10 +1,10 @@
 tile_m=2.00
-height_cm=2.83
-albedo_mean=#8b867e
+height_cm=3.22
+albedo_mean=#88847c
 nscale=1.000
 normal_blue_mean=0.976
 px=2048
 plitka_m=0.50
 setka=4x4
 mask=R shov, G trava v shvah, B nomer plitki 0..1, A treshchina/skol
-opis=trotuarnaya plitka 0.5x0.5, 4x4 na tayl 2 m, prosadki, skoly, shvy s peskom
+opis=trotuarnaya plitka 0.5x0.5, 4x4 na tayl 2 m, kazhdaya plitka unikalna
