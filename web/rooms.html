@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Квартира — стенд мебели</title>
+<style>
+:root {
+	--ground: #15171a;
+	--ink: #e8e5df;
+	--dim: #8d9297;
+	--accent: #d8903c;
+	--mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+	color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; background: var(--ground); }
+#view { display: block; width: 100vw; height: 100vh; cursor: grab; touch-action: none; }
+#view:active { cursor: grabbing; }
+#hud {
+	position: fixed; left: 12px; top: 12px;
+	font: 11.5px/1.75 var(--mono); color: var(--dim);
+	background: rgba(12, 14, 16, 0.74); border: 1px solid #2e3338; border-radius: 3px;
+	padding: 9px 12px; pointer-events: none; max-width: calc(100vw - 24px);
+}
+#hud b { color: var(--ink); font-weight: 500; }
+#status { color: var(--accent); }
+#rooms {
+	position: fixed; left: 50%; transform: translateX(-50%);
+	bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+	display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 24px);
+}
+#rooms button {
+	font: 500 13px/1 var(--mono); color: var(--ink);
+	background: rgba(12, 14, 16, 0.78); border: 1px solid #2e3338; border-radius: 10px;
+	height: 42px; padding: 0 14px; -webkit-tap-highlight-color: transparent;
+}
+#rooms button[aria-pressed="true"] { border-color: var(--accent); }
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="hud">
+	<b>Квартира</b> — стенд мебели · <span id="status">загрузка…</span><br>
+	тащить — вращать · колесо / щипок — ближе · правая кнопка / два пальца — сдвиг
+</div>
+<div id="rooms"></div>
+<script type="importmap">
+{
+	"imports": {
+		"three": "./vendor/three/three.module.js",
+		"three/addons/": "./vendor/three/"
+	}
+}
+</script>
+<script type="module" src="./src/rooms.js"></script>
+</body>
+</html>
