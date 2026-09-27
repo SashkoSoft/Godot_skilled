@@ -179,8 +179,13 @@ for (const W of WALLS) {
 	const ux = (bx - ax) / len, uz = (bz - az) / len, h = H, t = W.t || T;
 	// толстая стена растёт наружу: внутренняя грань остаётся на T/2 от оси
 	const nIn = inward((ax + bx) / 2, (az + bz) / 2, ux, uz), sh = -(t - T) / 2;
+	// границы комнат вдоль стены: кусок стены не тянется через две комнаты (иначе у него обои одной)
+	const cuts = [...new Set(Object.values(ROOMS).flatMap(R => ux ? [R.rect[0], R.rect[2]] : [R.rect[1], R.rect[3]]))]
+		.map(v => ux ? (v - ax) / ux : (v - az) / uz).filter(s => s > 1e-3 && s < len - 1e-3);
 	const along = (s0, s1, y0, y1) => {
 		if (s1 - s0 < 1e-3 || y1 - y0 < 1e-3) return;
+		const c = cuts.find(s => s > s0 + 1e-3 && s < s1 - 1e-3);
+		if (c !== undefined) { along(s0, c, y0, y1); along(c, s1, y0, y1); return; }
 		// у концов стены — продлить до наружной грани соседней: углы сходятся без щели
 		const ext = t / 2 + (t - T) / 2, e0 = s0 === 0 ? ext : 0, e1 = s1 === len ? ext : 0, l = s1 - s0 + e0 + e1, m = (s0 + s1) / 2 + (e1 - e0) / 2;
 		// полный кусок и готовый срезанный (до CUT): при срезе включается второй — рисунок обоев не сжимается
