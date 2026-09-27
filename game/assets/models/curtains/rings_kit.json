@@ -34,18 +34,18 @@
    "levels": [
     {
      "lod": 0,
-     "tris": 11122,
-     "kb": 864,
+     "tris": 2340,
+     "kb": 137,
      "glb": "curtain_rings_w100_g100_110_lod0.glb"
     },
     {
      "lod": 1,
-     "tris": 1333,
-     "kb": 112,
+     "tris": 499,
+     "kb": 37,
      "glb": "curtain_rings_w100_g100_110_lod1.glb"
     }
    ],
-   "seconds": 102.2
+   "seconds": 89.8
   },
   {
    "tag": "curtain_rings_w100_g20_30",
@@ -76,18 +76,18 @@
    "levels": [
     {
      "lod": 0,
-     "tris": 11122,
-     "kb": 864,
+     "tris": 2339,
+     "kb": 137,
      "glb": "curtain_rings_w100_g20_30_lod0.glb"
     },
     {
      "lod": 1,
-     "tris": 1334,
-     "kb": 112,
+     "tris": 500,
+     "kb": 37,
      "glb": "curtain_rings_w100_g20_30_lod1.glb"
     }
    ],
-   "seconds": 133.1
+   "seconds": 91.9
   },
   {
    "tag": "curtain_rings_w100_g30_40",
@@ -118,18 +118,18 @@
    "levels": [
     {
      "lod": 0,
-     "tris": 11122,
-     "kb": 864,
+     "tris": 2340,
+     "kb": 137,
      "glb": "curtain_rings_w100_g30_40_lod0.glb"
     },
     {
      "lod": 1,
-     "tris": 1334,
-     "kb": 112,
+     "tris": 500,
+     "kb": 37,
      "glb": "curtain_rings_w100_g30_40_lod1.glb"
     }
    ],
-   "seconds": 134.5
+   "seconds": 91.3
   },
   {
    "tag": "curtain_rings_w100_g45_55",
@@ -160,18 +160,18 @@
    "levels": [
     {
      "lod": 0,
-     "tris": 11122,
-     "kb": 864,
+     "tris": 2340,
+     "kb": 137,
      "glb": "curtain_rings_w100_g45_55_lod0.glb"
     },
     {
      "lod": 1,
-     "tris": 1334,
-     "kb": 112,
+     "tris": 499,
+     "kb": 37,
      "glb": "curtain_rings_w100_g45_55_lod1.glb"
     }
    ],
-   "seconds": 130.8
+   "seconds": 89.5
   },
   {
    "tag": "curtain_rings_w100_g60_70",
@@ -202,18 +202,18 @@
    "levels": [
     {
      "lod": 0,
-     "tris": 11122,
-     "kb": 864,
+     "tris": 2340,
+     "kb": 137,
      "glb": "curtain_rings_w100_g60_70_lod0.glb"
     },
     {
      "lod": 1,
-     "tris": 1333,
-     "kb": 112,
+     "tris": 500,
+     "kb": 37,
      "glb": "curtain_rings_w100_g60_70_lod1.glb"
     }
    ],
-   "seconds": 103.8
+   "seconds": 90.1
   },
   {
    "tag": "curtain_rings_w100_g80_90",
@@ -244,18 +244,18 @@
    "levels": [
     {
      "lod": 0,
-     "tris": 11122,
-     "kb": 864,
+     "tris": 2339,
+     "kb": 136,
      "glb": "curtain_rings_w100_g80_90_lod0.glb"
     },
     {
      "lod": 1,
-     "tris": 1334,
-     "kb": 112,
+     "tris": 500,
+     "kb": 37,
      "glb": "curtain_rings_w100_g80_90_lod1.glb"
     }
    ],
-   "seconds": 105.6
+   "seconds": 90.0
   },
   {
    "tag": "curtain_rings_w140_g100_114",
@@ -291,18 +291,18 @@
    "levels": [
     {
      "lod": 0,
-     "tris": 15438,
-     "kb": 1195,
+     "tris": 2519,
+     "kb": 140,
      "glb": "curtain_rings_w140_g100_114_lod0.glb"
     },
     {
      "lod": 1,
-     "tris": 1852,
-     "kb": 154,
+     "tris": 499,
+     "kb": 37,
      "glb": "curtain_rings_w140_g100_114_lod1.glb"
     }
    ],
-   "seconds": 147.7
+   "seconds": 102.3
   },
   {
    "tag": "curtain_rings_w140_g20_34",
@@ -338,18 +338,18 @@
    "levels": [
     {
      "lod": 0,
-     "tris": 15438,
-     "kb": 1195,
+     "tris": 2520,
+     "kb": 140,
      "glb": "curtain_rings_w140_g20_34_lod0.glb"
     },
     {
      "lod": 1,
-     "tris": 1852,
-     "kb": 154,
+     "tris": 500,
+     "kb": 37,
      "glb": "curtain_rings_w140_g20_34_lod1.glb"
     }
    ],
-   "seconds": 155.7
+   "seconds": 113.9
   },
   {
    "tag": "curtain_rings_w140_g30_44",
@@ -385,18 +385,18 @@
    "levels": [
     {
      "lod": 0,
-     "tris": 15438,
-     "kb": 1195,
+     "tris": 2520,
+     "kb": 140,
      "glb": "curtain_rings_w140_g30_44_lod0.glb"
     },
     {
      "lod": 1,
-     "tris": 1851,
-     "kb": 154,
+     "tris": 500,
+     "kb": 37,
      "glb": "curtain_rings_w140_g30_44_lod1.glb"
     }
    ],
-   "seconds": 155.1
+   "seconds": 112.1
   },
   {
    "tag": "curtain_rings_w140_g45_59",
@@ -432,18 +432,18 @@
    "levels": [
     {
      "lod": 0,
-     "tris": 15438,
-     "kb": 1195,
+     "tris": 2520,
+     "kb": 140,
      "glb": "curtain_rings_w140_g45_59_lod0.glb"
     },
     {
      "lod": 1,
-     "tris": 1851,
-     "kb": 154,
+     "tris": 500,
+     "kb": 37,
      "glb": "curtain_rings_w140_g45_59_lod1.glb"
     }
    ],
-   "seconds": 154.9
+   "seconds": 106.8
   },
   {
    "tag": "curtain_rings_w140_g60_74",
@@ -479,18 +479,18 @@
    "levels": [
     {
      "lod": 0,
-     "tris": 15438,
-     "kb": 1195,
+     "tris": 2519,
+     "kb": 140,
      "glb": "curtain_rings_w140_g60_74_lod0.glb"
     },
     {
      "lod": 1,
-     "tris": 1851,
-     "kb": 153,
+     "tris": 499,
+     "kb": 37,
      "glb": "curtain_rings_w140_g60_74_lod1.glb"
     }
    ],
-   "seconds": 155.8
+   "seconds": 105.5
   },
   {
    "tag": "curtain_rings_w140_g80_94",
@@ -526,18 +526,18 @@
    "levels": [
     {
      "lod": 0,
-     "tris": 15438,
-     "kb": 1195,
+     "tris": 2519,
+     "kb": 140,
      "glb": "curtain_rings_w140_g80_94_lod0.glb"
     },
     {
      "lod": 1,
-     "tris": 1852,
-     "kb": 154,
+     "tris": 500,
+     "kb": 37,
      "glb": "curtain_rings_w140_g80_94_lod1.glb"
     }
    ],
-   "seconds": 152.6
+   "seconds": 105.9
   }
  ]
 }
