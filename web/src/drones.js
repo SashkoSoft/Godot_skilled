@@ -59,7 +59,7 @@ export async function spawnDrones(d, { count = 3, robots = () => [] } = {}) {
 		group.add(lod);
 		drones.push({
 			lod, props, turrets, strobeMat, route, wp: 1,
-			vel: new THREE.Vector3(), heading: 0, state: "patrol", timer: 8 + R() * 12, target: null,
+			vel: new THREE.Vector3(), vdes: new THREE.Vector3(), tilt: new THREE.Vector2(), yawRate: 0, heading: 0, state: "patrol", timer: 8 + R() * 12, target: null,
 			phase: R() * 10, R,
 		});
 	}
@@ -100,26 +100,39 @@ export async function spawnDrones(d, { count = 3, robots = () => [] } = {}) {
 			// впереди крыша выше нас — зависнуть и сначала подняться (вперёд лететь, набирая
 			// высоту, не успевает: упирается в стену)
 			if (p.y < need - 1) { want.x = p.x; want.z = p.z; }
-			// скорость — к желаемой, с плавным разгоном; у цели — торможение
+			// Инерция. Желаемая скорость — к цели, у цели торможение; само «желание»
+			// сглажено (смена цели не дёргает). Разгон — пружиной к желаемой скорости с
+			// пределом тяги: вбок 2.5 м/с², по вертикали 1.8. Наклон — как у квадрокоптера:
+			// тяга наклонена на atan(a / g), и корпус догоняет его с запаздыванием.
 			tmp.subVectors(want, p);
 			const dist = tmp.length();
-			const sp = Math.min(SPEED, dist * 0.6);
-			tmp.setLength(sp).sub(D.vel);
-			const acc = tmp.clampLength(0, 4);
+			tmp.setLength(Math.min(SPEED, dist * 0.45));
+			D.vdes.lerp(tmp, Math.min(1, dt * 0.9));
+			const acc = tmp.subVectors(D.vdes, D.vel).multiplyScalar(1.1);
+			const ah = Math.hypot(acc.x, acc.z);
+			if (ah > 2.5) { acc.x *= 2.5 / ah; acc.z *= 2.5 / ah; }
+			acc.y = Math.max(-1.8, Math.min(1.8, acc.y));
 			D.vel.addScaledVector(acc, dt);
 			p.addScaledVector(D.vel, dt);
 			p.y += Math.sin(t * 1.7 + D.phase) * 0.05 * dt;   // лёгкое покачивание
-			// курс: по скорости; зависая — носом к цели
+			// курс: по скорости; зависая — носом к цели. Поворот — с разгоном и
+			// торможением угловой скорости (до 0.7 рад/с), не доворотом за кадр.
 			const hv = Math.hypot(D.vel.x, D.vel.z);
 			let aim = D.heading;
 			if (D.state === "watch") { const tp = D.target.object.position; aim = Math.atan2(-(tp.x - p.x), -(tp.z - p.z)); }
 			else if (hv > 0.5) aim = Math.atan2(-D.vel.x, -D.vel.z);
 			let da = aim - D.heading; da = Math.atan2(Math.sin(da), Math.cos(da));
-			D.heading += da * Math.min(1, dt * 1.5);
-			// крен и тангаж по ускорению (в собственных осях)
+			D.yawRate += (Math.max(-0.7, Math.min(0.7, da * 0.9)) - D.yawRate) * Math.min(1, dt * 1.4);
+			D.heading += D.yawRate * dt;
+			// крен и тангаж по ускорению (в собственных осях) + крен в вираж
 			const ch = Math.cos(D.heading), sh = Math.sin(D.heading);
 			const fwdA = -(acc.x * sh + acc.z * ch), sideA = acc.x * ch - acc.z * sh;
-			euler.set(-fwdA * 0.06 - Math.min(hv, SPEED) * 0.02, D.heading, -sideA * 0.06);
+			const G = 9.8;
+			const tp0 = -Math.atan(fwdA / G) - Math.min(hv, SPEED) * 0.015;               // нос вниз при разгоне и на ходу
+			const tr0 = -Math.atan((sideA + D.yawRate * hv) / G);                           // вбок и центростремительное
+			D.tilt.x += (tp0 - D.tilt.x) * Math.min(1, dt * 2.5);
+			D.tilt.y += (tr0 - D.tilt.y) * Math.min(1, dt * 2.5);
+			euler.set(D.tilt.x, D.heading, D.tilt.y);
 			D.lod.quaternion.setFromEuler(euler);
 			// винты, строб
 			for (const P of D.props) P.o.rotation.y += P.dir * PROP_RPS * Math.PI * 2 * dt;
@@ -133,7 +146,7 @@ export async function spawnDrones(d, { count = 3, robots = () => [] } = {}) {
 					euler.set(Math.atan2(tmp.y, Math.hypot(tmp.x, tmp.z)), Math.atan2(-tmp.x, -tmp.z), 0);
 				} else euler.set(-0.5 + Math.sin(t * 0.4 + D.phase) * 0.2, Math.sin(t * 0.25 + D.phase) * 0.8, 0);
 				q.setFromEuler(euler).premultiply(T.base);
-				T.o.quaternion.slerp(q, Math.min(1, dt * 3));
+				T.o.quaternion.slerp(q, Math.min(1, dt * 2));   // подвес плавный — из него смотрят
 			}
 		}
 	}
