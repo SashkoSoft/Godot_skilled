@@ -146,7 +146,8 @@ scene.background = new THREE.Color(0xa9b6c2);   // небо в окнах
 	const g = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ color: 0x5d6150, roughness: 1 }));
 	g.rotation.x = -Math.PI / 2; g.position.set(9, -0.02, 4.4); g.receiveShadow = true; scene.add(g);   // земля за окнами
 }
-scene.add(new THREE.HemisphereLight(0xe4ecf5, 0x6b5a48, 1.25));
+const hemi = new THREE.HemisphereLight(0xe4ecf5, 0x6b5a48, 1.25);
+scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff1dc, 2.4);
 sun.position.set(-3, 10, -6); sun.target.position.set(9, 0, 4.4);
 sun.castShadow = true;
@@ -288,7 +289,9 @@ const names = [...new Set(PLAN.flatMap(p => p[0] === "wall" ? p[3].map(e => e.m 
 	p[0] === "sill" ? p[2] : p[0] === "top" ? [p[2]] : p[0] === "front" ? [p[2]] : p[0] === "rad" ? [p[2], ...p[3]] :
 	p[0] === "radwall" ? [p[4]] : []))];
 // люстры blend: одна на комнату, начало — точка крепления к потолку
-const LAMPS = [["living", "lamp_brass_5"], ["bedroom", "lamp_bronze_3"], ["kitchen", "lamp_nickel_3"], ["kids", "lamp_bronze_3"]];
+const LAMPS = [["living", "lamp_brass_5"], ["bedroom", "lamp_bronze_3"], ["kitchen", "lamp_nickel_3"], ["kids", "lamp_bronze_3"],
+	["study", "lamp_brass_5"], ["hall", "lamp_nickel_3"], ["bath", "lamp_nickel_3"], ["wc", "lamp_nickel_3"]];
+const SHADOW_ROOMS = ["living", "bedroom", "kids", "study"];   // люстры с тенью (лимит сэмплеров D3D)
 names.push(...[...new Set([...windows.map(w => w.model), ...doorways.map(d => d.model), ...LAMPS.map(l => l[1])])].filter(n => !names.includes(n)));
 const curtainNames = [...new Set(PLAN.filter(p => p[0] === "drape").flatMap(p => [p[2].tulle, ...p[2].heavy]).concat("curtain_rail_bare"))];
 const TULLE_Z = 0.36, HEAVY_Z = 0.48, ROD = 1.0;   // от внутренней грани стены, м; полкарниза
@@ -573,8 +576,59 @@ for (const d of doorways) {
 for (const [room, m] of LAMPS) {
 	const R = ROOMS[room].rect, it = make(m, [0, -1]);
 	it.o.position.set((R[0] + R[2]) / 2, H, (R[1] + R[3]) / 2);
+	it.o.userData.shadowRoom = SHADOW_ROOMS.includes(room);
 	scene.add(it.o); count++;
 }
+/* ── вечер: тёплые лампы внутри, холодный свет из окон ──────────────────
+   Лампы — узлы Light_N у люстр и торшеров blend (центры ламп). На каждый светильник —
+   один точечный свет в среднем по его лампам (сила — по числу ламп), тёплый ~2700 K,
+   затухание по квадрату расстояния (decay 2) до distance. Тени — у люстр (кубическая
+   карта 512), у торшеров без теней (на телефоне теней от ламп нет совсем: 6 проходов
+   на лампу). Плафоны Glass_Shade* светятся своим цветом. Из окон — синие сумерки:
+   прожектор снаружи в каждое окно, с тенями (рамы и шторы кладут тень на пол).
+   Солнце гаснет, рассеянный — тусклый синий. #mood=evening, кнопка «вечер». */
+const lamps = [];
+scene.traverse(o => {
+	if (!/^Light_\d+/.test(o.name)) return;
+	let root = o; while (root.parent && root.parent !== scene) root = root.parent;
+	let L = lamps.find(l => l.root === root);
+	if (!L) lamps.push(L = { root, pts: [], shadow: !!root.userData.shadowRoom });
+	L.pts.push(o.getWorldPosition(new THREE.Vector3()));
+});
+const lampLights = [], shades = [];
+for (const L of lamps) {
+	const c = L.pts.reduce((a, p) => a.add(p), new THREE.Vector3()).multiplyScalar(1 / L.pts.length);
+	const pl = new THREE.PointLight(0xffb46b, 0, 7.5, 2);   // ~2700 K, сила выставится в setMood
+	pl.position.copy(c); pl.userData.n = L.pts.length;
+	pl.castShadow = !PHONE && L.shadow;   // люстры больших комнат — с тенью, торшеры и малые — без
+	// сам светильник тень не бросает: свет внутри него, иначе под люстрой — тёмный круг
+	L.root.traverse(m => { if (m.isMesh) m.castShadow = false; });
+	pl.shadow.mapSize.set(512, 512); pl.shadow.bias = -0.002; pl.shadow.radius = 3; pl.shadow.camera.near = 0.1;
+	scene.add(pl); lampLights.push(pl);
+	L.root.traverse(m => { if (m.isMesh && /Glass_Shade|Glass_Fringe/.test(m.name) && m.material.emissive) { m.material = m.material.clone(); shades.push(m.material); } });
+}
+const winLights = windows.map(w => {
+	const sl = new THREE.SpotLight(0x8fb0e8, 0, 14, Math.PI / 4.2, 0.6, 1.2);
+	sl.position.set(w.x - w.n[0] * 3.5, SILL + 2.6, w.z - w.n[1] * 3.5);   // снаружи, выше окна
+	sl.target.position.set(w.x + w.n[0] * 2.5, 0, w.z + w.n[1] * 2.5);
+	// тени — только у больших окон: каждая карта теней — сэмплер, под D3D на шейдер их не больше 16
+	sl.castShadow = !PHONE && /^win_3/.test(w.model); sl.shadow.mapSize.set(1024, 1024); sl.shadow.bias = -0.0008; sl.shadow.radius = 4;
+	scene.add(sl, sl.target); return sl;
+});
+const DAY = { bg: scene.background.clone(), hemi: hemi.intensity, sun: sun.intensity, exp: renderer.toneMappingExposure };
+let mood = q.get("mood") === "evening" ? "evening" : "day";
+function setMood(m) {
+	mood = m; const ev = m === "evening";
+	scene.background.set(ev ? 0x1b2436 : DAY.bg);
+	hemi.intensity = ev ? 0.12 : DAY.hemi; hemi.color.set(ev ? 0x6a80b0 : 0xe4ecf5);
+	sun.intensity = ev ? 0 : DAY.sun; sun.castShadow = !ev;
+	renderer.toneMappingExposure = ev ? 1.25 : DAY.exp;
+	for (const pl of lampLights) pl.intensity = ev ? 9 * Math.sqrt(pl.userData.n) : 0;
+	for (const sl of winLights) sl.intensity = ev ? 55 : 0;
+	for (const s of shades) { s.emissive.copy(s.color); s.emissiveIntensity = ev ? 2.2 : 0; }
+	for (const b of document.querySelectorAll("#rooms button[data-mood]")) b.setAttribute("aria-pressed", String(ev));
+}
+console.log(`[квартира] вечер: светильников ${lamps.length}, окон ${windows.length}`);
 applyWear();
 status.textContent = `${count} предметов, ${names.length} моделей` + (failed.length ? ` · не загрузились: ${failed.join(", ")}` : "");
 // ползунок износа (общий уровень; у каждого предмета — свой небольшой сдвиг)
@@ -611,6 +665,13 @@ for (const [id, v] of Object.entries(VIEWS)) {
 	b.addEventListener("click", () => setView(id));
 	bar.appendChild(b);
 }
+{
+	const b = document.createElement("button");
+	b.type = "button"; b.textContent = "вечер"; b.dataset.mood = "1";
+	b.addEventListener("click", () => setMood(mood === "evening" ? "day" : "evening"));
+	bar.appendChild(b);
+}
+setMood(mood);
 setView(q.get("view") || "all");
 if (q.get("yaw")) cam.yaw = +q.get("yaw");   // #yaw= — повернуть ракурс (снимки)
 
