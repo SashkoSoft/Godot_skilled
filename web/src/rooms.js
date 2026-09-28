@@ -85,6 +85,11 @@ const PLAN = [
 	["wall", "kids", "W", ["bed_pine_metal"], 0.15],
 	["wall", "kids", "S", [{ m: "folding_cot", side: true }], 0.1],
 	["auto", ["kids", "bedroom", "living", "kitchen"], ["sofa_book_check", "sofa_book_red"]],
+	// ковры blend: на полу — под столом / у кровати (плоские, место не занимают);
+	// настенный — над кроватью, верхний край на 2.3 м
+	["rug", "table_extending", "carpet_floor_red"], ["rug", "bed_double", "carpet_floor_beige"],
+	["rug", "kids", "carpet_rug"], ["rug", "hall", "carpet_runner"],
+	["wallhang", "bed_double", "carpet_wall", 2.3],
 	// кабинет: стенка, книжные шкафы, три стола, полки на стене над столами
 	["wall", "study", "E", ["stenka_long"], 0.2],
 	["wall", "study", "S", ["bookcase_60s", "bookcase_glass_doors"], 0.1],
@@ -285,7 +290,7 @@ for (const R of Object.values(ROOMS)) {
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 // маска: без премультипликации и без переворота (A — класс материала; UV как у атласа glb)
 const bmp = new THREE.ImageBitmapLoader().setOptions({ premultiplyAlpha: "none", colorSpaceConversion: "none" });
-const names = [...new Set(PLAN.flatMap(p => p[0] === "wall" ? p[3].map(e => e.m || e) : p[0] === "auto" ? p[2].map(e => e.m || e) : p[0] === "shelf" ? [p[2]] : p[0] === "table" ? [p[1], ...p[5].map(c => c[0])] :
+const names = [...new Set(PLAN.flatMap(p => p[0] === "wall" ? p[3].map(e => e.m || e) : p[0] === "auto" ? p[2].map(e => e.m || e) : p[0] === "shelf" ? [p[2]] : p[0] === "rug" ? [p[2]] : p[0] === "wallhang" ? [p[2]] : p[0] === "table" ? [p[1], ...p[5].map(c => c[0])] :
 	p[0] === "sill" ? p[2] : p[0] === "top" ? [p[2]] : p[0] === "front" ? [p[2]] : p[0] === "rad" ? [p[2], ...p[3]] :
 	p[0] === "radwall" ? [p[4]] : []))];
 // люстры blend: одна на комнату, начало — точка крепления к потолку
@@ -382,7 +387,7 @@ let count = 0;
 const FIRST = new Set(["rad", "radwall", "drape"]);
 // «auto» — последними: заполняют то, что осталось после явной раскладки
 // зависимые (сверху, перед, полка) — самыми последними: их основа может быть из «auto»
-const DEP = new Set(["top", "front", "shelf"]);
+const DEP = new Set(["top", "front", "shelf", "rug", "wallhang"]);
 for (const p of [...PLAN.filter(p => FIRST.has(p[0])), ...PLAN.filter(p => !FIRST.has(p[0]) && p[0] !== "auto" && !DEP.has(p[0])),
 	...PLAN.filter(p => p[0] === "auto"), ...PLAN.filter(p => DEP.has(p[0]))]) {
 	if (p[0] === "wall") {
@@ -451,6 +456,20 @@ for (const p of [...PLAN.filter(p => FIRST.has(p[0])), ...PLAN.filter(p => !FIRS
 			const ez = side === "N" ? tb.min.z : side === "S" ? tb.max.z : tb.min.z + (tb.max.z - tb.min.z) * f;
 			put(c, it, ex - S[0] * d * 0.55, ez - S[1] * d * 0.55); count++;
 		}
+	} else if (p[0] === "rug") {
+		// ковёр: по центру предмета (или комнаты), длинной стороной вдоль длинной стороны
+		const [, base, n] = p, b = placed[base] || (ROOMS[base] && new THREE.Box3(new THREE.Vector3(ROOMS[base].rect[0], 0, ROOMS[base].rect[1]), new THREE.Vector3(ROOMS[base].rect[2], 0, ROOMS[base].rect[3])));
+		if (!b) { clashes.push(`${n}: нет ${base}`); continue; }
+		const longX = b.max.x - b.min.x > b.max.z - b.min.z, it = make(n, longX ? [1, 0] : [0, 1]);
+		put(n, it, (b.min.x + b.max.x) / 2, (b.min.z + b.max.z) / 2, 0.005, false); count++;
+	} else if (p[0] === "wallhang") {
+		// на стену за предметом (ковёр над кроватью): лицом туда же, верх — на top
+		const [, base, n, top] = p, b = placed[base], f = faceOf[base];
+		if (!b || !f) { clashes.push(`${n}: нет ${base}`); continue; }
+		const it = make(n, f), D = Math.abs(f[0]) * (it.bb.max.x - it.bb.min.x) + Math.abs(f[1]) * (it.bb.max.z - it.bb.min.z);
+		const wx = f[0] > 0 ? b.min.x : f[0] < 0 ? b.max.x : (b.min.x + b.max.x) / 2;
+		const wz = f[1] > 0 ? b.min.z : f[1] < 0 ? b.max.z : (b.min.z + b.max.z) / 2;
+		put(n, it, wx + f[0] * D / 2, wz + f[1] * D / 2, top - (it.bb.max.y - it.bb.min.y), false); count++;
 	} else if (p[0] === "shelf") {
 		// Полка над предметом у стены: лицом туда же, вплотную к стене, на высоте y
 		const [, base, n, y] = p, b = placed[base], f = faceOf[base];
