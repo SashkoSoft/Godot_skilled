@@ -291,7 +291,7 @@ const names = [...new Set(PLAN.flatMap(p => p[0] === "wall" ? p[3].map(e => e.m 
 // люстры blend: одна на комнату, начало — точка крепления к потолку
 const LAMPS = [["living", "lamp_brass_5"], ["bedroom", "lamp_bronze_3"], ["kitchen", "lamp_nickel_3"], ["kids", "lamp_bronze_3"],
 	["study", "lamp_brass_5"], ["hall", "lamp_nickel_3"], ["bath", "lamp_nickel_3"], ["wc", "lamp_nickel_3"]];
-const SHADOW_ROOMS = ["living", "bedroom", "kids", "study"];   // люстры с тенью (лимит сэмплеров D3D)
+const SHADOW_ROOMS = ["living", "bedroom", "kids", "study", "kitchen"];   // люстры с тенью (лимит сэмплеров D3D)
 names.push(...[...new Set([...windows.map(w => w.model), ...doorways.map(d => d.model), ...LAMPS.map(l => l[1])])].filter(n => !names.includes(n)));
 const curtainNames = [...new Set(PLAN.filter(p => p[0] === "drape").flatMap(p => [p[2].tulle, ...p[2].heavy]).concat("curtain_rail_bare"))];
 const TULLE_Z = 0.36, HEAVY_Z = 0.48, ROD = 1.0;   // от внутренней грани стены, м; полкарниза
@@ -353,6 +353,7 @@ function make(n, face) {
 		m.material = makeWearMaterial(m.material, M.mask, noise, params);
 		wearMats.push({ u: m.material.userData.wear, off, dustK: 0.45, grimeK: 0.8 });   // как FurnitureRandomizer в Godot
 	});
+	o.userData.model = n;
 	o.rotation.y = Math.atan2(-face[0], -face[1]);
 	o.updateMatrixWorld(true);
 	return { o, bb: new THREE.Box3().setFromObject(o) };
@@ -580,39 +581,51 @@ for (const [room, m] of LAMPS) {
 	scene.add(it.o); count++;
 }
 /* ── вечер: тёплые лампы внутри, холодный свет из окон ──────────────────
-   Лампы — узлы Light_N у люстр и торшеров blend (центры ламп). На каждый светильник —
-   один точечный свет в среднем по его лампам (сила — по числу ламп), тёплый ~2700 K,
-   затухание по квадрату расстояния (decay 2) до distance. Тени — у люстр (кубическая
-   карта 512), у торшеров без теней (на телефоне теней от ламп нет совсем: 6 проходов
-   на лампу). Плафоны Glass_Shade* светятся своим цветом. Из окон — синие сумерки:
-   прожектор снаружи в каждое окно, с тенями (рамы и шторы кладут тень на пол).
+   Плафоны Glass_Shade* светятся своим цветом; на телефоне теней от ламп нет (6 проходов
+   на лампу). Из окон — синие сумерки, прожектор снаружи в каждое окно, без теней.
    Солнце гаснет, рассеянный — тусклый синий. #mood=evening, кнопка «вечер». */
-const lamps = [];
+// Свет светильника — в два слоя:
+//  • лампочки в каждой точке Light_N (внутри плафонов) — без теней, короткие (1.5 м):
+//    свечение плафонов и пятна на потолке и стене рядом;
+//  • основной свет — один на светильник, под плафонами (люстра) или в абажуре (торшер),
+//    с тенью от ВСЕГО в комнате — мебели, ножек стульев, стен; сами светильники тень не
+//    кладут (свет внутри них). Карт теней ≤ 8 (сэмплеры D3D ≤ 16 на шейдер): люстры
+//    больших комнат и кухни, торшеры; в прихожей, ванной, туалете — без тени.
+const bulbs = [], shades = [], shadeMeshes = [];
 scene.traverse(o => {
 	if (!/^Light_\d+/.test(o.name)) return;
 	let root = o; while (root.parent && root.parent !== scene) root = root.parent;
-	let L = lamps.find(l => l.root === root);
-	if (!L) lamps.push(L = { root, pts: [], shadow: !!root.userData.shadowRoom });
-	L.pts.push(o.getWorldPosition(new THREE.Vector3()));
+	bulbs.push({ root, p: o.getWorldPosition(new THREE.Vector3()) });
 });
-const lampLights = [], shades = [];
-for (const L of lamps) {
-	const c = L.pts.reduce((a, p) => a.add(p), new THREE.Vector3()).multiplyScalar(1 / L.pts.length);
-	const pl = new THREE.PointLight(0xffb46b, 0, 7.5, 2);   // ~2700 K, сила выставится в setMood
-	pl.position.copy(c); pl.userData.n = L.pts.length;
-	pl.castShadow = !PHONE && L.shadow;   // люстры больших комнат — с тенью, торшеры и малые — без
-	// сам светильник тень не бросает: свет внутри него, иначе под люстрой — тёмный круг
-	L.root.traverse(m => { if (m.isMesh) m.castShadow = false; });
-	pl.shadow.mapSize.set(512, 512); pl.shadow.bias = -0.002; pl.shadow.radius = 3; pl.shadow.camera.near = 0.1;
+const lamps = [...new Set(bulbs.map(b => b.root))];
+const lampLights = [];
+for (const b of bulbs) {
+	const pl = new THREE.PointLight(0xffb46b, 0, 1.5, 2); pl.position.copy(b.p); pl.userData.k = 0.5;
 	scene.add(pl); lampLights.push(pl);
-	L.root.traverse(m => { if (m.isMesh && /Glass_Shade|Glass_Fringe/.test(m.name) && m.material.emissive) { m.material = m.material.clone(); shades.push(m.material); } });
 }
+let shadowed = 0;
+for (const r of lamps) {
+	const pts = bulbs.filter(b => b.root === r).map(b => b.p), c = pts.reduce((a, p) => a.add(p), new THREE.Vector3()).multiplyScalar(1 / pts.length);
+	const high = c.y > 1.9;
+	if (high) c.y = Math.min(...pts.map(p => p.y)) - 0.12;   // под нижними плафонами
+	const pl = new THREE.PointLight(0xffb46b, 0, high ? 6.5 : 4.0, 2);
+	pl.position.copy(c); pl.userData.k = (high ? 2.4 : 1.6) * Math.sqrt(pts.length);
+	if (!PHONE && (!high || r.userData.shadowRoom) && shadowed < 8) { pl.castShadow = true; shadowed++; }
+	pl.shadow.mapSize.set(1024, 1024); pl.shadow.bias = -0.0015; pl.shadow.normalBias = 0.02; pl.shadow.radius = 2.5; pl.shadow.camera.near = 0.05;
+	scene.add(pl); lampLights.push(pl);
+}
+for (const r of lamps) r.traverse(m => {
+	if (m.isMesh && /Glass_Shade|Glass_Fringe/.test(m.name)) { shadeMeshes.push(m); if (m.material.emissive) { m.material = m.material.clone(); shades.push(m.material); } }
+});
+const lampMeshes = new Set(), openShades = new Set();   // вечером светильники тень не кладут
+for (const r of lamps) r.traverse(m => { if (m.isMesh) lampMeshes.add(m); });const castDay = new Map();
+scene.traverse(o => { if (o.isMesh) castDay.set(o, o.castShadow); });
 const winLights = windows.map(w => {
 	const sl = new THREE.SpotLight(0x8fb0e8, 0, 14, Math.PI / 4.2, 0.6, 1.2);
 	sl.position.set(w.x - w.n[0] * 3.5, SILL + 2.6, w.z - w.n[1] * 3.5);   // снаружи, выше окна
 	sl.target.position.set(w.x + w.n[0] * 2.5, 0, w.z + w.n[1] * 2.5);
 	// тени — только у больших окон: каждая карта теней — сэмплер, под D3D на шейдер их не больше 16
-	sl.castShadow = !PHONE && /^win_3/.test(w.model); sl.shadow.mapSize.set(1024, 1024); sl.shadow.bias = -0.0008; sl.shadow.radius = 4;
+	sl.castShadow = false;   // вечером тень — только от плафонов sl.shadow.mapSize.set(1024, 1024); sl.shadow.bias = -0.0008; sl.shadow.radius = 4;
 	scene.add(sl, sl.target); return sl;
 });
 const DAY = { bg: scene.background.clone(), hemi: hemi.intensity, sun: sun.intensity, exp: renderer.toneMappingExposure };
@@ -623,12 +636,14 @@ function setMood(m) {
 	hemi.intensity = ev ? 0.12 : DAY.hemi; hemi.color.set(ev ? 0x6a80b0 : 0xe4ecf5);
 	sun.intensity = ev ? 0 : DAY.sun; sun.castShadow = !ev;
 	renderer.toneMappingExposure = ev ? 1.25 : DAY.exp;
-	for (const pl of lampLights) pl.intensity = ev ? 9 * Math.sqrt(pl.userData.n) : 0;
-	for (const sl of winLights) sl.intensity = ev ? 55 : 0;
+	for (const pl of lampLights) pl.intensity = ev ? pl.userData.k : 0;
+	for (const sl of winLights) sl.intensity = ev ? 18 : 0;
+	// вечером: мебель и стены — тень как днём; сами светильники — только открытыми плафонами
+	for (const [o, c] of castDay) o.castShadow = ev ? (lampMeshes.has(o) ? openShades.has(o) : c) : c;
 	for (const s of shades) { s.emissive.copy(s.color); s.emissiveIntensity = ev ? 2.2 : 0; }
 	for (const b of document.querySelectorAll("#rooms button[data-mood]")) b.setAttribute("aria-pressed", String(ev));
 }
-console.log(`[квартира] вечер: светильников ${lamps.length}, окон ${windows.length}`);
+console.log(`[квартира] вечер: светильников ${lamps.length} (с тенью ${shadowed}), лампочек ${bulbs.length}, окон ${windows.length}`);
 applyWear();
 status.textContent = `${count} предметов, ${names.length} моделей` + (failed.length ? ` · не загрузились: ${failed.join(", ")}` : "");
 // ползунок износа (общий уровень; у каждого предмета — свой небольшой сдвиг)
