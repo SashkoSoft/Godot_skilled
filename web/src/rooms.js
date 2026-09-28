@@ -113,6 +113,14 @@ const PLAN = [
 	["rad", 2, "rad_4_short", ["pipe_floor_pass", "pipe_tee", "pipe_straight_1m"]],
 	["rad", 3, "rad_6_bypass_right", ["pipe_floor_pass", "pipe_straight_1m", "pipe_straight_1m"]],
 	["radwall", "kitchen", "N", 1.95, "rad_8_bare"],
+	// ванная (blend): начало моделей — в плоскости стены; смесители — точка крепления на высоте
+	// [radwall, комната, сторона, от угла м, модель, высота, центр вдоль стены — вместо «от угла»]
+	["radwall", "bath", "N", 0.05, "bath_cast"],
+	["radwall", "bath", "N", 0, "faucet_bath_shower", 0.85, "bath_cast"],
+	["radwall", "bath", "E", 1.0, "sink_pedestal"],
+	["radwall", "bath", "E", 0, "faucet_wall_knobs", 1.0, "sink_pedestal"],
+	["radwall", "wc", "E", 0.3, "sink_wall_rect"],
+	["radwall", "wc", "E", 0, "faucet_ceramic", 1.0, "sink_wall_rect"],
 	// Шторы: на окне два карниза, оба дальше подоконника (он 0.26 м): тюль у стекла,
 	// плотные шторы перед ним; на каждом — пара, левая и правая (правая — зеркало).
 	// Штора на кольцах: начало — край карниза, полотно — к центру окна.
@@ -289,8 +297,9 @@ const tulleMat = new THREE.MeshStandardMaterial({ color: 0xf1eee6, roughness: 0.
 const noise = await loadWearNoise(`${FURN}textures/wear_noise.png`);
 const models = {};
 await Promise.all(names.map(async n => {
-	const [g, img] = await Promise.all([loader.loadAsync(`${FURN}${n}_web.glb`), bmp.loadAsync(`${FURN}textures/baked/${n}_lod0_mask.png`)]);
-	const mask = new THREE.Texture(img);
+	// маски может не быть (смесители — целиком хром, износа нет)
+	const [g, img] = await Promise.all([loader.loadAsync(`${FURN}${n}_web.glb`), bmp.loadAsync(`${FURN}textures/baked/${n}_lod0_mask.png`).catch(() => null)]);
+	const mask = img ? new THREE.Texture(img) : null;
 	g.scene.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
 	models[n] = { scene: g.scene, mask };
 	status.textContent = `загружено ${Object.keys(models).length} из ${names.length}`;
@@ -442,19 +451,24 @@ for (const p of [...PLAN.filter(p => FIRST.has(p[0])), ...PLAN.filter(p => !FIRS
 			const w = windows[p[1]];
 			face = w.n; wallAt = w.z + w.n[1] * T / 2; alongAt = w.x;   // окна — на стенах вдоль X
 		} else {
-			const [, room, side, from] = p, S = SIDES[side], [cx, cz] = S.c(ROOMS[room].rect);
+			const [, room, side, from, , , over] = p, S = SIDES[side], [cx, cz] = S.c(ROOMS[room].rect);
 			face = S.n;
 			wallAt = Math.abs(S.n[1]) ? cz + S.n[1] * T / 2 : cx + S.n[0] * T / 2;
-			alongAt = (Math.abs(S.t[0]) ? cx : cz) + (S.t[0] + S.t[1]) * (from + inset);   // начало, центр — ниже
-			it0.start = true; it0.sign = S.t[0] + S.t[1];
+			if (over && placed[over]) {   // по центру другого предмета у той же стены (смеситель над ванной)
+				const b = placed[over]; alongAt = Math.abs(S.t[0]) ? (b.min.x + b.max.x) / 2 : (b.min.z + b.max.z) / 2;
+			} else {
+				alongAt = (Math.abs(S.t[0]) ? cx : cz) + (S.t[0] + S.t[1]) * (from + inset);   // начало, центр — ниже
+				it0.start = true; it0.sign = S.t[0] + S.t[1];
+			}
 		}
 		const it = make(name, face), onX = Math.abs(face[1]) > 0;   // стена вдоль X?
 		const lo = onX ? it.bb.min.x : it.bb.min.z, hi = onX ? it.bb.max.x : it.bb.max.z;
 		const center = it0.start ? alongAt + it0.sign * (hi - lo) / 2 : alongAt;
 		const shift = center - (lo + hi) / 2;
-		it.o.position.set(onX ? shift : wallAt, 0, onX ? wallAt : shift);
+		it.o.position.set(onX ? shift : wallAt, p[0] === "radwall" && p[5] ? p[5] : 0, onX ? wallAt : shift);
 		scene.add(it.o); it.o.updateMatrixWorld(true); count++;
-		occ.push({ box: new THREE.Box3().setFromObject(it.o), n: name });
+		placed[name] = new THREE.Box3().setFromObject(it.o);
+		if (!(p[0] === "radwall" && p[6])) occ.push({ box: placed[name], n: name });   // смеситель — над предметом, не место
 		const along = onX ? 0 : 2;		// стояки — по геометрии: вершины выше 0.8 м — трубы (батарея ниже); кучки по оси вдоль стены
 		if (p[0] === "rad") {
 			const xs = [], v = new THREE.Vector3();
