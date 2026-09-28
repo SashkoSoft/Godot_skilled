@@ -533,8 +533,9 @@ for (const w of windows) {
 for (const d of doorways) {
 	const it = make(d.model, d.side);
 	it.o.position.set(d.x + d.side[0] * d.face, 0, d.z + d.side[1] * d.face);   // face — до грани стены, где начало модели
-	// входная (outer) — наружу, на лестницу: по кадру open_sign у неё уводит полотно в комнату — знак обратный
-	it.o.traverse(n => { if (/^Door(\.\d+)?$/.test(n.name)) n.rotation.y += (d.outer ? -1 : 1) * (n.userData.open_sign ?? -1) * Math.PI / 2; });
+	// правило blend: open_sign × 90° вокруг вертикали узла уводит полотно к лицу модели (−Z),
+	// а лицом дверь смотрит в сторону side — туда и открывается (входная — на лестницу)
+	it.o.traverse(n => { if (/^Door(\.\d+)?$/.test(n.name)) n.rotation.y += (n.userData.open_sign ?? -1) * Math.PI / 2; });
 	scene.add(it.o); attached.push({ o: it.o, ...d.line }); count++;
 }
 for (const [room, m] of LAMPS) {
