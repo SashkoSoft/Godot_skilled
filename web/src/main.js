@@ -22,6 +22,7 @@ import { buildGroundMap, setupGround, hardify, loadPitGrass } from "./floor.js";
 import { spawnRobots } from "./robot.js";
 import { spawnDrones } from "./drones.js";
 import { instanceLods } from "./instlod.js";
+import { createInteriors } from "./furnish.js";
 import { buildHoudiniTrees } from "./trees.js";
 import { windUniforms, setWind } from "./wind.js";
 
@@ -207,7 +208,7 @@ function bushBoxes(bushes) {
 let grassBlades = null, grassNearHalf = 20;
 const grassCenter = new THREE.Vector3(), grassRay = new THREE.Vector3(), bottomRay = new THREE.Vector3();
 let robot = null;          // тот, за кем камера
-let drones = null, fenceIvy = null;
+let drones = null, fenceIvy = null, interiors = null;
 const FOV = 55, RIDE_FOV = 100;   // угол камеры: обычный и в дроне (setRide)
 let ride = -1, rideHeading = 0;
 const cpuMs = { anim: 0, plants: 0, render: 0 };
@@ -263,6 +264,14 @@ if (LEVEL === "district") {
 		const rest = buildingBoxes.filter(o => !H.ids.includes(o.userData.building));
 		layerObjs.houses.show = [H.group, ...rest]; layerObjs.houses.load = null;
 		if (H.ids.length) console.log(`[улица] дома-модели: ${H.ids.join(", ")}`);
+		// мебель в квартирах — по описанию дома hou (<id>.json), строится при подходе; #interiors=0 — без неё
+		if (q.get("interiors") !== "0") {
+			interiors = createInteriors(scene, { wear: 0.5 });
+			for (const b of d.buildings.filter(b => b.model && H.ids.includes(b.id))) {
+				fetch(`../game/assets/models/houses/${b.model}/${b.model}.json`).then(r => r.ok ? r.json() : null)
+					.then(info => { if (info && info.rooms) interiors.addHouse(b, info); }).catch(() => {});
+			}
+		}
 	} };
 	// Трава: карта «где растёт» из данных квартала → цвет земли + травинки у камеры.
 	// #grass=0 — без травинок (A/B и слабые устройства), цвет земли остаётся.
@@ -746,6 +755,7 @@ function tick(now) {
 	if (rocks) rocks.update(camera);
 	if (jointGrassL) jointGrassL.update(camera, now / 1000);
 	if (fenceIvy) fenceIvy.update(camera, now / 1000);
+	if (interiors && layerOn.houses) interiors.update(camera);
 	for (const I of instLods) I.update(camera);
 	const cpu2 = performance.now();
 	// время процессора (скользящее среднее): анимация (роботы, дроны), раскладка

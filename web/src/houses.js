@@ -73,6 +73,13 @@ export async function loadHouses(d) {
 			const bb = new THREE.Box3().setFromObject(l0.scene), c = bb.getCenter(new THREE.Vector3());
 			const inRect = c.x > r[0] && c.x < r[2] && c.z > r[1] && c.z < r[3];
 			if (!inRect) lod.position.set(cx, 0, cz);
+			else {
+				// Модель в мировых координатах: точка LOD — в центре дома, а ступени сдвинуты
+				// обратно. Иначе LOD мерит расстояние от начала координат (башня b3 — в 100 м
+				// от него): у дома рисовалась дальняя ступень без внутренних стен и перекрытий.
+				lod.position.set(cx, 0, cz);
+				for (const g of [l0, l1, l2]) g.scene.position.set(-cx, 0, -cz);
+			}
 			group.add(lod);
 			ids.push(b.id);
 		} catch (e) {

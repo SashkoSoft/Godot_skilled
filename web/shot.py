@@ -17,6 +17,7 @@ WebGL в headless идёт через программный ANGLE, поэтом
 """
 
 import argparse
+import shutil
 import http.server
 import functools
 import os
@@ -132,6 +133,9 @@ def main() -> int:
                            timeout=args.wait + 90)
     finally:
         srv.shutdown()
+        # профиль Chrome удалить: иначе по сотне МБ на каждый снимок копится в %TEMP%
+        # (так набралось 51 ГБ и диск C кончился)
+        shutil.rmtree(profile, ignore_errors=True)
 
     # Оставляем только строки страницы: остальное — шум запуска Chrome.
     keep = [ln for ln in (r.stderr or "").splitlines()
