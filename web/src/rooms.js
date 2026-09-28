@@ -312,12 +312,27 @@ await Promise.all(curtainNames.map(async n => {
 }));
 
 let seed = 1;
+const wearMats = [];
+let WEAR = q.has("wear") ? +q.get("wear") : 0.35;   // «слегка подержанное»
+function applyWear() {
+	for (const w of wearMats) {
+		const v = Math.min(1, Math.max(0, WEAR + w.off));
+		w.u.uWear.value = v; w.u.uDust.value = v * w.dustK; w.u.uGrime.value = Math.min(1, v * w.grimeK);
+	}
+}
 const placed = {}, faceOf = {};   // габарит и сторона лица последнего поставленного   // имя → последние габариты (для «стулья к столу», «сверху»)
 // экземпляр модели лицом по face = [x, z]; свой износ на каждый экземпляр
 function make(n, face) {
 	const M = models[n], o = M.scene.clone(true);
-	const params = randomWear(seed++ * 7919 + 13);
-	if (M.mask) o.traverse(m => { if (m.isMesh && m.material.map && !m.material.transparent) m.material = makeWearMaterial(m.material, M.mask, noise, params); });
+	// Износ: общий уровень WEAR (ползунок, #wear=) + свой небольшой сдвиг экземпляра (±0.1);
+	// оттенки (цвет ткани, краски, тон дерева) — случайные по экземпляру, как были.
+	// Раньше wear был случайным от 0 до 1 — рядом стояли новые и убитые предметы.
+	const params = randomWear(seed++ * 7919 + 13), off = (((seed * 0.6180339) % 1) - 0.5) * 0.2;
+	if (M.mask) o.traverse(m => {
+		if (!m.isMesh || !m.material.map || m.material.transparent) return;
+		m.material = makeWearMaterial(m.material, M.mask, noise, params);
+		wearMats.push({ u: m.material.userData.wear, off, dustK: 0.2 + 0.5 * ((seed * 0.37) % 1), grimeK: 0.5 + 0.6 * ((seed * 0.71) % 1) });
+	});
 	o.rotation.y = Math.atan2(-face[0], -face[1]);
 	o.updateMatrixWorld(true);
 	return { o, bb: new THREE.Box3().setFromObject(o) };
@@ -543,7 +558,17 @@ for (const [room, m] of LAMPS) {
 	it.o.position.set((R[0] + R[2]) / 2, H, (R[1] + R[3]) / 2);
 	scene.add(it.o); count++;
 }
-status.textContent = `${count} предметов, ${names.length} моделей, износ у каждого свой`;
+applyWear();
+status.textContent = `${count} предметов, ${names.length} моделей`;
+// ползунок износа (общий уровень; у каждого предмета — свой небольшой сдвиг)
+{
+	const box = document.createElement("label");
+	box.style.cssText = "position:fixed;right:12px;top:12px;font:12px monospace;color:#e8e5df;background:rgba(12,14,16,.78);border:1px solid #2e3338;border-radius:8px;padding:8px 10px;display:flex;gap:8px;align-items:center";
+	box.innerHTML = `износ <input type="range" min="0" max="1" step="0.05" value="${WEAR}" style="width:140px"> <b>${WEAR.toFixed(2)}</b>`;
+	const inp = box.querySelector("input"), out = box.querySelector("b");
+	inp.addEventListener("input", () => { WEAR = +inp.value; out.textContent = WEAR.toFixed(2); applyWear(); });
+	if (q.get("clean") !== "1") document.body.appendChild(box);
+}
 console.log("[квартира] габариты, м (ш × г × в): " + names.map(n => { const s = new THREE.Box3().setFromObject(models[n].scene).getSize(new THREE.Vector3()); return `${n} ${s.x.toFixed(2)}×${s.z.toFixed(2)}×${s.y.toFixed(2)}`; }).join(", "));
 console.log(`[квартира] ${count} предметов из ${names.length} моделей`);
 console.log(clashes.length ? `[квартира] пересечения: ${clashes.join("; ")}` : "[квартира] пересечений нет");
