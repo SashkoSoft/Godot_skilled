@@ -166,7 +166,8 @@ export async function buildHoudiniTrees(trees, { onProgress, base = BASE, name =
 		if (!a || !a.colors) return null;
 		return autumnCache[sp] ||= { amount: a.amount ?? 0.5, colors: a.colors.map(c => new THREE.Color(c)) };
 	};
-	const chosen = trees.map(t => pick(t[3]));
+	// params.tag — вариант задан явно (плющ на заборе: вариант по плите), иначе — подбор по породе
+	const chosen = trees.map(t => t[3].tag || pick(t[3]));
 	const tags = [...new Set(chosen)];
 	const bark = {};
 	await Promise.all(tags.map(async t => { const n = barkName(t); bark[t] = n ? await barkSet(n) : null; }));
@@ -277,13 +278,14 @@ export async function buildHoudiniTrees(trees, { onProgress, base = BASE, name =
 	const up = new THREE.Vector3(0, 1, 0), q = new THREE.Quaternion(), ql = new THREE.Quaternion();
 	for (const [i, [x, z, r, p]] of trees.entries()) {
 		const tag = chosen[i], v = variants[tag];
-		// Вписываем крону в наш диаметр; варианты под квартал уже почти в размер.
-		const s = (2 * r) / v.crown;
+		// params.m — готовая матрица (накладка в мировом масштабе: плющ на плите забора);
+		// иначе вписываем крону в наш диаметр — варианты под квартал уже почти в размер.
+		const s = p.m ? 1 : (2 * r) / v.crown;
 		// rotY — заданный поворот (трава вдоль шва плит), иначе случайный по seed
 		q.setFromAxisAngle(up, p.rotY ?? ((p.seed % 3600) / 3600) * Math.PI * 2);
 		const dir = p.leanDir * Math.PI / 180;
 		ql.setFromAxisAngle(new THREE.Vector3(Math.cos(dir), 0, Math.sin(dir)), p.lean * Math.PI / 180);
-		const m = new THREE.Matrix4().compose(new THREE.Vector3(x, 0, z), ql.multiply(q), new THREE.Vector3(s, s, s));
+		const m = p.m ? p.m.clone() : new THREE.Matrix4().compose(new THREE.Vector3(x, 0, z), ql.multiply(q), new THREE.Vector3(s, s, s));
 		// minH — нижняя граница высоты для LOD: метровый куст иначе грубел бы уже с 5 м
 		const hr = v.height * s;
 		items.push({ tag, m, pos: new THREE.Vector3(x, hr * 0.5, z), h: Math.max(minH, hr),

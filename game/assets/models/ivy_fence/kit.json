@@ -1,0 +1,1165 @@
+{
+ "units": "m, Y up, MIROVOY masshtab (sekciya 8 x 4.24)",
+ "pivot": "kak u zabora fence_po2 x2: zemlya po centru sekcii",
+ "budget": [
+  4000,
+  1200,
+  350
+ ],
+ "atlas": "leaf_atlas.png (obshchiy s kustami)",
+ "leafvar": "x sluchaynoe lista, y pleti, z vozrast (1 u kornya), w vysota",
+ "items": [
+  {
+   "tag": "fence_ivy_ivy_light_0",
+   "preset": "young",
+   "mesh": "C:\\Users\\Papa\\Documents\\HoudiniCOP\\export\\ivy\\fence_po2_world.bgeo.sc",
+   "parms": {
+    "mat_keep": "",
+    "proxy": 0,
+    "grow_dir": 0,
+    "seed": 14,
+    "roots": 4,
+    "targets": 40,
+    "climb": 1.907999902245673,
+    "patch_amt": 0.6,
+    "patch_scale": 0.35,
+    "wander": 2.4,
+    "root_band": 0.15,
+    "edge": 0.08,
+    "leaf_size": 0.2,
+    "leaf_step": 0.08,
+    "leaf_keep": 0.9,
+    "stem_r": 0.006,
+    "stem_step_k": 4.0,
+    "lod0_minload": 1.0,
+    "lod1_minload": 6.0,
+    "lod2_minload": 16.0,
+    "wall_max_ny": 0.35
+   },
+   "levels": [
+    {
+     "lod": 0,
+     "tris": 2136,
+     "leaves": 655,
+     "coverage": 0.527,
+     "kb": 120,
+     "glb": "fence_ivy_ivy_light_0_lod0.glb"
+    },
+    {
+     "lod": 1,
+     "tris": 598,
+     "leaves": 241,
+     "coverage": 0.524,
+     "kb": 43,
+     "glb": "fence_ivy_ivy_light_0_lod1.glb"
+    },
+    {
+     "lod": 2,
+     "tris": 176,
+     "leaves": 88,
+     "coverage": 0.462,
+     "kb": 15,
+     "glb": "fence_ivy_ivy_light_0_lod2.glb"
+    }
+   ],
+   "leafvar": "x sluchaynoe lista, y sluchaynoe pleti, z vozrast (1 u kornya, 0 na konce), w vysota na stene",
+   "checks": {
+    "off_wall_max_m": 0.006,
+    "vine_len_m": 51.0,
+    "climb_share": 0.598
+   },
+   "seconds": 3.4,
+   "species": "ivy",
+   "preset_kit": "light",
+   "budget_fit_k": 1.0
+  },
+  {
+   "tag": "fence_ivy_ivy_light_1",
+   "preset": "young",
+   "mesh": "C:\\Users\\Papa\\Documents\\HoudiniCOP\\export\\ivy\\fence_po2_world.bgeo.sc",
+   "parms": {
+    "mat_keep": "",
+    "proxy": 0,
+    "grow_dir": 0,
+    "seed": 21,
+    "roots": 4,
+    "targets": 40,
+    "climb": 1.907999902245673,
+    "patch_amt": 0.6,
+    "patch_scale": 0.35,
+    "wander": 2.4,
+    "root_band": 0.15,
+    "edge": 0.08,
+    "leaf_size": 0.2,
+    "leaf_step": 0.08,
+    "leaf_keep": 0.9,
+    "stem_r": 0.006,
+    "stem_step_k": 4.0,
+    "lod0_minload": 1.0,
+    "lod1_minload": 6.0,
+    "lod2_minload": 16.0,
+    "wall_max_ny": 0.35
+   },
+   "levels": [
+    {
+     "lod": 0,
+     "tris": 2698,
+     "leaves": 835,
+     "coverage": 0.669,
+     "kb": 152,
+     "glb": "fence_ivy_ivy_light_1_lod0.glb"
+    },
+    {
+     "lod": 1,
+     "tris": 710,
+     "leaves": 285,
+     "coverage": 0.634,
+     "kb": 50,
+     "glb": "fence_ivy_ivy_light_1_lod1.glb"
+    },
+    {
+     "lod": 2,
+     "tris": 198,
+     "leaves": 87,
+     "coverage": 0.517,
+     "kb": 17,
+     "glb": "fence_ivy_ivy_light_1_lod2.glb"
+    }
+   ],
+   "leafvar": "x sluchaynoe lista, y sluchaynoe pleti, z vozrast (1 u kornya, 0 na konce), w vysota na stene",
+   "checks": {
+    "off_wall_max_m": 0.006,
+    "vine_len_m": 67.9,
+    "climb_share": 0.502
+   },
+   "seconds": 3.4,
+   "species": "ivy",
+   "preset_kit": "light",
+   "budget_fit_k": 1.0
+  },
+  {
+   "tag": "fence_ivy_ivy_light_2",
+   "preset": "young",
+   "mesh": "C:\\Users\\Papa\\Documents\\HoudiniCOP\\export\\ivy\\fence_po2_world.bgeo.sc",
+   "parms": {
+    "mat_keep": "",
+    "proxy": 0,
+    "grow_dir": 0,
+    "seed": 28,
+    "roots": 4,
+    "targets": 40,
+    "climb": 1.907999902245673,
+    "patch_amt": 0.6,
+    "patch_scale": 0.35,
+    "wander": 2.4,
+    "root_band": 0.15,
+    "edge": 0.08,
+    "leaf_size": 0.2,
+    "leaf_step": 0.08,
+    "leaf_keep": 0.9,
+    "stem_r": 0.006,
+    "stem_step_k": 4.0,
+    "lod0_minload": 1.0,
+    "lod1_minload": 6.0,
+    "lod2_minload": 16.0,
+    "wall_max_ny": 0.35
+   },
+   "levels": [
+    {
+     "lod": 0,
+     "tris": 2478,
+     "leaves": 771,
+     "coverage": 0.602,
+     "kb": 140,
+     "glb": "fence_ivy_ivy_light_2_lod0.glb"
+    },
+    {
+     "lod": 1,
+     "tris": 704,
+     "leaves": 254,
+     "coverage": 0.575,
+     "kb": 46,
+     "glb": "fence_ivy_ivy_light_2_lod1.glb"
+    },
+    {
+     "lod": 2,
+     "tris": 174,
+     "leaves": 87,
+     "coverage": 0.509,
+     "kb": 15,
+     "glb": "fence_ivy_ivy_light_2_lod2.glb"
+    }
+   ],
+   "leafvar": "x sluchaynoe lista, y sluchaynoe pleti, z vozrast (1 u kornya, 0 na konce), w vysota na stene",
+   "checks": {
+    "off_wall_max_m": 0.006,
+    "vine_len_m": 60.6,
+    "climb_share": 0.492
+   },
+   "seconds": 2.4,
+   "species": "ivy",
+   "preset_kit": "light",
+   "budget_fit_k": 1.0
+  },
+  {
+   "tag": "fence_ivy_ivy_mid_0",
+   "preset": "mature",
+   "mesh": "C:\\Users\\Papa\\Documents\\HoudiniCOP\\export\\ivy\\fence_po2_world.bgeo.sc",
+   "parms": {
+    "mat_keep": "",
+    "proxy": 0,
+    "grow_dir": 0,
+    "seed": 14,
+    "roots": 5,
+    "targets": 68,
+    "climb": 4.027999793629754,
+    "patch_amt": 0.35,
+    "patch_scale": 0.35,
+    "wander": 2.4,
+    "root_band": 0.15,
+    "edge": 0.08,
+    "leaf_size": 0.2,
+    "leaf_step": 0.08,
+    "leaf_keep": 0.9,
+    "stem_r": 0.006,
+    "stem_step_k": 4.0,
+    "lod0_minload": 1.0,
+    "lod1_minload": 6.0,
+    "lod2_minload": 16.0,
+    "wall_max_ny": 0.35
+   },
+   "levels": [
+    {
+     "lod": 0,
+     "tris": 4034,
+     "leaves": 1250,
+     "coverage": 0.487,
+     "kb": 226,
+     "glb": "fence_ivy_ivy_mid_0_lod0.glb"
+    },
+    {
+     "lod": 1,
+     "tris": 1218,
+     "leaves": 460,
+     "coverage": 0.493,
+     "kb": 80,
+     "glb": "fence_ivy_ivy_mid_0_lod1.glb"
+    },
+    {
+     "lod": 2,
+     "tris": 350,
+     "leaves": 163,
+     "coverage": 0.43,
+     "kb": 29,
+     "glb": "fence_ivy_ivy_mid_0_lod2.glb"
+    }
+   ],
+   "leafvar": "x sluchaynoe lista, y sluchaynoe pleti, z vozrast (1 u kornya, 0 na konce), w vysota na stene",
+   "checks": {
+    "off_wall_max_m": 0.006,
+    "vine_len_m": 98.4,
+    "climb_share": 0.805
+   },
+   "seconds": 2.5,
+   "species": "ivy",
+   "preset_kit": "mid",
+   "budget_fit_k": 0.85
+  },
+  {
+   "tag": "fence_ivy_ivy_mid_1",
+   "preset": "mature",
+   "mesh": "C:\\Users\\Papa\\Documents\\HoudiniCOP\\export\\ivy\\fence_po2_world.bgeo.sc",
+   "parms": {
+    "mat_keep": "",
+    "proxy": 0,
+    "grow_dir": 0,
+    "seed": 21,
+    "roots": 3,
+    "targets": 42,
+    "climb": 4.027999793629754,
+    "patch_amt": 0.35,
+    "patch_scale": 0.35,
+    "wander": 2.4,
+    "root_band": 0.15,
+    "edge": 0.08,
+    "leaf_size": 0.2,
+    "leaf_step": 0.08,
+    "leaf_keep": 0.9,
+    "stem_r": 0.006,
+    "stem_step_k": 4.0,
+    "lod0_minload": 1.0,
+    "lod1_minload": 6.0,
+    "lod2_minload": 16.0,
+    "wall_max_ny": 0.35
+   },
+   "levels": [
+    {
+     "lod": 0,
+     "tris": 3796,
+     "leaves": 1215,
+     "coverage": 0.54,
+     "kb": 216,
+     "glb": "fence_ivy_ivy_mid_1_lod0.glb"
+    },
+    {
+     "lod": 1,
+     "tris": 1138,
+     "leaves": 419,
+     "coverage": 0.553,
+     "kb": 74,
+     "glb": "fence_ivy_ivy_mid_1_lod1.glb"
+    },
+    {
+     "lod": 2,
+     "tris": 276,
+     "leaves": 126,
+     "coverage": 0.422,
+     "kb": 23,
+     "glb": "fence_ivy_ivy_mid_1_lod2.glb"
+    }
+   ],
+   "leafvar": "x sluchaynoe lista, y sluchaynoe pleti, z vozrast (1 u kornya, 0 na konce), w vysota na stene",
+   "checks": {
+    "off_wall_max_m": 0.006,
+    "vine_len_m": 100.2,
+    "climb_share": 0.564
+   },
+   "seconds": 3.8,
+   "species": "ivy",
+   "preset_kit": "mid",
+   "budget_fit_k": 0.522
+  },
+  {
+   "tag": "fence_ivy_ivy_mid_2",
+   "preset": "mature",
+   "mesh": "C:\\Users\\Papa\\Documents\\HoudiniCOP\\export\\ivy\\fence_po2_world.bgeo.sc",
+   "parms": {
+    "mat_keep": "",
+    "proxy": 0,
+    "grow_dir": 0,
+    "seed": 28,
+    "roots": 4,
+    "targets": 49,
+    "climb": 4.027999793629754,
+    "patch_amt": 0.35,
+    "patch_scale": 0.35,
+    "wander": 2.4,
+    "root_band": 0.15,
+    "edge": 0.08,
+    "leaf_size": 0.2,
+    "leaf_step": 0.08,
+    "leaf_keep": 0.9,
+    "stem_r": 0.006,
+    "stem_step_k": 4.0,
+    "lod0_minload": 1.0,
+    "lod1_minload": 6.0,
+    "lod2_minload": 16.0,
+    "wall_max_ny": 0.35
+   },
+   "levels": [
+    {
+     "lod": 0,
+     "tris": 4112,
+     "leaves": 1308,
+     "coverage": 0.548,
+     "kb": 233,
+     "glb": "fence_ivy_ivy_mid_2_lod0.glb"
+    },
+    {
+     "lod": 1,
+     "tris": 1112,
+     "leaves": 451,
+     "coverage": 0.532,
+     "kb": 77,
+     "glb": "fence_ivy_ivy_mid_2_lod1.glb"
+    },
+    {
+     "lod": 2,
+     "tris": 332,
+     "leaves": 166,
+     "coverage": 0.464,
+     "kb": 27,
+     "glb": "fence_ivy_ivy_mid_2_lod2.glb"
+    }
+   ],
+   "leafvar": "x sluchaynoe lista, y sluchaynoe pleti, z vozrast (1 u kornya, 0 na konce), w vysota na stene",
+   "checks": {
+    "off_wall_max_m": 0.006,
+    "vine_len_m": 106.6,
+    "climb_share": 0.639
+   },
+   "seconds": 3.5,
+   "species": "ivy",
+   "preset_kit": "mid",
+   "budget_fit_k": 0.614
+  },
+  {
+   "tag": "fence_ivy_ivy_heavy_0",
+   "preset": "overgrown",
+   "mesh": "C:\\Users\\Papa\\Documents\\HoudiniCOP\\export\\ivy\\fence_po2_world.bgeo.sc",
+   "parms": {
+    "mat_keep": "",
+    "proxy": 0,
+    "grow_dir": 0,
+    "seed": 14,
+    "roots": 4,
+    "targets": 58,
+    "climb": 4.239999782768162,
+    "patch_amt": 0.1,
+    "patch_scale": 0.35,
+    "wander": 2.4,
+    "root_band": 0.15,
+    "edge": 0.08,
+    "leaf_size": 0.2,
+    "leaf_step": 0.08,
+    "leaf_keep": 0.9,
+    "stem_r": 0.006,
+    "stem_step_k": 4.0,
+    "lod0_minload": 1.0,
+    "lod1_minload": 6.0,
+    "lod2_minload": 16.0,
+    "wall_max_ny": 1.0
+   },
+   "levels": [
+    {
+     "lod": 0,
+     "tris": 3646,
+     "leaves": 1138,
+     "coverage": 0.414,
+     "kb": 205,
+     "glb": "fence_ivy_ivy_heavy_0_lod0.glb"
+    },
+    {
+     "lod": 1,
+     "tris": 1066,
+     "leaves": 420,
+     "coverage": 0.412,
+     "kb": 73,
+     "glb": "fence_ivy_ivy_heavy_0_lod1.glb"
+    },
+    {
+     "lod": 2,
+     "tris": 318,
+     "leaves": 147,
+     "coverage": 0.362,
+     "kb": 26,
+     "glb": "fence_ivy_ivy_heavy_0_lod2.glb"
+    }
+   ],
+   "leafvar": "x sluchaynoe lista, y sluchaynoe pleti, z vozrast (1 u kornya, 0 na konce), w vysota na stene",
+   "checks": {
+    "off_wall_max_m": 0.006,
+    "vine_len_m": 89.8,
+    "climb_share": 0.776
+   },
+   "seconds": 4.3,
+   "species": "ivy",
+   "preset_kit": "heavy",
+   "budget_fit_k": 0.444
+  },
+  {
+   "tag": "fence_ivy_ivy_heavy_1",
+   "preset": "overgrown",
+   "mesh": "C:\\Users\\Papa\\Documents\\HoudiniCOP\\export\\ivy\\fence_po2_world.bgeo.sc",
+   "parms": {
+    "mat_keep": "",
+    "proxy": 0,
+    "grow_dir": 0,
+    "seed": 21,
+    "roots": 4,
+    "targets": 58,
+    "climb": 4.239999782768162,
+    "patch_amt": 0.1,
+    "patch_scale": 0.35,
+    "wander": 2.4,
+    "root_band": 0.15,
+    "edge": 0.08,
+    "leaf_size": 0.2,
+    "leaf_step": 0.08,
+    "leaf_keep": 0.9,
+    "stem_r": 0.006,
+    "stem_step_k": 4.0,
+    "lod0_minload": 1.0,
+    "lod1_minload": 6.0,
+    "lod2_minload": 16.0,
+    "wall_max_ny": 1.0
+   },
+   "levels": [
+    {
+     "lod": 0,
+     "tris": 3972,
+     "leaves": 1233,
+     "coverage": 0.481,
+     "kb": 222,
+     "glb": "fence_ivy_ivy_heavy_1_lod0.glb"
+    },
+    {
+     "lod": 1,
+     "tris": 1182,
+     "leaves": 422,
+     "coverage": 0.472,
+     "kb": 75,
+     "glb": "fence_ivy_ivy_heavy_1_lod1.glb"
+    },
+    {
+     "lod": 2,
+     "tris": 286,
+     "leaves": 127,
+     "coverage": 0.374,
+     "kb": 23,
+     "glb": "fence_ivy_ivy_heavy_1_lod2.glb"
+    }
+   ],
+   "leafvar": "x sluchaynoe lista, y sluchaynoe pleti, z vozrast (1 u kornya, 0 na konce), w vysota na stene",
+   "checks": {
+    "off_wall_max_m": 0.006,
+    "vine_len_m": 99.4,
+    "climb_share": 0.809
+   },
+   "seconds": 2.6,
+   "species": "ivy",
+   "preset_kit": "heavy",
+   "budget_fit_k": 0.444
+  },
+  {
+   "tag": "fence_ivy_ivy_heavy_2",
+   "preset": "overgrown",
+   "mesh": "C:\\Users\\Papa\\Documents\\HoudiniCOP\\export\\ivy\\fence_po2_world.bgeo.sc",
+   "parms": {
+    "mat_keep": "",
+    "proxy": 0,
+    "grow_dir": 0,
+    "seed": 28,
+    "roots": 4,
+    "targets": 58,
+    "climb": 4.239999782768162,
+    "patch_amt": 0.1,
+    "patch_scale": 0.35,
+    "wander": 2.4,
+    "root_band": 0.15,
+    "edge": 0.08,
+    "leaf_size": 0.2,
+    "leaf_step": 0.08,
+    "leaf_keep": 0.9,
+    "stem_r": 0.006,
+    "stem_step_k": 4.0,
+    "lod0_minload": 1.0,
+    "lod1_minload": 6.0,
+    "lod2_minload": 16.0,
+    "wall_max_ny": 1.0
+   },
+   "levels": [
+    {
+     "lod": 0,
+     "tris": 3670,
+     "leaves": 1139,
+     "coverage": 0.404,
+     "kb": 206,
+     "glb": "fence_ivy_ivy_heavy_2_lod0.glb"
+    },
+    {
+     "lod": 1,
+     "tris": 1098,
+     "leaves": 386,
+     "coverage": 0.392,
+     "kb": 70,
+     "glb": "fence_ivy_ivy_heavy_2_lod1.glb"
+    },
+    {
+     "lod": 2,
+     "tris": 358,
+     "leaves": 135,
+     "coverage": 0.352,
+     "kb": 26,
+     "glb": "fence_ivy_ivy_heavy_2_lod2.glb"
+    }
+   ],
+   "leafvar": "x sluchaynoe lista, y sluchaynoe pleti, z vozrast (1 u kornya, 0 na konce), w vysota na stene",
+   "checks": {
+    "off_wall_max_m": 0.006,
+    "vine_len_m": 90.2,
+    "climb_share": 0.802
+   },
+   "seconds": 2.5,
+   "species": "ivy",
+   "preset_kit": "heavy",
+   "budget_fit_k": 0.444
+  },
+  {
+   "tag": "fence_ivy_ivy_dry_0",
+   "preset": "dry",
+   "mesh": "C:\\Users\\Papa\\Documents\\HoudiniCOP\\export\\ivy\\fence_po2_world.bgeo.sc",
+   "parms": {
+    "mat_keep": "",
+    "proxy": 0,
+    "grow_dir": 0,
+    "seed": 14,
+    "roots": 5,
+    "targets": 68,
+    "climb": 3.815999804491346,
+    "patch_amt": 0.4,
+    "patch_scale": 0.35,
+    "wander": 2.4,
+    "root_band": 0.15,
+    "edge": 0.08,
+    "leaf_size": 0.2,
+    "leaf_step": 0.08,
+    "leaf_keep": 0.9,
+    "stem_r": 0.006,
+    "stem_step_k": 4.0,
+    "lod0_minload": 1.0,
+    "lod1_minload": 6.0,
+    "lod2_minload": 16.0,
+    "wall_max_ny": 0.35
+   },
+   "levels": [
+    {
+     "lod": 0,
+     "tris": 3976,
+     "leaves": 1225,
+     "coverage": 0.477,
+     "kb": 222,
+     "glb": "fence_ivy_ivy_dry_0_lod0.glb"
+    },
+    {
+     "lod": 1,
+     "tris": 1236,
+     "leaves": 454,
+     "coverage": 0.48,
+     "kb": 80,
+     "glb": "fence_ivy_ivy_dry_0_lod1.glb"
+    },
+    {
+     "lod": 2,
+     "tris": 360,
+     "leaves": 160,
+     "coverage": 0.429,
+     "kb": 29,
+     "glb": "fence_ivy_ivy_dry_0_lod2.glb"
+    }
+   ],
+   "leafvar": "x sluchaynoe lista, y sluchaynoe pleti, z vozrast (1 u kornya, 0 na konce), w vysota na stene",
+   "checks": {
+    "off_wall_max_m": 0.006,
+    "vine_len_m": 95.6,
+    "climb_share": 0.8
+   },
+   "seconds": 2.4,
+   "species": "ivy",
+   "preset_kit": "dry",
+   "budget_fit_k": 0.85
+  },
+  {
+   "tag": "fence_ivy_ivy_dry_1",
+   "preset": "dry",
+   "mesh": "C:\\Users\\Papa\\Documents\\HoudiniCOP\\export\\ivy\\fence_po2_world.bgeo.sc",
+   "parms": {
+    "mat_keep": "",
+    "proxy": 0,
+    "grow_dir": 0,
+    "seed": 21,
+    "roots": 4,
+    "targets": 58,
+    "climb": 3.815999804491346,
+    "patch_amt": 0.4,
+    "patch_scale": 0.35,
+    "wander": 2.4,
+    "root_band": 0.15,
+    "edge": 0.08,
+    "leaf_size": 0.2,
+    "leaf_step": 0.08,
+    "leaf_keep": 0.9,
+    "stem_r": 0.006,
+    "stem_step_k": 4.0,
+    "lod0_minload": 1.0,
+    "lod1_minload": 6.0,
+    "lod2_minload": 16.0,
+    "wall_max_ny": 0.35
+   },
+   "levels": [
+    {
+     "lod": 0,
+     "tris": 4010,
+     "leaves": 1254,
+     "coverage": 0.55,
+     "kb": 225,
+     "glb": "fence_ivy_ivy_dry_1_lod0.glb"
+    },
+    {
+     "lod": 1,
+     "tris": 1124,
+     "leaves": 428,
+     "coverage": 0.527,
+     "kb": 75,
+     "glb": "fence_ivy_ivy_dry_1_lod1.glb"
+    },
+    {
+     "lod": 2,
+     "tris": 344,
+     "leaves": 129,
+     "coverage": 0.423,
+     "kb": 25,
+     "glb": "fence_ivy_ivy_dry_1_lod2.glb"
+    }
+   ],
+   "leafvar": "x sluchaynoe lista, y sluchaynoe pleti, z vozrast (1 u kornya, 0 na konce), w vysota na stene",
+   "checks": {
+    "off_wall_max_m": 0.006,
+    "vine_len_m": 101.9,
+    "climb_share": 0.651
+   },
+   "seconds": 2.4,
+   "species": "ivy",
+   "preset_kit": "dry",
+   "budget_fit_k": 0.722
+  },
+  {
+   "tag": "fence_ivy_ivy_dry_2",
+   "preset": "dry",
+   "mesh": "C:\\Users\\Papa\\Documents\\HoudiniCOP\\export\\ivy\\fence_po2_world.bgeo.sc",
+   "parms": {
+    "mat_keep": "",
+    "proxy": 0,
+    "grow_dir": 0,
+    "seed": 28,
+    "roots": 4,
+    "targets": 49,
+    "climb": 3.815999804491346,
+    "patch_amt": 0.4,
+    "patch_scale": 0.35,
+    "wander": 2.4,
+    "root_band": 0.15,
+    "edge": 0.08,
+    "leaf_size": 0.2,
+    "leaf_step": 0.08,
+    "leaf_keep": 0.9,
+    "stem_r": 0.006,
+    "stem_step_k": 4.0,
+    "lod0_minload": 1.0,
+    "lod1_minload": 6.0,
+    "lod2_minload": 16.0,
+    "wall_max_ny": 0.35
+   },
+   "levels": [
+    {
+     "lod": 0,
+     "tris": 3964,
+     "leaves": 1266,
+     "coverage": 0.555,
+     "kb": 225,
+     "glb": "fence_ivy_ivy_dry_2_lod0.glb"
+    },
+    {
+     "lod": 1,
+     "tris": 1082,
+     "leaves": 430,
+     "coverage": 0.539,
+     "kb": 74,
+     "glb": "fence_ivy_ivy_dry_2_lod1.glb"
+    },
+    {
+     "lod": 2,
+     "tris": 318,
+     "leaves": 159,
+     "coverage": 0.487,
+     "kb": 26,
+     "glb": "fence_ivy_ivy_dry_2_lod2.glb"
+    }
+   ],
+   "leafvar": "x sluchaynoe lista, y sluchaynoe pleti, z vozrast (1 u kornya, 0 na konce), w vysota na stene",
+   "checks": {
+    "off_wall_max_m": 0.006,
+    "vine_len_m": 102.8,
+    "climb_share": 0.648
+   },
+   "seconds": 2.8,
+   "species": "ivy",
+   "preset_kit": "dry",
+   "budget_fit_k": 0.614
+  },
+  {
+   "tag": "fence_ivy_creeper_mid_0",
+   "preset": "mature",
+   "mesh": "C:\\Users\\Papa\\Documents\\HoudiniCOP\\export\\ivy\\fence_po2_world.bgeo.sc",
+   "parms": {
+    "mat_keep": "",
+    "proxy": 0,
+    "grow_dir": 0,
+    "seed": 18,
+    "roots": 5,
+    "targets": 68,
+    "climb": 4.027999793629754,
+    "patch_amt": 0.35,
+    "patch_scale": 0.35,
+    "wander": 2.4,
+    "root_band": 0.15,
+    "edge": 0.08,
+    "leaf_size": 0.3,
+    "leaf_step": 0.11,
+    "leaf_keep": 0.9,
+    "stem_r": 0.006,
+    "stem_step_k": 4.0,
+    "lod0_minload": 1.0,
+    "lod1_minload": 6.0,
+    "lod2_minload": 16.0,
+    "wall_max_ny": 0.35
+   },
+   "levels": [
+    {
+     "lod": 0,
+     "tris": 4064,
+     "leaves": 1136,
+     "coverage": 0.599,
+     "kb": 213,
+     "glb": "fence_ivy_creeper_mid_0_lod0.glb"
+    },
+    {
+     "lod": 1,
+     "tris": 1090,
+     "leaves": 401,
+     "coverage": 0.587,
+     "kb": 71,
+     "glb": "fence_ivy_creeper_mid_0_lod1.glb"
+    },
+    {
+     "lod": 2,
+     "tris": 328,
+     "leaves": 140,
+     "coverage": 0.51,
+     "kb": 26,
+     "glb": "fence_ivy_creeper_mid_0_lod2.glb"
+    }
+   ],
+   "leafvar": "x sluchaynoe lista, y sluchaynoe pleti, z vozrast (1 u kornya, 0 na konce), w vysota na stene",
+   "checks": {
+    "off_wall_max_m": 0.006,
+    "vine_len_m": 119.8,
+    "climb_share": 0.798
+   },
+   "seconds": 2.6,
+   "species": "creeper",
+   "preset_kit": "mid",
+   "budget_fit_k": 0.85
+  },
+  {
+   "tag": "fence_ivy_creeper_mid_1",
+   "preset": "mature",
+   "mesh": "C:\\Users\\Papa\\Documents\\HoudiniCOP\\export\\ivy\\fence_po2_world.bgeo.sc",
+   "parms": {
+    "mat_keep": "",
+    "proxy": 0,
+    "grow_dir": 0,
+    "seed": 25,
+    "roots": 6,
+    "targets": 80,
+    "climb": 4.027999793629754,
+    "patch_amt": 0.35,
+    "patch_scale": 0.35,
+    "wander": 2.4,
+    "root_band": 0.15,
+    "edge": 0.08,
+    "leaf_size": 0.3,
+    "leaf_step": 0.11,
+    "leaf_keep": 0.9,
+    "stem_r": 0.006,
+    "stem_step_k": 4.0,
+    "lod0_minload": 1.0,
+    "lod1_minload": 6.0,
+    "lod2_minload": 16.0,
+    "wall_max_ny": 0.35
+   },
+   "levels": [
+    {
+     "lod": 0,
+     "tris": 4112,
+     "leaves": 1117,
+     "coverage": 0.633,
+     "kb": 213,
+     "glb": "fence_ivy_creeper_mid_1_lod0.glb"
+    },
+    {
+     "lod": 1,
+     "tris": 1244,
+     "leaves": 406,
+     "coverage": 0.622,
+     "kb": 75,
+     "glb": "fence_ivy_creeper_mid_1_lod1.glb"
+    },
+    {
+     "lod": 2,
+     "tris": 272,
+     "leaves": 136,
+     "coverage": 0.532,
+     "kb": 23,
+     "glb": "fence_ivy_creeper_mid_1_lod2.glb"
+    }
+   ],
+   "leafvar": "x sluchaynoe lista, y sluchaynoe pleti, z vozrast (1 u kornya, 0 na konce), w vysota na stene",
+   "checks": {
+    "off_wall_max_m": 0.006,
+    "vine_len_m": 118.9,
+    "climb_share": 0.803
+   },
+   "seconds": 2.8,
+   "species": "creeper",
+   "preset_kit": "mid",
+   "budget_fit_k": 1.0
+  },
+  {
+   "tag": "fence_ivy_creeper_mid_2",
+   "preset": "mature",
+   "mesh": "C:\\Users\\Papa\\Documents\\HoudiniCOP\\export\\ivy\\fence_po2_world.bgeo.sc",
+   "parms": {
+    "mat_keep": "",
+    "proxy": 0,
+    "grow_dir": 0,
+    "seed": 32,
+    "roots": 6,
+    "targets": 80,
+    "climb": 4.027999793629754,
+    "patch_amt": 0.35,
+    "patch_scale": 0.35,
+    "wander": 2.4,
+    "root_band": 0.15,
+    "edge": 0.08,
+    "leaf_size": 0.3,
+    "leaf_step": 0.11,
+    "leaf_keep": 0.9,
+    "stem_r": 0.006,
+    "stem_step_k": 4.0,
+    "lod0_minload": 1.0,
+    "lod1_minload": 6.0,
+    "lod2_minload": 16.0,
+    "wall_max_ny": 0.35
+   },
+   "levels": [
+    {
+     "lod": 0,
+     "tris": 3792,
+     "leaves": 1029,
+     "coverage": 0.54,
+     "kb": 197,
+     "glb": "fence_ivy_creeper_mid_2_lod0.glb"
+    },
+    {
+     "lod": 1,
+     "tris": 1176,
+     "leaves": 374,
+     "coverage": 0.54,
+     "kb": 70,
+     "glb": "fence_ivy_creeper_mid_2_lod1.glb"
+    },
+    {
+     "lod": 2,
+     "tris": 244,
+     "leaves": 122,
+     "coverage": 0.451,
+     "kb": 21,
+     "glb": "fence_ivy_creeper_mid_2_lod2.glb"
+    }
+   ],
+   "leafvar": "x sluchaynoe lista, y sluchaynoe pleti, z vozrast (1 u kornya, 0 na konce), w vysota na stene",
+   "checks": {
+    "off_wall_max_m": 0.006,
+    "vine_len_m": 104.3,
+    "climb_share": 0.798
+   },
+   "seconds": 2.8,
+   "species": "creeper",
+   "preset_kit": "mid",
+   "budget_fit_k": 1.0
+  },
+  {
+   "tag": "fence_ivy_creeper_heavy_0",
+   "preset": "overgrown",
+   "mesh": "C:\\Users\\Papa\\Documents\\HoudiniCOP\\export\\ivy\\fence_po2_world.bgeo.sc",
+   "parms": {
+    "mat_keep": "",
+    "proxy": 0,
+    "grow_dir": 0,
+    "seed": 18,
+    "roots": 6,
+    "targets": 80,
+    "climb": 4.239999782768162,
+    "patch_amt": 0.1,
+    "patch_scale": 0.35,
+    "wander": 2.4,
+    "root_band": 0.15,
+    "edge": 0.08,
+    "leaf_size": 0.3,
+    "leaf_step": 0.11,
+    "leaf_keep": 0.9,
+    "stem_r": 0.006,
+    "stem_step_k": 4.0,
+    "lod0_minload": 1.0,
+    "lod1_minload": 6.0,
+    "lod2_minload": 16.0,
+    "wall_max_ny": 1.0
+   },
+   "levels": [
+    {
+     "lod": 0,
+     "tris": 3858,
+     "leaves": 1055,
+     "coverage": 0.54,
+     "kb": 201,
+     "glb": "fence_ivy_creeper_heavy_0_lod0.glb"
+    },
+    {
+     "lod": 1,
+     "tris": 1184,
+     "leaves": 372,
+     "coverage": 0.519,
+     "kb": 70,
+     "glb": "fence_ivy_creeper_heavy_0_lod1.glb"
+    },
+    {
+     "lod": 2,
+     "tris": 346,
+     "leaves": 129,
+     "coverage": 0.4,
+     "kb": 25,
+     "glb": "fence_ivy_creeper_heavy_0_lod2.glb"
+    }
+   ],
+   "leafvar": "x sluchaynoe lista, y sluchaynoe pleti, z vozrast (1 u kornya, 0 na konce), w vysota na stene",
+   "checks": {
+    "off_wall_max_m": 0.006,
+    "vine_len_m": 106.8,
+    "climb_share": 0.807
+   },
+   "seconds": 3.8,
+   "species": "creeper",
+   "preset_kit": "heavy",
+   "budget_fit_k": 0.614
+  },
+  {
+   "tag": "fence_ivy_creeper_heavy_1",
+   "preset": "overgrown",
+   "mesh": "C:\\Users\\Papa\\Documents\\HoudiniCOP\\export\\ivy\\fence_po2_world.bgeo.sc",
+   "parms": {
+    "mat_keep": "",
+    "proxy": 0,
+    "grow_dir": 0,
+    "seed": 25,
+    "roots": 6,
+    "targets": 80,
+    "climb": 4.239999782768162,
+    "patch_amt": 0.1,
+    "patch_scale": 0.35,
+    "wander": 2.4,
+    "root_band": 0.15,
+    "edge": 0.08,
+    "leaf_size": 0.3,
+    "leaf_step": 0.11,
+    "leaf_keep": 0.9,
+    "stem_r": 0.006,
+    "stem_step_k": 4.0,
+    "lod0_minload": 1.0,
+    "lod1_minload": 6.0,
+    "lod2_minload": 16.0,
+    "wall_max_ny": 1.0
+   },
+   "levels": [
+    {
+     "lod": 0,
+     "tris": 3968,
+     "leaves": 1075,
+     "coverage": 0.548,
+     "kb": 205,
+     "glb": "fence_ivy_creeper_heavy_1_lod0.glb"
+    },
+    {
+     "lod": 1,
+     "tris": 1224,
+     "leaves": 383,
+     "coverage": 0.517,
+     "kb": 72,
+     "glb": "fence_ivy_creeper_heavy_1_lod1.glb"
+    },
+    {
+     "lod": 2,
+     "tris": 360,
+     "leaves": 129,
+     "coverage": 0.434,
+     "kb": 25,
+     "glb": "fence_ivy_creeper_heavy_1_lod2.glb"
+    }
+   ],
+   "leafvar": "x sluchaynoe lista, y sluchaynoe pleti, z vozrast (1 u kornya, 0 na konce), w vysota na stene",
+   "checks": {
+    "off_wall_max_m": 0.006,
+    "vine_len_m": 113.7,
+    "climb_share": 0.817
+   },
+   "seconds": 3.9,
+   "species": "creeper",
+   "preset_kit": "heavy",
+   "budget_fit_k": 0.614
+  },
+  {
+   "tag": "fence_ivy_creeper_heavy_2",
+   "preset": "overgrown",
+   "mesh": "C:\\Users\\Papa\\Documents\\HoudiniCOP\\export\\ivy\\fence_po2_world.bgeo.sc",
+   "parms": {
+    "mat_keep": "",
+    "proxy": 0,
+    "grow_dir": 0,
+    "seed": 32,
+    "roots": 6,
+    "targets": 80,
+    "climb": 4.239999782768162,
+    "patch_amt": 0.1,
+    "patch_scale": 0.35,
+    "wander": 2.4,
+    "root_band": 0.15,
+    "edge": 0.08,
+    "leaf_size": 0.3,
+    "leaf_step": 0.11,
+    "leaf_keep": 0.9,
+    "stem_r": 0.006,
+    "stem_step_k": 4.0,
+    "lod0_minload": 1.0,
+    "lod1_minload": 6.0,
+    "lod2_minload": 16.0,
+    "wall_max_ny": 1.0
+   },
+   "levels": [
+    {
+     "lod": 0,
+     "tris": 3106,
+     "leaves": 814,
+     "coverage": 0.36,
+     "kb": 159,
+     "glb": "fence_ivy_creeper_heavy_2_lod0.glb"
+    },
+    {
+     "lod": 1,
+     "tris": 1076,
+     "leaves": 298,
+     "coverage": 0.346,
+     "kb": 60,
+     "glb": "fence_ivy_creeper_heavy_2_lod1.glb"
+    },
+    {
+     "lod": 2,
+     "tris": 354,
+     "leaves": 102,
+     "coverage": 0.315,
+     "kb": 22,
+     "glb": "fence_ivy_creeper_heavy_2_lod2.glb"
+    }
+   ],
+   "leafvar": "x sluchaynoe lista, y sluchaynoe pleti, z vozrast (1 u kornya, 0 na konce), w vysota na stene",
+   "checks": {
+    "off_wall_max_m": 0.006,
+    "vine_len_m": 79.3,
+    "climb_share": 0.811
+   },
+   "seconds": 3.9,
+   "species": "creeper",
+   "preset_kit": "heavy",
+   "budget_fit_k": 0.614
+  }
+ ]
+}
