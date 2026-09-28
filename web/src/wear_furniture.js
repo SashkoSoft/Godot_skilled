@@ -97,8 +97,10 @@ c = mix(c, c * vec3(1.04, 0.98, 0.82), kw * wr * 0.6);
 float lac = smoothstep(0.45, 0.85, blot) * wr;
 c = mix(c, (c * 0.6 + vec3(lum3(c)) * 0.4) * 1.25, kw * lac * 0.6);
 r += kw * (0.45 * wr * smoothstep(0.4, 0.9, blot) + 0.3 * ew);
-float pc = smoothstep(1.0 - wr * 0.55, 1.0 - wr * 0.55 + 0.04, clamp(E2 * 0.7 + chip * 0.55, 0.0, 1.3)) * on;
-c = mix(c, vec3(0.34, 0.25, 0.16) * (0.8 + 0.4 * fine), kp * pc);
+float patch_ = smoothstep(0.45, 0.6, textureLod(uNoise, uv * 2.0 + uNoiseOff, 4.0).b);   // рёбра — пятнами
+float pc = smoothstep(1.05 - wr * 0.5, 1.09 - wr * 0.5, clamp(E2 * 0.45 * patch_ + chip * 0.6, 0.0, 1.3)) * on;
+vec3 prim = mix(vec3(0.66, 0.60, 0.50), vec3(0.58, 0.44, 0.30), smoothstep(0.4, 0.8, fine));   // грунт / дерево
+c = mix(c, prim * (0.85 + 0.25 * fine), kp * pc);
 c = mix(c, c * 0.85 + 0.1, kp * scr * wr * 0.4); r += kp * (0.3 * pc + 0.2 * wr);
 float lum = lum3(c);
 c = mix(c, c * 0.55 + lum * 0.35 + 0.1, kf * wr * 0.7);

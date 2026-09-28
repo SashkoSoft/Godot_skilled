@@ -331,7 +331,7 @@ function make(n, face) {
 	if (M.mask) o.traverse(m => {
 		if (!m.isMesh || !m.material.map || m.material.transparent) return;
 		m.material = makeWearMaterial(m.material, M.mask, noise, params);
-		wearMats.push({ u: m.material.userData.wear, off, dustK: 0.2 + 0.5 * ((seed * 0.37) % 1), grimeK: 0.5 + 0.6 * ((seed * 0.71) % 1) });
+		wearMats.push({ u: m.material.userData.wear, off, dustK: 0.45, grimeK: 0.8 });   // как FurnitureRandomizer в Godot
 	});
 	o.rotation.y = Math.atan2(-face[0], -face[1]);
 	o.updateMatrixWorld(true);
