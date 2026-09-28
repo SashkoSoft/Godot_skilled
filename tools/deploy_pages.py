@@ -65,7 +65,7 @@ def collect(wait):
 			"--no-first-run", "--use-angle=d3d11", "--enable-gpu", "--ignore-gpu-blocklist", "http://127.0.0.1:8160/" + page]
 		p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 		time.sleep(wait)
-		p.kill()
+		subprocess.run(["taskkill", "/T", "/F", "/PID", str(p.pid)], capture_output=True)   # с дочерними: иначе профиль занят и не удаляется
 		print(f"  {page}: +{len(served) - before} файлов")
 	srv.shutdown()
 
