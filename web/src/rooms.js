@@ -22,13 +22,13 @@ const H = 2.6, T = 0.1, CUT = 0.9;   // высота стен, толщина, �
 
 // комнаты — прямоугольники по осям стен [x0, z0, x1, z1]
 const ROOMS = {
-	living: { name: "гостиная", rect: [0, 0, 6.6, 4.8], floor: "herring", paper: "wp-damask-green" },
-	bedroom: { name: "спальня", rect: [6.6, 0, 13, 4.8], floor: "mosaic", paper: "wp-roses-vine" },
-	kitchen: { name: "кухня", rect: [0, 4.8, 3.6, 8], floor: "ft-checker-red", paper: "ft-wreath-tile" },
-	kids: { name: "детская", rect: [3.6, 4.8, 13, 8], floor: "herring", paper: "wp-sprigs" },
-	study: { name: "кабинет", rect: [13, 0, 18, 4.8], floor: "herring", paper: "wp-rose-stripe" },
-	hall: { name: "прихожая", rect: [13, 4.8, 16, 8], floor: "ft-octagon-dot", paper: "wp-damask-blue" },
-	bath: { name: "ванная", rect: [16, 4.8, 18, 8], floor: "ft-checker-white", paper: "ft-wreath-tile" },
+	living: { name: "гостиная", rect: [0, 0, 6.6, 5.2], floor: "herring", paper: "wp-damask-green" },
+	bedroom: { name: "спальня", rect: [6.6, 0, 13, 5.2], floor: "mosaic", paper: "wp-roses-vine" },
+	kitchen: { name: "кухня", rect: [0, 5.2, 3.6, 8.8], floor: "ft-checker-red", paper: "ft-wreath-tile" },
+	kids: { name: "детская", rect: [3.6, 5.2, 13, 8.8], floor: "herring", paper: "wp-sprigs" },
+	study: { name: "кабинет", rect: [13, 0, 18, 5.2], floor: "herring", paper: "wp-rose-stripe" },
+	hall: { name: "прихожая", rect: [13, 5.2, 16, 8.8], floor: "ft-octagon-dot", paper: "wp-damask-blue" },
+	bath: { name: "ванная", rect: [16, 5.2, 18, 8.8], floor: "ft-checker-white", paper: "ft-wreath-tile" },
 };
 // Стены: отрезок по оси (внутренняя грань — на T/2 от оси), t — толщина (наружные 0.3:
 // окна blend утоплены в стену до 0.2; толщина добавляется наружу, комнаты не меняются).
@@ -41,14 +41,14 @@ const win = (c, m) => ({ c, w: WINDOW[m][0], y: [SILL - 0.035, SILL + WINDOW[m][
 const door = (c, m, side) => ({ c, w: (m === "door_flat_narrow" ? 0.6 : 0.8) + 0.066, y: DOOR, door: m, side });
 const WALLS = [
 	{ a: [0, 0], b: [18, 0], t: 0.3, open: [win(4.6, "win_3_fort_left"), win(9.8, "win_3_fort_right"), win(15.5, "win_3_fort_left")] },
-	{ a: [0, 8], b: [18, 8], t: 0.3, open: [win(1.8, "win_2_kitchen"), win(8.3, "win_3_fort_right"), win(17, "win_1_small")] },
-	{ a: [18, 0], b: [18, 8], t: 0.3 },
-	{ a: [13, 0], b: [13, 8], open: [door(2.4, "door_glass", [1, 0]), door(6.4, "door_panel_6lite", [-1, 0])] },
-	{ a: [16, 4.8], b: [16, 8], open: [door(1.6, "door_flat_narrow", [1, 0])] },
-	{ a: [6.6, 0], b: [6.6, 4.8], open: [door(3.3, "door_glass", [-1, 0])] },
-	{ a: [0, 4.8], b: [18, 4.8], open: [door(1.6, "door_panel_6lite", [0, -1]), door(5.2, "door_flat", [0, 1]), door(12.2, "door_flat_narrow", [0, 1]), door(14.5, "door_flat", [0, -1])] },
-	{ a: [3.6, 4.8], b: [3.6, 8] },
-	{ a: [0, 0], b: [0, 8], t: 0.3, open: [win(5.3, "win_1_small")] },   // последней: окна 0–3 — N и S
+	{ a: [0, 8.8], b: [18, 8.8], t: 0.3, open: [win(1.8, "win_2_kitchen"), win(8.3, "win_3_fort_right"), win(17, "win_1_small")] },
+	{ a: [18, 0], b: [18, 8.8], t: 0.3 },
+	{ a: [13, 0], b: [13, 8.8], open: [door(2.4, "door_glass", [1, 0]), door(6.4, "door_panel_6lite", [-1, 0])] },
+	{ a: [16, 5.2], b: [16, 8.8], open: [door(1.6, "door_flat_narrow", [1, 0])] },
+	{ a: [6.6, 0], b: [6.6, 5.2], open: [door(3.3, "door_glass", [-1, 0])] },
+	{ a: [0, 5.2], b: [18, 5.2], open: [door(1.6, "door_panel_6lite", [0, -1]), door(5.2, "door_flat", [0, 1]), door(12.2, "door_flat_narrow", [0, 1]), door(14.5, "door_flat", [0, -1])] },
+	{ a: [3.6, 5.2], b: [3.6, 8.8] },
+	{ a: [0, 0], b: [0, 8.8], t: 0.3, open: [win(7.0, "win_1_small")] },   // последней: окна 0–3 — N и S
 ];
 
 // Расстановка. wall(комната, сторона, [модели], от угла м) — ряд спиной к стене;
@@ -72,7 +72,7 @@ const PLAN = [
 	["sill", 1, ["pot_ribbed", "pot_bowl", "pot_tall"]],
 	// кухня: плита и мойки по западной стене, стол с табуретами
 	["wall", "kitchen", "W", ["stove_gas", "sink_cabinet", "sink_backsplash"], 0.1],
-	["table", "table_kitchen", 2.3, 6.5, [0, -1], [["stool_cream", "N", 0.5], ["stool_marble", "S", 0.3], ["stool_green", "S", 0.75], ["chair_spindle", "E", 0.5]]],
+	["table", "table_kitchen", 2.3, 7.1, [0, -1], [["stool_cream", "N", 0.5], ["stool_marble", "S", 0.3], ["stool_green", "S", 0.75], ["chair_spindle", "E", 0.5]]],
 	["top", "table_kitchen", "pot_classic", 0.5],
 	// детская: кровати по стенам, два письменных стола между дверями
 	["wall", "kids", "E", ["bed_metal"], 0.25],
@@ -91,9 +91,11 @@ const PLAN = [
 	["wall", "hall", "W", [{ m: "hall_hanger_panels", keepY: true }], 0.3],
 	["auto", ["hall"], [{ m: "hall_shelf_hooks", keepY: true }]],
 	// стенки и торшеры — где найдётся место
-	["auto", ["living", "bedroom", "study"], ["stenka_glass"]],
+	["auto", ["living", "bedroom", "study", "kids", "hall"], ["stenka_glass"]],
 	["auto", ["living", "bedroom", "study", "kids"], ["floor_lamp_classic", "floor_lamp_duo"]],
-	["auto", ["kitchen", "living", "kids", "bedroom", "study"], ["sofa_cushions_red"]],
+	["auto", ["bedroom", "kids", "study", "living", "hall"], ["wardrobe_3door", "wardrobe_50s_glass"]],
+	["top", "wardrobe_3door", "wardrobe_3door_top", 0.5],
+	["auto", ["kitchen", "living", "kids", "bedroom", "study", "hall"], ["sofa_cushions_red"]],
 	["wall", "kids", "N", ["desk_pedestal", "desk_legs"], 1.95],
 	["front", "desk_pedestal", "chair_ladder"], ["front", "desk_legs", "chair_vienna"],
 	["sill", 0, ["pot_tall", "pot_classic", "pot_ribbed"]],
@@ -128,11 +130,11 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xa9b6c2);   // небо в окнах
 {
 	const g = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ color: 0x5d6150, roughness: 1 }));
-	g.rotation.x = -Math.PI / 2; g.position.set(9, -0.02, 4); g.receiveShadow = true; scene.add(g);   // земля за окнами
+	g.rotation.x = -Math.PI / 2; g.position.set(9, -0.02, 4.4); g.receiveShadow = true; scene.add(g);   // земля за окнами
 }
 scene.add(new THREE.HemisphereLight(0xe4ecf5, 0x6b5a48, 1.25));
 const sun = new THREE.DirectionalLight(0xfff1dc, 2.4);
-sun.position.set(-3, 10, -6); sun.target.position.set(9, 0, 4);
+sun.position.set(-3, 10, -6); sun.target.position.set(9, 0, 4.4);
 sun.castShadow = true;
 sun.shadow.mapSize.set(4096, 4096);
 Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 30 });
@@ -194,7 +196,7 @@ const windows = [];   // окна: центр проёма, нормаль вн�
 const doorways = [];   // двери: центр, сторона лица, модель
 const doorZones = [];   // проходы у дверей — мебель туда не ставится
 const wallPieces = [];   // куски стен: для среза — линия стены (нормаль, смещение) и высоты
-const inward = (x, z, ux, uz) => { const n = [-uz, ux]; return n[0] * (9 - x) + n[1] * (4 - z) < 0 ? [uz, -ux] : n; };
+const inward = (x, z, ux, uz) => { const n = [-uz, ux]; return n[0] * (9 - x) + n[1] * (4.4 - z) < 0 ? [uz, -ux] : n; };
 for (const W of WALLS) {
 	const [ax, az] = W.a, [bx, bz] = W.b, len = Math.hypot(bx - ax, bz - az);
 	const ux = (bx - ax) / len, uz = (bz - az) / len, h = H, t = W.t || T;
@@ -328,7 +330,10 @@ let count = 0;
 // сначала всё, что у окон (батареи, шторы) — оно занимает место; потом мебель
 const FIRST = new Set(["rad", "radwall", "drape"]);
 // «auto» — последними: заполняют то, что осталось после явной раскладки
-for (const p of [...PLAN.filter(p => FIRST.has(p[0])), ...PLAN.filter(p => !FIRST.has(p[0]) && p[0] !== "auto"), ...PLAN.filter(p => p[0] === "auto")]) {
+// зависимые (сверху, перед, полка) — самыми последними: их основа может быть из «auto»
+const DEP = new Set(["top", "front", "shelf"]);
+for (const p of [...PLAN.filter(p => FIRST.has(p[0])), ...PLAN.filter(p => !FIRST.has(p[0]) && p[0] !== "auto" && !DEP.has(p[0])),
+	...PLAN.filter(p => p[0] === "auto"), ...PLAN.filter(p => DEP.has(p[0]))]) {
 	if (p[0] === "wall") {
 		const [, room, side, list, from] = p, S = SIDES[side], [cx, cz] = S.c(ROOMS[room].rect), R = ROOMS[room].rect;
 		const wallLen = Math.abs(S.t[0]) ? R[2] - R[0] : R[3] - R[1];
@@ -416,7 +421,10 @@ for (const p of [...PLAN.filter(p => FIRST.has(p[0])), ...PLAN.filter(p => !FIRS
 	} else if (p[0] === "top") {
 		const [, base, n, f] = p, b = placed[base];
 		if (!b) { clashes.push(`${n}: нет ${base}`); continue; }
-		put(n, make(n, [0, 1]), b.min.x + (b.max.x - b.min.x) * f, (b.min.z + b.max.z) / 2, b.max.y, false); count++;
+		// сверху: лицом туда же, куда предмет (антресоль на шкаф, горшок на буфет)
+		const fc = faceOf[base] || [0, 1], alongX = fc[0] === 0;
+		put(n, make(n, fc), alongX ? b.min.x + (b.max.x - b.min.x) * f : (b.min.x + b.max.x) / 2,
+			alongX ? (b.min.z + b.max.z) / 2 : b.min.z + (b.max.z - b.min.z) * f, b.max.y, false); count++;
 	} else if (p[0] === "rad" || p[0] === "radwall") {
 		// Батарея: начало модели — на полу в плоскости стены (не центр габарита):
 		// ставится началом на внутреннюю грань стены, по высоте — как есть; вдоль стены —
@@ -520,7 +528,7 @@ console.log(clashes.length ? `[квартира] пересечения: ${clash
 
 /* ── камера: вращение вокруг точки ──────────────────────────────────── */
 const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 100);
-const VIEWS = { all: { t: [9, 0.4, 4], d: 21, yaw: 20, pitch: 55, name: "вся квартира" } };
+const VIEWS = { all: { t: [9, 0.4, 4.4], d: 21.5, yaw: 20, pitch: 55, name: "вся квартира" } };
 for (const [id, R] of Object.entries(ROOMS)) {
 	const [x0, z0, x1, z1] = R.rect;
 	VIEWS[id] = { t: [(x0 + x1) / 2, 0.6, (z0 + z1) / 2], d: Math.max(x1 - x0, z1 - z0) * 1.15 + 1.5, yaw: 25, pitch: 50, name: R.name };
