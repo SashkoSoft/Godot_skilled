@@ -64,12 +64,15 @@ export async function loadHouses(d) {
 				dress(g.scene, T);
 				lod.addLevel(g.scene, [0, 90, 200][i], 0.1);
 			}
-			// Геометрия может прийти уже в мировых координатах (так пришёл b5),
-			// а может — вокруг пивота в центре rect. Смотрим габарит: если он уже
-			// стоит на месте дома — не двигаем, иначе переносим в центр rect.
+			// Геометрия может прийти уже в мировых координатах (так приходят дома hou),
+			// а может — вокруг пивота в центре rect. Смотрим габарит: если его центр внутри
+			// rect — дом уже на месте, не двигаем. (Раньше порог был 2 м от центра rect —
+			// крыльцо и козырёк башни сдвигали центр габарита на 2.1 м, и башню переносили
+			// второй раз, за край квартала.)
 			const r = b.rect, cx = (r[0] + r[2]) / 2, cz = (r[1] + r[3]) / 2;
 			const bb = new THREE.Box3().setFromObject(l0.scene), c = bb.getCenter(new THREE.Vector3());
-			if (Math.hypot(c.x - cx, c.z - cz) > 2) lod.position.set(cx, 0, cz);
+			const inRect = c.x > r[0] && c.x < r[2] && c.z > r[1] && c.z < r[3];
+			if (!inRect) lod.position.set(cx, 0, cz);
 			group.add(lod);
 			ids.push(b.id);
 		} catch (e) {
