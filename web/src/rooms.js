@@ -28,7 +28,9 @@ const ROOMS = {
 	kids: { name: "детская", rect: [3.6, 5.2, 13, 8.8], floor: "herring", paper: "wp-sprigs" },
 	study: { name: "кабинет", rect: [13, 0, 18, 5.2], floor: "herring", paper: "wp-rose-stripe" },
 	hall: { name: "прихожая", rect: [13, 5.2, 16, 8.8], floor: "ft-octagon-dot", paper: "wp-damask-blue" },
-	bath: { name: "ванная", rect: [16, 5.2, 18, 8.8], floor: "ft-checker-white", paper: "ft-wreath-tile" },
+	// настенная плитка comfy: орнамент — кухня/ванная, однотонная — туалет/ванная
+	bath: { name: "ванная", rect: [16, 5.2, 18, 7.2], floor: "ft-checker-white", paper: "wt-turquoise-decor" },
+	wc: { name: "туалет", rect: [16, 7.2, 18, 8.8], floor: "ft-checker-white", paper: "wt-mint" },
 };
 // Стены: отрезок по оси (внутренняя грань — на T/2 от оси), t — толщина (наружные 0.3:
 // окна blend утоплены в стену до 0.2; толщина добавляется наружу, комнаты не меняются).
@@ -47,7 +49,8 @@ const WALLS = [
 		{ c: 14.5, w: 0.93, y: [0, 2.08], door: "pdoor_red", side: [0, 1], outer: true }] },
 	{ a: [18, 0], b: [18, 8.8], t: 0.3 },
 	{ a: [13, 0], b: [13, 8.8], open: [door(2.4, "door_glass", [1, 0]), door(6.4, "door_panel_6lite", [-1, 0])] },
-	{ a: [16, 5.2], b: [16, 8.8], open: [door(1.6, "door_flat_narrow", [1, 0])] },
+	{ a: [16, 5.2], b: [16, 8.8], open: [door(1.0, "door_flat_narrow", [1, 0]), door(2.8, "door_flat_narrow", [1, 0])] },
+	{ a: [16, 7.2], b: [18, 7.2] },
 	{ a: [6.6, 0], b: [6.6, 5.2], open: [door(3.3, "door_glass", [-1, 0])] },
 	{ a: [0, 5.2], b: [18, 5.2], open: [door(1.6, "door_panel_6lite", [0, -1]), door(5.2, "door_flat", [0, 1]), door(12.2, "door_flat_narrow", [0, 1]), door(14.5, "door_flat", [0, -1])] },
 	{ a: [3.6, 5.2], b: [3.6, 8.8] },
@@ -90,9 +93,9 @@ const PLAN = [
 	["auto", ["study", "kids"], ["desk_school"]],
 	["shelf", "desk_side_cabinet", "shelf_glass_dark", 1.35], ["shelf", "desk_drawers_gallery", "shelf_glass_light", 1.35],
 	// прихожая: вешалки на стенах (у настенных начало — на своей высоте), тумба и скамья для обуви
-	["wall", "hall", "E", [{ m: "hall_stand", keepY: true }, { m: "hall_shoe_bench", keepY: true }], 0.2],
+	["wall", "hall", "E", [{ m: "hall_stand", keepY: true }], 0.2],
 	["wall", "hall", "W", [{ m: "hall_hanger_panels", keepY: true }], 0.3],
-	["auto", ["hall"], [{ m: "hall_shelf_hooks", keepY: true }]],
+	["auto", ["hall"], [{ m: "hall_shelf_hooks", keepY: true }, { m: "hall_shoe_bench", keepY: true }]],
 	// стенки и торшеры — где найдётся место
 	["auto", ["living", "bedroom", "study", "kids", "hall"], ["stenka_glass"]],
 	["auto", ["living", "bedroom", "study", "kids"], ["floor_lamp_classic", "floor_lamp_duo"]],
