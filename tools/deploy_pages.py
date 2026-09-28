@@ -14,6 +14,20 @@ import argparse, functools, http.server, os, pathlib, shutil, socketserver, subp
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "web"))
 import shot   # noqa: E402  (find_chrome, Handler)
+import os
+
+def _tmpprof():
+    # профиль Chrome — временный и удаляется при выходе (раньше копились в %TEMP%: 51 ГБ)
+    import tempfile, atexit, shutil, time
+    d = tempfile.mkdtemp(prefix="chrome_prof_")
+    def _rm():
+        for _ in range(10):
+            shutil.rmtree(d, ignore_errors=True)
+            if not os.path.exists(d): return
+            time.sleep(0.5)
+    atexit.register(_rm)
+    return d
+
 
 WT = pathlib.Path(os.environ.get("PAGES_WT", r"C:\Users\Papa\Documents\gh-pages-worktree"))
 GIT = os.path.expandvars(r"%LOCALAPPDATA%\Programs\Git\cmd\git.exe")
@@ -47,7 +61,7 @@ def collect(wait):
 	threading.Thread(target=srv.serve_forever, daemon=True).start()
 	for page in PAGES:
 		before = len(served)
-		cmd = [shot.find_chrome(), "--headless=new", "--window-size=1600,900", "--user-data-dir=" + tempfile.mkdtemp(),
+		cmd = [shot.find_chrome(), "--headless=new", "--window-size=1600,900", "--user-data-dir=" + _tmpprof(),
 			"--no-first-run", "--use-angle=d3d11", "--enable-gpu", "--ignore-gpu-blocklist", "http://127.0.0.1:8160/" + page]
 		p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 		time.sleep(wait)
