@@ -2139,5 +2139,149 @@
   "webp": true,
   "ormHeight": false,
   "tile": 1.2
+ },
+ "wt-cream": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false,
+  "tile": 1.2
+ },
+ "wt-delft-corner": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false,
+  "tile": 1.2
+ },
+ "wt-mint": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false,
+  "tile": 1.2
+ },
+ "wt-rosette": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false,
+  "tile": 1.2
+ },
+ "wt-turquoise": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false,
+  "tile": 1.2
+ },
+ "wt-turquoise-decor": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false,
+  "tile": 1.2
  }
 }
