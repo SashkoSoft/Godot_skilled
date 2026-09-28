@@ -41,7 +41,10 @@ const win = (c, m) => ({ c, w: WINDOW[m][0], y: [SILL - 0.035, SILL + WINDOW[m][
 const door = (c, m, side) => ({ c, w: (m === "door_flat_narrow" ? 0.6 : 0.8) + 0.066, y: DOOR, door: m, side });
 const WALLS = [
 	{ a: [0, 0], b: [18, 0], t: 0.3, open: [win(4.6, "win_3_fort_left"), win(9.8, "win_3_fort_right"), win(15.5, "win_3_fort_left")] },
-	{ a: [0, 8.8], b: [18, 8.8], t: 0.3, open: [win(1.8, "win_2_kitchen"), win(8.3, "win_3_fort_right"), win(17, "win_1_small")] },
+	// входная дверь (дерматин, blend) — в прихожую с лестничной клетки: проём 0.93 × 2.08,
+	// начало — на наружной грани стены, открывается наружу
+	{ a: [0, 8.8], b: [18, 8.8], t: 0.3, open: [win(1.8, "win_2_kitchen"), win(8.3, "win_3_fort_right"), win(17, "win_1_small"),
+		{ c: 14.5, w: 0.93, y: [0, 2.08], door: "pdoor_red", side: [0, 1], outer: true }] },
 	{ a: [18, 0], b: [18, 8.8], t: 0.3 },
 	{ a: [13, 0], b: [13, 8.8], open: [door(2.4, "door_glass", [1, 0]), door(6.4, "door_panel_6lite", [-1, 0])] },
 	{ a: [16, 5.2], b: [16, 8.8], open: [door(1.6, "door_flat_narrow", [1, 0])] },
@@ -95,7 +98,7 @@ const PLAN = [
 	["auto", ["living", "bedroom", "study", "kids"], ["floor_lamp_classic", "floor_lamp_duo"]],
 	["auto", ["bedroom", "kids", "study", "living", "hall"], ["wardrobe_3door", "wardrobe_50s_glass"]],
 	["top", "wardrobe_3door", "wardrobe_3door_top", 0.5],
-	["auto", ["kitchen", "living", "kids", "bedroom", "study", "hall"], ["sofa_cushions_red"]],
+	["auto", ["kitchen", "living", "kids", "bedroom", "study", "hall", "bath"], ["sofa_cushions_red"]],
 	["wall", "kids", "N", ["desk_pedestal", "desk_legs"], 1.95],
 	["front", "desk_pedestal", "chair_ladder"], ["front", "desk_legs", "chair_vienna"],
 	["sill", 0, ["pot_tall", "pot_classic", "pot_ribbed"]],
@@ -226,7 +229,7 @@ for (const W of WALLS) {
 		if (o.door) {   // проход: полоса 0.9 м по обе стороны двери
 			const hw = o.w / 2 + 0.05, dd = 0.9;
 			doorZones.push(new THREE.Box3(new THREE.Vector3(x - (ux ? hw : dd), 0, z - (uz ? hw : dd)), new THREE.Vector3(x + (ux ? hw : dd), DOOR[1], z + (uz ? hw : dd))));
-			doorways.push({ x, z, side: o.side, model: o.door, line: { n: [-uz, ux], c: -uz * ax + ux * az } });
+			doorways.push({ x, z, side: o.side, model: o.door, outer: !!o.outer, face: o.outer ? t - T / 2 : T / 2, line: { n: [-uz, ux], c: -uz * ax + ux * az } });
 		}
 		if (o.win) windows.push({ x, z, w: o.w, n: nIn, model: o.win, line: { n: [-uz, ux], c: -uz * ax + ux * az } });
 		s = o1;
@@ -512,8 +515,9 @@ for (const w of windows) {
 }
 for (const d of doorways) {
 	const it = make(d.model, d.side);
-	it.o.position.set(d.x + d.side[0] * T / 2, 0, d.z + d.side[1] * T / 2);
-	it.o.traverse(n => { if (/^Door(\.\d+)?$/.test(n.name)) n.rotation.y += (n.userData.open_sign ?? -1) * Math.PI / 2; });
+	it.o.position.set(d.x + d.side[0] * d.face, 0, d.z + d.side[1] * d.face);   // face — до грани стены, где начало модели
+	// входная (outer) — наружу, на лестницу: по кадру open_sign у неё уводит полотно в комнату — знак обратный
+	it.o.traverse(n => { if (/^Door(\.\d+)?$/.test(n.name)) n.rotation.y += (d.outer ? -1 : 1) * (n.userData.open_sign ?? -1) * Math.PI / 2; });
 	scene.add(it.o); attached.push({ o: it.o, ...d.line }); count++;
 }
 for (const [room, m] of LAMPS) {
@@ -548,6 +552,7 @@ for (const [id, v] of Object.entries(VIEWS)) {
 	bar.appendChild(b);
 }
 setView(q.get("view") || "all");
+if (q.get("yaw")) cam.yaw = +q.get("yaw");   // #yaw= — повернуть ракурс (снимки)
 
 const ptrs = new Map();
 let last = null;
