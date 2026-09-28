@@ -23,6 +23,7 @@ import { spawnRobots } from "./robot.js";
 import { spawnDrones } from "./drones.js";
 import { instanceLods } from "./instlod.js";
 import { createInteriors } from "./furnish.js";
+import { createPlayer } from "./player.js";
 import { buildHoudiniTrees } from "./trees.js";
 import { windUniforms, setWind } from "./wind.js";
 
@@ -209,6 +210,9 @@ let grassBlades = null, grassNearHalf = 20;
 const grassCenter = new THREE.Vector3(), grassRay = new THREE.Vector3(), bottomRay = new THREE.Vector3();
 let robot = null;          // тот, за кем камера
 let drones = null, fenceIvy = null, interiors = null;
+// игра: герой бегает по кварталу и в домах (player.js); world — что берём в коллизию
+let player = null, playing = false;
+const world = { bo: null, fences: null, playground: null, houses: null, boxes: [], sig: "" };
 const FOV = 55, RIDE_FOV = 100;   // угол камеры: обычный и в дроне (setRide)
 let ride = -1, rideHeading = 0;
 const cpuMs = { anim: 0, plants: 0, render: 0 };
@@ -229,6 +233,7 @@ if (LEVEL === "district") {
 	const treeBoxes = treeMode === "box";
 	const bo = buildBlockout(d, { treeBoxes });
 	scene.add(bo.group);
+	world.bo = bo;
 	dressBoxes().catch(e => console.error("[улица] материалы коробок:", e));
 	// Настоящие дома (от hou) — вместо коробок тех зданий, у которых есть model.
 	// По умолчанию выключены и не грузятся (пользователь: «верни пока коробки»):
@@ -236,11 +241,11 @@ if (LEVEL === "district") {
 	// заборы-модели по данным — фоном, коробочные заборы там не строятся
 	// заборы и плющ на них (HoudiniCOP: накладки на плиту, тот же конвейер растений, что кусты)
 	loadFences(d).then(P => {
-		scene.add(P.group);
+		scene.add(P.group); world.fences = P.group;
 		if (P.ivy.length) return buildHoudiniTrees(P.ivy, { ...plantCull, base: "../game/assets/models/ivy_fence/", name: "FenceIvy",
 			minH: 4, lodDist: [30, 90], cull: [70, 0], autumn: d.trees.autumn }).then(I => { scene.add(I.group); fenceIvy = I; });
 	}).catch(e => console.error("[улица] заборы:", e, e.stack));
-	loadPlayground(d).then(P => { scene.add(P.group); playground = P; }).catch(e => console.error("[улица] площадки:", e));
+	loadPlayground(d).then(P => { scene.add(P.group); playground = P; world.playground = P.group; }).catch(e => console.error("[улица] площадки:", e));
 	// опоры и уличные мелочи — экземплярами (instlod.js): вызов на деталь, а не на предмет; #inst=0 — как было (A/B)
 	const toInst = (P, what) => { if (!P) return; scene.add(P.group); if (q.get("inst") === "0") return; const I = instanceLods(P.group, { sun: sunDir }); if (I) { instLods.push(I); console.log(`[улица] ${what}: ${I.stats.items} предметов → ${I.stats.calls} вызовов`); } };
 	loadPoles(d).then(P => toInst(P, "опоры")).catch(e => console.error("[улица] опоры:", e));
@@ -260,7 +265,7 @@ if (LEVEL === "district") {
 	for (const o of buildingBoxes) o.visible = false;
 	layerObjs.houses = { show: [], hide: [], load: async () => {
 		const H = await loadHouses(d);
-		scene.add(H.group);
+		scene.add(H.group); world.houses = H;
 		const rest = buildingBoxes.filter(o => !H.ids.includes(o.userData.building));
 		layerObjs.houses.show = [H.group, ...rest]; layerObjs.houses.load = null;
 		if (H.ids.length) console.log(`[улица] дома-модели: ${H.ids.join(", ")}`);
@@ -431,6 +436,7 @@ addEventListener("keydown", (e) => {
 	if (e.code === "KeyR" && crowd.length) { nextRobot(1); return; }
 	if (e.code === "KeyF" && robot) { toggleFollow(); return; }
 	if (e.code === "KeyV") { nextRide(); return; }
+	if (e.code === "Enter") { playing ? stopPlay() : startPlay(); return; }
 	if (e.code === "KeyT" && loadTrees) { toggleLayer("trees"); return; }
 	if (e.code === "KeyP" && hud.perfTable) {
 		// разбивка цены кадра по слоям — что дорогое; время — только A/B на устройстве
@@ -644,15 +650,82 @@ canvas.addEventListener("pointermove", (e) => {
 
 // Кнопки на экране (для телефона; на компьютере те же действия на клавишах)
 for (const [id, fn] of [["btn-prev", () => nextRobot(-1)], ["btn-next", () => nextRobot(1)],
-	["btn-follow", toggleFollow], ["btn-all", overview], ["btn-drone", nextRide]]) {
+	["btn-follow", toggleFollow], ["btn-all", overview], ["btn-drone", nextRide], ["btn-play", () => playing ? stopPlay() : startPlay()]]) {
 	const b = document.getElementById(id);
 	if (b) b.addEventListener("click", fn);
 }
 canvas.addEventListener("wheel", (e) => {
 	e.preventDefault();
+	if (playing) { playDist = Math.max(1.5, Math.min(12, playDist * (e.deltaY > 0 ? 1.12 : 0.89))); return; }
 	if (follow) { followDist = Math.max(4, Math.min(200, followDist * (e.deltaY > 0 ? 1.12 : 0.89))); return; }
 	cam.speed = Math.max(0.5, Math.min(60, cam.speed * (e.deltaY > 0 ? 0.85 : 1.18)));
 }, { passive: false });
+
+/* ── игра: герой бегает по кварталу и в домах ───────────────────────────
+   Enter / кнопка «играть» — вход и выход. WASD — бег относительно камеры, Shift — шагом,
+   пробел — прыжок, мышь (тащить) — осмотреться, колесо — ближе/дальше.
+   Коллизия — земля и коробки блок-аута, заборы, площадка, коллизии домов hou;
+   пересобирается, когда догрузилось новое (дома, их коллизии). */
+let playDist = 4.5, autoRoute = null, autoT = 0;
+function collectColliders() {
+	const objs = [], H = world.houses;
+	if (world.bo) world.bo.group.traverse(o => {
+		if (!o.isMesh) return;
+		for (let p = o; p; p = p.parent) if (p === world.bo.game) return;   // контуры игровых зон — не стены
+		for (let p = o; p; p = p.parent) if (p.userData.building && H && H.ids.includes(p.userData.building)) return;   // у дома есть своя коллизия
+		objs.push(o);
+	});
+	for (const g of [world.fences, world.playground]) if (g) objs.push(g);
+	// Дома: коллизия — сама ближняя ступень модели (полы, тамбур, ступени, стены), без
+	// дверных полотен, стёкол и дверей лифта. Отдельная <id>_col.glb у hou упрощена:
+	// в ней нет пола тамбура (+0.45) — игрок проваливался под крыльцом.
+	if (H) H.group.traverse(o => {
+		if (!o.isLOD) return;
+		o.levels[0].object.traverse(m => { if (m.isMesh && !/doors|glass|lift_door|windows/i.test(m.name)) objs.push(m); });
+	});
+	if (q.get("coldbg")) { const pt = new THREE.Vector3(...q.get("coldbg").split(",").map(Number)); for (const o of objs) o.traverse(m => { if (m.isMesh && new THREE.Box3().setFromObject(m).expandByScalar(0.35).containsPoint(pt)) console.log("COLDBG " + m.name + " / " + (m.parent && m.parent.name) + " " + JSON.stringify(m.userData)); }); }
+	return objs;
+}
+function worldSig() {
+	const H = world.houses;
+	return [!!world.bo, !!world.fences, !!world.playground, H ? H.ids.length : -1, world.boxes.length].join("|");
+}
+async function startPlay() {
+	if (LEVEL !== "district") { say("игра — на уровне квартала (#level=district)"); return; }
+	if (!layerOn.houses) await toggleLayer("houses");
+	if (!player) {
+		player = await createPlayer(scene, { spawn: [108.5, 0.1, -20], envMap: skyEnvMap() });
+		cam.yaw = 0; cam.pitch = -12;
+	}
+	player.root.visible = true;
+	follow = false; if (ride >= 0) setRide(-1);
+	playing = true;
+	say("игра: WASD — бег, Shift — шагом, пробел — прыжок, мышь — осмотреться · Enter — выйти");
+}
+function stopPlay() { playing = false; if (player) player.root.visible = false; say("свободная камера"); }
+let sigTimer = 0;
+function playTick(dt) {
+	sigTimer -= dt;
+	if (sigTimer <= 0) {   // раз в секунду: не догрузилось ли что-то в коллизию
+		sigTimer = 1;
+		const s = worldSig();
+		if (s !== world.sig) { world.sig = s; player.setColliders(collectColliders(), world.boxes); }
+	}
+	const y = cam.yaw * Math.PI / 180, f = new THREE.Vector3(-Math.sin(y), 0, -Math.cos(y)), r = new THREE.Vector3(Math.cos(y), 0, -Math.sin(y));
+	move.set(0, 0, 0);
+	if (keys.has("KeyW") || keys.has("ArrowUp")) move.add(f);
+	if (keys.has("KeyS") || keys.has("ArrowDown")) move.sub(f);
+	if (keys.has("KeyD") || keys.has("ArrowRight")) move.add(r);
+	if (keys.has("KeyA") || keys.has("ArrowLeft")) move.sub(r);
+	if (autoRoute && autoRoute.length) {   // проверка: бежать по точкам маршрута (#route=)
+		const [tx, tz] = autoRoute[0], dx = tx - player.pos.x, dz = tz - player.pos.z, dd = Math.hypot(dx, dz);
+		if (dd < 0.25) { autoRoute.shift(); console.log(`PLAYERDBG точка ${player.pos.toArray().map(v => v.toFixed(2)).join(",")}`); }
+		else move.set(dx / dd, 0, dz / dd);
+		autoT += dt; if (autoT > 1) { autoT = 0; console.log(`PLAYERDBG ${player.pos.toArray().map(v => v.toFixed(2)).join(",")} ground=${player.onGround}`); }
+	}	player.update(dt, move, { run: !(keys.has("ShiftLeft") || keys.has("ShiftRight")), jump: keys.has("Space") });
+	player.cameraAt(camera, cam.yaw, cam.pitch, playDist);
+	cam.p.copy(camera.position);   // тени, трава, LOD — от камеры
+}
 
 /* ── цикл ───────────────────────────────────────────────────────────── */
 function resize() {
@@ -681,6 +754,7 @@ function tick(now) {
 
 	resize();
 
+	if (playing && player) { playTick(dt); } else {
 	move.set(0, 0, 0);
 	camera.getWorldDirection(fwd);
 	right.crossVectors(fwd, camera.up).normalize();
@@ -696,6 +770,7 @@ function tick(now) {
 		const fast = keys.has("ShiftLeft") || keys.has("ShiftRight");
 		const sp = cam.speed * (fast ? 10 : 1) * dt;
 		cam.p.addScaledVector(move.normalize(), sp);
+	}
 	}
 
 	const cpu0 = performance.now();
@@ -829,7 +904,20 @@ if (LEVEL === "district") {
 		if (name in saved && !!saved[name] !== layerOn[name] && !fromHash[name]) await toggleLayer(name);
 }
 
-// #off=grass,bushes,… — выключить слои для замера «с фичей / без фичи»
+// #play=1 — сразу в игру; #drive=KeyW:4,Space:0.3,KeyA:1 — проверка: нажатия по очереди (с), лог позиции
+if (q.get("play") === "1") {
+	await startPlay();
+	if (q.get("route")) autoRoute = q.get("route").split(";").map(s => s.split(",").map(Number));
+	if (q.get("drive")) (async () => {
+		await new Promise(r => setTimeout(r, 4000));
+		for (const step of q.get("drive").split(",")) {
+			const [k, s] = step.split(":"); keys.add(k);
+			const t0 = performance.now();
+			while (performance.now() - t0 < +s * 1000) { await new Promise(r => setTimeout(r, 500)); console.log(`PLAYERDBG ${k} ${player.pos.toArray().map(v => v.toFixed(2)).join(",")} ground=${player.onGround}`); }
+			keys.delete(k);
+		}
+	})();
+}// #off=grass,bushes,… — выключить слои для замера «с фичей / без фичи»
 if (q.has("off")) say("выключено для замера: " + applyOff(scene, renderer, q.get("off")).join(", "));
 // #perf=1 — цена кадра по слоям в консоль сразу, без рендера (для харнесса:
 // headless первый тяжёлый кадр рисует ненадёжно, а обход сцены ему не нужен).
