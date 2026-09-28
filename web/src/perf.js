@@ -76,7 +76,7 @@ export const BENCH = {
 	"трава": ["GrassBlades"], "кусты": ["Undergrowth", "UndergrowthBoxes"], "деревья": ["Trees"],
 	"роботы": ["Robots"], "дома": ["Houses"], "мусор": ["Trash"], "бордюр": ["Curbs"],
 	"опоры": ["Poles"], "плиты": ["Slabs"], "камешки": ["Rocks"], "заборы": ["Fences"],
-	"площадка": ["Playground"], "мелочи": ["StreetProps"], "плиты-трава": ["JointGrass"], "тени": null,
+	"площадка": ["Playground"], "мелочи": ["StreetProps"], "плющ": ["FenceIvy"], "плиты-трава": ["JointGrass"], "тени": null,
 	"пол": null,   // шейдер пола (floor.js): на время замера — простой материал того же цвета
 	// карта теней не перерисовывается (читается прежняя) — цена прохода в тень
 	"перерисовка теней": null,

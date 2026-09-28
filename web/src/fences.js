@@ -26,7 +26,9 @@ const MIXES = [
 const DIR = "../game/assets/models/props/fence/";
 const FENCES = {
 	// scale — во сколько раз модель крупнее файла (пользователь: «в два раза больше» — плита 8×4 м)
-	po2: { step: 8.0, scale: 2, wall: [8, 4], files: v => [`fence_po2_${v}_web.glb`, `fence_po2_${v}_lod1_web.glb`, `fence_po2_${v}_lod2_web.glb`], variants: ["A", "B", "C", "D"] },   // грязная, ржавая, мох, облезлая краска
+	// ivy — варианты плюща HoudiniCOP (game/assets/models/ivy_fence/); веса — повтором в списке
+	po2: { step: 8.0, scale: 2, wall: [8, 4], ivy: [0, 1, 2].flatMap(i => ["light", "light", "mid", "mid", "heavy", "dry"].map(k => `fence_ivy_ivy_${k}_${i}`)
+		.concat([`fence_ivy_creeper_mid_${i}`, `fence_ivy_creeper_heavy_${i}`])), files: v => [`fence_po2_${v}_web.glb`, `fence_po2_${v}_lod1_web.glb`, `fence_po2_${v}_lod2_web.glb`], variants: ["A", "B", "C", "D"] },   // грязная, ржавая, мох, облезлая краска
 };
 const LOD_DIST = [25, 70];   // м
 
@@ -72,6 +74,7 @@ export async function loadFences(d, { weather = true } = {}) {
 		return g.scene;
 	});
 	let count = 0, kit = null;
+	const ivy = [];   // плющ HoudiniCOP: [x, z, r, { tag, m }] — накладка на плиту в мировом масштабе
 	for (const a of d.areas) {
 		const kind = a.kind === "fenced" && a.fence && FENCES[a.fence];
 		if (!kind || !a.rect) continue;
@@ -97,9 +100,21 @@ export async function loadFences(d, { weather = true } = {}) {
 			const t = hash(p.z, p.x);
 			if (t < 0.2) { lod.rotation.x = (t < 0.1 ? 1 : -1) * (1 + t * 10) * Math.PI / 180; }
 			group.add(lod);
+			// Плющ: ~70 % плит, вариант по хешу; стороны у плиты равноправны — иногда
+			// разворот на 180°, чтобы соседние накладки не повторялись. Масштаб накладки —
+			// мировой (8 × 4.24 м): от плиты берётся только поворот, место и растяжка по X.
+			const hi = hash(p.x - 5.7, p.z + 2.3);
+			if (kind.ivy && hi < 0.7) {
+				const tag = kind.ivy[Math.floor(hash(p.x + 9.1, p.z - 4.4) * kind.ivy.length) % kind.ivy.length];
+				const o = new THREE.Object3D();
+				o.position.copy(lod.position); o.rotation.copy(lod.rotation);
+				if (hi < 0.3) o.rotation.y += Math.PI;
+				o.scale.set(p.scaleX, 1, 1); o.updateMatrix();
+				ivy.push([p.x, p.z, 4, { tag, m: o.matrix.clone(), health: "healthy" }]);
+			}
 			count++;
 		}
 	}
-	console.log(`[улица] заборы: плит ${count}`);
-	return { group, count };
+	console.log(`[улица] заборы: плит ${count}, с плющом ${ivy.length}`);
+	return { group, count, ivy };
 }

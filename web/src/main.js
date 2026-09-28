@@ -207,7 +207,7 @@ function bushBoxes(bushes) {
 let grassBlades = null, grassNearHalf = 20;
 const grassCenter = new THREE.Vector3(), grassRay = new THREE.Vector3(), bottomRay = new THREE.Vector3();
 let robot = null;          // тот, за кем камера
-let drones = null;
+let drones = null, fenceIvy = null;
 const FOV = 55, RIDE_FOV = 100;   // угол камеры: обычный и в дроне (setRide)
 let ride = -1, rideHeading = 0;
 const cpuMs = { anim: 0, plants: 0, render: 0 };
@@ -233,7 +233,12 @@ if (LEVEL === "district") {
 	// По умолчанию выключены и не грузятся (пользователь: «верни пока коробки»):
 	// загрузка — при первом нажатии кнопки «дома» или сразу с #houses=on.
 	// заборы-модели по данным — фоном, коробочные заборы там не строятся
-	loadFences(d).then(P => scene.add(P.group)).catch(e => console.error("[улица] заборы:", e));
+	// заборы и плющ на них (HoudiniCOP: накладки на плиту, тот же конвейер растений, что кусты)
+	loadFences(d).then(P => {
+		scene.add(P.group);
+		if (P.ivy.length) return buildHoudiniTrees(P.ivy, { ...plantCull, base: "../game/assets/models/ivy_fence/", name: "FenceIvy",
+			minH: 4, lodDist: [30, 90], cull: [70, 0], autumn: d.trees.autumn }).then(I => { scene.add(I.group); fenceIvy = I; });
+	}).catch(e => console.error("[улица] заборы:", e, e.stack));
 	loadPlayground(d).then(P => { scene.add(P.group); playground = P; }).catch(e => console.error("[улица] площадки:", e));
 	// опоры и уличные мелочи — экземплярами (instlod.js): вызов на деталь, а не на предмет; #inst=0 — как было (A/B)
 	const toInst = (P, what) => { if (!P) return; scene.add(P.group); if (q.get("inst") === "0") return; const I = instanceLods(P.group, { sun: sunDir }); if (I) { instLods.push(I); console.log(`[улица] ${what}: ${I.stats.items} предметов → ${I.stats.calls} вызовов`); } };
@@ -740,6 +745,7 @@ function tick(now) {
 	if (slabs) slabs.update(camera);
 	if (rocks) rocks.update(camera);
 	if (jointGrassL) jointGrassL.update(camera, now / 1000);
+	if (fenceIvy) fenceIvy.update(camera, now / 1000);
 	for (const I of instLods) I.update(camera);
 	const cpu2 = performance.now();
 	// время процессора (скользящее среднее): анимация (роботы, дроны), раскладка
