@@ -20,7 +20,8 @@
    ]
   },
   "webp": true,
-  "ormHeight": false
+  "ormHeight": false,
+  "tile": 1.06
  },
  "wp-damask-emboss": {
   "src": "2k",
@@ -43,7 +44,8 @@
    ]
   },
   "webp": true,
-  "ormHeight": false
+  "ormHeight": false,
+  "tile": 1.06
  },
  "wp-damask-green": {
   "src": "2k",
@@ -66,7 +68,8 @@
    ]
   },
   "webp": true,
-  "ormHeight": false
+  "ormHeight": false,
+  "tile": 1.06
  },
  "wp-fans": {
   "src": "2k",
@@ -89,7 +92,8 @@
    ]
   },
   "webp": true,
-  "ormHeight": false
+  "ormHeight": false,
+  "tile": 1.06
  },
  "wp-floral": {
   "src": "2k",
@@ -112,7 +116,8 @@
    ]
   },
   "webp": true,
-  "ormHeight": false
+  "ormHeight": false,
+  "tile": 1.06
  },
  "wp-rose-stripe": {
   "src": "2k",
@@ -135,7 +140,8 @@
    ]
   },
   "webp": true,
-  "ormHeight": false
+  "ormHeight": false,
+  "tile": 1.06
  },
  "wp-roses-vine": {
   "src": "2k",
@@ -158,7 +164,8 @@
    ]
   },
   "webp": true,
-  "ormHeight": false
+  "ormHeight": false,
+  "tile": 1.06
  },
  "wp-sprigs": {
   "src": "2k",
@@ -181,7 +188,8 @@
    ]
   },
   "webp": true,
-  "ormHeight": false
+  "ormHeight": false,
+  "tile": 1.06
  },
  "asphalt-road-crumbled": {
   "src": "2k",
@@ -2011,5 +2019,125 @@
   },
   "webp": true,
   "ormHeight": false
+ },
+ "ft-checker-red": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false,
+  "tile": 1.2
+ },
+ "ft-checker-white": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false,
+  "tile": 1.2
+ },
+ "ft-octagon-dot": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false,
+  "tile": 1.2
+ },
+ "ft-plaid-red": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false,
+  "tile": 1.2
+ },
+ "ft-wreath-tile": {
+  "src": "2k",
+  "tiers": [
+   "1k",
+   "512"
+  ],
+  "maps": {
+   "1k": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ],
+   "512": [
+    "albedo",
+    "normal",
+    "orm",
+    "height"
+   ]
+  },
+  "webp": true,
+  "ormHeight": false,
+  "tile": 1.2
  }
 }
