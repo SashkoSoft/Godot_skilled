@@ -296,14 +296,31 @@ const TULLE_Z = 0.36, HEAVY_Z = 0.48, ROD = 1.0;   // от внутренней 
 const tulleMat = new THREE.MeshStandardMaterial({ color: 0xf1eee6, roughness: 0.9, transparent: true, opacity: 0.42, side: THREE.DoubleSide, depthWrite: false });
 const noise = await loadWearNoise(`${FURN}textures/wear_noise.png`);
 const models = {};
-await Promise.all(names.map(async n => {
-	// маски может не быть (смесители — целиком хром, износа нет)
-	const [g, img] = await Promise.all([loader.loadAsync(`${FURN}${n}_web.glb`), bmp.loadAsync(`${FURN}textures/baked/${n}_lod0_mask.png`).catch(() => null)]);
-	const mask = img ? new THREE.Texture(img) : null;
-	g.scene.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
-	models[n] = { scene: g.scene, mask };
-	status.textContent = `загружено ${Object.keys(models).length} из ${names.length}`;
-}));
+// Загрузка: по 6 моделей разом (на телефоне сотня параллельных загрузок и расшифровок
+// упиралась в память и вставала на «83 из 86»); у каждой — предел 40 с: не пришла —
+// на её месте серый ящик, стенд открывается без неё. Маска износа — уменьшенная:
+// 512 на компьютере, 256 на телефоне (полная 1024 весила 72 МБ на стенд).
+const PHONE = texPx <= 512, failed = [];   // у ступеней свои атласы — и маски свои (LOD0 → 512, LOD1 → 256)
+const withTimeout = (pr, ms) => Promise.race([pr, new Promise((_, no) => setTimeout(() => no(new Error("время вышло")), ms))]);
+let done = 0;
+async function loadModel(n) {
+	try {
+		// маски может не быть (смесители — целиком хром, износа нет)
+		// телефон — ступень LOD1 blend (атлас 512): 88 моделей по три карты 1024 — ~1.4 ГБ видеопамяти
+		const glb = PHONE ? `${FURN}${n}_lod1_web.glb` : `${FURN}${n}_web.glb`;
+		const [g, img] = await withTimeout(Promise.all([loader.loadAsync(glb),
+			bmp.loadAsync(`${FURN}textures/baked/lod/${n}_${PHONE ? "lod1_mask_256" : "lod0_mask_512"}.png`).catch(() => null)]), 40000);
+		g.scene.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
+		models[n] = { scene: g.scene, mask: img ? new THREE.Texture(img) : null };
+	} catch (e) {
+		failed.push(n); console.warn(`[квартира] ${n}: ${e.message}`);
+		const box = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshStandardMaterial({ color: 0x777777 }));
+		box.position.y = 0.2; const g = new THREE.Group(); g.add(box);
+		models[n] = { scene: g, mask: null };
+	}
+	status.textContent = `загружено ${++done} из ${names.length}`;
+}
+for (let i = 0; i < names.length; i += 6) await Promise.all(names.slice(i, i + 6).map(loadModel));
 // шторы — без масок износа; текстуры простых штор лежат рядом с glb
 await Promise.all(curtainNames.map(async n => {
 	const g = await loader.loadAsync(`${CURT}${n}.glb`);
@@ -559,7 +576,7 @@ for (const [room, m] of LAMPS) {
 	scene.add(it.o); count++;
 }
 applyWear();
-status.textContent = `${count} предметов, ${names.length} моделей`;
+status.textContent = `${count} предметов, ${names.length} моделей` + (failed.length ? ` · не загрузились: ${failed.join(", ")}` : "");
 // ползунок износа (общий уровень; у каждого предмета — свой небольшой сдвиг)
 {
 	const box = document.createElement("label");
