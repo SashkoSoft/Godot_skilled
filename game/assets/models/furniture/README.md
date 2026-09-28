@@ -289,3 +289,23 @@ R — рёбра, G — AO, B — «смотрит вверх», A — клас�
 
 Формат мебели. Двери `Door_L/R`, `Door_1_1..3`, `Door_Top_1..3` (open_sign; средняя дверь без ручки — открывается после соседней).
 Пересборка: `blender -b --factory-startup --python build_wardrobes.py`.
+
+## Конструктор входных дверей с дерматином — `build_padded_doors.py` (по 6 фото пользователя)
+
+**Полотна** (начало — ось петель, полотно уходит в +X Blender, лицо +Y; 0.86 × 2.03; открывается наружу):
+`pdoor_leaf_diamond` (ромбы с пуговицами), `pdoor_leaf_tufted` (стёганые «подушки», латунные пуговицы),
+`pdoor_leaf_dense` (мелкий ромб, серебряные гвоздики), `pdoor_leaf_flat` (гладкая), `pdoor_leaf_rope` (гладкая, витой кант с латунными гвоздиками).
+Гнёзда на полотне: `Socket_Handle`, `Socket_Lock`, `Socket_Lock2`, `Socket_Peephole`, `Socket_Number` (снаружи) и
+`Socket_Handle_In` (изнутри, повёрнуто на 180°) — фурнитуру ставить дочерней к гнезду без сдвига.
+
+**Коробки** (начало — пол, центр проёма, лицо стены; проём 0.93 × 2.08): `pdoor_frame_wood`, `pdoor_frame_wood_light`,
+`pdoor_frame_metal` (чёрный уголок, петли), `pdoor_frame_leather` (обитая, латунные гвоздики, петли).
+`Socket_Hinge` — сюда ставится полотно (петли справа для зрителя; для левой двери — зеркалить по X).
+
+**Фурнитура** (начало — точка крепления, наружу +Y): `pdoor_hw_lever_brass`, `pdoor_hw_lever_chrome` (на планке с цилиндром),
+`pdoor_hw_bracket` (скоба), `pdoor_hw_peephole`, `pdoor_hw_lock_round`, `pdoor_hw_lock_hex`, `pdoor_hw_number`.
+
+**Готовые двери** (собраны из тех же деталей): `pdoor_red`, `pdoor_brown`, `pdoor_wine`, `pdoor_flat_brown`, `pdoor_black`, `pdoor_rope`.
+Узел полотна `Door` (open_sign = +1 — наружу). Дерматин — класс «кожа»: рандомайзер перекрашивает, даёт трещины и прорывы.
+Треуг.: полотна LOD0 9–14 тыс. (стёжка + гвоздики), LOD1 3–5.5 тыс., LOD2 0.03–2 тыс.; коробки 0.1–4 тыс.; фурнитура до 0.4 тыс.
+Пересборка: `python gen_furniture_textures.py doorleather` → `blender -b --factory-startup --python build_padded_doors.py`.
