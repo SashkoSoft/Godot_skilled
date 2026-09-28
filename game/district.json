@@ -52,14 +52,14 @@
 			"loot": "еда, вода, бытовая химия — много, но охраняется"
 		},
 		{
-			"id": "b3", "name": "Башня 1", "kind": "tower", "floors": 12, "construction": "panel", "damage": 0.25, "rect": [80, -50, 116, -31.5],
+			"id": "b3", "name": "Башня 1", "kind": "tower", "floors": 12, "model": "b3", "construction": "panel", "damage": 0.25, "rect": [80, -50, 116, -31.5],
 			"series": "II-67, план из game/plan_traced.json, лифт; две секции — два подъезда (этаж ~650 м², > 500 м² — два эвакуационных выхода)",
 			"entrances": [{ "side": "S", "at": 87.5, "label": "подъезд 1" }, { "side": "S", "at": 108.5, "label": "подъезд 2" }],
 			"role": "главный дом для вылазок: этот корпус уже построен в игре",
 			"loot": "квартиры, крыша, машинное отделение лифта"
 		},
 		{
-			"id": "b4", "name": "Башня 2", "kind": "tower", "floors": 12, "construction": "panel", "damage": 0.45, "rect": [80, 14, 116, 32.5],
+			"id": "b4", "name": "Башня 2", "kind": "tower", "floors": 12, "model": "b4", "construction": "panel", "damage": 0.45, "rect": [80, 14, 116, 32.5],
 			"series": "II-67, тот же корпус",
 			"entrances": [{ "side": "S", "at": 87.5, "label": "подъезд 1" }, { "side": "S", "at": 108.5, "label": "подъезд 2" }],
 			"role": "позже: верхние этажи заросли, нужен инструмент, чтобы пройти",
