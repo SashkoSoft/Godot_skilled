@@ -24,7 +24,7 @@ const H = 2.6, T = 0.1, CUT = 0.9;   // высота стен, толщина, �
 const ROOMS = {
 	living: { name: "гостиная", rect: [0, 0, 6.6, 4.8], floor: "herring", paper: "wp-damask-green" },
 	bedroom: { name: "спальня", rect: [6.6, 0, 13, 4.8], floor: "mosaic", paper: "wp-roses-vine" },
-	kitchen: { name: "кухня", rect: [0, 4.8, 3.6, 8], floor: "mosaic", paper: "wp-fans" },
+	kitchen: { name: "кухня", rect: [0, 4.8, 3.6, 8], floor: "ft-checker-red", paper: "ft-wreath-tile" },
 	kids: { name: "детская", rect: [3.6, 4.8, 13, 8], floor: "herring", paper: "wp-sprigs" },
 };
 // Стены: отрезок по оси (внутренняя грань — на T/2 от оси), t — толщина (наружные 0.3:
@@ -152,11 +152,12 @@ function wallMesh(w, h, d, x, y, z) {
 		if (!n) return;
 		const fx = x + n[0] * w / 2, fz = z + n[1] * d / 2, R = roomAt(fx + n[0] * 0.05, fz + n[1] * 0.05);
 		if (!R || !R.paper) return;
+		const tile = LODM[R.paper]?.tile || PAPER_TILE;   // обои 1.06, плитка 1.2
 		let mi = mats.indexOf(paperMat(R.paper)); if (mi < 0) { mats.push(paperMat(R.paper)); mi = mats.length - 1; }
 		gr.materialIndex = mi;
 		for (let k = gr.start; k < gr.start + gr.count; k++) {
 			const vi = g.index.getX(k), wx = pos.getX(vi) + x, wy = pos.getY(vi) + y, wz = pos.getZ(vi) + z;
-			uv.setXY(vi, (n[0] ? wz : wx) / PAPER_TILE, wy / PAPER_TILE);
+			uv.setXY(vi, (n[0] ? wz : wx) / tile, wy / tile);
 		}
 	});
 	g.groups.forEach((gr, i) => { if (!N[i]) gr.materialIndex = 0; else if (gr.materialIndex > mats.length - 1) gr.materialIndex = 0; });
@@ -229,8 +230,12 @@ function parquet(kind) {
 	// ORM: R — AO, G — шероховатость (лак ~0.3), B — высота
 	return new THREE.MeshStandardMaterial({ map: ld("albedo", true), normalMap: ld("normal"), roughnessMap: ld("orm"), roughness: 1, metalness: 0 });
 }
+// пол: паркет HoudiniCOP или плитка comfy (набор ft-*: шаг тайла — из манифеста)
 const floorMats = { herring: parquet("herring"), mosaic: parquet("mosaic") };
 const TILE = { herring: 0.849, mosaic: 1.04 };
+for (const R of Object.values(ROOMS)) if (/^ft-/.test(R.floor) && !floorMats[R.floor]) {
+	floorMats[R.floor] = paperMat(R.floor); TILE[R.floor] = LOD[R.floor]?.tile || 1.2;
+}
 for (const R of Object.values(ROOMS)) {
 	const [x0, z0, x1, z1] = R.rect, g = new THREE.PlaneGeometry(x1 - x0, z1 - z0);
 	g.rotateX(-Math.PI / 2); g.translate((x0 + x1) / 2, 0, (z0 + z1) / 2);
