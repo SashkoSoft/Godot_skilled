@@ -209,9 +209,10 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 		const doorBoxes = {};
 		for (const d of info.doors) for (const rid of d.rooms) {
 			const rm = byId[rid]; if (!rm) continue;
-			const [x0, z0, x1, z1] = rectOf(rm), [px, , pz] = d.pos, hw = d.width / 2 + 0.05, dd = 0.9;
+			const [x0, z0, x1, z1] = rectOf(rm), [px, , pz] = d.pos, hw = d.width / 2 + 0.25, dd = 1.1;   // проём + размах створки
 			const alongX = Math.abs(pz - z0) < 0.1 || Math.abs(pz - z1) < 0.1;   // дверь в стене вдоль X
-			(doorBoxes[rid] ||= []).push(new THREE.Box3(new THREE.Vector3(px - (alongX ? hw : dd), -1, pz - (alongX ? dd : hw)), new THREE.Vector3(px + (alongX ? hw : dd), 3, pz + (alongX ? dd : hw))));
+			// по высоте — на все этажи (было −1…3 м в мире: выше 1-го этажа проходы не берегли, стенки вставали в двери)
+			(doorBoxes[rid] ||= []).push(new THREE.Box3(new THREE.Vector3(px - (alongX ? hw : dd), -1e3, pz - (alongX ? dd : hw)), new THREE.Vector3(px + (alongX ? hw : dd), 1e3, pz + (alongX ? dd : hw))));
 		}
 		const winByFloor = {};
 		for (const w of info.windows) (winByFloor[w.floor] ||= []).push(w);
@@ -607,7 +608,9 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 	/** Хлам в комнате: у шкафов, у кроватей, сверху на низкой мебели и вразброс. */
 	async function scatter(rm, kind, placed, occ, inside, y, rnd, k, plan, G, spots) {
 		const items = [];   // габариты уже брошенных вещей
-		const pick = list => list[Math.floor(rnd() * list.length)];
+		// одна и та же вещь в комнате — не дважды (кроме того, чего бывает много: книги, газеты, посуда, тряпки)
+		const used = new Set(), MANY = /^(book|newspaper|magazine|plate|cup|can_|bottle|jar|rag_|box_|slippers)/;
+		const pick = list => { for (let k = 0; k < 4; k++) { const n = list[Math.floor(rnd() * list.length)]; if (MANY.test(n) || !used.has(n)) { used.add(n); return n; } } return list[0]; };
 		const fits = bx => {
 			const s = bx.clone().expandByScalar(-0.01);
 			return inside(bx) && !occ.some(o => o.intersectsBox(s)) && !items.some(o => o.intersectsBox(s));

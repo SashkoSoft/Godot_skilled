@@ -232,7 +232,7 @@ let watch = null, watchDist = 3.2, lastLook = 0, watchInfoT = 0;
 // #robotdbg — ручки для консоли: где роботы, игрок, камера
 if (q.has("robotdbg")) window.dbg = { get crowd() { return crowd; }, get player() { return player; }, get cam() { return cam; }, get scene() { return scene; }, set route(v) { autoRoute = v; }, watchRobot(r) { watch = r; watchHud.hidden = false; cam.yaw = r.heading * 180 / Math.PI + 150; cam.pitch = -20; }, get interiors() { return interiors; } };
 const world = { bo: null, fences: null, playground: null, houses: null, boxes: [], flights: [], houseInfo: [], bvh: null, camBvh: null, holes: [], sig: "" };
-const FOV = 55, RIDE_FOV = 100;   // угол камеры: обычный и в дроне (setRide)
+const FOV = 55, RIDE_FOV = 100, PLAY_FOV = 72;   // угол камеры: обычный, в дроне (setRide), в игре — шире (в квартирах не тесно)
 let ride = -1, rideHeading = 0;
 const cpuMs = { anim: 0, plants: 0, render: 0 };
 const instLods = [];
@@ -770,9 +770,10 @@ async function startPlay() {
 	player.root.visible = true;
 	follow = false; if (ride >= 0) setRide(-1);
 	playing = true;
+	camera.fov = PLAY_FOV; camera.updateProjectionMatrix();
 	say("игра: WASD — бег, Shift — рывок, Ctrl — шагом, пробел — прыжок, E — обыскать, мышь — осмотреться · Enter — выйти");
 }
-function stopPlay() { playing = false; if (player) player.root.visible = false; say("свободная камера"); }
+function stopPlay() { playing = false; camera.fov = FOV; camera.updateProjectionMatrix(); if (player) player.root.visible = false; say("свободная камера"); }
 /* ── наблюдение: камера за роботом-обходчиком в доме ────────────────────
    H / кнопка «в доме» — следующий обходчик (Shift+H — предыдущий), Esc или WASD — выйти.
    Камера за спиной, как у героя: стены её придвигают (общая коллизия мира); мышь или
@@ -897,6 +898,25 @@ review = createReview({ scene, camera, canvas, renderer, say,
 	};
 	mk("мебель", "shown"); mk("мелочь", "clutter");
 	document.body.appendChild(box);
+}
+// Двойной клик в свободной камере — герой встаёт в эту точку (пол, земля, лестница) и начинается игра.
+// Поверхность — первая видимая под курсором; ставится на 5 см выше, пол найдёт сам.
+{
+	const tRay = new THREE.Raycaster(), tNdc = new THREE.Vector2();
+	const shownT = o => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };
+	canvas.addEventListener("dblclick", async e => {
+		if (playing || (review && review.on) || watch) return;
+		const r = canvas.getBoundingClientRect();
+		tNdc.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+		tRay.setFromCamera(tNdc, camera); tRay.far = 400;
+		const hit = tRay.intersectObjects(scene.children, true).find(h => shownT(h.object) && !h.object.isSprite && !h.object.isLine && !h.object.isPoints
+			&& !/Sky|GrassBlades|DroneFOV|LootMap/.test(h.object.name) && (!h.face || h.face.normal.clone().transformDirection(h.object.matrixWorld).y > 0.5));
+		if (!hit) { say("сюда не встать — кликните по полу или земле"); return; }
+		await startPlay();
+		player.pos.set(hit.point.x, hit.point.y + 0.05, hit.point.z);
+		player.root.position.copy(player.pos);
+		say("телепорт: " + (world.houseInfo.length ? whereIs(player.pos) : ""));
+	});
 }
 const lootMap = makeLootMap();
 scene.add(lootMap);

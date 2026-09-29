@@ -131,7 +131,9 @@ export function createReview({ scene, camera, canvas, renderer, where = () => ""
 	function cast(x, y) {
 		ndc.set(x, y); ray.setFromCamera(ndc, camera);
 		const hits = ray.intersectObjects(targets(), true);
-		return hits.find(h => h.object.visible && !h.object.isSprite && !h.object.isLine && !SKIP.test(h.object.name)) || null;
+		// видимое по всей цепочке: скрытые ступени LOD, коробки блок-аута под домами — не в счёт
+		const shown = o => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };
+		return hits.find(h => shown(h.object) && !h.object.isSprite && !h.object.isLine && !SKIP.test(h.object.name)) || null;
 	}
 
 	// клик без перетаскивания — отзыв
