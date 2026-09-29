@@ -155,19 +155,19 @@ export function createReview({ scene, camera, canvas, renderer, where = () => ""
 	}
 
 	const tmpV = new THREE.Vector3();
-	/** Раз в 0.3 с: сетка лучей перед камерой + луч под курсором → рамки и подписи. */
+	// Сетка лучей перед камерой + луч под курсором → рамки и подписи. Луч по всей сцене
+	// дорогой (без BVH), 21 луч разом давал рывок каждые 0.3 с — тормозило, пока пишут отзыв.
+	// Теперь по 3 луча за кадр, круг ~7 кадров; при открытом окне отзыва лучей нет вовсе.
+	const GRID = [];
+	for (let j = 0; j < 4; j++) for (let i = 0; i < 5; i++) GRID.push([-0.8 + i * 0.4, -0.6 + j * 0.4]);
+	let gi = 0, found = new Map();
 	function update(dt) {
-		if (!on) return;
-		if ((pickT -= dt) < 0) {
-			pickT = 0.3;
-			const found = new Map();
-			const add = (hit, key) => { if (hit && !found.has(key)) found.set(key, hit); };
-			hover = cast(mouse.x, mouse.y);
-			if (hover) add(hover, hover.object.uuid + ":" + (hover.instanceId ?? ""));
-			for (let j = 0; j < 4; j++) for (let i = 0; i < 5; i++) {
-				const h = cast(-0.8 + i * 0.4, -0.6 + j * 0.4);
-				if (h) add(h, h.object.uuid + ":" + (h.instanceId ?? ""));
-			}
+		if (!on || !dlg.hidden) return;
+		const add = (hit) => { if (hit) { const key = hit.object.uuid + ":" + (hit.instanceId ?? ""); if (!found.has(key)) found.set(key, hit); } };
+		if (gi === 0) { found = new Map(); hover = cast(mouse.x, mouse.y); add(hover); }
+		for (let n = 0; n < 3 && gi < GRID.length; n++, gi++) add(cast(GRID[gi][0], GRID[gi][1]));
+		if (gi >= GRID.length) {
+			gi = 0;
 			let k = 0;
 			ring.visible = false;
 			for (const [key, h] of found) {

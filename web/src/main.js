@@ -771,9 +771,10 @@ async function startPlay() {
 	follow = false; if (ride >= 0) setRide(-1);
 	playing = true;
 	camera.fov = PLAY_FOV; camera.updateProjectionMatrix();
+	document.getElementById("btn-play").textContent = "✈ полетать";   // та же кнопка — обратно в свободную камеру
 	say("игра: WASD — бег, Shift — рывок, Ctrl — шагом, пробел — прыжок, E — обыскать, мышь — осмотреться · Enter — выйти");
 }
-function stopPlay() { playing = false; camera.fov = FOV; camera.updateProjectionMatrix(); if (player) player.root.visible = false; say("свободная камера"); }
+function stopPlay() { playing = false; camera.fov = FOV; camera.updateProjectionMatrix(); document.getElementById("btn-play").textContent = "▶ играть"; if (player) player.root.visible = false; say("свободная камера"); }
 /* ── наблюдение: камера за роботом-обходчиком в доме ────────────────────
    H / кнопка «в доме» — следующий обходчик (Shift+H — предыдущий), Esc или WASD — выйти.
    Камера за спиной, как у героя: стены её придвигают (общая коллизия мира); мышь или
@@ -884,20 +885,15 @@ review = createReview({ scene, camera, canvas, renderer, say,
 	where: p => (world.houseInfo.length ? whereIs(p) : ""),
 	context: () => ({ mode: playing ? "игра" : watch ? "наблюдение" : follow ? "за роботом" : "свободная камера", hash: location.hash }) });
 { const b = document.getElementById("btn-review"); if (b) b.addEventListener("click", () => review.toggle()); }
-// Слева — две кнопки: «мебель» и «мелочь» (хлам, товар, тряпки) в домах; лут и столкновения остаются
-{
-	const box = document.createElement("div");
-	box.style.cssText = "position:fixed;left:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;z-index:15";
-	const mk = (label, key) => {
-		const b = document.createElement("button");
-		b.type = "button"; b.textContent = label;
-		b.style.cssText = "padding:8px 12px;border-radius:8px;border:1px solid #3a4048;background:rgba(20,24,28,.85);color:#e8e2d6;font:14px system-ui,sans-serif;cursor:pointer";
-		const paint = on => { b.style.opacity = on ? "1" : "0.45"; b.style.textDecoration = on ? "none" : "line-through"; };
-		b.addEventListener("click", () => { if (!interiors) return; interiors[key] = !interiors[key]; paint(interiors[key]); say(`${label}: ${interiors[key] ? "вкл" : "выкл"}`); b.blur(); });
-		paint(true); box.appendChild(b);
-	};
-	mk("мебель", "shown"); mk("мелочь", "clutter");
-	document.body.appendChild(box);
+// Кнопки «мебель» и «мелочь» (хлам, товар, тряпки) — в общей панели слоёв, от «дома» не зависят
+for (const [id, key, label] of [["btn-furn", "shown", "мебель"], ["btn-clutter", "clutter", "мелочь"]]) {
+	const b = document.getElementById(id);
+	if (b) b.addEventListener("click", () => {
+		if (!interiors) { say("мебель ещё не загружена"); return; }
+		interiors[key] = !interiors[key];
+		b.setAttribute("aria-pressed", String(interiors[key]));
+		say(`${label}: ${interiors[key] ? "вкл" : "выкл"}`);
+	});
 }
 // Двойной клик в свободной камере — герой встаёт в эту точку (пол, земля, лестница) и начинается игра.
 // Поверхность — первая видимая под курсором; ставится на 5 см выше, пол найдёт сам.
@@ -1158,7 +1154,7 @@ function tick(now) {
 	if (rocks) rocks.update(camera);
 	if (jointGrassL) jointGrassL.update(camera, now / 1000);
 	if (fenceIvy) fenceIvy.update(camera, now / 1000);
-	if (interiors && layerOn.houses) interiors.update(camera);
+	if (interiors) interiors.update(camera);   // мебель — своими кнопками, от слоя «дома» не зависит
 	for (const I of instLods) I.update(camera);
 	const cpu2 = performance.now();
 	// время процессора (скользящее среднее): анимация (роботы, дроны), раскладка

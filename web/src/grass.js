@@ -136,9 +136,9 @@ vec3 grassColor(vec2 xz, float t) {
 	float n = gNoise(xz * 0.09) * 0.65 + gNoise(xz * 0.37) * 0.35;
 	// Палитра травы в ключе листвы: сочная ↔ сизоватая ↔ выгоревшая, приглушённая —
 	// кислотно-зелёная трава читается пластиком.
-	vec3 lush = vec3(0.105, 0.185, 0.06), cool = vec3(0.085, 0.16, 0.085), dry = vec3(0.28, 0.265, 0.14);
+	vec3 lush = vec3(0.105, 0.185, 0.06), cool = vec3(0.085, 0.16, 0.085), dry = vec3(0.21, 0.22, 0.075);   // выгоревшая — оливково-соломенная; прежняя (0.28, 0.265, 0.14) читалась серой
 	float m = gNoise(xz * 0.23 + 7.7);
-	vec3 base = mix(mix(lush, cool, smoothstep(0.45, 0.8, m)), dry, smoothstep(0.55, 0.9, n));   // сухие пятна — меньшинство
+	vec3 base = mix(mix(lush, cool, smoothstep(0.45, 0.8, m)), dry, smoothstep(0.62, 0.95, n));   // сухие пятна — меньшинство
 	return base * (0.7 + 0.6 * t);   // t: 0 у корня (тень в дерне) … 1 на кончике
 }
 `;
@@ -293,8 +293,8 @@ export function buildGrassBlades({ grid = 200, spacing = 0.2, ring = false, near
 				vec3 col = grassColor(root, t);
 				float hv = gHash(wcell + 17.3), hs = gHash(wcell + 31.7), hb = gHash(wcell + 47.9);
 				col *= mix(vec3(1.14, 1.05, 0.78), vec3(0.86, 0.98, 1.15), hv) * mix(0.78, 1.22, h3);
-				float dryShare = 0.05 + 0.3 * smoothstep(0.55, 0.9, gNoise(root * 0.09) * 0.65 + gNoise(root * 0.37) * 0.35);
-				if (hs < dryShare) col = mix(vec3(0.30, 0.26, 0.14), vec3(0.44, 0.39, 0.24), hb) * (0.7 + 0.5 * t);
+				float dryShare = 0.03 + 0.15 * smoothstep(0.62, 0.95, gNoise(root * 0.09) * 0.65 + gNoise(root * 0.37) * 0.35);
+				if (hs < dryShare) col = mix(vec3(0.27, 0.25, 0.08), vec3(0.38, 0.34, 0.12), hb) * (0.7 + 0.5 * t);   // солома, не серое
 				else if (hs > 0.96) col *= vec3(1.25, 0.9, 0.7);                                     // рыжеватый стебель
 				col = mix(col, vec3(0.30, 0.24, 0.11) * (0.8 + 0.4 * hb), smoothstep(0.72, 1.0, t) * step(0.62, hb) * 0.55);   // бурый кончик
 				if (kind == 1.0) col = vec3(0.07, 0.15, 0.035) * (0.8 + 0.5 * t);                 // подорожник — тёмный, плотный

@@ -93,6 +93,7 @@ export async function spawnDrones(d, { count = 3, robots = () => [] } = {}) {
 	const fov = new THREE.InstancedMesh(fovGeo, fovMat, Math.max(1, drones.length));
 	fov.geometry.setAttribute("aLock", new THREE.InstancedBufferAttribute(new Float32Array(Math.max(1, drones.length)), 1));
 	fov.name = "DroneFOV"; fov.frustumCulled = false; fov.renderOrder = 5;
+	fov.visible = false;   // пятна обзора на земле пока выключены (просьба пользователя); расчёт оставлен
 	group.add(fov);
 	const _fd = new THREE.Vector3(), _fp = new THREE.Vector3(), _fm = new THREE.Matrix4(), _fq = new THREE.Quaternion(), _fs = new THREE.Vector3();
 

@@ -42,6 +42,11 @@ function hash(n) {
 /** Правило зоны: набор, тон и грязь для треугольника с комнатой room и панелью panel. */
 function rule(zone, room, panel, info, stairColor) {
 	const rm = room >= 0 ? info.rooms[room] : null, type = rm ? rm.type : null;
+	// подвал (этаж −1): стены и пол комнат — как у подвала, а не обои и линолеум квартир
+	if (rm && rm.floor < 0) {
+		if (zone === "wall_room") zone = "basement_wall";
+		else if (zone === "slab_top") zone = "basement_floor";
+	}
 	switch (zone) {
 		case "facade_panel":
 			return { set: `concrete_panel_smooth_v${Math.floor(hash(panel) * 3)}`, tone: 1 + 0.03 * (hash(panel + 1) * 2 - 1), grime: 0.3 + 0.7 * hash(panel + 2) };
