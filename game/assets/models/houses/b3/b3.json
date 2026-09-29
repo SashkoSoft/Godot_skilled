@@ -721,10 +721,10 @@
  ],
  "stairs_note": "kryl'co +0.45 (stupeni s poruchnyami, kozyrek na stenkah) -> tambur -> korotkiy marsh do pola 1 etazha (+1.5); dalee parnye marshi, promezhutochnye ploshchadki u fasada vhoda",
  "tris": {
-  "lod0": 109017,
-  "lod1": 51178,
+  "lod0": 112643,
+  "lod1": 51250,
   "lod2": 18411,
-  "col": 18696
+  "col": 18744
  },
  "files": {
   "lod0": "b3_lod0.glb",
@@ -737,15 +737,43 @@
  "materials": [
   "blocks",
   "brick",
+  "brick_facade",
   "concrete",
   "concrete_panel",
   "door_wood",
+  "facade_panel",
   "glass",
   "gypsum",
   "metal_painted",
+  "monolith",
+  "plinth",
+  "roof",
   "rubble",
+  "slab_edge",
+  "slab_top",
+  "slab_under",
+  "stairwell_wall",
+  "wall_room",
   "window_frame"
  ],
+ "zones": {
+  "materials": {
+   "facade_panel": "naruzhnye paneli (u kirpichnyh - brick_facade)",
+   "plinth": "cokol' do urovnya plity 1-go etazha (+1.28)",
+   "monolith": "marshi, ploshchadki, kryl'co, kozyrek, balkonnye plity",
+   "slab_top": "pol - OTDELNOY gran'yu na kazhduyu komnatu",
+   "slab_under": "potolok - tozhe po komnatam (komnata etazha nizhe)",
+   "slab_edge": "torcy plit (v fasade, v proryve)",
+   "stairwell_wall": "steny, smotryashchie v lestnichnuyu kletku / ploshchadku",
+   "wall_room": "steny kvartir i vnutrennyaya gran' naruzhnoy steny",
+   "roof": "verh krovli"
+  },
+  "node_suffix": "<id>_<part>_fNN__<zona>; zona i v extras.zone",
+  "vertex_attrs": {
+   "_room": "indeks v rooms (-1 - snaruzhi / net komnaty)",
+   "_panel": "facade_panel/plinth: side*10000 + (etazh+1)*100 + prolyot (side 0 zad-s-podyezdami, 1 front, 2 levo, 3 pravo v lokal'nyh osyah doma; etazh -1 - cokol'); -1 - ne fasad"
+  }
+ },
  "flights": [
   {
    "kind": "entry",

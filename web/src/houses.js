@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { houseTiles, textureSet } from "./facades.js";
+import { dressZones } from "./zones.js";
 
 // Дома квартала от сессии hou: game/assets/models/houses/<id>/<id>_lod{0,1,2}.glb.
 // Пивот — центр прямоугольника rect из district.json на уровне тротуара, оси
@@ -58,6 +59,12 @@ export async function loadHouses(d) {
 		try {
 			const dir = `${BASE}${b.model}/${b.model}`;
 			const [l0, l1, l2] = await Promise.all([0, 1, 2].map(l => loader.loadAsync(`${dir}_lod${l}.glb`)));
+			// дома с зонами материалов (b3, b4) — отделка по комнатам и панелям (zones.js, наборы blend)
+			const info = await fetch(`${dir}.json`).then(r => r.ok ? r.json() : null).catch(() => null);
+			if (info && info.zones) {
+				const z = [l0, l1, l2].map(g => dressZones(g.scene, info));
+				console.log(`[улица] дом ${b.id}: зоны отделки на ступенях LOD ${z.join("/")} мешей`);
+			}
 			const lod = new THREE.LOD();
 			lod.name = "house-" + b.id;
 			for (const [i, g] of [l0, l1, l2].entries()) {
