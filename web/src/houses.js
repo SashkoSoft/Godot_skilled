@@ -50,14 +50,15 @@ function dress(root, T) {
  * Возвращает группу и список id — их коробки в блок-ауте надо спрятать.
  * LOD — штатный THREE.LOD с запасом 10 % на порогах (дом целиком, не по кускам).
  */
-export async function loadHouses(d) {
+export async function loadHouses(d, focus = null) {
 	const T = await houseTiles();
 	T.set.brick_silicate ??= T.set.blocks; T.tile_m.brick_silicate ??= T.tile_m.blocks;   // старое имя силикатного кирпича в GLB
 	const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);   // руины сжаты (tools/ruin_import.py)
 	const group = new THREE.Group();
 	group.name = "Houses";
 	const ids = [], colliders = [], doors = [];   // doors — управление створками (doors.js), по дому   // коллизия домов (<id>_col.glb) — в мировых координатах, для игрока
-	for (const b of d.buildings.filter(b => b.model)) {
+	// дома не в фокусе (district.json → focus) — пока коробками блок-аута, модели не грузятся
+	for (const b of d.buildings.filter(b => b.model && (!focus || focus.includes(b.id)))) {
 		try {
 			const dir = `${BASE}${b.model}/${b.model}`;
 			const [l0, l1, l2] = await Promise.all([0, 1, 2].map(l => loader.loadAsync(`${dir}_lod${l}.glb`)));

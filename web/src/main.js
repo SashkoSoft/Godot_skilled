@@ -285,7 +285,7 @@ if (LEVEL === "district") {
 	bo.group.traverse(o => { if (o.userData.building) buildingBoxes.push(o); });
 	for (const o of buildingBoxes) o.visible = false;
 	layerObjs.houses = { show: [], hide: [], load: async () => {
-		const H = await loadHouses(d);
+		const H = await loadHouses(d, FOCUS);
 		scene.add(H.group); world.houses = H;
 		const rest = buildingBoxes.filter(o => !H.ids.includes(o.userData.building));
 		layerObjs.houses.show = [H.group, ...rest]; layerObjs.houses.load = null;

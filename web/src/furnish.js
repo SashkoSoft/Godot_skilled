@@ -386,7 +386,7 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 	const DEPTS = ["moloko", "bakaleya", "gastronomiya", "khleb", "konditer", "ovoshchi"];
 	const GOODS = {
 		moloko: ["milk_bottle", "kefir_bottle", "milk_pyramid"], bakaleya: ["pack_grain", "pack_salt", "matches_block", "can_stack"],
-		gastronomiya: ["can_stack", "jar", "jar_3l"], khleb: ["bread_tray"], konditer: ["pack_grain", "box_closed"], ovoshchi: ["crate_wood"],
+		gastronomiya: ["can_stack", "jar", "jar_3l"], khleb: ["bread_tray"], konditer: ["candy_box_assorti", "candy_box_ptichye", "candy_tray", "cake", "cake_box"], ovoshchi: ["crate_wood"],
 		gondola: ["can_stack", "pack_grain", "pack_salt", "matches_block", "milk_pyramid", "jar"], store: ["crate_wood", "crate_plastic", "sack", "box_closed", "can_stack", "bidon"],
 	};
 	const SHOP_FLOOR = ["crate_wood", "crate_plastic", "sack", "basket", "can_stack", "milk_bottle", "bidon", "box_crushed_top", "box_flattened", "plate_broken", "bottle", "newspaper"];
@@ -528,11 +528,14 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 			const r = await place(n, W(F.L - Math.min(fp.sx, fp.sz) / 2 - 0.6, v), fromU);
 			if (r) { r.dept = pick(["moloko", "gastronomiya"]); racks.push(r); }
 		}
-		for (let v = 8; v < F.D - 3; v += 2.3) {
-			const M = await model("gastro_counter"), fp = footprint(M, toU);
-			const r = await place("gastro_counter", W(Math.min(fp.sx, fp.sz) / 2 + 0.9, v), toU);
+		// вдоль стены u = 0: «Гастрономия» с весами, каждый третий — горка «Кондитерские изделия»
+		for (let v = 8, i = 0; v < F.D - 3; v += 2.3, i++) {
+			const n = i % 3 === 2 ? "konditer_showcase" : "gastro_counter";
+			const M = await model(n), fp = footprint(M, toU);
+			const r = await place(n, W(Math.min(fp.sx, fp.sz) / 2 + 0.9, v), toU);
 			if (!r) continue;
-			r.dept = "gastronomiya"; racks.push(r);
+			r.dept = n === "konditer_showcase" ? "konditer" : "gastronomiya"; racks.push(r);
+			if (n !== "gastro_counter") continue;
 			const ps = M.ex && M.ex.place_scales && (typeof M.ex.place_scales === "string" ? JSON.parse(M.ex.place_scales) : M.ex.place_scales);
 			if (ps && rnd() < 0.7) {
 				const e = r.entry, c = Math.cos(e.rotY), s = Math.sin(e.rotY), SM = await model("clutter:scales_dial");
