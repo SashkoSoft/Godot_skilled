@@ -31,6 +31,7 @@ const STAIR_TYPES = /^(ploshchadka|lestnica|lift)$/;
 const NO_MASK = new Set(["tile22_white", "tile22_blue"]);   // у плитки маски нет — грязь не рисуется
 const CUTOUT = new Set(["storage_mesh", "storage_boards"]);   // сетка и штакетник кладовок: вырез по альфе, двусторонние
 
+const hashApt = s => { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h) % 100000; };
 // целое → 0..1, одинаково на всех машинах
 function hash(n) {
 	let x = (n | 0) * 374761393 + 668265263;
@@ -46,8 +47,8 @@ function rule(zone, room, panel, info, stairColor) {
 			return { set: `concrete_panel_smooth_v${Math.floor(hash(panel) * 3)}`, tone: 1 + 0.03 * (hash(panel + 1) * 2 - 1), grime: 0.3 + 0.7 * hash(panel + 2) };
 		case "plinth":
 			return { set: "concrete_monolith", tone: 0.92 + 0.03 * (hash(panel + 1) * 2 - 1), grime: 1.3 };
-		case "monolith":
-			return { set: "concrete_monolith", tone: 1, grime: 0.8 };
+		case "monolith":   // марши, площадки, крыльцо: гладкий бетон (с опалубкой читались досками)
+			return { set: "concrete_panel_smooth_v2", tone: 0.78, grime: 1 };
 		case "slab_edge":
 			return { set: "concrete_panel_smooth_v1", tone: 0.9, grime: 0.6 };
 		case "slab_top": {
@@ -72,7 +73,8 @@ function rule(zone, room, panel, info, stairColor) {
 				const h = hash(room + 17);
 				return { set: h < 0.4 ? "room_paint_blue" : h < 0.7 ? "tile22_white" : "tile22_blue", tone: 1, grime: h < 0.4 ? 0.6 : 0 };
 			}
-			const k = room >= 0 ? room : 0;
+			// прихожая нарезана кусками — обои одни на всю квартиру, не по куску
+			const k = rm && rm.apartment && type === "prihozhaya" ? hashApt(rm.apartment) : room >= 0 ? room : 0;
 			return { set: ["wallpaper_flowers", "wallpaper_stripes", "wallpaper_diamond"][Math.floor(hash(k + 11) * 3)], tone: 0.9 + 0.2 * hash(k + 5), grime: 0.5 };
 		}
 		case "roof": return { set: "roof_roll", tone: 1, grime: 1 };

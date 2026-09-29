@@ -396,10 +396,8 @@ if (q.has("sss")) windUniforms.uSSS.value = +q.get("sss");   // сила про�
 	// Земля квартала — плиты на отметке 0: над подвалом и приямком их вырезаем (в отрисовке —
 	// шейдером земли и мощения, в коллизии — при сборке). Подвал — габарит его помещений.
 	const bboxOf = rs => { const xs = rs.flatMap(r => r.polygon_xz.map(p => p[0])), zs = rs.flatMap(r => r.polygon_xz.map(p => p[1])); return [Math.min(...xs), Math.min(...zs), Math.max(...xs), Math.max(...zs)]; };
-	world.holes = houseInfo.flatMap(h => {
-		const bs = h.info.rooms.filter(r => r.floor === -1);
-		return bs.length ? [bboxOf(bs.filter(r => r.kind_en !== "pit")), ...bs.filter(r => r.kind_en === "pit").map(r => bboxOf([r]))] : [];
-	});
+	// по помещениям, а не габаритом: у детсада (буква П) габарит накрывал двор между крыльями — яма
+	world.holes = houseInfo.flatMap(h => h.info.rooms.filter(r => r.floor === -1).map(r => bboxOf([r])));
 	setGroundHoles(world.holes);
 	if (rocks) rocks.holes = world.holes;
 	clearGrass(world.holes);
@@ -738,7 +736,13 @@ function collectColliders() {
 	if (H) for (const t of H.group.children) if (t.name.startsWith("tunnel-")) objs.push(t);
 	if (H) H.group.traverse(o => {
 		if (!o.isLOD) return;
-		o.levels[0].object.traverse(m => { if (m.isMesh && !/doors|door_wood|glass|lift_door|windows/i.test(m.name)) objs.push(m); });
+		const SKIPC = /doors|door_wood|glass|lift_door|windows/i;
+		o.levels[0].object.traverse(m => {
+			if (!m.isMesh) return;
+			for (let p = m; p && p !== o; p = p.parent) if (SKIPC.test(p.name)) return;   // стёкла руины: mesh_0 внутри b3_glass_*
+			if ([].concat(m.material).some(x => x && x.name === "glass")) return;
+			objs.push(m);
+		});
 	});
 	if (q.get("coldbg")) { const pt = new THREE.Vector3(...q.get("coldbg").split(",").map(Number)); for (const o of objs) o.traverse(m => { if (m.isMesh && new THREE.Box3().setFromObject(m).expandByScalar(0.35).containsPoint(pt)) console.log("COLDBG " + m.name + " / " + (m.parent && m.parent.name) + " " + JSON.stringify(m.userData)); }); }
 	return objs;
@@ -1095,6 +1099,7 @@ function tick(now) {
 		undergroundNow = under;
 		const skyObj = scene.getObjectByName("Sky");
 		if (skyObj) skyObj.visible = !under;   // купол неба под землёй виден сквозь щели
+		if (world.bo) world.bo.group.visible = !under;   // земля квартала снизу — «куски» на потолке подвала
 		if (under) { dayBg = scene.background; dayFog = scene.fog && scene.fog.color.clone(); scene.background = UNDER_BG; if (scene.fog) scene.fog.color.copy(UNDER_BG); }
 		else { scene.background = dayBg; if (scene.fog && dayFog) scene.fog.color.copy(dayFog); }
 	}

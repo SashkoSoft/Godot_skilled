@@ -263,10 +263,20 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 			};
 			// у стены: стороны в случайном порядке, шаг 0.1 м
 			const SIDES = [[0, 1, "N"], [0, -1, "S"], [1, 0, "W"], [-1, 0, "E"]];   // лицо в комнату
+			// стены, которых нет: сторона, общая с соседним куском прихожей той же квартиры
+			const open = new Set();
+			if (rm.type === "prihozhaya" && rm.apartment) for (const o of info.rooms) {
+				if (o === rm || o.type !== "prihozhaya" || o.apartment !== rm.apartment) continue;
+				const [a0, b0, a1, b1] = rectOf(o), e = 0.05;
+				const ovX = Math.min(a1, gx1) - Math.max(a0, gx0), ovZ = Math.min(b1, gz1) - Math.max(b0, gz0);
+				if (ovZ > 0.3 && Math.abs(a1 - gx0) < e) open.add("W"); if (ovZ > 0.3 && Math.abs(a0 - gx1) < e) open.add("E");
+				if (ovX > 0.3 && Math.abs(b1 - gz0) < e) open.add("N"); if (ovX > 0.3 && Math.abs(b0 - gz1) < e) open.add("S");
+			}
 			const atWall = async (n, keepY) => {
 				const M = await model(n);
 				const order = SIDES.map(s => [s, rnd()]).sort((a, c) => a[1] - c[1]).map(a => a[0]);
-				for (const [fx, fz] of order) {
+				for (const [fx, fz, sideName] of order) {
+					if (open.has(sideName)) continue;   // спиной к проходу — не к стене
 					const fp = footprint(M, [fx, fz]);
 					const dy = keepY ? 0 : -fp.minY;
 					const alongX = fx === 0, L = alongX ? fp.sx : fp.sz, D = alongX ? fp.sz : fp.sx;

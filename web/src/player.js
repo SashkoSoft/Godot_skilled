@@ -287,9 +287,15 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 
 	/** Камера за спиной: yaw/pitch в градусах; стена между — придвигает. */
 	const head = new THREE.Vector3();
+	const bodyMats = []; root.traverse(o => { if (o.isMesh) for (const m of [].concat(o.material)) { m.transparent = true; bodyMats.push(m); } });
+	let fadeK = 1;
 	function cameraAt(camera, yaw, pitch, dist) {
 		head.set(pos.x, pos.y + 1.45, pos.z);
 		cameraOrbit(camera, [bvh, camBvh], head, yaw, pitch, dist);
+		// камера у самой спины (коридор, туннель) — герой полупрозрачный, видно, куда идём
+		const d = camera.position.distanceTo(head), want = d < 1.1 ? 0.18 : d < 2.2 ? 0.18 + (d - 1.1) / 1.1 * 0.82 : 1;
+		fadeK += (want - fadeK) * 0.2;
+		for (const m of bodyMats) { m.opacity = fadeK; m.depthWrite = fadeK > 0.95; }
 	}
 
 	return { root, pos, loot, get looting() { return !!lootRun; }, setColliders, setBVH(b, cam = null) { bvh = b; camBvh = cam; }, setFlights, setDoors(fn) { doorSegs = fn; }, update, cameraAt, get onStairs() { return !!onStairs; }, get onGround() { return onGround; }, get bvh() { return bvh; } };
