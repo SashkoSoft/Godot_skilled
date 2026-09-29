@@ -63,6 +63,11 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 // настроение квартала: закат по умолчанию, #mood=day — дневной свет
 const MOOD = LEVEL === "district" ? (MOODS[new URLSearchParams(location.hash.slice(1)).get("mood")] || MOODS.sunset) : null;
 renderer.toneMappingExposure = MOOD ? MOOD.exposure : 1.35;
+// Адаптация глаза: в доме (игрок, наблюдаемый робот или камера внутри) экспозиция плавно
+// растёт в INDOOR раз — свет в квартиры идёт только из окон, и без этого там не видно ничего;
+// на улице возвращается. #indoor=N — множитель (1 — без адаптации).
+const BASE_EXP = renderer.toneMappingExposure, INDOOR = q.has("indoor") ? +q.get("indoor") : 2.2;
+let indoorNow = false, indoorT = 0;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 
@@ -217,7 +222,7 @@ let player = null, playing = false, robotDbgT = 0;
 let watch = null, watchDist = 3.2, lastLook = 0, watchInfoT = 0;
 // #robotdbg — ручки для консоли: где роботы, игрок, камера
 if (q.has("robotdbg")) window.dbg = { get crowd() { return crowd; }, get player() { return player; }, get cam() { return cam; }, get scene() { return scene; }, set route(v) { autoRoute = v; } };
-const world = { bo: null, fences: null, playground: null, houses: null, boxes: [], flights: [], houseInfo: [], bvh: null, sig: "" };
+const world = { bo: null, fences: null, playground: null, houses: null, boxes: [], flights: [], houseInfo: [], bvh: null, camBvh: null, sig: "" };
 const FOV = 55, RIDE_FOV = 100;   // угол камеры: обычный и в дроне (setRide)
 let ride = -1, rideHeading = 0;
 const cpuMs = { anim: 0, plants: 0, render: 0 };
@@ -276,7 +281,7 @@ if (LEVEL === "district") {
 		if (H.ids.length) console.log(`[улица] дома-модели: ${H.ids.join(", ")}`);
 		// мебель в квартирах — по описанию дома hou (<id>.json), строится при подходе; #interiors=0 — без неё
 		if (q.get("interiors") !== "0") {
-			interiors = createInteriors(scene, { wear: 0.5 });
+			interiors = createInteriors(scene, { wear: 0.5, clutter: q.has("clutter") ? +q.get("clutter") : 1 });   // #clutter — плотность хлама, 0 — без него
 			for (const b of d.buildings.filter(b => b.model && H.ids.includes(b.id))) {
 				fetch(`../game/assets/models/houses/${b.model}/${b.model}.json`).then(r => r.ok ? r.json() : null)
 					.then(info => { if (info && info.rooms) interiors.addHouse(b, info, { roomFilter: roomFurnishable }); }).catch(() => {});
@@ -740,6 +745,24 @@ watchHud.hidden = true;
 document.body.appendChild(watchHud);
 const ROOM_RU = { zhilaya: "комната", kuhnya: "кухня", prihozhaya: "прихожая", sanuzel: "ванная", tualet: "туалет", kladovaya: "кладовка",
 	ploshchadka: "площадка", lestnica: "лестница", lift: "лифт" };
+// Камера в комнате: отлёт не дальше стен комнаты, где стоит тот, за кем смотрим. Лучом
+// по стенам мало — выбитое окно на уровне головы выпускало камеру на улицу.
+function roomLimit(p, yaw, pitch, dist) {
+	for (const info of world.houseInfo) for (const room of info.rooms) {
+		if (p.y < room.y - 0.3 || p.y > room.y + 2.6) continue;
+		const xs = room.polygon_xz.map(v => v[0]), zs = room.polygon_xz.map(v => v[1]);
+		const x0 = Math.min(...xs), x1 = Math.max(...xs), z0 = Math.min(...zs), z1 = Math.max(...zs);
+		if (p.x < x0 || p.x > x1 || p.z < z0 || p.z > z1) continue;
+		const y = yaw * Math.PI / 180, q = pitch * Math.PI / 180;
+		const dx = Math.sin(y) * Math.cos(q), dz = Math.cos(y) * Math.cos(q), dy = -Math.sin(q), m = 0.2;
+		let t = dist;
+		if (dx > 1e-3) t = Math.min(t, (x1 - m - p.x) / dx); else if (dx < -1e-3) t = Math.min(t, (x0 + m - p.x) / dx);
+		if (dz > 1e-3) t = Math.min(t, (z1 - m - p.z) / dz); else if (dz < -1e-3) t = Math.min(t, (z0 + m - p.z) / dz);
+		if (dy > 1e-3) t = Math.min(t, (room.y + 2.55 - (p.y + 1.45)) / dy);
+		return Math.max(0.4, t);
+	}
+	return dist;
+}
 function whereIs(p) {
 	for (const info of world.houseInfo) for (const room of info.rooms) {
 		if (p.y < room.y - 0.3 || p.y > room.y + 2.6) continue;
@@ -780,7 +803,7 @@ function watchTick(dt) {
 		cam.yaw += d * Math.min(1, dt * 1.5);
 	}
 	watchHead.set(o.x, o.y + 1.45, o.z);
-	cameraOrbit(camera, world.bvh, watchHead, cam.yaw, cam.pitch, watchDist);
+	cameraOrbit(camera, [world.bvh, world.camBvh], watchHead, cam.yaw, cam.pitch, roomLimit(o, cam.yaw, cam.pitch, watchDist));
 	cam.p.copy(camera.position);
 	if ((watchInfoT -= dt) < 0) { watchInfoT = 0.3; watchHud.textContent = `${whereIs(o)} · ${watch.action}`; }
 }
@@ -794,7 +817,11 @@ function refreshCollision(dt) {
 	if (s !== world.sig) {
 		world.sig = s;
 		world.bvh = buildCollision(collectColliders(), interiors ? world.boxes.concat(interiors.boxes()) : world.boxes);   // мебель — коробками
-		if (player) player.setBVH(world.bvh);
+		// окна и стёкла — только для камеры: иначе с головой на уровне окна она вылетает на улицу
+		const glass = [];
+		if (world.houses) world.houses.group.traverse(o => { if (o.isLOD) o.levels[0].object.traverse(m => { if (m.isMesh && /glass|windows|window_frame/i.test(m.name + " " + [].concat(m.material).map(x => x.name).join(" "))) glass.push(m); }); });
+		world.camBvh = glass.length ? buildCollision(glass) : null;
+		if (player) player.setBVH(world.bvh, world.camBvh);
 	}
 }
 function playTick(dt) {
@@ -818,7 +845,7 @@ function playTick(dt) {
 		if (dd < 0.6 && dd > 1e-4 && Math.abs(player.pos.y - o.y) < 1.2) { player.pos.x = o.x + dx / dd * 0.6; player.pos.z = o.z + dz / dd * 0.6; }
 	}
 	player.root.position.x = player.pos.x; player.root.position.z = player.pos.z;   // высоту на марше задаёт лестница
-	player.cameraAt(camera, cam.yaw, cam.pitch, playDist);
+	player.cameraAt(camera, cam.yaw, cam.pitch, roomLimit(player.pos, cam.yaw, cam.pitch, playDist));
 	cam.p.copy(camera.position);   // тени, трава, LOD — от камеры
 }
 
@@ -900,6 +927,13 @@ function tick(now) {
 	}
 
 	updateCamera();
+	// адаптация глаза: раз в 0.25 с — в доме ли тот, на кого смотрим
+	if ((indoorT -= dt) < 0) {
+		indoorT = 0.25;
+		const p = playing && player ? player.pos : watch ? watch.object.position : camera.position;
+		indoorNow = world.houseInfo.length > 0 && whereIs(p) !== "улица";
+	}
+	renderer.toneMappingExposure += (BASE_EXP * (indoorNow ? INDOOR : 1) - renderer.toneMappingExposure) * Math.min(1, dt * 1.5);
 	if (houdiniTrees) houdiniTrees.update(camera, now / 1000);
 	if (undergrowth) undergrowth.update(camera, now / 1000);
 	if (grassBlades) {

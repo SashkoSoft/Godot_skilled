@@ -49,13 +49,18 @@ export function buildCollision(objs, boxes = []) {
 	return new MeshBVH(geo);
 }
 
-/** Камера вокруг точки head: yaw/pitch в градусах, dist — отлёт; стена между — придвигает. */
+/** Камера вокруг точки head: yaw/pitch в градусах, dist — отлёт; стена между — придвигает.
+ *  bvh — одна BVH или список (стены; окна и стёкла — отдельно: герою не мешают, камеру держат в комнате). */
 const _ray = new THREE.Ray(), _dir = new THREE.Vector3();
 export function cameraOrbit(camera, bvh, head, yaw, pitch, dist) {
 	const y = yaw * Math.PI / 180, p = pitch * Math.PI / 180;
 	_dir.set(Math.sin(y) * Math.cos(p), -Math.sin(p), Math.cos(y) * Math.cos(p));   // от головы к камере
 	let d = dist;
-	if (bvh) { _ray.origin.copy(head); _ray.direction.copy(_dir); const hit = bvh.raycastFirst(_ray, THREE.DoubleSide); if (hit && hit.distance < d + 0.2) d = Math.max(0.4, hit.distance - 0.25); }
+	_ray.origin.copy(head); _ray.direction.copy(_dir);
+	for (const b of [].concat(bvh || [])) {
+		const hit = b && b.raycastFirst(_ray, THREE.DoubleSide);
+		if (hit && hit.distance < d + 0.2) d = Math.max(0.4, hit.distance - 0.25);
+	}
 	camera.position.copy(head).addScaledVector(_dir, d);
 	camera.lookAt(head);
 }
@@ -76,7 +81,7 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 	scene.add(root);
 	// свет у героя: в квартирах и подъезде солнца почти нет — мягкий тёплый круг вокруг
 	// (без тени: дёшево), снаружи днём его не видно
-	const glow = new THREE.PointLight(0xffe2c0, 2.2, 7, 2);
+	const glow = new THREE.PointLight(0xffe2c0, 7, 10, 2);
 	glow.position.set(0, 2.2, 0.6); root.add(glow);
 	const mixer = new THREE.AnimationMixer(root);
 	const clip = n => gltf.animations.find(a => a.name.toLowerCase() === n.toLowerCase());
@@ -92,7 +97,7 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 	const fade = (a, t = 0.25) => { if (!a || a === cur) return; a.reset().play(); cur.crossFadeTo(a, t, false); cur = a; };
 
 	const pos = new THREE.Vector3(...(spawn || [0, 0, 0])), vel = new THREE.Vector3();
-	let heading = 0, onGround = false, bvh = null;
+	let heading = 0, onGround = false, bvh = null, camBvh = null;
 	const seg = new THREE.Line3(), box = new THREE.Box3(), triPt = new THREE.Vector3(), segPt = new THREE.Vector3();
 	const ray = new THREE.Ray(), down = new THREE.Vector3(0, -1, 0);
 
@@ -205,8 +210,8 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 	const head = new THREE.Vector3();
 	function cameraAt(camera, yaw, pitch, dist) {
 		head.set(pos.x, pos.y + 1.45, pos.z);
-		cameraOrbit(camera, bvh, head, yaw, pitch, dist);
+		cameraOrbit(camera, [bvh, camBvh], head, yaw, pitch, dist);
 	}
 
-	return { root, pos, setColliders, setBVH(b) { bvh = b; }, setFlights, setDoors(fn) { doorSegs = fn; }, update, cameraAt, get onStairs() { return !!onStairs; }, get onGround() { return onGround; }, get bvh() { return bvh; } };
+	return { root, pos, setColliders, setBVH(b, cam = null) { bvh = b; camBvh = cam; }, setFlights, setDoors(fn) { doorSegs = fn; }, update, cameraAt, get onStairs() { return !!onStairs; }, get onGround() { return onGround; }, get bvh() { return bvh; } };
 }
