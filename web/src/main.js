@@ -214,8 +214,8 @@ let drones = null, fenceIvy = null, interiors = null;
 // игра: герой бегает по кварталу и в домах (player.js); world — что берём в коллизию
 let player = null, playing = false, robotDbgT = 0;
 // #robotdbg — ручки для консоли: где роботы, игрок, камера
-if (q.has("robotdbg")) window.dbg = { get crowd() { return crowd; }, get player() { return player; }, get cam() { return cam; }, get scene() { return scene; } };
-const world = { bo: null, fences: null, playground: null, houses: null, boxes: [], sig: "" };
+if (q.has("robotdbg")) window.dbg = { get crowd() { return crowd; }, get player() { return player; }, get cam() { return cam; }, get scene() { return scene; }, set route(v) { autoRoute = v; } };
+const world = { bo: null, fences: null, playground: null, houses: null, boxes: [], flights: [], sig: "" };
 const FOV = 55, RIDE_FOV = 100;   // угол камеры: обычный и в дроне (setRide)
 let ride = -1, rideHeading = 0;
 const cpuMs = { anim: 0, plants: 0, render: 0 };
@@ -368,6 +368,7 @@ if (q.has("sss")) windUniforms.uSSS.value = +q.get("sss");   // сила про�
 	const houseInfo = (await Promise.all(d.buildings.filter(b => b.model).map(b =>
 		fetch(`../game/assets/models/houses/${b.model}/${b.model}.json`).then(r => r.ok ? r.json() : null).catch(() => null))))
 		.filter(i => i && i.rooms).map(info => ({ info, roomOk: roomWalkable }));
+	world.flights = houseInfo.flatMap(h => h.info.flights || []);   // марши — для героя (клип лестницы)
 	const R = await spawnRobots(d, { count, start: [77, -26], envMap, houses: houseInfo });
 	crowd = R.robots; robotLod = R.updateLod; crowdStep = R.crowdStep;
 	const robotsGroup = new THREE.Group();
@@ -695,7 +696,7 @@ function collectColliders() {
 }
 function worldSig() {
 	const H = world.houses;
-	return [!!world.bo, !!world.fences, !!world.playground, H ? H.ids.length : -1, world.boxes.length].join("|");
+	return [!!world.bo, !!world.fences, !!world.playground, H ? H.ids.length : -1, world.boxes.length, interiors ? interiors.boxes().length : 0].join("|");
 }
 async function startPlay() {
 	if (LEVEL !== "district") { say("игра — на уровне квартала (#level=district)"); return; }
@@ -707,6 +708,7 @@ async function startPlay() {
 		const spawn = q.get("spawn") === "robot" && ind ? ind.object.position.toArray().map((v, i) => v + [1.2, 0.05, 0][i])
 			: q.get("spawn") ? q.get("spawn").split(",").map(Number) : [108.5, 0.1, -20];
 		player = await createPlayer(scene, { spawn, envMap: skyEnvMap() });
+		player.setFlights(world.flights);
 		cam.yaw = 0; cam.pitch = -12;
 	}
 	player.root.visible = true;
@@ -721,7 +723,7 @@ function playTick(dt) {
 	if (sigTimer <= 0) {   // раз в секунду: не догрузилось ли что-то в коллизию
 		sigTimer = 1;
 		const s = worldSig();
-		if (s !== world.sig) { world.sig = s; player.setColliders(collectColliders(), world.boxes); }
+		if (s !== world.sig) { world.sig = s; player.setColliders(collectColliders(), interiors ? world.boxes.concat(interiors.boxes()) : world.boxes); }   // мебель — коробками
 	}
 	const y = cam.yaw * Math.PI / 180, f = new THREE.Vector3(-Math.sin(y), 0, -Math.cos(y)), r = new THREE.Vector3(Math.cos(y), 0, -Math.sin(y));
 	move.set(0, 0, 0);
@@ -741,7 +743,7 @@ function playTick(dt) {
 		const o = rb.object.position, dx = player.pos.x - o.x, dz = player.pos.z - o.z, dd = Math.hypot(dx, dz);
 		if (dd < 0.6 && dd > 1e-4 && Math.abs(player.pos.y - o.y) < 1.2) { player.pos.x = o.x + dx / dd * 0.6; player.pos.z = o.z + dz / dd * 0.6; }
 	}
-	player.root.position.copy(player.pos);
+	player.root.position.x = player.pos.x; player.root.position.z = player.pos.z;   // высоту на марше задаёт лестница
 	player.cameraAt(camera, cam.yaw, cam.pitch, playDist);
 	cam.p.copy(camera.position);   // тени, трава, LOD — от камеры
 }

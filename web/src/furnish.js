@@ -140,7 +140,7 @@ export function createInteriors(scene, { wear = 0.5 } = {}) {
 			const kind = type === "room" ? (area < 13 || rnd() < 0.35 ? "bedroom" : "living") : type;
 			const put = (n, fp, cx, cz, dy = 0) => {
 				const bx = new THREE.Box3(new THREE.Vector3(cx - fp.sx / 2, y, cz - fp.sz / 2), new THREE.Vector3(cx + fp.sx / 2, y + fp.h, cz + fp.sz / 2));
-				occ.push(bx); plan.push({ n, x: cx, y: y + dy, z: cz, rotY: fp.rotY }); return bx;
+				occ.push(bx); plan.push({ n, x: cx, y: y + dy, z: cz, rotY: fp.rotY, box: bx }); return bx;
 			};
 			// у стены: стороны в случайном порядке, шаг 0.1 м
 			const SIDES = [[0, 1, "N"], [0, -1, "S"], [1, 0, "W"], [-1, 0, "E"]];   // лицо в комнату
@@ -190,7 +190,8 @@ export function createInteriors(scene, { wear = 0.5 } = {}) {
 						const fp2 = footprint(CM, [-sx, -sz]);
 						const cx = sx ? (sx > 0 ? bx.max.x + fp2.sx * 0.1 : bx.min.x - fp2.sx * 0.1) : (bx.min.x + bx.max.x) / 2;
 						const cz = sz ? (sz > 0 ? bx.max.z + fp2.sz * 0.1 : bx.min.z - fp2.sz * 0.1) : (bx.min.z + bx.max.z) / 2;
-						plan.push({ n: c, x: cx, y: y - fp2.minY, z: cz, rotY: fp2.rotY });
+						const cb = new THREE.Box3(new THREE.Vector3(cx - fp2.sx / 2, y, cz - fp2.sz / 2), new THREE.Vector3(cx + fp2.sx / 2, y + fp2.h, cz + fp2.sz / 2));
+						plan.push({ n: c, x: cx, y: y - fp2.minY, z: cz, rotY: fp2.rotY, box: cb });
 					}
 				}
 			}
@@ -216,6 +217,8 @@ export function createInteriors(scene, { wear = 0.5 } = {}) {
 			}
 		}
 		scene.add(group);
+		// коробки предметов — в столкновения игрока (низкое, ниже шага, капсула и так не задевает)
+		H.boxes = plan.map(p => p.box).filter(Boolean);
 		console.log(`[улица] мебель ${b.id}: предметов ${plan.length}, моделей ${Object.keys(byModel).length}, вызовов ${calls}`);
 		return group;
 	}
@@ -227,7 +230,9 @@ export function createInteriors(scene, { wear = 0.5 } = {}) {
 			if (H.group) H.group.visible = d < FAR;
 		}
 	}
-	return { addHouse, update };
+	/** Коробки расставленной мебели во всех построенных домах (мир). */
+	const boxes = () => houses.flatMap(H => H.boxes || []);
+	return { addHouse, update, boxes };
 }
 
 function rectOf(rm) {

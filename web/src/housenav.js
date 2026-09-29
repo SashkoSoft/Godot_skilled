@@ -12,6 +12,8 @@
 //    площадке на своей высоте. Крыльцо (kind porch) низом — к ближнему узлу улицы.
 // passable === false (руина) — марш не связывается. Лифт в граф не входит.
 
+import { flightShape } from "./stairs.js";
+
 const INNER = 0.8;
 
 // Руина (<id>_ruin.json, состояние комнат от hou): без пола или недостижимая — не для
@@ -119,8 +121,7 @@ export function addHouseToGraph(nodes, info, { roomOk = () => true } = {}) {
 		link(a, b);
 		// ребро a–b — марш (клипы лестницы). a — у первого подступенка; b у маршей — на проступь
 		// дальше последнего, у крыльца — на нём самом (замер лучом): d1 — от b до первого спуска
-		const len = Math.hypot(f.b[0] - f.a[0], f.b[2] - f.a[2]);
-		nodes[a].flight = nodes[b].flight = { rise: f.rise, tread: f.tread, d1: Math.max(0, len - (f.steps - 1) * f.tread) };
+		nodes[a].flight = nodes[b].flight = flightShape(f);
 		link(b, nearLanding(f.b[0], f.b[1], f.b[2]));
 		if (f.kind === "porch") link(a, nearStreet(f.a[0], f.a[2]));
 		else link(a, nearLanding(f.a[0], f.a[1], f.a[2]));

@@ -4,6 +4,7 @@ import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { walkLines } from "./district.js";
 import { addHouseToGraph } from "./housenav.js";
+import { inPlace, stairsPose } from "./stairs.js";
 
 // Роботы бродят по кварталу: сеть проездов и троп из district.json превращается
 // в граф, на развилке выбирается случайный путь, в тупике — разворот.
@@ -192,7 +193,6 @@ export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap
 	// Лестница (blend, под ступени hou 0.1667×0.267): в цикле кость Root сама уезжает на две
 	// ступени (0.534 м вперёд, 0.333 вверх). Движение из клипа вынимается, тело ведёт граф
 	// по маршу с той же скоростью — ноги попадают на ступени.
-	const inPlace = c => { if (!c) return null; const k = c.clone(); k.tracks = k.tracks.filter(t => t.name !== "Root.position"); return k; };
 	C.stairsUp = inPlace(byName("StairsUp-loop")); C.stairsDown = inPlace(byName("StairsDown-loop"));
 	// Шаг в сторону на ходу (уступить дорогу): 25° от курса, 0.71 м/с вперёд и 0.33 вбок
 	C.strafeL = byName("WalkStrafe-L-loop"); C.strafeR = byName("WalkStrafe-R-loop");
@@ -602,14 +602,10 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false) {
 	// подступенок — в 0.116 м впереди Root, проступь за ним — на 0.103 выше Root; вниз — край
 	// в 0.054 м впереди, проступь под ногами — на 0.063 выше Root. Высота тела — прямая через
 	// эти точки, фаза клипа — от пройденного по маршу (две ступени на цикл).
-	function stairsPose(NA, NB, f) {
-		const F = NB.flight, k = F.tread / 0.267, sc = F.rise / 0.1667, s = F.rise / F.tread;
-		let y, f0;
-		if (NB.y > NA.y) { f0 = -0.116 * k; y = NA.y + F.rise - 0.103 * sc + (f - f0) * s; }
-		else { f0 = F.d1 - 0.054 * k; y = NA.y - 0.063 * sc - (f - f0) * s; }
-		const p = (f - f0) / (2 * F.tread), dur = stairs.getClip().duration;
-		stairs.time = (p - Math.floor(p)) * dur;
-		return Math.min(Math.max(NA.y, NB.y), Math.max(Math.min(NA.y, NB.y), y));
+	function stairsY(NA, NB, f) {
+		const st = stairsPose(NB.flight, NB.y > NA.y, f, NA.y, NB.y);
+		stairs.time = st.phase * stairs.getClip().duration;
+		return st.y;
 	}
 	function leaveStairs() {
 		A.walk.reset().play(); stairs.crossFadeTo(A.walk, 0.25, false);
@@ -656,7 +652,7 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false) {
 		const NA = graph[prev >= 0 ? prev : target], NB = graph[target];
 		const segL = Math.hypot(NB.p[0] - NA.p[0], NB.p[1] - NA.p[1]), left = Math.hypot(NB.p[0] - pos.x, NB.p[1] - pos.y);
 		const k = segL > 1e-3 ? Math.min(1, Math.max(0, 1 - left / segL)) : 1;
-		const y = stairs && NA.flight && NA.flight === NB.flight ? stairsPose(NA, NB, segL - left) : (NA.y || 0) + ((NB.y || 0) - (NA.y || 0)) * k;
+		const y = stairs && NA.flight && NA.flight === NB.flight ? stairsY(NA, NB, segL - left) : (NA.y || 0) + ((NB.y || 0) - (NA.y || 0)) * k;
 		// в доме сдвиг вбок меньше: прихожие в метр шириной
 		const la = indoors() ? Math.max(-0.25, Math.min(0.25, lat)) : lat;
 		root.position.set(pos.x + Math.cos(heading) * la, y, pos.y - Math.sin(heading) * la);

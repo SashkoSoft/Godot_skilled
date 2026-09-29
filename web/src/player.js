@@ -3,6 +3,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { MeshBVH } from "../vendor/three-mesh-bvh/index.module.js";
+import { inPlace, flightShape, stairsPose } from "./stairs.js";
 
 // Игрок: робот-герой от третьего лица, бегает по кварталу и внутри домов.
 //
@@ -39,9 +40,12 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 	glow.position.set(0, 2.2, 0.6); root.add(glow);
 	const mixer = new THREE.AnimationMixer(root);
 	const clip = n => gltf.animations.find(a => a.name.toLowerCase() === n.toLowerCase());
-	const A = { idle: clip("Idle-loop"), walk: clip("Walk-loop"), run: clip("Run-loop"), jump: clip("Idle_Jump") || clip("Walk_Jump") };
+	const A = { idle: clip("Idle-loop"), walk: clip("Walk-loop"), run: clip("Run-loop"), jump: clip("Idle_Jump") || clip("Walk_Jump"),
+		stUp: inPlace(clip("StairsUp-loop")), stDown: inPlace(clip("StairsDown-loop")) };
 	const act = {};
 	for (const [k, c] of Object.entries(A)) if (c) { act[k] = mixer.clipAction(c); if (k === "jump") { act[k].setLoop(THREE.LoopOnce, 1); act[k].clampWhenFinished = true; } }
+	// лестница: фазу клипа задаёт положение на марше, сам клип не идёт
+	for (const k of ["stUp", "stDown"]) if (act[k]) act[k].timeScale = 0;
 	// скорости клипов (м/с) — замеры робота из толпы (robot.js): шаг 0.78, бег 2.68
 	const V = { walk: 0.78, run: 2.68 };
 	let cur = act.idle; cur.play();
@@ -59,8 +63,12 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 			o.updateMatrixWorld(true);
 			o.traverse(m => {
 				if (!m.isMesh || m.isInstancedMesh || m.isSkinnedMesh || !m.geometry.attributes.position) return;
-				const g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
-				const pg = new THREE.BufferGeometry(); pg.setAttribute("position", g.attributes.position.clone());
+				const g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry;
+				// вершины — во float: у сжатых моделей (руина, meshopt) они в int16 с нормализацией,
+				// и applyMatrix4 записал бы мировые координаты обратно в int16 — пол руины пропадал
+				const src = g.attributes.position, fa = new Float32Array(src.count * 3);
+				for (let i = 0; i < src.count; i++) { fa[i * 3] = src.getX(i); fa[i * 3 + 1] = src.getY(i); fa[i * 3 + 2] = src.getZ(i); }
+				const pg = new THREE.BufferGeometry(); pg.setAttribute("position", new THREE.BufferAttribute(fa, 3));
 				pg.applyMatrix4(m.matrixWorld); parts.push(pg);
 			});
 		}
@@ -84,11 +92,30 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 		return hit && hit.distance <= STEP + R + maxDrop ? hit.point.y : null;
 	}
 
+	// Марши домов (<id>.json → flights): на марше — клип лестницы, ноги по ступеням (stairs.js)
+	let flights = [], onStairs = null;
+	function setFlights(list) {
+		flights = list.filter(f => f.passable !== false).map(f => {
+			const F = flightShape(f);
+			return { ...F, a: f.a, b: f.b, dx: (f.b[0] - f.a[0]) / F.len, dz: (f.b[2] - f.a[2]) / F.len, half: (f.width || 1.3) / 2 };
+		});
+	}
+	function flightAt(p) {
+		for (const F of flights) {
+			const rx = p.x - F.a[0], rz = p.z - F.a[2], f = rx * F.dx + rz * F.dz;
+			if (f < 0 || f > F.len || Math.abs(rx * F.dz - rz * F.dx) > F.half) continue;
+			if (Math.abs(p.y - (F.a[1] + (F.b[1] - F.a[1]) * f / F.len)) > 0.5) continue;   // марш этажом выше/ниже
+			return { F, f };
+		}
+		return null;
+	}
+
 	const input = new THREE.Vector3();
 	/** move — направление в мире (длина 0..1), run — бег, jump — прыжок. */
 	function update(dt, move, { run = true, jump = false } = {}) {
 		if (!bvh) return;
-		const speed = move.lengthSq() > 1e-4 ? (run ? V.run : V.walk) : 0;
+		// по лестнице не разбежаться: бегом — через ступеньку быстрее, шагом — со скоростью клипа
+		const speed = move.lengthSq() > 1e-4 ? (onStairs ? (run ? 1.3 : 0.45) : run ? V.run : V.walk) : 0;
 		input.copy(move).setY(0); if (input.lengthSq() > 1) input.normalize();
 		// разгон к нужной скорости (не мгновенно — меньше дрожи)
 		const k = Math.min(1, dt * (onGround ? 12 : 2));
@@ -128,9 +155,24 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 			let da = want - heading; da = Math.atan2(Math.sin(da), Math.cos(da));
 			heading += da * Math.min(1, dt * 12);
 		}
-		root.position.copy(pos); root.rotation.y = heading;
+		root.rotation.y = heading;
+		// на марше и идёт вдоль него — клип лестницы, высота тела — по ступеням, а не по лучу
+		let visY = pos.y;
+		const fl = onGround && act.stUp && flightAt(pos);
+		const along = fl ? vel.x * fl.F.dx + vel.z * fl.F.dz : 0;
+		onStairs = fl && Math.abs(along) > 0.1 ? fl.F : null;
+		if (onStairs) {
+			const F = fl.F, up = along > 0;
+			const st = up ? stairsPose(F, true, fl.f, F.a[1], F.b[1]) : stairsPose(F, false, F.len - fl.f, F.b[1], F.a[1]);
+			const a = up ? act.stUp : act.stDown;
+			fade(a, 0.2);
+			a.time = st.phase * a.getClip().duration;
+			visY = st.y;
+		}
+		root.position.set(pos.x, visY, pos.z);
 		// анимация по скорости: клип под фактическую скорость — ноги не скользят
-		if (onGround && cur !== act.jump) {
+		if (onStairs) { /* клип лестницы уже выбран */ }
+		else if (onGround && cur !== act.jump) {
 			if (hs < 0.15) fade(act.idle);
 			else if (hs < 1.4 || !act.run) { fade(act.walk); act.walk.timeScale = hs / V.walk; }
 			else { fade(act.run); act.run.timeScale = hs / V.run; }
@@ -150,5 +192,5 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 		camera.position.copy(camPos); camera.lookAt(head);
 	}
 
-	return { root, pos, setColliders, update, cameraAt, get onGround() { return onGround; }, get bvh() { return bvh; } };
+	return { root, pos, setColliders, setFlights, update, cameraAt, get onStairs() { return !!onStairs; }, get onGround() { return onGround; }, get bvh() { return bvh; } };
 }
