@@ -130,10 +130,10 @@ const PLAN = [
 	// плотные шторы перед ним; на каждом — пара, левая и правая (правая — зеркало).
 	// Штора на кольцах: начало — край карниза, полотно — к центру окна.
 	// тюль задёрнут (g100), плотные — раздвинуты по-разному (g — доля полкарниза под полотном)
-	["drape", 0, { tulle: "curtain_rings_w100_g100_110_lod0", heavy: ["curtain_rings_w100_g20_30_lod0", "curtain_rings_w100_g30_40_lod0"], color: 0x7a2e2a }],
-	["drape", 1, { tulle: "curtain_rings_w100_g100_110_lod0", heavy: ["curtain_rings_w100_g45_55_lod0", "curtain_rings_w100_g60_70_lod0"], color: 0x5f6b3a }],
-	["drape", 2, { tulle: "curtain_rings_w100_g100_110_lod0", heavy: ["curtain_rings_w100_g20_30_lod0", "curtain_rings_w100_g20_30_lod0"], color: 0xa9803a }],
-	["drape", 3, { tulle: "curtain_rings_w100_g100_110_lod0", heavy: ["curtain_rings_w100_g30_40_lod0", "curtain_rings_w100_g45_55_lod0"], color: 0x3f4f6b }],
+	["drape", 0, { tulle: "flower", heavy: ["curtain_rings_w100_g20_30_lod0", "curtain_rings_w100_g30_40_lod0"], color: 0x7a2e2a }],
+	["drape", 1, { tulle: "vine", heavy: ["curtain_rings_w100_g45_55_lod0", "curtain_rings_w100_g60_70_lod0"], color: 0x5f6b3a }],
+	["drape", 2, { tulle: "trellis", heavy: ["curtain_rings_w100_g20_30_lod0", "curtain_rings_w100_g20_30_lod0"], color: 0xa9803a }],
+	["drape", 3, { tulle: "flower", heavy: ["curtain_rings_w100_g30_40_lod0", "curtain_rings_w100_g45_55_lod0"], color: 0x3f4f6b }],
 ];
 
 /* ── сцена ──────────────────────────────────────────────────────────── */
@@ -298,10 +298,50 @@ const LAMPS = [["living", "lamp_brass_5"], ["bedroom", "lamp_bronze_3"], ["kitch
 	["study", "lamp_brass_5"], ["hall", "lamp_nickel_3"], ["bath", "lamp_nickel_3"], ["wc", "lamp_nickel_3"]];
 const SHADOW_ROOMS = ["living", "bedroom", "kids", "study", "kitchen"];   // люстры с тенью (лимит сэмплеров D3D)
 names.push(...[...new Set([...windows.map(w => w.model), ...doorways.map(d => d.model), ...LAMPS.map(l => l[1])])].filter(n => !names.includes(n)));
-const curtainNames = [...new Set(PLAN.filter(p => p[0] === "drape").flatMap(p => [p[2].tulle, ...p[2].heavy]).concat("curtain_rail_bare"))];
+// тюль HoudiniCOP на кольцах: до пола (2.5 м) и до подоконника (кухня, 1.6 м); сборка 80 %
+const TULLE = { 250: "tulle_rings_w100_h250_g80_2590_lod0", 160: "tulle_rings_w100_h160_g80_1690_lod0" };
+const tulleH = w => (w.model === "win_2_kitchen" ? 160 : 250);
+const curtainNames = [...new Set(PLAN.filter(p => p[0] === "drape").flatMap(p => p[2].heavy).concat("curtain_rail_bare", ...Object.values(TULLE)))];
 const TULLE_Z = 0.36, HEAVY_Z = 0.48, ROD = 1.0;   // от внутренней грани стены, м; полкарниза
-// тюль — полупрозрачный (кружево ждём у HoudiniCOP: текстура с альфой по узору)
-const tulleMat = new THREE.MeshStandardMaterial({ color: 0xf1eee6, roughness: 0.9, transparent: true, opacity: 0.42, side: THREE.DoubleSide, depthWrite: false });
+// Кружево тюля HoudiniCOP (textures/tulle): узор тайлом 0.36 м, внизу кайма 0.18 м с фестонами;
+// альфа — непрозрачность нитей (дырки 0, сетка ~0.6).
+// UV полотна — 0..1: u по развёрнутой ширине (карниз × 2.5 = 2.5 м), v сверху вниз по высоте.
+const LACE = "../game/assets/textures/tulle/", LACE_TILE = 0.36, LACE_BAND = 0.18;
+const laceTex = (name, srgb) => {
+	const tx = new THREE.TextureLoader().load(LACE + name);
+	tx.flipY = false;   // как у текстур glTF: v = 0 — верх картинки
+	tx.wrapS = tx.wrapT = THREE.RepeatWrapping; tx.anisotropy = 4;
+	tx.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+	return tx;
+};
+const laceCache = {};
+function laceMat(pattern, h) {
+	const key = pattern + h;
+	if (laceCache[key]) return laceCache[key];
+	const px = texPx <= 512 ? "512" : "1k", H = h / 100, sx = 2.5 / LACE_TILE, sy = H / LACE_TILE;
+	const map = laceTex(`tulle_lace_${pattern}_albedo_${px}.webp`, true);
+	const normalMap = laceTex(`tulle_lace_${pattern}_normal_${px}.png`, false);
+	normalMap.repeat.set(sx, sy);
+	const band = laceTex("tulle_lace_border_albedo_512.webp", true);   // кайма есть только в 512
+	band.wrapT = THREE.ClampToEdgeWrapping;
+	// прозрачность — смешиванием: alpha hash (дешевле) на расстоянии рябит «снегом» по нитям
+	const m = new THREE.MeshStandardMaterial({ name: "tulle-" + key, map, normalMap, roughness: 0.85, side: THREE.DoubleSide, transparent: true, depthWrite: false });
+	m.onBeforeCompile = sh => {
+		sh.uniforms.lBand = { value: band };
+		sh.uniforms.lScale = { value: new THREE.Vector3(sx, sy, H) };
+		sh.fragmentShader = sh.fragmentShader
+			.replace("#include <common>", "#include <common>\nuniform sampler2D lBand;\nuniform vec3 lScale;")
+			.replace("#include <map_fragment>", `
+	// снизу — кайма (фестоны), выше — узор; от низа в метрах: (1 − v)·H
+	float fromBottom = (1.0 - vMapUv.y) * lScale.z;
+	vec4 lace = fromBottom < ${LACE_BAND.toFixed(2)}
+		? texture2D(lBand, vec2(vMapUv.x * lScale.x, 1.0 - fromBottom / ${LACE_BAND.toFixed(2)}))
+		: texture2D(map, vMapUv * lScale.xy);
+	diffuseColor *= lace;`);
+	};
+	m.customProgramCacheKey = () => "lace";
+	return (laceCache[key] = m);
+}
 const noise = await loadWearNoise(`${FURN}textures/wear_noise.png`);
 const models = {};
 // Загрузка: по 6 моделей разом (на телефоне сотня параллельных загрузок и расшифровок
@@ -558,11 +598,12 @@ for (const p of [...PLAN.filter(p => FIRST.has(p[0])), ...PLAN.filter(p => !FIRS
 		const hang = (n, side, off, mat) => {
 			const it = make(n, w.n);
 			if (Math.sign((it.bb.min.x + it.bb.max.x) / 2) !== -side) it.o.scale.x = -1;   // полотно — к центру окна
-			it.o.traverse(m => { if (m.isMesh && /fabric/i.test(m.material.name)) { m.material = mat; if (mat === tulleMat) m.castShadow = false; } });
+			it.o.traverse(m => { if (m.isMesh && /fabric/i.test(m.material.name)) { m.material = mat; if (mat.transparent) m.castShadow = false; } });
 			it.o.position.set(w.x + side * ROD, 0, zf + w.n[1] * off);
 			scene.add(it.o); it.o.updateMatrixWorld(true); count++;
 		};
-		for (const [off, pair, mat] of [[TULLE_Z, [D.tulle, D.tulle], tulleMat], [HEAVY_Z, D.heavy, heavyMat]]) {
+		const th = tulleH(w), tulle = TULLE[th];
+		for (const [off, pair, mat] of [[TULLE_Z, [tulle, tulle], laceMat(D.tulle, th)], [HEAVY_Z, D.heavy, heavyMat]]) {
 			hang(pair[0], -1, off, mat); hang(pair[1], 1, off, mat);
 			// карниз: центр по окну, на высоте колец (2.545 м), на том же отступе
 			const r = make("curtain_rail_bare", w.n), d = r.bb.max.z - r.bb.min.z;
