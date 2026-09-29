@@ -20,11 +20,12 @@ const TILE = {
 	concrete_monolith: 2, concrete_slab_under: 3, concrete_stair: 1.2,
 	stair_green: 1.5, stair_blue: 1.5, stair_beige: 1.5, stair_brownred: 1.5, stair_ceiling: 3,
 	wallpaper_flowers: 0.53, wallpaper_stripes: 0.53, wallpaper_diamond: 0.53,
-	tile22_white: 1.1, tile22_blue: 1.1,
+	tile22_white: 1.1, tile22_blue: 1.1, floor_metlakh: 1.2,
+	room_paint_beige: 1.5, room_paint_blue: 1.5, room_paint_green: 1.5,
 	parquet_herring: 1, linoleum_wood: 2, linoleum_tiles: 2, roof_roll: 4, rubble: 1.5, concrete_fracture: 1.5,
 };
 const TILE_V = { wallpaper_flowers: 1.06, wallpaper_stripes: 1.06, wallpaper_diamond: 1.06 };
-const PAINT = /^stair_(green|blue|beige|brownred)$/;   // полоса краски до 1.5 м от пола этажа
+const PAINT = /^(stair|room_paint)_(green|blue|beige|brownred)$/;   // полоса краски до 1.5 м от пола этажа
 const STAIR_TYPES = /^(ploshchadka|lestnica|lift)$/;
 const NO_MASK = new Set(["tile22_white", "tile22_blue"]);   // у плитки маски нет — грязь не рисуется
 
@@ -48,8 +49,8 @@ function rule(zone, room, panel, info, stairColor) {
 		case "slab_edge":
 			return { set: "concrete_panel_smooth_v1", tone: 0.9, grime: 0.6 };
 		case "slab_top": {
-			// пол площадок — гладкий бетон: monolith с отпечатком опалубки на полу читается досками
-			if (!type || STAIR_TYPES.test(type)) return { set: "concrete_panel_smooth_v0", tone: 0.85, grime: 1 };
+			// пол площадок — метлахская плитка (monolith — бетон с отпечатком опалубки, для стен)
+			if (!type || STAIR_TYPES.test(type)) return { set: "floor_metlakh", tone: 1, grime: 1 };
 			if (type === "sanuzel" || type === "tualet") return { set: "linoleum_tiles", tone: 1, grime: 0.6 };
 			if (type === "zhilaya") return { set: hash(room + 7) < 0.7 ? "parquet_herring" : "linoleum_wood", tone: 0.92 + 0.16 * hash(room + 3), grime: 0.5 };
 			return { set: "linoleum_wood", tone: 0.92 + 0.16 * hash(room + 3), grime: 0.6 };
@@ -61,8 +62,12 @@ function rule(zone, room, panel, info, stairColor) {
 			return { set: stairColor, tone: 1, grime: 1 };
 		case "wall_room": {
 			if (type && STAIR_TYPES.test(type)) return { set: stairColor, tone: 1, grime: 1 };
-			// краска подъезда с надписями на кухню не годится — пока обои и плитка (чистую краску просили у blend)
-			if (type === "sanuzel" || type === "tualet") return { set: hash(room + 17) < 0.5 ? "tile22_white" : "tile22_blue", tone: 1, grime: 0 };
+			// кухня — чистая масляная панель до 1.5 м; санузел — панель или плитка
+			if (type === "kuhnya") return { set: hash(room + 19) < 0.5 ? "room_paint_beige" : "room_paint_green", tone: 1, grime: 0.6 };
+			if (type === "sanuzel" || type === "tualet") {
+				const h = hash(room + 17);
+				return { set: h < 0.4 ? "room_paint_blue" : h < 0.7 ? "tile22_white" : "tile22_blue", tone: 1, grime: h < 0.4 ? 0.6 : 0 };
+			}
 			const k = room >= 0 ? room : 0;
 			return { set: ["wallpaper_flowers", "wallpaper_stripes", "wallpaper_diamond"][Math.floor(hash(k + 11) * 3)], tone: 0.9 + 0.2 * hash(k + 5), grime: 0.5 };
 		}
