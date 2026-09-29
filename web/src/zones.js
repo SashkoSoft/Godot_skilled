@@ -73,10 +73,11 @@ function rule(zone, room, panel, info, stairColor) {
 		}
 		case "roof": return { set: "roof_roll", tone: 1, grime: 1 };
 		case "rubble": return { set: "rubble", tone: 1, grime: 1 };
+		case "fracture": return { set: "concrete_fracture", tone: 1, grime: 0.4 };   // свежий скол руины
 	}
 	return null;
 }
-export const ZONES = new Set(["facade_panel", "plinth", "monolith", "slab_edge", "slab_top", "slab_under", "stairwell_wall", "wall_room", "roof", "rubble"]);
+export const ZONES = new Set(["facade_panel", "plinth", "monolith", "slab_edge", "slab_top", "slab_under", "stairwell_wall", "wall_room", "roof", "rubble", "fracture"]);
 
 const loader = new THREE.TextureLoader();
 const texCache = {};
@@ -96,23 +97,37 @@ let blankTex = null;
 const blank = () => blankTex ||= Object.assign(new THREE.DataTexture(new Uint8Array(4), 1, 1), { needsUpdate: true });
 
 const matCache = {};
-function material(set, floor) {
+// uvM — сколько метров в единице UV модели (у целого дома 1, у руины hou 2);
+// double — двусторонний (руина: у колотых кусков открытые оболочки и развёрнутые грани)
+function material(set, floor, uvM = 1, double = false) {
 	const band = PAINT.test(set);
-	const key = set + (band ? `@${floor.base}/${floor.pitch}` : "");
+	const key = set + (band ? `@${floor.base}/${floor.pitch}` : "") + `*${uvM}` + (double ? "d" : "");
 	if (matCache[key]) return matCache[key];
 	const orm = tex(set, "orm");
 	const m = new THREE.MeshStandardMaterial({
 		name: "zone:" + set, map: tex(set, "albedo"), normalMap: tex(set, "normal"),
-		aoMap: orm, roughnessMap: orm, metalness: 0,
+		aoMap: orm, roughnessMap: orm, metalness: 0, side: double ? THREE.DoubleSide : THREE.FrontSide,
 	});
 	const mask = NO_MASK.has(set) ? blank() : tex(set, "mask");
 	m.onBeforeCompile = sh => {
 		sh.uniforms.zMask = { value: mask };
 		sh.uniforms.zBand = { value: new THREE.Vector3(band ? 1 : 0, floor.base, floor.pitch) };
+		sh.uniforms.zUvM = { value: uvM };
 		sh.vertexShader = sh.vertexShader
-			.replace("#include <common>", "#include <common>\nattribute vec2 zv;\nvarying vec2 vZv;\nuniform vec3 zBand;")
+			.replace("#include <common>", "#include <common>\nattribute vec2 zv;\nvarying vec2 vZv;\nuniform vec3 zBand;\nuniform float zUvM;")
 			.replace("#include <uv_vertex>", `#include <uv_vertex>
 	vZv = zv;
+	// UV модели не в метрах (руина: 2 м на единицу) — повтор тайла считан в метрах
+	vMapUv *= zUvM;
+	#ifdef USE_NORMALMAP
+	vNormalMapUv *= zUvM;
+	#endif
+	#ifdef USE_AOMAP
+	vAoMapUv *= zUvM;
+	#endif
+	#ifdef USE_ROUGHNESSMAP
+	vRoughnessMapUv *= zUvM;
+	#endif
 	if (zBand.x > 0.5) {
 		// краска: V от пола своего этажа (панель до 1.5 м, выше побелка), по всем картам
 		float wy = (modelMatrix * vec4(position, 1.0)).y;
@@ -164,7 +179,9 @@ export function dressZones(root, info) {
 		const zone = o.material.name, g = o.geometry;
 		const room = g.attributes._room, panel = g.attributes._panel, pos = g.attributes.position;
 		const sgn = a => a ? (i => { const x = a.getX(i); return x >= 2147483648 ? x - 4294967296 : x; }) : () => -1;   // -1 записан как uint32
-		const R = sgn(room), P = sgn(panel);
+		// после сжатия (tools/attr2uv.py) комната и панель — в uv2: x — комната, y — панель
+		const u2 = !room && g.attributes.uv2;
+		const R = u2 ? (i => Math.round(u2.getX(i))) : sgn(room), P = u2 ? (i => Math.round(u2.getY(i))) : sgn(panel);
 		const idx = g.index ? g.index.array : Array.from({ length: pos.count }, (_, i) => i);
 		const zv = new Float32Array(pos.count * 2);
 		const bySet = new Map();
@@ -183,7 +200,7 @@ export function dressZones(root, info) {
 		g.clearGroups();
 		for (const [set, list] of bySet) {
 			g.addGroup(out.length, list.length, mats.length);
-			mats.push(material(set, floor));
+			mats.push(material(set, floor, info.uv_m || 1, info.kind === "ruin"));
 			for (const i of list) out.push(i);
 		}
 		g.setIndex(out);

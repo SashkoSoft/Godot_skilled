@@ -24,6 +24,7 @@ import { spawnDrones } from "./drones.js";
 import { instanceLods } from "./instlod.js";
 import { createInteriors } from "./furnish.js";
 import { createPlayer } from "./player.js";
+import { roomWalkable, roomFurnishable } from "./housenav.js";
 import { buildHoudiniTrees } from "./trees.js";
 import { windUniforms, setWind } from "./wind.js";
 
@@ -213,7 +214,7 @@ let drones = null, fenceIvy = null, interiors = null;
 // игра: герой бегает по кварталу и в домах (player.js); world — что берём в коллизию
 let player = null, playing = false, robotDbgT = 0;
 // #robotdbg — ручки для консоли: где роботы, игрок, камера
-if (q.has("robotdbg")) window.dbg = { get crowd() { return crowd; }, get player() { return player; }, get cam() { return cam; } };
+if (q.has("robotdbg")) window.dbg = { get crowd() { return crowd; }, get player() { return player; }, get cam() { return cam; }, get scene() { return scene; } };
 const world = { bo: null, fences: null, playground: null, houses: null, boxes: [], sig: "" };
 const FOV = 55, RIDE_FOV = 100;   // угол камеры: обычный и в дроне (setRide)
 let ride = -1, rideHeading = 0;
@@ -276,7 +277,7 @@ if (LEVEL === "district") {
 			interiors = createInteriors(scene, { wear: 0.5 });
 			for (const b of d.buildings.filter(b => b.model && H.ids.includes(b.id))) {
 				fetch(`../game/assets/models/houses/${b.model}/${b.model}.json`).then(r => r.ok ? r.json() : null)
-					.then(info => { if (info && info.rooms) interiors.addHouse(b, info); }).catch(() => {});
+					.then(info => { if (info && info.rooms) interiors.addHouse(b, info, { roomFilter: roomFurnishable }); }).catch(() => {});
 			}
 		}
 	} };
@@ -366,7 +367,7 @@ if (q.has("sss")) windUniforms.uSSS.value = +q.get("sss");   // сила про�
 	// дома hou: их комнаты, двери и марши — продолжение графа улицы (роботы ходят и внутри)
 	const houseInfo = (await Promise.all(d.buildings.filter(b => b.model).map(b =>
 		fetch(`../game/assets/models/houses/${b.model}/${b.model}.json`).then(r => r.ok ? r.json() : null).catch(() => null))))
-		.filter(i => i && i.rooms).map(info => ({ info }));
+		.filter(i => i && i.rooms).map(info => ({ info, roomOk: roomWalkable }));
 	const R = await spawnRobots(d, { count, start: [77, -26], envMap, houses: houseInfo });
 	crowd = R.robots; robotLod = R.updateLod; crowdStep = R.crowdStep;
 	const robotsGroup = new THREE.Group();
@@ -687,7 +688,7 @@ function collectColliders() {
 	// в ней нет пола тамбура (+0.45) — игрок проваливался под крыльцом.
 	if (H) H.group.traverse(o => {
 		if (!o.isLOD) return;
-		o.levels[0].object.traverse(m => { if (m.isMesh && !/doors|glass|lift_door|windows/i.test(m.name)) objs.push(m); });
+		o.levels[0].object.traverse(m => { if (m.isMesh && !/doors|door_wood|glass|lift_door|windows/i.test(m.name)) objs.push(m); });
 	});
 	if (q.get("coldbg")) { const pt = new THREE.Vector3(...q.get("coldbg").split(",").map(Number)); for (const o of objs) o.traverse(m => { if (m.isMesh && new THREE.Box3().setFromObject(m).expandByScalar(0.35).containsPoint(pt)) console.log("COLDBG " + m.name + " / " + (m.parent && m.parent.name) + " " + JSON.stringify(m.userData)); }); }
 	return objs;

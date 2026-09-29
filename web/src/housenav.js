@@ -14,6 +14,11 @@
 
 const INNER = 0.8;
 
+// Руина (<id>_ruin.json, состояние комнат от hou): без пола или недостижимая — не для
+// роботов; мебель — только где пол цел (floor_ok > 0.6). У целого дома полей нет — всё можно.
+export const roomWalkable = r => r.state !== "gone" && r.reachable !== false;
+export const roomFurnishable = r => roomWalkable(r) && (r.floor_ok == null || r.floor_ok > 0.6);
+
 function rectOf(rm) {
 	const xs = rm.polygon_xz.map(p => p[0]), zs = rm.polygon_xz.map(p => p[1]);
 	return [Math.min(...xs), Math.min(...zs), Math.max(...xs), Math.max(...zs)];

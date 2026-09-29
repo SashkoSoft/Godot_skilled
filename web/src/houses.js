@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { houseTiles, textureSet } from "./facades.js";
 import { dressZones } from "./zones.js";
 
@@ -51,7 +52,7 @@ function dress(root, T) {
 export async function loadHouses(d) {
 	const T = await houseTiles();
 	T.set.brick_silicate ??= T.set.blocks; T.tile_m.brick_silicate ??= T.tile_m.blocks;   // старое имя силикатного кирпича в GLB
-	const loader = new GLTFLoader();
+	const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);   // руины сжаты (tools/ruin_import.py)
 	const group = new THREE.Group();
 	group.name = "Houses";
 	const ids = [], colliders = [];   // коллизия домов (<id>_col.glb) — в мировых координатах, для игрока
@@ -61,6 +62,11 @@ export async function loadHouses(d) {
 			const [l0, l1, l2] = await Promise.all([0, 1, 2].map(l => loader.loadAsync(`${dir}_lod${l}.glb`)));
 			// дома с зонами материалов (b3, b4) — отделка по комнатам и панелям (zones.js, наборы blend)
 			const info = await fetch(`${dir}.json`).then(r => r.ok ? r.json() : null).catch(() => null);
+			// руина: стёкла — отдельными файлами по ступеням
+			if (info && info.glass_lods) {
+				const gl = await Promise.all([0, 1, 2].map(l => loader.loadAsync(`${dir}_glass_lod${l}.glb`).catch(() => null)));
+				gl.forEach((g, i) => { if (g) [l0, l1, l2][i].scene.add(g.scene); });
+			}
 			if (info && info.zones) {
 				const z = [l0, l1, l2].map(g => dressZones(g.scene, info));
 				console.log(`[улица] дом ${b.id}: зоны отделки на ступенях LOD ${z.join("/")} мешей`);
@@ -78,7 +84,9 @@ export async function loadHouses(d) {
 			// второй раз, за край квартала.)
 			const r = b.rect, cx = (r[0] + r[2]) / 2, cz = (r[1] + r[3]) / 2;
 			const bb = new THREE.Box3().setFromObject(l0.scene), c = bb.getCenter(new THREE.Vector3());
-			const inRect = c.x > r[0] && c.x < r[2] && c.z > r[1] && c.z < r[3];
+			// мировые координаты — если габарит накрывает центр участка (центр габарита не годится:
+			// обломки руины b3 уходят к улице, и центр выезжал за rect — руину сдвигали второй раз)
+			const inRect = bb.min.x < cx && bb.max.x > cx && bb.min.z < cz && bb.max.z > cz;
 			if (!inRect) lod.position.set(cx, 0, cz);
 			else {
 				// Модель в мировых координатах: точка LOD — в центре дома, а ступени сдвинуты
