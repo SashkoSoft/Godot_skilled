@@ -171,10 +171,43 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 		return null;
 	}
 
+	// Обыск мебели — клипы лута blend (как у роботов): подойти → открыть → порыться → достать
+	// или «пусто» → отойти. Пока идёт, герой не ходит; по концу — onDone.
+	let lootRun = null;
+	const lootClip = n => { const c = clip(n); if (!c) return null; const a = mixer.clipAction(c); return a; };
+	function loot(kind, found, spot, onDone) {
+		const P = kind === "cabinet" ? "LootCabinet" : kind === "drawer" ? "LootDrawer" : "LootLowDoor";
+		const side = Math.random() < 0.5 ? "L" : "R";
+		const seq = [[kind === "drawer" ? `${P}-open` : `${P}-open-${side}`], [`${P}-search-loop`, 2], [found || !clip(`${P}-empty`) ? `${P}-take` : `${P}-empty`], [`${P}-leave`]]
+			.filter(([n]) => clip(n));
+		lootRun = { seq, k: -1, t: 0, dur: 0, spot, heading: spot.heading, to: new THREE.Vector3(spot.use[0], pos.y, spot.use[1]), onDone };
+		vel.set(0, 0, 0);
+	}
+	function lootTick(dt) {
+		const L = lootRun;
+		// встать на место и повернуться лицом к мебели
+		pos.x += (L.to.x - pos.x) * Math.min(1, dt * 6); pos.z += (L.to.z - pos.z) * Math.min(1, dt * 6);
+		let d = L.heading - heading; d = Math.atan2(Math.sin(d), Math.cos(d));
+		heading += Math.sign(d) * Math.min(Math.abs(d), dt * 5);
+		if (L.k === 0 && L.spot.open) {   // дверца или ящик — по кадрам клипа открывания
+			const el = L.dur - L.t, [t0, t1] = L.spot.openT;
+			L.spot.open(Math.min(1, Math.max(0, (el - t0) / (t1 - t0))));
+		}
+		if (L.k < 0 && Math.abs(d) < 0.1) L.t = 0;
+		else if ((L.t -= dt) > 0) return;
+		L.k++;
+		if (L.k >= L.seq.length) { fade(act.idle, 0.25); lootRun = null; L.onDone(); return; }
+		const [n, dur] = L.seq[L.k], a = lootClip(n);
+		a.setLoop(dur !== undefined ? THREE.LoopRepeat : THREE.LoopOnce, Infinity); a.clampWhenFinished = dur === undefined;
+		fade(a, 0.2);
+		L.t = L.dur = dur || a.getClip().duration;
+	}
+
 	const input = new THREE.Vector3();
 	/** move — направление в мире (длина 0..1), run — бег, jump — прыжок. */
 	function update(dt, move, { run = true, jump = false } = {}) {
 		if (!bvh) return;
+		if (lootRun) { lootTick(dt); root.position.copy(pos); root.rotation.y = heading; mixer.update(dt); return; }
 		// по лестнице не разбежаться: бегом — через ступеньку быстрее, шагом — со скоростью клипа
 		const speed = move.lengthSq() > 1e-4 ? (onStairs ? (run ? 1.3 : 0.45) : run ? V.run : V.walk) : 0;
 		input.copy(move).setY(0); if (input.lengthSq() > 1) input.normalize();
@@ -256,5 +289,5 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 		cameraOrbit(camera, [bvh, camBvh], head, yaw, pitch, dist);
 	}
 
-	return { root, pos, setColliders, setBVH(b, cam = null) { bvh = b; camBvh = cam; }, setFlights, setDoors(fn) { doorSegs = fn; }, update, cameraAt, get onStairs() { return !!onStairs; }, get onGround() { return onGround; }, get bvh() { return bvh; } };
+	return { root, pos, loot, get looting() { return !!lootRun; }, setColliders, setBVH(b, cam = null) { bvh = b; camBvh = cam; }, setFlights, setDoors(fn) { doorSegs = fn; }, update, cameraAt, get onStairs() { return !!onStairs; }, get onGround() { return onGround; }, get bvh() { return bvh; } };
 }

@@ -1414,8 +1414,8 @@
   "lod1": 72340,
   "lod2": 25147,
   "col": 30372,
-  "basement": 7976,
-  "basement_col": 3516
+  "basement": 7988,
+  "basement_col": 3540
  },
  "files": {
   "lod0": "b1_lod0.glb",
@@ -1465,10 +1465,44 @@
      ]
     ],
     "tunnel": "tunnel_b1_b5"
+   },
+   {
+    "room": "fb_r025",
+    "side": "l",
+    "floor_y": -1.2,
+    "out_dir_xz": [
+     1.0,
+     0.0
+    ],
+    "wall_point_xz": [
+     -10.5,
+     -78.5
+    ],
+    "tunnel_floor_y": -3.6,
+    "hole_polygon_xz": [
+     [
+      -10.8,
+      -77.8
+     ],
+     [
+      -14.3,
+      -77.8
+     ],
+     [
+      -14.3,
+      -79.2
+     ],
+     [
+      -10.8,
+      -79.2
+     ]
+    ],
+    "tunnel": "tunnel_b1_b2"
    }
   ],
   "tunnels": [
-   "tunnel_b1_b5"
+   "tunnel_b1_b5",
+   "tunnel_b1_b2"
   ]
  },
  "node_naming": "<id>_<part>_fNN, extras.floor, extras.part; slab_fNN = pol etazha NN (slab_f09 — krovlya)",

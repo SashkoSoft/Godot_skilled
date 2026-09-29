@@ -24,6 +24,7 @@ import { spawnDrones } from "./drones.js";
 import { instanceLods } from "./instlod.js";
 import { createInteriors } from "./furnish.js";
 import { createPlayer, buildCollision, cameraOrbit } from "./player.js";
+import { makeBagLabel, makeLootMap, LOOT_KINDS, LOOT_RU, LOOT_COLOR } from "./lootui.js";
 import { roomWalkable, roomFurnishable } from "./housenav.js";
 import { buildHoudiniTrees } from "./trees.js";
 import { windUniforms, setWind } from "./wind.js";
@@ -474,6 +475,8 @@ addEventListener("keydown", (e) => {
 	if (e.code === "KeyV") { nextRide(); return; }
 	if (e.code === "Enter") { playing ? stopPlay() : startPlay(); return; }
 	if (e.code === "KeyH") { nextWatch(e.shiftKey ? -1 : 1); return; }
+		if (e.code === "KeyE" && playing) { tryLoot(); return; }
+	if (e.code === "KeyL") { lootMap.visible = !lootMap.visible; lootMapT = 0; say(lootMap.visible ? "карта лута: золото, серебро, бронза, серое — пусто, тёмное — обыскано" : "карта лута скрыта"); return; }
 	if (e.code === "Escape" && watch) { stopWatch(); return; }
 	if (e.code === "KeyT" && loadTrees) { toggleLayer("trees"); return; }
 	if (e.code === "KeyP" && hud.perfTable) {
@@ -833,6 +836,58 @@ function watchTick(dt) {
 	cam.p.copy(camera.position);
 	if ((watchInfoT -= dt) < 0) { watchInfoT = 0.3; watchHud.textContent = `${whereIs(o)} · ${watch.action}`; }
 }
+/* ── лут: инвентарь героя, подсказка у мебели, таблички над роботами, карта ──── */
+const inventory = { gold: 0, silver: 0, bronze: 0 };
+const invHud = Object.assign(document.createElement("div"), { id: "inventory" });
+invHud.style.cssText = "position:fixed;left:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));padding:8px 12px;border-radius:8px;" +
+	"background:rgba(10,12,14,.75);color:#e8e2d6;font:14px/1.5 system-ui,sans-serif;pointer-events:none";
+invHud.hidden = true;
+document.body.appendChild(invHud);
+const promptHud = Object.assign(document.createElement("div"), { id: "loot-prompt" });
+promptHud.style.cssText = "position:fixed;left:50%;top:62%;transform:translateX(-50%);padding:6px 14px;border-radius:8px;" +
+	"background:rgba(10,12,14,.75);color:#f2c14e;font:15px/1.4 system-ui,sans-serif;pointer-events:none";
+promptHud.hidden = true;
+document.body.appendChild(promptHud);
+function drawInventory() {
+	invHud.innerHTML = "<b>Инвентарь</b><br>" + LOOT_KINDS.map(k =>
+		`<span style="color:${LOOT_COLOR[k]}">●</span> ${LOOT_RU[k]}: ${inventory[k]}`).join("<br>");
+}
+drawInventory();
+const FURN_RU = { cabinet: "шкаф", drawer: "ящики", lowdoor: "тумбочку" };
+let nearSpot = null;
+function tryLoot() {
+	if (!player || player.looting || !nearSpot || !interiors) return;
+	const s = nearSpot; s.busy = true;
+	player.loot(s.kind, !!s.item, s, () => {
+		const it = interiors.take(s);
+		if (it) { inventory[it]++; drawInventory(); say(`найдено: ${LOOT_RU[it]}`); } else say("пусто");
+	});
+}
+const lootMap = makeLootMap();
+scene.add(lootMap);
+if (q.has("lootmap")) lootMap.visible = true;
+let lootMapT = 0;
+const bagLabels = new Map();   // робот → табличка
+function lootTick(dt) {
+	if (!interiors) return;
+	// подсказка у мебели
+	nearSpot = playing && player && !player.looting ? interiors.lootNear(player.pos) : null;
+	promptHud.hidden = !nearSpot;
+	if (nearSpot) promptHud.textContent = `E — обыскать ${FURN_RU[nearSpot.kind] || "мебель"}`;
+	invHud.hidden = !playing;
+	// карта лута — раз в секунду
+	if (lootMap.visible && (lootMapT -= dt) < 0) { lootMapT = 1; lootMap.userData.set(interiors.lootSpots()); }
+	// таблички над роботами — ближе 25 м к камере
+	for (const r of crowd) {
+		const p = r.object.position, near = camera.position.distanceTo(p) < 25 && layerOn.robots;
+		let L = bagLabels.get(r);
+		if (!near) { if (L) L.visible = false; continue; }
+		if (!L) { L = makeBagLabel(); scene.add(L); bagLabels.set(r, L); }
+		L.visible = true;
+		L.position.set(p.x, p.y + 2.25, p.z);   // чуть над головой
+		L.userData.set(r.bag || {});
+	}
+}
 let sigTimer = 0;
 // коллизия мира — одна на героя и камеру наблюдения; раз в секунду: не догрузилось ли новое
 function refreshCollision(dt) {
@@ -927,6 +982,7 @@ function tick(now) {
 	const cpu0 = performance.now();
 	for (const r of crowd) r.update(dt);
 	if (robotLod) robotLod(camera);
+	lootTick(dt);
 	// двери открываются перед игроком и роботами
 	if (world.houses && world.houses.doors.length && layerOn.houses) {
 		const agents = crowd.map(r => r.object.position);

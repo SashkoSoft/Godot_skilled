@@ -33,10 +33,10 @@ const CLUTTER = {
 		"photo_frame", "vinyl_records", "casket", "suitcase", "iron", "slippers", "cable_coil"],
 	bed: ["slippers", "book_open", "magazine_pile", "alarm_clock", "cup", "newspaper", "photo_frame", "bottle", "tablet_broken"],
 	top: ["alarm_clock", "radio", "phone_rotary", "photo_frame", "cup", "book_closed", "jar", "flower_pot_dead", "casket", "battery_lamp", "ar_glasses"],
-	kitchen: ["plate", "plate_broken", "cup", "pot", "kettle", "frying_pan", "jar", "jar_3l", "can_open", "bottle", "bucket", "box_crushed"],
+	kitchen: ["plate", "plate_broken", "cup", "pot", "kettle", "frying_pan", "jar", "jar_3l", "can_open", "bottle", "bucket", "box_soggy"],
 	room: ["book_closed", "newspaper", "newspaper_bundle", "vinyl_records", "radio", "tv_portable", "flower_pot_dead", "magazine_pile", "bottle",
-		"box_closed", "box_crushed", "toy_blocks", "ball", "cable_bundle", "drone_debris", "robot_arm", "robot_head"],
-	hall: ["boots", "slippers", "suitcase", "box_closed", "box_crushed", "newspaper_bundle", "bucket"],
+		"box_closed", "box_crushed_top", "box_crushed_side", "box_flattened", "box_torn_flap", "box_crushed_open", "toy_blocks", "ball", "cable_bundle", "drone_debris", "robot_arm", "robot_head"],
+	hall: ["boots", "slippers", "suitcase", "box_closed", "box_crushed_side", "box_flattened", "newspaper_bundle", "bucket"],
 	bath: ["bucket", "bottle", "jar"],
 };
 const STORAGE = /wardrobe|stenka|sideboard|bookcase|dresser|hall_shoe/, BED = /^bed_/;
@@ -46,8 +46,11 @@ const STORAGE = /wardrobe|stenka|sideboard|bookcase|dresser|hall_shoe/, BED = /^
 const LOOT = [
 	[/wardrobe|stenka|sideboard_tall|bookcase_glass_doors/, "cabinet"],
 	[/dresser|desk_pedestal|desk_side_cabinet|desk_drawers/, "drawer"],
-	[/^sideboard$|sideboard_bar|sink_cabinet|hall_shoe_bench/, "lowdoor"],
+	[/^sideboard$|sideboard_bar|sink_cabinet|hall_shoe_bench|nightstand/, "lowdoor"],
 ];
+// что лежит (тест): золото редко, серебро чаще, бронза чаще всего, остальное — пусто
+const LOOT_ROLL = [["gold", 0.05], ["silver", 0.2], ["bronze", 0.45]];
+const rollItem = r => { let x = r(); for (const [k, p] of LOOT_ROLL) { if (x < p) return k; x -= p; } return null; };
 const USE_D = 0.55;   // от лица мебели до Root робота — ручка на 0.55 м впереди (клипы blend)
 const CELL = 0.2, BODY = 0.32;   // сетка проходимости комнаты и радиус робота
 
@@ -116,6 +119,8 @@ const SETS = {
 		{ wall: [["wardrobe_legs", "wardrobe_mirror", "wardrobe_3door", "wardrobe_50s_glass"]] },
 		{ wall: [["desk_legs", "desk_school", "table_book_closed", "sideboard", null]], chair: ["chair_bent", "chair_vienna", "chair_ladder"] },
 		{ wall: [["floor_lamp_classic", "floor_lamp_duo", null, null]] },
+		{ wall: [["nightstand"]] },
+		{ wall: [["dresser_70s", null]] },
 	],
 	living: [
 		{ wall: [["sofa_book_check", "sofa_book_floral", "sofa_book_red", "sofa_cushions_red", "sofa_tahta"]] },
@@ -170,7 +175,16 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 				if (!o.isMesh) return;
 				let mat = o.material;
 				if (mask && mat.map && !mat.transparent) mat = makeWearMaterial(mat, mask, noise, wearP);
-				parts.push({ geo: o.geometry, mat, rel: o.matrixWorld.clone() });
+				let a = o;
+				while (a && a !== g.scene && !(a.userData && a.userData.part)) a = a.parent;
+				const e = a && a !== g.scene ? a.userData : null;
+				const anim = e && ["door", "drawer", "flap", "slide"].includes(e.part) ? {
+					node: a.name, part: e.part, swing: e.swing || 1, rad: (e.max_deg || 90) * Math.PI / 180,
+					axis: e.axis, travel: e.travel_m || 0, axisRot: e.axis_rot || [1, 0, 0],
+					hinge: e.hinge_pos || a.getWorldPosition(new THREE.Vector3()).toArray(), pivot: a.getWorldPosition(new THREE.Vector3()).toArray(),
+					handleY: e.handle_pos ? e.handle_pos[1] : a.getWorldPosition(new THREE.Vector3()).y,
+				} : null;
+				parts.push({ geo: o.geometry, mat, rel: o.matrixWorld.clone(), anim });
 			});
 			return { parts, box: new THREE.Box3().setFromObject(g.scene) };
 		})();
@@ -230,7 +244,8 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 			const placed = [], planStart = plan.length;   // поставленная мебель комнаты: { n, bx, face } — у неё ляжет хлам
 			const put = (n, fp, cx, cz, dy = 0, face = null) => {
 				const bx = new THREE.Box3(new THREE.Vector3(cx - fp.sx / 2, y, cz - fp.sz / 2), new THREE.Vector3(cx + fp.sx / 2, y + fp.h, cz + fp.sz / 2));
-				occ.push(bx); plan.push({ n, x: cx, y: y + dy, z: cz, rotY: fp.rotY, box: bx }); placed.push({ n, bx, face }); return bx;
+				const entry = { n, x: cx, y: y + dy, z: cz, rotY: fp.rotY, box: bx };
+				occ.push(bx); plan.push(entry); placed.push({ n, bx, face, entry }); return bx;
 			};
 			// у стены: стороны в случайном порядке, шаг 0.1 м
 			const SIDES = [[0, 1, "N"], [0, -1, "S"], [1, 0, "W"], [-1, 0, "E"]];   // лицо в комнату
@@ -295,7 +310,16 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 				const ux = f[0] ? (f[0] > 0 ? bx.max.x : bx.min.x) + f[0] * USE_D : cx, uz = f[1] ? (f[1] > 0 ? bx.max.z : bx.min.z) + f[1] * USE_D : cz;
 				const [ui, uj] = cellOf(G, ux, uz);
 				if (!isFree(G, ui, uj)) continue;   // перед мебелью не встать — не лут
-				spots.push({ kind: L[1], n: P.n, use: [ux, uz], heading: Math.atan2(-f[0], -f[1]), looted: false, busy: false });
+				// какую деталь открывать: дверцу или ящик на высоте руки клипа (шкаф 1.0, тумбочка 0.38, ящик 0.36)
+				const M = await model(P.n), want = L[1] === "drawer" ? ["drawer", 0.36] : ["door", L[1] === "cabinet" ? 1.0 : 0.38];
+				let node = null, nd = 1e9;
+				for (const pt of M.parts) if (pt.anim && (pt.anim.part === want[0] || (want[0] === "door" && pt.anim.part === "flap"))) {
+					const d = Math.abs(pt.anim.handleY - want[1]); if (d < nd) { nd = d; node = pt.anim.node; }
+				}
+				spots.push({ kind: L[1], n: P.n, use: [ux, uz], y, heading: Math.atan2(-f[0], -f[1]), looted: false, busy: false,
+					item: rollItem(rnd), at: [cx, Math.min(bx.max.y, y + 1.3), cz], entry: P.entry, node, open: null,
+					// кадры клипа: рука на ручке → дверца/ящик открыты (robot_clip_extras blend)
+					openT: L[1] === "cabinet" ? [0.667, 1.958] : L[1] === "drawer" ? [1.792, 2.333] : [1.458, 2.542] });
 			}
 			if (spots.length) H.loot.push({ rect: [gx0, gz0, gx1, gz1], y, G, spots, room: rm.id });
 			if (clutter > 0) await scatter(rm, kind, placed, occ, inside, y, rnd, (info.kind === "ruin" ? 1.6 : 1) * clutter, plan);
@@ -308,8 +332,10 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 		let calls = 0;
 		for (const [n, list] of Object.entries(byModel)) {
 			const M = await model(n);
+			list.forEach((p, i) => { p.inst = i; p.ims = []; });
 			for (const part of M.parts) {
 				const im = new THREE.InstancedMesh(part.geo, part.mat, list.length);
+				if (part.anim) list.forEach(p => p.ims.push({ im, part }));
 				list.forEach((p, i) => {
 					q.setFromAxisAngle(up, p.rotY);
 					m4.compose(new THREE.Vector3(p.x, p.y, p.z), q, one).multiply(part.rel);
@@ -321,16 +347,23 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 			}
 		}
 		scene.add(group);
+		// открывание дверцы/ящика экземпляра: k 0…1 (0 — закрыто)
+		for (const R of H.loot) for (const s of R.spots) s.open = k => openPart(s, k);
 		// коробки предметов — в столкновения игрока (низкое, ниже шага, капсула и так не задевает)
 		H.boxes = plan.map(p => p.box).filter(Boolean);
 		console.log(`[улица] мебель ${b.id}: предметов ${plan.length}, моделей ${Object.keys(byModel).length}, вызовов ${calls}`);
 		return group;
 	}
 
+	let building = null;
 	function update(camera) {
 		for (const H of houses) {
 			const d = H.center.distanceTo(camera.position);
-			if (!H.built && d < NEAR) H.built = build(H).then(g => (H.group = g)).catch(e => console.error("[улица] мебель", H.b.id, e));
+			// строится сразу во всех домах (лут для роботов — везде), по одному дому за раз; виден — ближе FAR
+			if (!H.built && !building) {
+				H.built = building = build(H).then(g => { H.group = g; g.visible = H.center.distanceTo(camera.position) < FAR; })
+					.catch(e => console.error("[улица] мебель", H.b.id, e)).finally(() => { building = null; });
+			}
 			if (H.group) H.group.visible = d < FAR;
 		}
 	}
@@ -396,12 +429,42 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 		}
 		return null;
 	}
+	const _m = new THREE.Matrix4(), _b = new THREE.Matrix4(), _q = new THREE.Quaternion(), _t = new THREE.Matrix4(), _r = new THREE.Matrix4(), _up = new THREE.Vector3(0, 1, 0), _one = new THREE.Vector3(1, 1, 1), _v = new THREE.Vector3();
+	function openPart(s, k) {
+		const e = s.entry;
+		if (!e || !e.ims || !s.node) return;
+		_b.compose(_v.set(e.x, e.y, e.z), _q.setFromAxisAngle(_up, e.rotY), _one);
+		for (const { im, part } of e.ims) {
+			const A = part.anim;
+			if (A.node !== s.node) continue;
+			if (A.part === "door") _m.makeTranslation(...A.hinge).multiply(_r.makeRotationY(A.swing * A.rad * k)).multiply(_t.makeTranslation(-A.hinge[0], -A.hinge[1], -A.hinge[2]));
+			else if (A.part === "flap") _m.makeTranslation(...A.pivot).multiply(_r.makeRotationAxis(_v.set(...A.axisRot).normalize(), A.swing * A.rad * k)).multiply(_t.makeTranslation(-A.pivot[0], -A.pivot[1], -A.pivot[2]));
+			else _m.makeTranslation(A.axis[0] * A.travel * k, A.axis[1] * A.travel * k, A.axis[2] * A.travel * k);
+			_m.premultiply(_b).multiply(part.rel);
+			im.setMatrixAt(e.inst, _m);
+			im.instanceMatrix.needsUpdate = true;
+		}
+	}
+	/** Все места лута в построенных домах (карта лута). */
+	const lootSpots = () => houses.flatMap(H => (H.loot || []).flatMap(R => R.spots));
+	/** Ближайшее к p свободное место, у которого можно встать (герой): до 1.1 м от точки «встать». */
+	function lootNear(p) {
+		let best = null, bd = 1.1;
+		for (const s of lootSpots()) {
+			if (s.looted || s.busy || Math.abs(p.y - s.y) > 0.6) continue;
+			const d = Math.hypot(p.x - s.use[0], p.z - s.use[1]);
+			if (d < bd) { bd = d; best = s; }
+		}
+		return best;
+	}
+	/** Забрать содержимое места: вернуть вид лута (или null — пусто), место — обыскано. */
+	function take(s) { const it = s.item; s.item = null; s.looted = true; s.busy = false; return it; }
 	/** Сколько мест для лута и сколько обыскано (подпись, проверки). */
 	const lootStats = () => { let n = 0, done = 0; for (const H of houses) for (const R of H.loot || []) for (const s of R.spots) { n++; if (s.looted) done++; } return { n, done }; };
 
 	/** Коробки расставленной мебели во всех построенных домах (мир). */
 	const boxes = () => houses.flatMap(H => H.boxes || []);
-	return { addHouse, update, boxes, lootAt, lootStats };
+	return { addHouse, update, boxes, lootAt, lootStats, lootSpots, lootNear, take };
 }
 
 function rectOf(rm) {

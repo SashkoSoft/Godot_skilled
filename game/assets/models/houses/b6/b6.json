@@ -416,8 +416,8 @@
   "lod1": 17748,
   "lod2": 5891,
   "col": 10260,
-  "basement": 4224,
-  "basement_col": 1824
+  "basement": 4248,
+  "basement_col": 1848
  },
  "files": {
   "lod0": "b6_lod0.glb",
@@ -434,7 +434,44 @@
   "note": "etazh -1, otdel'nyy fayl; potolok - niz plity 1-go etazha v faile doma (zona slab_under s _room pomeshcheniya podvala); vhod iz tambura (flights kind basement, dver' kind basement), priyamok s torca (flights kind pit, room type priyamok, dver' kind pit); v zemle u priyamka nuzhen vyrez po polygon_xz komnaty pit",
   "rooms": 22,
   "doors": 37,
-  "breaches": []
+  "breaches": [
+   {
+    "room": "fb_r020",
+    "side": "r",
+    "floor_y": -1.2,
+    "out_dir_xz": [
+     1.0,
+     0.0
+    ],
+    "wall_point_xz": [
+     -51.0,
+     77.5
+    ],
+    "tunnel_floor_y": -3.6,
+    "hole_polygon_xz": [
+     [
+      -55.01,
+      76.8
+     ],
+     [
+      -51.51,
+      76.8
+     ],
+     [
+      -51.51,
+      78.2
+     ],
+     [
+      -55.01,
+      78.2
+     ]
+    ],
+    "tunnel": "tunnel_b6_b7"
+   }
+  ],
+  "tunnels": [
+   "tunnel_b6_b7"
+  ]
  },
  "node_naming": "<id>_<part>_fNN, extras.floor, extras.part; slab_fNN = pol etazha NN (slab_f05 — krovlya)",
  "uv": "metry: 1 edinica UV = 1 m, proekciya po osi grani",

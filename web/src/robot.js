@@ -235,6 +235,8 @@ export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap
 		back: !!(C.back && C.idle_back && C.back_idle && V.back),
 	};
 
+	// лут: откуда брать места (furnish.js lootAt) — задаётся, когда мебель построена
+	let lootFn = null;
 	const graph = buildWalkGraph(d);
 	const roomNodes = {};
 	for (const H of houses) roomNodes[H.info.id] = addHouseToGraph(graph, H.info, H).roomNode;
@@ -336,8 +338,6 @@ export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap
 			a.setAvoid(Math.max(-0.7, Math.min(0.7, push * 0.9)));
 		}
 	}
-	// лут: откуда брать места (furnish.js lootAt) — задаётся, когда мебель построена
-	let lootFn = null;
 	return { robots, V, measured: !!measured, nodes: graph.length, updateLod, crowdStep, setLoot(fn) { lootFn = fn; } };
 }
 
@@ -660,11 +660,12 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false, LC =
 	   Войдя в комнату (дошёл до узла), обходчик иногда сворачивает к мебели с лутом: путь по
 	   сетке комнаты (furnish.js), у мебели — лицом к ней, цепочка клипов blend, и тем же
 	   путём назад на маршрут. Пока идёт крюк, походку не меняет. */
-	const LOOT_P = 0.35;
+	const LOOT_P = 0.5;
+	const bag = {};   // собранный лут: { gold, silver, bronze }
 	let ex = null;   // { spot, pts, i, y, phase: go | loot | back, seq, step, t }
 	const lootAction = (n, loop) => { const c = LC[n]; if (!c) return null; const a = mixer.clipAction(c); a.setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce, Infinity); a.clampWhenFinished = !loop; return a; };
 	function lootSeq(kind) {
-		const side = rand() < 0.5 ? "L" : "R", found = rand() < 0.6;
+		const side = rand() < 0.5 ? "L" : "R", found = !!ex.spot.item;   // находит то, что лежит (карта лута)
 		const P = kind === "cabinet" ? "LootCabinet" : kind === "drawer" ? "LootDrawer" : "LootLowDoor";
 		const open = kind === "drawer" ? `${P}-open` : `${P}-open-${side}`;
 		const seq = [[open], [`${P}-search-loop`, 2 + rand() * 3]];
@@ -691,10 +692,16 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false, LC =
 			let d = ex.spot.heading - heading; d = Math.atan2(Math.sin(d), Math.cos(d));
 			heading += Math.sign(d) * Math.min(Math.abs(d), dt * 4);
 			if (ex.step < 0) { if (Math.abs(d) < 0.1) exPlay(0); return; }
+				// дверца или ящик — по кадрам клипа открывания: от касания ручки до «открыто»
+			if (ex.step === 0 && ex.spot.open) {
+				const el = ex.cur.getClip().duration - ex.t, [t0, t1] = ex.spot.openT;
+				ex.spot.open(Math.min(1, Math.max(0, (el - t0) / (t1 - t0))));
+			}
 			if ((ex.t -= dt) > 0) return;
 			if (ex.step + 1 < ex.seq.length) { exPlay(ex.step + 1); return; }
 			// отошёл — назад на маршрут тем же путём
-			ex.spot.looted = true; ex.spot.busy = false;
+			const it = ex.spot.item; ex.spot.item = null; ex.spot.looted = true; ex.spot.busy = false;
+			if (it) bag[it] = (bag[it] || 0) + 1;
 			A.walk.reset().play(); ex.cur.crossFadeTo(A.walk, 0.25, false); active = A.walk; mode = "walk";
 			ex.pts = ex.pts.slice().reverse(); ex.i = 1; ex.phase = "back"; ex.cur = null;
 			return;
@@ -791,7 +798,7 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false, LC =
 			if (gesture) return turnSign ? "поворачивается" : (ACT_RU[gesture.getClip().name] || "жест");
 			if (trans) return ACT_RU[trans.to] || trans.to;
 			return ACT_RU[mode] || mode;
-		}, get onStairs() { return !!stairs; }, get looting() { return ex ? ex.phase : null; }, get strafing() { return !!strafe; },
+		}, bag, get onStairs() { return !!stairs; }, get looting() { return ex ? ex.phase : null; }, get strafing() { return !!strafe; },
 		get heading() { return heading; }, get speed() { return speed; }, get mode() { return mode; },
 		setAvoid(v) { latTarget = v; },
 		// испуг от встречного: только стоя или на ходу, с шансом — отшатнуться и попятиться

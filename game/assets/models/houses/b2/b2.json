@@ -1,0 +1,2082 @@
+{
+ "id": "b2",
+ "name": "Универсам",
+ "axes": "X vostok, Z yug, Y vverh, metry",
+ "pivot": "geometriya v MIROVYH koordinatah kvartala (kak b5), y = 0 trotuar",
+ "balconies": [],
+ "canopies": [],
+ "loggias": [],
+ "shops": [],
+ "lift": null,
+ "apron": "otmostka 0.8 m po perimetru, chast apron v _f00, bez kollizii",
+ "rect_requested": [
+  10,
+  -78,
+  52,
+  -52
+ ],
+ "rect_actual": [
+  10.0,
+  -78.5,
+  52.0,
+  -51.5
+ ],
+ "grid": {
+  "bay": 3.0,
+  "floor_h": 5.0,
+  "floor0_y": 0.0,
+  "slab": 0.22,
+  "bays_along": 9,
+  "bays_deep": 14
+ },
+ "floors": 1,
+ "construction": "panel",
+ "damage": 0.5,
+ "damage_done": {
+  "corner_cells": [
+   [
+    7,
+    12
+   ],
+   [
+    7,
+    13
+   ],
+   [
+    8,
+    12
+   ],
+   [
+    8,
+    13
+   ]
+  ],
+  "corner_from_floor": 0,
+  "slab_holes": [
+   {
+    "floor": 1,
+    "cell": [
+     2,
+     12
+    ]
+   },
+   {
+    "floor": 1,
+    "cell": [
+     3,
+     3
+    ]
+   },
+   {
+    "floor": 1,
+    "cell": [
+     4,
+     2
+    ]
+   },
+   {
+    "floor": 1,
+    "cell": [
+     7,
+     6
+    ]
+   },
+   {
+    "floor": 1,
+    "cell": [
+     8,
+     2
+    ]
+   }
+  ],
+  "windows_broken": 17,
+  "windows_total": 34
+ },
+ "entrances": [
+  {
+   "label": null,
+   "side": "N",
+   "at_requested": 31,
+   "pos": [
+    52.0,
+    0.0,
+    -53.0
+   ]
+  },
+  {
+   "label": null,
+   "side": "E",
+   "at_requested": -65,
+   "pos": [
+    52.0,
+    0.0,
+    -65.0
+   ]
+  }
+ ],
+ "stairs_note": "kryl'co +0.00 (stupeni s poruchnyami, kozyrek na stenkah) -> tambur -> korotkiy marsh do pola 1 etazha (+0.0); dalee parnye marshi, promezhutochnye ploshchadki u fasada vhoda",
+ "tris": {
+  "lod0": 27479,
+  "lod1": 20025,
+  "lod2": 7396,
+  "col": 936,
+  "basement": 4284,
+  "basement_col": 2292
+ },
+ "files": {
+  "lod0": "b2_lod0.glb",
+  "lod1": "b2_lod1.glb",
+  "lod2": "b2_lod2.glb",
+  "col": "b2_col.glb",
+  "basement": "b2_basement.glb",
+  "basement_col": "b2_basement_col.glb"
+ },
+ "basement": {
+  "floor_y": -2.7,
+  "ceiling_y": -0.22,
+  "slab": 0.2,
+  "note": "etazh -1, otdel'nyy fayl; potolok - niz plity 1-go etazha v faile doma (zona slab_under s _room pomeshcheniya podvala); vhod iz tambura (flights kind basement, dver' kind basement), priyamok s torca (flights kind pit, room type priyamok, dver' kind pit); v zemle u priyamka nuzhen vyrez po polygon_xz komnaty pit",
+  "rooms": 10,
+  "doors": 35,
+  "breaches": [
+   {
+    "room": "fb_r006",
+    "side": "f",
+    "floor_y": -2.7,
+    "out_dir_xz": [
+     -1.0,
+     0.0
+    ],
+    "wall_point_xz": [
+     10.0,
+     -65.25
+    ],
+    "tunnel_floor_y": -5.1,
+    "hole_polygon_xz": [
+     [
+      13.8,
+      -65.95
+     ],
+     [
+      13.8,
+      -64.55
+     ],
+     [
+      10.3,
+      -64.55
+     ],
+     [
+      10.3,
+      -65.95
+     ]
+    ],
+    "tunnel": "tunnel_b1_b2"
+   },
+   {
+    "room": "fb_r004",
+    "side": "b",
+    "floor_y": -2.7,
+    "out_dir_xz": [
+     1.0,
+     -0.0
+    ],
+    "wall_point_xz": [
+     52.0,
+     -53.25
+    ],
+    "tunnel_floor_y": -5.1,
+    "hole_polygon_xz": [
+     [
+      51.7,
+      -53.95
+     ],
+     [
+      51.7,
+      -52.55
+     ],
+     [
+      48.2,
+      -52.55
+     ],
+     [
+      48.2,
+      -53.95
+     ]
+    ],
+    "tunnel": "tunnel_b2_b3"
+   }
+  ],
+  "tunnels": [
+   "tunnel_b1_b2",
+   "tunnel_b2_b3"
+  ]
+ },
+ "node_naming": "<id>_<part>_fNN, extras.floor, extras.part; slab_fNN = pol etazha NN (slab_f01 — krovlya)",
+ "uv": "metry: 1 edinica UV = 1 m, proekciya po osi grani",
+ "materials": [
+  "basement_floor",
+  "basement_wall",
+  "blocks",
+  "brick",
+  "brick_facade",
+  "cable_tray",
+  "column",
+  "concrete",
+  "concrete_panel",
+  "door_wood",
+  "equipment",
+  "facade_panel",
+  "glass",
+  "gypsum",
+  "metal_painted",
+  "monolith",
+  "pipe",
+  "planks",
+  "plinth",
+  "roof",
+  "rubble",
+  "slab_edge",
+  "slab_top",
+  "slab_under",
+  "stairwell_wall",
+  "storage_grid",
+  "wall_room",
+  "window_frame"
+ ],
+ "zones": {
+  "materials": {
+   "facade_panel": "naruzhnye paneli (u kirpichnyh - brick_facade)",
+   "plinth": "cokol' do urovnya plity 1-go etazha (+-0.22)",
+   "monolith": "marshi, ploshchadki, kryl'co, kozyrek, balkonnye plity",
+   "slab_top": "pol - OTDELNOY gran'yu na kazhduyu komnatu",
+   "slab_under": "potolok - tozhe po komnatam (komnata etazha nizhe)",
+   "slab_edge": "torcy plit (v fasade, v proryve)",
+   "stairwell_wall": "steny, smotryashchie v lestnichnuyu kletku / ploshchadku",
+   "wall_room": "steny kvartir i vnutrennyaya gran' naruzhnoy steny",
+   "roof": "verh krovli"
+  },
+  "node_suffix": "<id>_<part>_fNN__<zona>; zona i v extras.zone",
+  "vertex_attrs": {
+   "_room": "indeks v rooms (-1 - snaruzhi / net komnaty)",
+   "_panel": "facade_panel/plinth: side*10000 + (etazh+1)*100 + prolyot (side 0 zad-s-podyezdami, 1 front, 2 levo, 3 pravo v lokal'nyh osyah doma; etazh -1 - cokol'); -1 - ne fasad"
+  }
+ },
+ "flights": [
+  {
+   "kind": "pit",
+   "section": -1,
+   "floor": -1,
+   "steps": 18,
+   "rise": 0.15,
+   "tread": 0.3,
+   "width": 1.4,
+   "a": [
+    41.5,
+    0.0,
+    -84.9
+   ],
+   "b": [
+    41.5,
+    -2.7,
+    -79.8
+   ]
+  }
+ ],
+ "landings_mid": [],
+ "door_leaves": [
+  {
+   "door": 0,
+   "hinge": [
+    49.04,
+    0.0,
+    -75.886
+   ],
+   "swing": 1,
+   "rest_center": [
+    49.019,
+    1.022,
+    -75.5
+   ],
+   "open_into": "f00_r001",
+   "width": 0.772,
+   "leaf": "single",
+   "kind": "room",
+   "floor": 0,
+   "node": "b2_door_000"
+  },
+  {
+   "door": 1,
+   "hinge": [
+    49.04,
+    0.0,
+    -71.386
+   ],
+   "swing": 1,
+   "rest_center": [
+    49.019,
+    1.022,
+    -71.0
+   ],
+   "open_into": "f00_r002",
+   "width": 0.772,
+   "leaf": "single",
+   "kind": "room",
+   "floor": 0,
+   "node": "b2_door_001"
+  },
+  {
+   "door": 2,
+   "hinge": [
+    49.06,
+    0.0,
+    -66.886
+   ],
+   "swing": 1,
+   "rest_center": [
+    49.039,
+    1.022,
+    -66.5
+   ],
+   "open_into": "f00_r003",
+   "width": 0.772,
+   "leaf": "single",
+   "kind": "room",
+   "floor": 0,
+   "node": "b2_door_002"
+  },
+  {
+   "door": 3,
+   "hinge": [
+    49.04,
+    0.0,
+    -60.886
+   ],
+   "swing": 1,
+   "rest_center": [
+    49.019,
+    1.022,
+    -60.5
+   ],
+   "open_into": "f00_r004",
+   "width": 0.772,
+   "leaf": "single",
+   "kind": "room",
+   "floor": 0,
+   "node": "b2_door_003"
+  },
+  {
+   "door": 25,
+   "hinge": [
+    29.886,
+    -2.7,
+    -60.35
+   ],
+   "swing": 1,
+   "rest_center": [
+    29.5,
+    -1.678,
+    -60.371
+   ],
+   "open_into": "fb_r007",
+   "width": 0.772,
+   "leaf": "single",
+   "kind": "shelter",
+   "floor": -1,
+   "node": "b2_door_004"
+  },
+  {
+   "door": 26,
+   "hinge": [
+    26.886,
+    -2.7,
+    -60.35
+   ],
+   "swing": 1,
+   "rest_center": [
+    26.5,
+    -1.678,
+    -60.371
+   ],
+   "open_into": "fb_r007",
+   "width": 0.772,
+   "leaf": "single",
+   "kind": "shelter",
+   "floor": -1,
+   "node": "b2_door_005"
+  },
+  {
+   "door": 34,
+   "hinge": [
+    29.886,
+    -2.7,
+    -54.65
+   ],
+   "swing": -1,
+   "rest_center": [
+    29.5,
+    -1.678,
+    -54.629
+   ],
+   "open_into": "fb_r007",
+   "width": 0.772,
+   "leaf": "single",
+   "kind": "electrical",
+   "floor": -1,
+   "node": "b2_door_006"
+  },
+  {
+   "door": 35,
+   "hinge": [
+    31.15,
+    -2.7,
+    -77.236
+   ],
+   "swing": 1,
+   "rest_center": [
+    31.129,
+    -1.678,
+    -76.85
+   ],
+   "open_into": "fb_r000",
+   "width": 0.772,
+   "leaf": "single",
+   "kind": "boiler",
+   "floor": -1,
+   "node": "b2_door_007"
+  },
+  {
+   "door": 38,
+   "hinge": [
+    41.936,
+    -2.7,
+    -78.5
+   ],
+   "swing": -1,
+   "rest_center": [
+    41.5,
+    -1.778,
+    -78.479
+   ],
+   "open_into": "fb_r009",
+   "width": 0.872,
+   "leaf": "single",
+   "kind": "pit",
+   "floor": -1,
+   "node": "b2_door_008"
+  }
+ ],
+ "apartments": [],
+ "rooms": [
+  {
+   "id": "f00_r000",
+   "floor": 0,
+   "y": 0.0,
+   "apartment": null,
+   "type": "shop",
+   "kind_en": "shop",
+   "area_m2": 1053.0,
+   "polygon_xz": [
+    [
+     49.0,
+     -78.5
+    ],
+    [
+     49.0,
+     -51.5
+    ],
+    [
+     10.0,
+     -51.5
+    ],
+    [
+     10.0,
+     -78.5
+    ]
+   ]
+  },
+  {
+   "id": "f00_r001",
+   "floor": 0,
+   "y": 0.0,
+   "apartment": null,
+   "type": "kladovaya",
+   "kind_en": "storage",
+   "area_m2": 18.0,
+   "polygon_xz": [
+    [
+     52.0,
+     -78.5
+    ],
+    [
+     52.0,
+     -72.5
+    ],
+    [
+     49.0,
+     -72.5
+    ],
+    [
+     49.0,
+     -78.5
+    ]
+   ]
+  },
+  {
+   "id": "f00_r002",
+   "floor": 0,
+   "y": 0.0,
+   "apartment": null,
+   "type": "office",
+   "kind_en": "office",
+   "area_m2": 9.0,
+   "polygon_xz": [
+    [
+     52.0,
+     -72.5
+    ],
+    [
+     52.0,
+     -69.5
+    ],
+    [
+     49.0,
+     -69.5
+    ],
+    [
+     49.0,
+     -72.5
+    ]
+   ]
+  },
+  {
+   "id": "f00_r003",
+   "floor": 0,
+   "y": 0.0,
+   "apartment": null,
+   "type": "tualet",
+   "kind_en": "wc",
+   "area_m2": 18.0,
+   "polygon_xz": [
+    [
+     52.0,
+     -69.5
+    ],
+    [
+     52.0,
+     -63.5
+    ],
+    [
+     49.0,
+     -63.5
+    ],
+    [
+     49.0,
+     -69.5
+    ]
+   ]
+  },
+  {
+   "id": "f00_r004",
+   "floor": 0,
+   "y": 0.0,
+   "apartment": null,
+   "type": "kladovaya",
+   "kind_en": "storage",
+   "area_m2": 18.0,
+   "polygon_xz": [
+    [
+     52.0,
+     -63.5
+    ],
+    [
+     52.0,
+     -57.5
+    ],
+    [
+     49.0,
+     -57.5
+    ],
+    [
+     49.0,
+     -63.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r000",
+   "floor": -1,
+   "y": -2.7,
+   "apartment": null,
+   "type": "kladovki zhil'cov",
+   "kind_en": "storage",
+   "name": "подвал, кладовки жильцов",
+   "area_m2": 126.0,
+   "polygon_xz": [
+    [
+     52.0,
+     -78.5
+    ],
+    [
+     52.0,
+     -72.5
+    ],
+    [
+     31.0,
+     -72.5
+    ],
+    [
+     31.0,
+     -78.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r001",
+   "floor": -1,
+   "y": -2.7,
+   "apartment": null,
+   "type": "podval",
+   "kind_en": "basement",
+   "name": "подвал, подвал",
+   "area_m2": 126.0,
+   "polygon_xz": [
+    [
+     52.0,
+     -72.5
+    ],
+    [
+     52.0,
+     -66.5
+    ],
+    [
+     31.0,
+     -66.5
+    ],
+    [
+     31.0,
+     -72.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r002",
+   "floor": -1,
+   "y": -2.7,
+   "apartment": null,
+   "type": "podval",
+   "kind_en": "basement",
+   "name": "подвал, подвал",
+   "area_m2": 126.0,
+   "polygon_xz": [
+    [
+     52.0,
+     -66.5
+    ],
+    [
+     52.0,
+     -60.5
+    ],
+    [
+     31.0,
+     -60.5
+    ],
+    [
+     31.0,
+     -66.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r003",
+   "floor": -1,
+   "y": -2.7,
+   "apartment": null,
+   "type": "podval",
+   "kind_en": "basement",
+   "name": "подвал, подвал",
+   "area_m2": 126.0,
+   "polygon_xz": [
+    [
+     52.0,
+     -60.5
+    ],
+    [
+     52.0,
+     -54.5
+    ],
+    [
+     31.0,
+     -54.5
+    ],
+    [
+     31.0,
+     -60.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r004",
+   "floor": -1,
+   "y": -2.7,
+   "apartment": null,
+   "type": "kladovki zhil'cov",
+   "kind_en": "storage",
+   "name": "подвал, кладовки жильцов",
+   "area_m2": 63.0,
+   "polygon_xz": [
+    [
+     52.0,
+     -54.5
+    ],
+    [
+     52.0,
+     -51.5
+    ],
+    [
+     31.0,
+     -51.5
+    ],
+    [
+     31.0,
+     -54.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r005",
+   "floor": -1,
+   "y": -2.7,
+   "apartment": null,
+   "type": "teplovoy uzel",
+   "kind_en": "boiler",
+   "name": "подвал, тепловой узел",
+   "area_m2": 126.0,
+   "polygon_xz": [
+    [
+     31.0,
+     -78.5
+    ],
+    [
+     31.0,
+     -72.5
+    ],
+    [
+     10.0,
+     -72.5
+    ],
+    [
+     10.0,
+     -78.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r006",
+   "floor": -1,
+   "y": -2.7,
+   "apartment": null,
+   "type": "ubezhishche",
+   "kind_en": "shelter",
+   "name": "подвал, убежище",
+   "area_m2": 252.0,
+   "polygon_xz": [
+    [
+     31.0,
+     -72.5
+    ],
+    [
+     31.0,
+     -60.5
+    ],
+    [
+     10.0,
+     -60.5
+    ],
+    [
+     10.0,
+     -72.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r007",
+   "floor": -1,
+   "y": -2.7,
+   "apartment": null,
+   "type": "podval",
+   "kind_en": "basement",
+   "name": "подвал, подвал",
+   "area_m2": 126.0,
+   "polygon_xz": [
+    [
+     31.0,
+     -60.5
+    ],
+    [
+     31.0,
+     -54.5
+    ],
+    [
+     10.0,
+     -54.5
+    ],
+    [
+     10.0,
+     -60.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r008",
+   "floor": -1,
+   "y": -2.7,
+   "apartment": null,
+   "type": "elektroshchitovaya",
+   "kind_en": "electrical",
+   "name": "подвал, электрощитовая",
+   "area_m2": 63.0,
+   "polygon_xz": [
+    [
+     31.0,
+     -54.5
+    ],
+    [
+     31.0,
+     -51.5
+    ],
+    [
+     10.0,
+     -51.5
+    ],
+    [
+     10.0,
+     -54.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r009",
+   "floor": -1,
+   "y": -2.7,
+   "apartment": null,
+   "type": "priyamok",
+   "kind_en": "pit",
+   "name": "приямок",
+   "area_m2": 8.96,
+   "polygon_xz": [
+    [
+     42.2,
+     -84.9
+    ],
+    [
+     42.2,
+     -78.5
+    ],
+    [
+     40.8,
+     -78.5
+    ],
+    [
+     40.8,
+     -84.9
+    ]
+   ]
+  }
+ ],
+ "doors": [
+  {
+   "floor": 0,
+   "rooms": [
+    "f00_r000",
+    "f00_r001"
+   ],
+   "kind": "room",
+   "width": 0.9,
+   "pos": [
+    49.0,
+    0.0,
+    -75.5
+   ]
+  },
+  {
+   "floor": 0,
+   "rooms": [
+    "f00_r000",
+    "f00_r002"
+   ],
+   "kind": "room",
+   "width": 0.9,
+   "pos": [
+    49.0,
+    0.0,
+    -71.0
+   ]
+  },
+  {
+   "floor": 0,
+   "rooms": [
+    "f00_r000",
+    "f00_r003"
+   ],
+   "kind": "room",
+   "width": 0.9,
+   "pos": [
+    49.0,
+    0.0,
+    -66.5
+   ]
+  },
+  {
+   "floor": 0,
+   "rooms": [
+    "f00_r000",
+    "f00_r004"
+   ],
+   "kind": "room",
+   "width": 0.9,
+   "pos": [
+    49.0,
+    0.0,
+    -60.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r000",
+    "fb_r001"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    50.35,
+    -2.7,
+    -72.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r000",
+    "fb_r001"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    47.5,
+    -2.7,
+    -72.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r000",
+    "fb_r001"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    44.5,
+    -2.7,
+    -72.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r000",
+    "fb_r001"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    41.5,
+    -2.7,
+    -72.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r000",
+    "fb_r001"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    38.5,
+    -2.7,
+    -72.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r000",
+    "fb_r001"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    35.5,
+    -2.7,
+    -72.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r000",
+    "fb_r001"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    32.5,
+    -2.7,
+    -72.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r001",
+    "fb_r002"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    50.35,
+    -2.7,
+    -66.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r001",
+    "fb_r002"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    47.5,
+    -2.7,
+    -66.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r001",
+    "fb_r002"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    44.5,
+    -2.7,
+    -66.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r001",
+    "fb_r002"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    41.5,
+    -2.7,
+    -66.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r001",
+    "fb_r002"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    38.5,
+    -2.7,
+    -66.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r001",
+    "fb_r002"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    35.5,
+    -2.7,
+    -66.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r001",
+    "fb_r002"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    32.5,
+    -2.7,
+    -66.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r002",
+    "fb_r003"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    50.35,
+    -2.7,
+    -60.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r002",
+    "fb_r003"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    47.5,
+    -2.7,
+    -60.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r002",
+    "fb_r003"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    44.5,
+    -2.7,
+    -60.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r002",
+    "fb_r003"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    41.5,
+    -2.7,
+    -60.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r002",
+    "fb_r003"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    38.5,
+    -2.7,
+    -60.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r002",
+    "fb_r003"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    35.5,
+    -2.7,
+    -60.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r002",
+    "fb_r003"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    32.5,
+    -2.7,
+    -60.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r006",
+    "fb_r007"
+   ],
+   "kind": "shelter",
+   "width": 0.9,
+   "pos": [
+    29.5,
+    -2.7,
+    -60.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r006",
+    "fb_r007"
+   ],
+   "kind": "shelter",
+   "width": 0.9,
+   "pos": [
+    26.5,
+    -2.7,
+    -60.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r003",
+    "fb_r004"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    50.35,
+    -2.7,
+    -54.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r003",
+    "fb_r004"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    47.5,
+    -2.7,
+    -54.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r003",
+    "fb_r004"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    44.5,
+    -2.7,
+    -54.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r003",
+    "fb_r004"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    41.5,
+    -2.7,
+    -54.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r003",
+    "fb_r004"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    38.5,
+    -2.7,
+    -54.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r003",
+    "fb_r004"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    35.5,
+    -2.7,
+    -54.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r003",
+    "fb_r004"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    32.5,
+    -2.7,
+    -54.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r007",
+    "fb_r008"
+   ],
+   "kind": "electrical",
+   "width": 0.9,
+   "pos": [
+    29.5,
+    -2.7,
+    -54.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r000",
+    "fb_r005"
+   ],
+   "kind": "boiler",
+   "width": 0.9,
+   "pos": [
+    31.0,
+    -2.7,
+    -76.85
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r003",
+    "fb_r007"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    31.0,
+    -2.7,
+    -59.0
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r003",
+    "fb_r007"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    31.0,
+    -2.7,
+    -56.0
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r009",
+    "fb_r000"
+   ],
+   "kind": "pit",
+   "width": 1.0,
+   "pos": [
+    41.5,
+    -2.7,
+    -78.35
+   ]
+  }
+ ],
+ "windows": [
+  {
+   "floor": 0,
+   "pos": [
+    10.0,
+    0.9,
+    -77.0
+   ],
+   "normal": [
+    -1.0,
+    0.0,
+    0.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": false,
+   "room_kind": "shop"
+  },
+  {
+   "floor": 0,
+   "pos": [
+    11.5,
+    0.9,
+    -78.5
+   ],
+   "normal": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": false,
+   "room_kind": "shop"
+  },
+  {
+   "floor": 0,
+   "pos": [
+    14.5,
+    0.9,
+    -78.5
+   ],
+   "normal": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": true,
+   "room_kind": "shop",
+   "glass_variant": "glass_panel_04_out",
+   "glass_mirror": false
+  },
+  {
+   "floor": 0,
+   "pos": [
+    17.5,
+    0.9,
+    -78.5
+   ],
+   "normal": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": false,
+   "room_kind": "shop"
+  },
+  {
+   "floor": 0,
+   "pos": [
+    20.5,
+    0.9,
+    -78.5
+   ],
+   "normal": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": true,
+   "room_kind": "shop",
+   "glass_variant": "glass_panel_10_blast",
+   "glass_mirror": false
+  },
+  {
+   "floor": 0,
+   "pos": [
+    23.5,
+    0.9,
+    -78.5
+   ],
+   "normal": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": false,
+   "room_kind": "shop"
+  },
+  {
+   "floor": 0,
+   "pos": [
+    26.5,
+    0.9,
+    -78.5
+   ],
+   "normal": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": false,
+   "room_kind": "shop"
+  },
+  {
+   "floor": 0,
+   "pos": [
+    32.5,
+    0.9,
+    -78.5
+   ],
+   "normal": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": true,
+   "room_kind": "shop",
+   "glass_variant": "glass_panel_01_out",
+   "glass_mirror": true
+  },
+  {
+   "floor": 0,
+   "pos": [
+    35.5,
+    0.9,
+    -78.5
+   ],
+   "normal": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": false,
+   "room_kind": "shop"
+  },
+  {
+   "floor": 0,
+   "pos": [
+    38.5,
+    0.9,
+    -78.5
+   ],
+   "normal": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": true,
+   "room_kind": "shop",
+   "glass_variant": "glass_panel_14_blast",
+   "glass_mirror": false
+  },
+  {
+   "floor": 0,
+   "pos": [
+    41.5,
+    0.9,
+    -78.5
+   ],
+   "normal": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": true,
+   "room_kind": "shop",
+   "glass_variant": "glass_panel_07_out",
+   "glass_mirror": false
+  },
+  {
+   "floor": 0,
+   "pos": [
+    44.5,
+    0.9,
+    -78.5
+   ],
+   "normal": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": true,
+   "room_kind": "shop",
+   "glass_variant": "glass_panel_01_out",
+   "glass_mirror": true
+  },
+  {
+   "floor": 0,
+   "pos": [
+    47.5,
+    0.9,
+    -78.5
+   ],
+   "normal": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": false,
+   "room_kind": "shop"
+  },
+  {
+   "floor": 0,
+   "pos": [
+    10.0,
+    0.9,
+    -74.0
+   ],
+   "normal": [
+    -1.0,
+    0.0,
+    0.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": true,
+   "room_kind": "shop",
+   "glass_variant": "glass_panel_02_out",
+   "glass_mirror": true
+  },
+  {
+   "floor": 0,
+   "pos": [
+    10.0,
+    0.9,
+    -71.0
+   ],
+   "normal": [
+    -1.0,
+    0.0,
+    0.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": true,
+   "room_kind": "shop",
+   "glass_variant": "glass_panel_15_crack",
+   "glass_mirror": false
+  },
+  {
+   "floor": 0,
+   "pos": [
+    52.0,
+    0.9,
+    -71.0
+   ],
+   "normal": [
+    1.0,
+    0.0,
+    -0.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": false,
+   "room_kind": "office"
+  },
+  {
+   "floor": 0,
+   "pos": [
+    10.0,
+    0.9,
+    -68.0
+   ],
+   "normal": [
+    -1.0,
+    0.0,
+    0.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": false,
+   "room_kind": "shop"
+  },
+  {
+   "floor": 0,
+   "pos": [
+    10.0,
+    0.9,
+    -65.0
+   ],
+   "normal": [
+    -1.0,
+    0.0,
+    0.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": false,
+   "room_kind": "shop"
+  },
+  {
+   "floor": 0,
+   "pos": [
+    10.0,
+    0.9,
+    -62.0
+   ],
+   "normal": [
+    -1.0,
+    0.0,
+    0.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": true,
+   "room_kind": "shop",
+   "glass_variant": "glass_panel_05_in",
+   "glass_mirror": false
+  },
+  {
+   "floor": 0,
+   "pos": [
+    10.0,
+    0.9,
+    -59.0
+   ],
+   "normal": [
+    -1.0,
+    0.0,
+    0.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": true,
+   "room_kind": "shop",
+   "glass_variant": "glass_panel_01_out",
+   "glass_mirror": false
+  },
+  {
+   "floor": 0,
+   "pos": [
+    10.0,
+    0.9,
+    -56.0
+   ],
+   "normal": [
+    -1.0,
+    0.0,
+    0.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": false,
+   "room_kind": "shop"
+  },
+  {
+   "floor": 0,
+   "pos": [
+    10.0,
+    0.9,
+    -53.0
+   ],
+   "normal": [
+    -1.0,
+    0.0,
+    0.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": false,
+   "room_kind": "shop"
+  },
+  {
+   "floor": 0,
+   "pos": [
+    11.5,
+    0.9,
+    -51.5
+   ],
+   "normal": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": false,
+   "room_kind": "shop"
+  },
+  {
+   "floor": 0,
+   "pos": [
+    14.5,
+    0.9,
+    -51.5
+   ],
+   "normal": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": true,
+   "room_kind": "shop",
+   "glass_variant": "glass_panel_12_blast",
+   "glass_mirror": false
+  },
+  {
+   "floor": 0,
+   "pos": [
+    17.5,
+    0.9,
+    -51.5
+   ],
+   "normal": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": true,
+   "room_kind": "shop",
+   "glass_variant": "glass_panel_13_blast",
+   "glass_mirror": true
+  },
+  {
+   "floor": 0,
+   "pos": [
+    20.5,
+    0.9,
+    -51.5
+   ],
+   "normal": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": false,
+   "room_kind": "shop"
+  },
+  {
+   "floor": 0,
+   "pos": [
+    23.5,
+    0.9,
+    -51.5
+   ],
+   "normal": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": false,
+   "room_kind": "shop"
+  },
+  {
+   "floor": 0,
+   "pos": [
+    26.5,
+    0.9,
+    -51.5
+   ],
+   "normal": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": false,
+   "room_kind": "shop"
+  },
+  {
+   "floor": 0,
+   "pos": [
+    29.5,
+    0.9,
+    -51.5
+   ],
+   "normal": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": true,
+   "room_kind": "shop",
+   "glass_variant": "glass_panel_10_blast",
+   "glass_mirror": true
+  },
+  {
+   "floor": 0,
+   "pos": [
+    32.5,
+    0.9,
+    -51.5
+   ],
+   "normal": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": false,
+   "room_kind": "shop"
+  },
+  {
+   "floor": 0,
+   "pos": [
+    35.5,
+    0.9,
+    -51.5
+   ],
+   "normal": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": true,
+   "room_kind": "shop",
+   "glass_variant": "glass_panel_01_out",
+   "glass_mirror": false
+  },
+  {
+   "floor": 0,
+   "pos": [
+    38.5,
+    0.9,
+    -51.5
+   ],
+   "normal": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": true,
+   "room_kind": "shop",
+   "glass_variant": "glass_panel_10_blast",
+   "glass_mirror": true
+  },
+  {
+   "floor": 0,
+   "pos": [
+    41.5,
+    0.9,
+    -51.5
+   ],
+   "normal": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": true,
+   "room_kind": "shop",
+   "glass_variant": "glass_panel_14_blast",
+   "glass_mirror": false
+  },
+  {
+   "floor": 0,
+   "pos": [
+    44.5,
+    0.9,
+    -51.5
+   ],
+   "normal": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "wall_t": 0.3,
+   "width": 1.4,
+   "height": 1.5,
+   "broken": true,
+   "room_kind": "shop",
+   "glass_variant": "glass_panel_13_blast",
+   "glass_mirror": true
+  }
+ ]
+}
