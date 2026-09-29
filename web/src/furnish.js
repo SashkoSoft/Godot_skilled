@@ -137,7 +137,7 @@ const SETS = {
 	],
 	hall: [
 		{ wall: [["hall_stand", "hall_hanger_panels", "hall_shelf_hooks"]], keepY: true },
-		{ wall: [["hall_shoe_bench", null]], keepY: true },
+		{ wall: [["hall_shoe_bench", null]] },   // стоит на полу (с keepY висела в воздухе)
 	],
 	bath: [
 		{ wall: [["bath_cast", "bath_legs"]] },
@@ -275,6 +275,8 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 			const atWall = async (n, keepY) => {
 				const M = await model(n);
 				const order = SIDES.map(s => [s, rnd()]).sort((a, c) => a[1] - c[1]).map(a => a[0]);
+				// навесное (вешалки) в повреждённой комнате руины — стены может не быть
+				if (keepY && rm.state && rm.state !== "intact") return null;
 				for (const [fx, fz, sideName] of order) {
 					if (open.has(sideName)) continue;   // спиной к проходу — не к стене
 					const fp = footprint(M, [fx, fz]);

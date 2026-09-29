@@ -259,6 +259,7 @@ export function buildGrassBlades({ grid = 200, spacing = 0.2, ring = false, near
 				else if (kind == 4.0) { height = 0.22 + 0.1 * h2; width = 0.005; headW = 0.045; lay = 0.1; }
 				else { height = 0.32 + 0.15 * h2; width = 0.005; headW = 0.05; lay = 0.1; }
 				height *= alive;
+				width *= alive; headW *= alive;   // мёртвая травинка — в точку (иначе плоский ромбик цветка висел над землёй за кварталом)
 				width *= WIDTH_MUL; headW *= WIDTH_MUL;   // в кольце травинок меньше — они шире
 				float ang = h1 * 6.2831;
 				vec2 side = vec2(cos(ang), sin(ang)), fwd = vec2(-side.y, side.x);

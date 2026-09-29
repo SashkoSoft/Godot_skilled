@@ -46,7 +46,7 @@ function rule(zone, room, panel, info, stairColor) {
 		case "facade_panel":
 			return { set: `concrete_panel_smooth_v${Math.floor(hash(panel) * 3)}`, tone: 1 + 0.03 * (hash(panel + 1) * 2 - 1), grime: 0.3 + 0.7 * hash(panel + 2) };
 		case "plinth":
-			return { set: "concrete_monolith", tone: 0.92 + 0.03 * (hash(panel + 1) * 2 - 1), grime: 1.3 };
+			return { set: "concrete_panel_smooth_v2", tone: 0.72 + 0.04 * (hash(panel + 1) * 2 - 1), grime: 1.3 };   // цоколь: опалубка читалась полосатой будкой
 		case "monolith":   // марши, площадки, крыльцо: гладкий бетон (с опалубкой читались досками)
 			return { set: "concrete_panel_smooth_v2", tone: 0.78, grime: 1 };
 		case "slab_edge":
@@ -61,7 +61,8 @@ function rule(zone, room, panel, info, stairColor) {
 		}
 		case "slab_under":
 			// копоть на потолке подъезда — в полную силу, в квартирах едва
-			return !type || STAIR_TYPES.test(type) ? { set: "stair_ceiling", tone: 1, grime: 1 } : { set: "concrete_slab_under", tone: 1, grime: 0.2 };
+			// подъезд: бетон с копотью (побелка stair_ceiling читалась гипсокартоном)
+			return !type || STAIR_TYPES.test(type) ? { set: "concrete_slab_under", tone: 0.8, grime: 1 } : { set: "concrete_slab_under", tone: 1, grime: 0.2 };
 		case "stairwell_wall":
 			return { set: stairColor, tone: 1, grime: 1 };
 		case "wall_room": {
@@ -88,7 +89,7 @@ function rule(zone, room, panel, info, stairColor) {
 		case "earth": return { set: "earth", tone: 1, grime: 0.8 };
 		case "timber": return { set: "timber", tone: 0.95 + 0.1 * hash(panel + 31), grime: 0.8 };
 		case "concrete_pipe": return { set: "concrete_pipe", tone: 1, grime: 0.8 };
-		case "column": return { set: "concrete_monolith", tone: 0.85, grime: 0.9 };
+		case "column": return { set: "concrete_panel_smooth_v2", tone: 0.8, grime: 0.9 };
 	}
 	return null;
 }
