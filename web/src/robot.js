@@ -196,6 +196,14 @@ export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap
 	C.stairsUp = inPlace(byName("StairsUp-loop")); C.stairsDown = inPlace(byName("StairsDown-loop"));
 	// Шаг в сторону на ходу (уступить дорогу): 25° от курса, 0.71 м/с вперёд и 0.33 вбок
 	C.strafeL = byName("WalkStrafe-L-loop"); C.strafeR = byName("WalkStrafe-R-loop");
+	// Лут (blend): из стойки к мебели → порыться → достать в сумку или «пусто» → отойти в стойку.
+	// Отдельно от C: у C каждый клип становится действием автоматически.
+	const LC = {};
+	for (const n of ["LootCabinet-open-L", "LootCabinet-open-R", "LootCabinet-search-loop", "LootCabinet-take", "LootCabinet-empty", "LootCabinet-leave",
+		"LootDrawer-open", "LootDrawer-search-loop", "LootDrawer-take", "LootDrawer-empty", "LootDrawer-leave",
+		"LootLowDoor-open-L", "LootLowDoor-open-R", "LootLowDoor-search-loop", "LootLowDoor-take", "LootLowDoor-leave"]) LC[n] = byName(n);
+	// сумка на поясе: вершины — в пространстве модели робота, вешается на кость Hips
+	const bagG = await loader.loadAsync(DIR + "loot_bag_web.glb").catch(() => null);
 	console.log(`[улица] робот: клипы ${gltf.animations.map(a => `${a.name} ${a.duration.toFixed(2)}с`).join(", ")}`);
 
 	// Скорость каждого цикла — замером по его же анимации. Клип обязан играть
@@ -279,7 +287,18 @@ export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap
 			graph.forEach((n, j) => { if (n.house) return; const dd = Math.hypot(n.p[0] - start[0], n.p[1] - start[1]); if (dd < best) { best = dd; startNode = j; } });
 		} else if (indoor) startNode = houseNodes[Math.floor(rand() * houseNodes.length)];
 		else startNode = streetNodes[Math.floor(rand() * streetNodes.length)];
-		robots.push(makeAgent(root, C, V, can, graph, rand, startNode, indoor));
+		if (indoor && bagG) {
+			const hips = root.getObjectByName("Hips");
+			if (hips) {
+				root.updateMatrixWorld(true);
+				const rel = new THREE.Matrix4().copy(root.matrixWorld).invert().multiply(hips.matrixWorld);   // Hips в позе покоя, в осях модели
+				const bag = bagG.scene.clone(true);
+				bag.matrixAutoUpdate = false; bag.matrix.copy(rel).invert();
+				bag.traverse(o => { if (o.isMesh) { o.castShadow = true; if (envMap && o.material.metalness > 0.5) o.material.envMap = envMap; } });
+				hips.add(bag);
+			}
+		}
+		robots.push(makeAgent(root, C, V, can, graph, rand, startNode, indoor, LC, () => lootFn));
 	}
 	// LOD по расстоянию до камеры, с гистерезисом — на границе не мигает
 	const cp = new THREE.Vector3();
@@ -317,7 +336,9 @@ export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap
 			a.setAvoid(Math.max(-0.7, Math.min(0.7, push * 0.9)));
 		}
 	}
-	return { robots, V, measured: !!measured, nodes: graph.length, updateLod, crowdStep };
+	// лут: откуда брать места (furnish.js lootAt) — задаётся, когда мебель построена
+	let lootFn = null;
+	return { robots, V, measured: !!measured, nodes: graph.length, updateLod, crowdStep, setLoot(fn) { lootFn = fn; } };
 }
 
 // indoor — «обходчик»: ходит и по домам (реже всего посещённые узлы — значит, рано или
@@ -329,8 +350,14 @@ const ACT_RU = {
 	Duck: "пригнулся", Startle: "вздрогнул", Jump_InPlace: "прыгает", Jump_Forward: "прыгает вперёд", Idle_Jump: "подпрыгивает",
 	Walk_Trip: "споткнулся", Walk_Stagger: "пошатнулся", Walk_Jump: "перепрыгивает", Walk_Duck: "пригибается на ходу",
 	Run_Trip: "споткнулся на бегу", Run_Jump: "прыгает на бегу",
+	"LootCabinet-open": "открывает шкаф", "LootCabinet-search-loop": "роется в шкафу", "LootCabinet-take": "достаёт находку в сумку",
+	"LootCabinet-empty": "пусто — разводит руками", "LootCabinet-leave": "отходит от шкафа",
+	"LootDrawer-open": "выдвигает ящик", "LootDrawer-search-loop": "роется в ящике", "LootDrawer-take": "достаёт находку в сумку",
+	"LootDrawer-empty": "пусто — разводит руками", "LootDrawer-leave": "встаёт от ящика",
+	"LootLowDoor-open": "открывает тумбочку", "LootLowDoor-search-loop": "роется в тумбочке", "LootLowDoor-take": "достаёт находку в сумку",
+	"LootLowDoor-leave": "встаёт от тумбочки",
 };
-function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false) {
+function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false, LC = {}, getLoot = () => null) {
 	const mixer = new THREE.AnimationMixer(root);
 	const A = {};
 	const once = clip => {
@@ -629,8 +656,71 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false) {
 		active = A.walk; mode = "walk"; modeTime = 0; modeHold = range(...HOLD.walk); lastT = 0; stairs = null;
 	}
 
+	/* ── лут: крюк к мебели ───────────────────────────────────────────────
+	   Войдя в комнату (дошёл до узла), обходчик иногда сворачивает к мебели с лутом: путь по
+	   сетке комнаты (furnish.js), у мебели — лицом к ней, цепочка клипов blend, и тем же
+	   путём назад на маршрут. Пока идёт крюк, походку не меняет. */
+	const LOOT_P = 0.35;
+	let ex = null;   // { spot, pts, i, y, phase: go | loot | back, seq, step, t }
+	const lootAction = (n, loop) => { const c = LC[n]; if (!c) return null; const a = mixer.clipAction(c); a.setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce, Infinity); a.clampWhenFinished = !loop; return a; };
+	function lootSeq(kind) {
+		const side = rand() < 0.5 ? "L" : "R", found = rand() < 0.6;
+		const P = kind === "cabinet" ? "LootCabinet" : kind === "drawer" ? "LootDrawer" : "LootLowDoor";
+		const open = kind === "drawer" ? `${P}-open` : `${P}-open-${side}`;
+		const seq = [[open], [`${P}-search-loop`, 2 + rand() * 3]];
+		if (found || !LC[`${P}-empty`]) seq.push([`${P}-take`]); else seq.push([`${P}-empty`]);
+		seq.push([`${P}-leave`]);
+		return seq.filter(([n]) => LC[n]);
+	}
+	function exStart(res) {
+		ex = { spot: res.spot, pts: res.pts, i: 0, y: res.y, phase: "go", seq: null, step: -1, t: 0, cur: null };
+		gesture = null; trans = null; pending = null; turnSign = 0; strafe = null;
+		if (active !== A.walk) { A.walk.reset().play(); (active || A.idle).crossFadeTo(A.walk, 0.2, false); active = A.walk; }
+		mode = "walk";
+	}
+	function exPlay(k) {
+		const [n, dur] = ex.seq[k], a = lootAction(n, dur !== undefined);
+		a.reset().play();
+		(ex.cur || active).crossFadeTo(a, 0.2, false);
+		ex.cur = a; ex.step = k; ex.t = dur || a.getClip().duration;
+	}
+	function exTick(dt) {
+		if (ex.phase === "loot") {
+			speed = 0;
+			// лицом к мебели
+			let d = ex.spot.heading - heading; d = Math.atan2(Math.sin(d), Math.cos(d));
+			heading += Math.sign(d) * Math.min(Math.abs(d), dt * 4);
+			if (ex.step < 0) { if (Math.abs(d) < 0.1) exPlay(0); return; }
+			if ((ex.t -= dt) > 0) return;
+			if (ex.step + 1 < ex.seq.length) { exPlay(ex.step + 1); return; }
+			// отошёл — назад на маршрут тем же путём
+			ex.spot.looted = true; ex.spot.busy = false;
+			A.walk.reset().play(); ex.cur.crossFadeTo(A.walk, 0.25, false); active = A.walk; mode = "walk";
+			ex.pts = ex.pts.slice().reverse(); ex.i = 1; ex.phase = "back"; ex.cur = null;
+			return;
+		}
+		speed = V.walk;
+		const [tx, tz] = ex.pts[ex.i], dx = tx - pos.x, dz = tz - pos.y;
+		if (Math.hypot(dx, dz) < 0.12) {
+			ex.i++;
+			if (ex.i >= ex.pts.length) {
+				if (ex.phase === "go") { ex.phase = "loot"; ex.seq = lootSeq(ex.spot.kind); ex.step = -1; pos.set(tx, tz); }
+				else { ex = null; target = nextNode(); }
+				return;
+			}
+		}
+		const want = Math.atan2(tx - pos.x, tz - pos.y);
+		let d = want - heading; d = Math.atan2(Math.sin(d), Math.cos(d));
+		heading += Math.sign(d) * Math.min(Math.abs(d), dt * 5);
+		pos.x += Math.sin(heading) * speed * dt; pos.y += Math.cos(heading) * speed * dt;
+	}
+
 	function update(dt) {
 		mixer.update(dt);
+		if (ex) {
+			exTick(dt);
+			if (ex) { root.position.set(pos.x, ex.y, pos.y); root.rotation.y = heading; return; }
+		}
 		if (A.stairsUp && A.stairsDown && V.stairsUp && onFlight()) stairsStep();
 		else { if (stairs) leaveStairs(); gait(dt); }
 		// Уступить дорогу — шаг в сторону на ходу (клип), а не скольжение вбок
@@ -650,6 +740,12 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false) {
 		let dx = tp[0] - pos.x, dz = tp[1] - pos.y;
 		// в доме узлы тесные (двери, марши) — подходим ближе, чем на улице
 		if (Math.hypot(dx, dz) < (graph[target].r ?? 0.9)) {
+			// в комнате — может свернуть к мебели с лутом
+			const lf = indoor && !stairs && getLoot();
+			if (lf && graph[target].house && rand() < LOOT_P) {
+				const res = lf({ x: pos.x, y: graph[target].y || 0, z: pos.y }, rand);
+				if (res) { exStart(res); return; }
+			}
 			target = nextNode();
 			dx = graph[target].p[0] - pos.x; dz = graph[target].p[1] - pos.y;
 		}
@@ -688,13 +784,14 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false) {
 		object: root, update, offPath, indoor,
 		/** Что делает сейчас — словами (подпись в режиме наблюдения). */
 		get action() {
+			if (ex) return ex.phase === "loot" ? (ex.cur ? ACT_RU[ex.cur.getClip().name.replace(/-(L|R)$/, "")] || "обыскивает" : "подходит к мебели") : ex.phase === "go" ? "идёт к мебели" : "возвращается";
 			if (fall) return "упал";
 			if (stairs) return stairs === A.stairsUp ? "поднимается по лестнице" : "спускается по лестнице";
 			if (strafe) return "уступает дорогу";
 			if (gesture) return turnSign ? "поворачивается" : (ACT_RU[gesture.getClip().name] || "жест");
 			if (trans) return ACT_RU[trans.to] || trans.to;
 			return ACT_RU[mode] || mode;
-		}, get onStairs() { return !!stairs; }, get strafing() { return !!strafe; },
+		}, get onStairs() { return !!stairs; }, get looting() { return ex ? ex.phase : null; }, get strafing() { return !!strafe; },
 		get heading() { return heading; }, get speed() { return speed; }, get mode() { return mode; },
 		setAvoid(v) { latTarget = v; },
 		// испуг от встречного: только стоя или на ходу, с шансом — отшатнуться и попятиться

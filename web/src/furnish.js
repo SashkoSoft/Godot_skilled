@@ -40,6 +40,71 @@ const CLUTTER = {
 	bath: ["bucket", "bottle", "jar"],
 };
 const STORAGE = /wardrobe|stenka|sideboard|bookcase|dresser|hall_shoe/, BED = /^bed_/;
+
+// Лут: мебель, которую роботы (и потом игрок) открывают и обыскивают. Тип — какой клип
+// робота: шкаф (дверца на высоте 1 м), ящик (0.36 м), нижняя дверца (0.38 м).
+const LOOT = [
+	[/wardrobe|stenka|sideboard_tall|bookcase_glass_doors/, "cabinet"],
+	[/dresser|desk_pedestal|desk_side_cabinet|desk_drawers/, "drawer"],
+	[/^sideboard$|sideboard_bar|sink_cabinet|hall_shoe_bench/, "lowdoor"],
+];
+const USE_D = 0.55;   // от лица мебели до Root робота — ручка на 0.55 м впереди (клипы blend)
+const CELL = 0.2, BODY = 0.32;   // сетка проходимости комнаты и радиус робота
+
+/** Сетка комнаты: свободна ли клетка (мебель, раздутая на радиус робота, и стены — заняты). */
+function roomGrid(rect, obst) {
+	const [x0, z0, x1, z1] = rect, W = Math.max(1, Math.ceil((x1 - x0) / CELL)), H = Math.max(1, Math.ceil((z1 - z0) / CELL));
+	const free = new Uint8Array(W * H);
+	for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+		const x = x0 + (i + 0.5) * CELL, z = z0 + (j + 0.5) * CELL;
+		if (x < x0 + BODY || x > x1 - BODY || z < z0 + BODY || z > z1 - BODY) continue;
+		if (obst.some(b => x > b.min.x - BODY && x < b.max.x + BODY && z > b.min.z - BODY && z < b.max.z + BODY)) continue;
+		free[j * W + i] = 1;
+	}
+	return { x0, z0, W, H, free };
+}
+const cellOf = (G, x, z) => [Math.floor((x - G.x0) / CELL), Math.floor((z - G.z0) / CELL)];
+const isFree = (G, i, j) => i >= 0 && j >= 0 && i < G.W && j < G.H && G.free[j * G.W + i] === 1;
+/** Путь по сетке от (ax, az) до (bx, bz): точки-повороты [x, z] или null, если не дойти. */
+function gridPath(G, ax, az, bx, bz) {
+	// старт — ближайшая свободная клетка (точка входа бывает у самой стены)
+	let [si, sj] = cellOf(G, ax, az);
+	if (!isFree(G, si, sj)) {
+		let best = null, bd = 1e9;
+		for (let j = 0; j < G.H; j++) for (let i = 0; i < G.W; i++) if (G.free[j * G.W + i]) { const d = (i - si) ** 2 + (j - sj) ** 2; if (d < bd) { bd = d; best = [i, j]; } }
+		if (!best || bd > 16) return null;
+		[si, sj] = best;
+	}
+	const [ti, tj] = cellOf(G, bx, bz);
+	if (!isFree(G, ti, tj)) return null;
+	const prev = new Int32Array(G.W * G.H).fill(-2), q = [sj * G.W + si];
+	prev[q[0]] = -1;
+	for (let h = 0; h < q.length; h++) {
+		const c = q[h], ci = c % G.W, cj = (c / G.W) | 0;
+		if (ci === ti && cj === tj) break;
+		for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+			const ni = ci + di, nj = cj + dj;
+			if (!isFree(G, ni, nj) || (di && dj && (!isFree(G, ci + di, cj) || !isFree(G, ci, cj + dj)))) continue;
+			const n = nj * G.W + ni;
+			if (prev[n] !== -2) continue;
+			prev[n] = c; q.push(n);
+		}
+	}
+	const end = tj * G.W + ti;
+	if (prev[end] === -2) return null;
+	const cells = [];
+	for (let c = end; c !== -1; c = prev[c]) cells.unshift([G.x0 + (c % G.W + 0.5) * CELL, G.z0 + (((c / G.W) | 0) + 0.5) * CELL]);
+	// спрямление: из точки — сразу в самую дальнюю видимую по свободным клеткам
+	const sees = (a, b) => { const n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 0.1); for (let k = 1; k < n; k++) { const [i, j] = cellOf(G, a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n); if (!isFree(G, i, j)) return false; } return true; };
+	const out = [cells[0]];
+	for (let k = 0; k < cells.length - 1;) {
+		let far = k + 1;
+		for (let m = cells.length - 1; m > k + 1; m--) if (sees(cells[k], cells[m])) { far = m; break; }
+		out.push(cells[far]); k = far;
+	}
+	out[out.length - 1] = [bx, bz];
+	return out;
+}
 const TOP = /^(sideboard|dresser|desk_|table_|hall_shoe_bench)/;   // на что можно положить сверху (низкое)
 const NEAR = 70, FAR = 110;
 const INSET_IN = 0.08, INSET_OUT = 0.33;   // от оси сетки до грани: внутренняя стена, наружная
@@ -122,6 +187,7 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 		const { info, b } = H, R = b.rect;
 		const byId = Object.fromEntries(info.rooms.map(x => [x.id, x]));
 		const plan = [];   // { n, x, y, z, rotY }
+		H.loot = [];   // комнаты с местами для лута: { rect, y, G — сетка проходимости, spots }
 		// проходы у дверей — занятое место в обеих комнатах
 		const doorBoxes = {};
 		for (const d of info.doors) for (const rid of d.rooms) {
@@ -161,7 +227,7 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 			};
 			const inside = bx => bx.min.x >= x0 - 0.01 && bx.max.x <= x1 + 0.01 && bx.min.z >= z0 - 0.01 && bx.max.z <= z1 + 0.01;
 			const kind = type === "room" ? (area < 13 || rnd() < 0.35 ? "bedroom" : "living") : type;
-			const placed = [];   // поставленная мебель комнаты: { n, bx, face } — у неё ляжет хлам
+			const placed = [], planStart = plan.length;   // поставленная мебель комнаты: { n, bx, face } — у неё ляжет хлам
 			const put = (n, fp, cx, cz, dy = 0, face = null) => {
 				const bx = new THREE.Box3(new THREE.Vector3(cx - fp.sx / 2, y, cz - fp.sz / 2), new THREE.Vector3(cx + fp.sx / 2, y + fp.h, cz + fp.sz / 2));
 				occ.push(bx); plan.push({ n, x: cx, y: y + dy, z: cz, rotY: fp.rotY, box: bx }); placed.push({ n, bx, face }); return bx;
@@ -219,6 +285,19 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 					}
 				}
 			}
+			// места для лута: встать перед мебелью можно и дойти туда от двери — проверено сеткой
+			const obst = plan.slice(planStart).filter(p => p.box).map(p => p.box);
+			const G = roomGrid([x0, z0, x1, z1], obst), spots = [];
+			for (const P of placed) {
+				const L = LOOT.find(([re]) => re.test(P.n));
+				if (!L || !P.face) continue;
+				const f = P.face, bx = P.bx, cx = (bx.min.x + bx.max.x) / 2, cz = (bx.min.z + bx.max.z) / 2;
+				const ux = f[0] ? (f[0] > 0 ? bx.max.x : bx.min.x) + f[0] * USE_D : cx, uz = f[1] ? (f[1] > 0 ? bx.max.z : bx.min.z) + f[1] * USE_D : cz;
+				const [ui, uj] = cellOf(G, ux, uz);
+				if (!isFree(G, ui, uj)) continue;   // перед мебелью не встать — не лут
+				spots.push({ kind: L[1], n: P.n, use: [ux, uz], heading: Math.atan2(-f[0], -f[1]), looted: false, busy: false });
+			}
+			if (spots.length) H.loot.push({ rect: [gx0, gz0, gx1, gz1], y, G, spots, room: rm.id });
 			if (clutter > 0) await scatter(rm, kind, placed, occ, inside, y, rnd, (info.kind === "ruin" ? 1.6 : 1) * clutter, plan);
 		}
 		// экземпляры: по детали модели на всё здание
@@ -300,9 +379,29 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 		for (let i = count(1, 4); i > 0; i--) await drop(pick(list), x0 + rnd() * (x1 - x0), z0 + rnd() * (z1 - z0), 0.5);
 	}
 
+	/**
+	 * Лут рядом с точкой p (робот вошёл в комнату): свободное место в той же комнате и путь
+	 * к нему по сетке. Место бронируется (busy), пока робот не закончит; looted — обыскано.
+	 */
+	function lootAt(p, rand = Math.random) {
+		for (const H of houses) for (const R of H.loot || []) {
+			if (Math.abs(p.y - R.y) > 0.5 || p.x < R.rect[0] - 0.2 || p.x > R.rect[2] + 0.2 || p.z < R.rect[1] - 0.2 || p.z > R.rect[3] + 0.2) continue;
+			const free = R.spots.filter(s => !s.looted && !s.busy);
+			if (!free.length) return null;
+			const s = free[Math.floor(rand() * free.length)];
+			const pts = gridPath(R.G, p.x, p.z, s.use[0], s.use[1]);
+			if (!pts) return null;
+			s.busy = true;
+			return { spot: s, pts, y: R.y };
+		}
+		return null;
+	}
+	/** Сколько мест для лута и сколько обыскано (подпись, проверки). */
+	const lootStats = () => { let n = 0, done = 0; for (const H of houses) for (const R of H.loot || []) for (const s of R.spots) { n++; if (s.looted) done++; } return { n, done }; };
+
 	/** Коробки расставленной мебели во всех построенных домах (мир). */
 	const boxes = () => houses.flatMap(H => H.boxes || []);
-	return { addHouse, update, boxes };
+	return { addHouse, update, boxes, lootAt, lootStats };
 }
 
 function rectOf(rm) {

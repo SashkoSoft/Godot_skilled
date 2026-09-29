@@ -224,12 +224,13 @@ let player = null, playing = false, robotDbgT = 0;
 // наблюдение за обходчиком (объявлено здесь: мышь и клавиши работают и пока квартал грузится)
 let watch = null, watchDist = 3.2, lastLook = 0, watchInfoT = 0;
 // #robotdbg — ручки для консоли: где роботы, игрок, камера
-if (q.has("robotdbg")) window.dbg = { get crowd() { return crowd; }, get player() { return player; }, get cam() { return cam; }, get scene() { return scene; }, set route(v) { autoRoute = v; } };
+if (q.has("robotdbg")) window.dbg = { get crowd() { return crowd; }, get player() { return player; }, get cam() { return cam; }, get scene() { return scene; }, set route(v) { autoRoute = v; }, watchRobot(r) { watch = r; watchHud.hidden = false; cam.yaw = r.heading * 180 / Math.PI + 150; cam.pitch = -20; }, get interiors() { return interiors; } };
 const world = { bo: null, fences: null, playground: null, houses: null, boxes: [], flights: [], houseInfo: [], bvh: null, camBvh: null, holes: [], sig: "" };
 const FOV = 55, RIDE_FOV = 100;   // угол камеры: обычный и в дроне (setRide)
 let ride = -1, rideHeading = 0;
 const cpuMs = { anim: 0, plants: 0, render: 0 };
 const instLods = [];
+let robotsApi = null;   // spawnRobots: setLoot — места для лута (furnish.js)
 let crowd = [], followIdx = 0, robotLod = null, crowdStep = null, playground = null, curbs = null, slabs = null, rocks = null, jointGrassL = null;
 // Камера за роботом: держит текущие поворот и наклон, дистанция — колесом мыши
 let follow = false, followDist = 34;
@@ -285,6 +286,7 @@ if (LEVEL === "district") {
 		// мебель в квартирах — по описанию дома hou (<id>.json), строится при подходе; #interiors=0 — без неё
 		if (q.get("interiors") !== "0") {
 			interiors = createInteriors(scene, { wear: 0.5, clutter: q.has("clutter") ? +q.get("clutter") : 1 });   // #clutter — плотность хлама, 0 — без него
+		if (robotsApi) robotsApi.setLoot(interiors.lootAt);   // обходчики лутят мебель
 			for (const b of d.buildings.filter(b => b.model && H.ids.includes(b.id))) {
 				fetch(`../game/assets/models/houses/${b.model}/${b.model}.json`).then(r => r.ok ? r.json() : null)
 					.then(info => { if (info && info.rooms) interiors.addHouse(b, info, { roomFilter: roomFurnishable }); }).catch(() => {});
@@ -396,6 +398,7 @@ if (q.has("sss")) windUniforms.uSSS.value = +q.get("sss");   // сила про�
 	for (const t of tunnels) world.houseInfo.push({ id: "туннель", rooms: t.rooms.map(r => ({ ...r, y: Math.min(...r.polyline.map(p => p[1])), floor: -2, type: "tunnel" })), flights: [] });
 	const R = await spawnRobots(d, { count, start: [77, -26], envMap, houses: houseInfo, tunnels });
 	crowd = R.robots; robotLod = R.updateLod; crowdStep = R.crowdStep;
+	robotsApi = R; if (interiors) R.setLoot(interiors.lootAt);
 	const robotsGroup = new THREE.Group();
 	robotsGroup.name = "Robots";   // отдельный слой в разбивке цены кадра и в #off=robots
 	for (const r of crowd) robotsGroup.add(r.object);
