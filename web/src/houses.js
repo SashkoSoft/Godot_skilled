@@ -126,6 +126,7 @@ export async function loadHouses(d) {
 		const g = await loader.loadAsync(`${BASE}tunnels/${t.file}`).catch(() => null);
 		if (!g) continue;
 		g.scene.name = "tunnel-" + t.id;
+		dressZones(g.scene, { id: t.id, zones: {}, rooms: [], uv_m: 1 });   // порода, крепь, коллектор — наборы blend
 		// двусторонний: порода вокруг хода — оболочка с нормалями внутрь, обход граней не гарантирован
 		g.scene.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = true; o.material.side = THREE.DoubleSide; } });
 		group.add(g.scene);

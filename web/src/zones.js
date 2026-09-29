@@ -21,6 +21,7 @@ const TILE = {
 	stair_green: 1.5, stair_blue: 1.5, stair_beige: 1.5, stair_brownred: 1.5, stair_ceiling: 3,
 	wallpaper_flowers: 0.53, wallpaper_stripes: 0.53, wallpaper_diamond: 0.53,
 	tile22_white: 1.1, tile22_blue: 1.1, floor_metlakh: 1.2,
+	earth: 2, timber: 1.2, concrete_pipe: 2, basement_floor: 2, storage_mesh: 1, storage_boards: 1.2,
 	room_paint_beige: 1.5, room_paint_blue: 1.5, room_paint_green: 1.5,
 	parquet_herring: 1, linoleum_wood: 2, linoleum_tiles: 2, roof_roll: 4, rubble: 1.5, concrete_fracture: 1.5,
 };
@@ -28,6 +29,7 @@ const TILE_V = { wallpaper_flowers: 1.06, wallpaper_stripes: 1.06, wallpaper_dia
 const PAINT = /^(stair|room_paint)_(green|blue|beige|brownred)$/;   // полоса краски до 1.5 м от пола этажа
 const STAIR_TYPES = /^(ploshchadka|lestnica|lift)$/;
 const NO_MASK = new Set(["tile22_white", "tile22_blue"]);   // у плитки маски нет — грязь не рисуется
+const CUTOUT = new Set(["storage_mesh", "storage_boards"]);   // сетка и штакетник кладовок: вырез по альфе, двусторонние
 
 // целое → 0..1, одинаково на всех машинах
 function hash(n) {
@@ -76,12 +78,17 @@ function rule(zone, room, panel, info, stairColor) {
 		case "fracture": return { set: "concrete_fracture", tone: 1, grime: 0.4 };   // свежий скол руины
 		// подвал: голый бетон стен и столбов, стяжка пола — темнее и грязнее
 		case "basement_wall": return { set: "concrete_panel_smooth_v2", tone: 0.82, grime: 1 };
-		case "basement_floor": return { set: "concrete_slab_under", tone: 0.7, grime: 1 };
+		case "basement_floor": return { set: "basement_floor", tone: 1, grime: 0.8 };
+		case "storage_grid": return { set: hash(room + 23) < 0.5 ? "storage_mesh" : "storage_boards", tone: 1, grime: 0.6 };
+		// туннели: порода, крепь, бетонный коллектор
+		case "earth": return { set: "earth", tone: 1, grime: 0.8 };
+		case "timber": return { set: "timber", tone: 0.95 + 0.1 * hash(panel + 31), grime: 0.8 };
+		case "concrete_pipe": return { set: "concrete_pipe", tone: 1, grime: 0.8 };
 		case "column": return { set: "concrete_monolith", tone: 0.85, grime: 0.9 };
 	}
 	return null;
 }
-export const ZONES = new Set(["facade_panel", "plinth", "monolith", "slab_edge", "slab_top", "slab_under", "stairwell_wall", "wall_room", "roof", "rubble", "fracture", "basement_wall", "basement_floor", "column"]);
+export const ZONES = new Set(["facade_panel", "plinth", "monolith", "slab_edge", "slab_top", "slab_under", "stairwell_wall", "wall_room", "roof", "rubble", "fracture", "basement_wall", "basement_floor", "column", "storage_grid", "earth", "timber", "concrete_pipe"]);
 
 const loader = new THREE.TextureLoader();
 const texCache = {};
@@ -105,12 +112,13 @@ const matCache = {};
 // double — двусторонний (сейчас не нужен: развёрнутые грани руины hou исправила)
 function material(set, floor, uvM = 1, double = false) {
 	const band = PAINT.test(set);
-	const key = set + (band ? `@${floor.base}/${floor.pitch}` : "") + `*${uvM}` + (double ? "d" : "");
+	const key = set + (band ? `@${floor.base}/${floor.pitch}` : "") + `*${uvM}` + (double ? "d" : "");   // вырез (CUTOUT) — по имени набора
 	if (matCache[key]) return matCache[key];
 	const orm = tex(set, "orm");
 	const m = new THREE.MeshStandardMaterial({
 		name: "zone:" + set, map: tex(set, "albedo"), normalMap: tex(set, "normal"),
-		aoMap: orm, roughnessMap: orm, metalness: 0, side: double ? THREE.DoubleSide : THREE.FrontSide,
+		aoMap: orm, roughnessMap: orm, metalness: 0, side: double || CUTOUT.has(set) ? THREE.DoubleSide : THREE.FrontSide,
+		alphaTest: CUTOUT.has(set) ? 0.5 : 0,
 	});
 	const mask = NO_MASK.has(set) ? blank() : tex(set, "mask");
 	m.onBeforeCompile = sh => {
