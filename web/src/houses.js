@@ -53,7 +53,7 @@ export async function loadHouses(d) {
 	const loader = new GLTFLoader();
 	const group = new THREE.Group();
 	group.name = "Houses";
-	const ids = [];
+	const ids = [], colliders = [];   // коллизия домов (<id>_col.glb) — в мировых координатах, для игрока
 	for (const b of d.buildings.filter(b => b.model)) {
 		try {
 			const dir = `${BASE}${b.model}/${b.model}`;
@@ -82,9 +82,15 @@ export async function loadHouses(d) {
 			}
 			group.add(lod);
 			ids.push(b.id);
+			// коллизия — фоном; её нет — игрок упирается в коробку габарита (см. player.js)
+			loader.loadAsync(`${dir}_col.glb`).then(g => {
+				g.scene.position.copy(lod.position); if (inRect) g.scene.position.set(0, 0, 0);
+				if (!inRect) g.scene.position.set(cx, 0, cz);
+				g.scene.updateMatrixWorld(true); colliders.push({ id: b.id, scene: g.scene });
+			}).catch(() => {});
 		} catch (e) {
 			console.warn(`[улица] дом ${b.id}: модель ${b.model} не загрузилась — остаётся коробка (${e})`);
 		}
 	}
-	return { group, ids };
+	return { group, ids, colliders };
 }

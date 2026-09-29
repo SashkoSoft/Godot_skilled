@@ -128,7 +128,8 @@ export function createInteriors(scene, { wear = 0.5 } = {}) {
 			for (const w of winByFloor[rm.floor] || []) {
 				const [wx, , wz] = w.pos;
 				if (wx < gx0 - 0.4 || wx > gx1 + 0.4 || wz < gz0 - 0.4 || wz > gz1 + 0.4) continue;
-				const hw = w.width / 2 + 0.15, alongX = Math.abs(w.normal[2]) > 0.5;
+				const hw = w.width / 2 + 0.15, alongX = w.normal ? Math.abs(w.normal[2]) > 0.5
+					: Math.min(Math.abs(wz - gz0), Math.abs(wz - gz1)) < Math.min(Math.abs(wx - gx0), Math.abs(wx - gx1));   // старые дома (b1, b5, b6): нормали нет — по ближней стене
 				tall.push(new THREE.Box3(new THREE.Vector3(wx - (alongX ? hw : 0.6), -1, wz - (alongX ? 0.6 : hw)), new THREE.Vector3(wx + (alongX ? hw : 0.6), 3, wz + (alongX ? 0.6 : hw))));
 			}
 			const hit = (bx, isTall) => {

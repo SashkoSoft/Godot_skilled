@@ -3,6 +3,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { walkLines } from "./district.js";
+import { addHouseToGraph } from "./housenav.js";
 
 // Роботы бродят по кварталу: сеть проездов и троп из district.json превращается
 // в граф, на развилке выбирается случайный путь, в тупике — разворот.
@@ -147,7 +148,8 @@ function rng(seed) {
  * своим скелетом, миксером, цветом полос (материал Glow) и характером:
  * своя фаза шага, свои длительности шага/стояния/бега и склонность бегать.
  */
-export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap = null } = {}) {
+// houses — [{ info }] описания домов hou: их комнаты, двери и марши продолжают граф улицы (housenav.js)
+export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap = null, houses = [] } = {}) {
 	const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 	const gltfs = await Promise.all(LOD_FILES.map(f => loader.loadAsync(DIR + f)));
 	const gltf = gltfs[0], proto = gltf.scene;
@@ -216,6 +218,15 @@ export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap
 	};
 
 	const graph = buildWalkGraph(d);
+	for (const H of houses) addHouseToGraph(graph, H.info, H);
+	// Дом без маршей в описании (старые b1, b5, b6) — острова квартир, с улицы в них не попасть:
+	// такие узлы закрыты (cut), в них не стартуют и не ходят.
+	const reach = new Uint8Array(graph.length), st = [];
+	graph.forEach((n, j) => { if (!n.house) { reach[j] = 1; st.push(j); } });
+	while (st.length) for (const v of graph[st.pop()].nb) if (!reach[v]) { reach[v] = 1; st.push(v); }
+	const houseNodes = [], streetNodes = [];
+	graph.forEach((n, j) => { if (!reach[j]) n.cut = true; else (n.house ? houseNodes : streetNodes).push(j); });
+	if (houses.length) console.log(`[улица] роботы: в домах доступно узлов ${houseNodes.length}, закрыто ${graph.length - houseNodes.length - streetNodes.length}`);
 	const robots = [];
 	for (let i = 0; i < count; i++) {
 		// каждый — клон нетронутого образца: в клон добавляются меши LOD1/LOD2, и если бы
@@ -249,11 +260,14 @@ export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap
 		// сериализовались бы у каждого следующего робота (спам «Unable to serialize Texture»)
 		root.lodSets = lods; root.lodCur = 0;
 		let startNode;
+		// каждый третий (кроме первого — за ним камера F) — обходчик домов, стартует внутри
+		const indoor = houseNodes.length > 0 && i > 0 && i % 3 === 0;
 		if (i === 0 && start) {
 			let best = Infinity;
-			graph.forEach((n, j) => { const dd = Math.hypot(n.p[0] - start[0], n.p[1] - start[1]); if (dd < best) { best = dd; startNode = j; } });
-		} else startNode = Math.floor(rand() * graph.length);
-		robots.push(makeAgent(root, C, V, can, graph, rand, startNode));
+			graph.forEach((n, j) => { if (n.house) return; const dd = Math.hypot(n.p[0] - start[0], n.p[1] - start[1]); if (dd < best) { best = dd; startNode = j; } });
+		} else if (indoor) startNode = houseNodes[Math.floor(rand() * houseNodes.length)];
+		else startNode = streetNodes[Math.floor(rand() * streetNodes.length)];
+		robots.push(makeAgent(root, C, V, can, graph, rand, startNode, indoor));
 	}
 	// LOD по расстоянию до камеры, с гистерезисом — на границе не мигает
 	const cp = new THREE.Vector3();
@@ -271,20 +285,21 @@ export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap
 	}
 	// Толпа: встречные расходятся вбок (до 0.7 м от оси), лоб в лоб ближе метра —
 	// изредка испуг и шаг назад. O(n²) на 50 роботах — пустяк.
-	function crowdStep() {
-		const n = robots.length;
+	// others — ещё препятствия, которые сами не уступают (игрок): { position, heading }
+	function crowdStep(others = []) {
+		const n = robots.length, all = others.length ? robots.concat(others) : robots;
 		for (let i = 0; i < n; i++) {
 			const a = robots[i], pa = a.object.position, ha = a.heading;
 			const fx = Math.sin(ha), fz = Math.cos(ha), rx = Math.cos(ha), rz = -Math.sin(ha);
 			let push = 0;
-			for (let j = 0; j < n; j++) {
+			for (let j = 0; j < all.length; j++) {
 				if (i === j) continue;
-				const pb = robots[j].object.position, dx = pb.x - pa.x, dz = pb.z - pa.z, dd = Math.hypot(dx, dz);
-				if (dd > 2.4 || dd < 1e-3) continue;
+				const pb = all[j].object ? all[j].object.position : all[j].position, dx = pb.x - pa.x, dz = pb.z - pa.z, dd = Math.hypot(dx, dz);
+				if (dd > 2.4 || dd < 1e-3 || Math.abs(pb.y - pa.y) > 1.2) continue;   // другой этаж / марш — не встречный
 				const ahead = dx * fx + dz * fz, side = dx * rx + dz * rz;
 				if (ahead < -0.5) continue;                        // сзади — не наша забота
 				push -= Math.sign(side || (i < j ? 1 : -1)) * (2.4 - dd) / 2.4;
-				const facing = Math.cos(robots[j].heading - ha) < -0.6;
+				const facing = Math.cos(all[j].heading - ha) < -0.6;
 				if (facing && dd < 1.0 && Math.random() < 0.004) a.startle();
 			}
 			a.setAvoid(Math.max(-0.7, Math.min(0.7, push * 0.9)));
@@ -293,7 +308,9 @@ export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap
 	return { robots, V, measured: !!measured, nodes: graph.length, updateLod, crowdStep };
 }
 
-function makeAgent(root, C, V, can, graph, rand, startNode) {
+// indoor — «обходчик»: ходит и по домам (реже всего посещённые узлы — значит, рано или
+// поздно каждая комната каждого этажа); иначе — только улица.
+function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false) {
 	const mixer = new THREE.AnimationMixer(root);
 	const A = {};
 	const once = clip => {
@@ -320,6 +337,10 @@ function makeAgent(root, C, V, can, graph, rand, startNode) {
 	// Радиус поворота постоянный на любой скорости: ω = v / R. С постоянной ω
 	// бегущий (3 м/с) описывал дугу втрое шире шагающего и срезал углы по газону.
 	const TURN_R = 0.8;
+	// в доме узлы в 0.3–0.8 м друг от друга (дверь, точка за ней, марш) — радиус меньше,
+	// иначе робот описывает круги вокруг проёма
+	const TURN_R_IN = 0.15;
+	const indoors = () => !!(graph[target]?.house || (prev >= 0 && graph[prev].house));
 
 	// Прогулка: цель — узел, где робот бывал реже всего во всём квартале
 	// (среди равных — наугад), путь к ней — кратчайший по графу. Выбор соседа
@@ -327,16 +348,24 @@ function makeAgent(root, C, V, can, graph, rand, startNode) {
 	const visits = new Array(graph.length).fill(0);
 	let route = [];
 	const dist = (a, b) => Math.hypot(graph[a].p[0] - graph[b].p[0], graph[a].p[1] - graph[b].p[1]);
+	// Дейкстра на двоичной куче: с домами в графе тысячи узлов, перебор за O(n²) дёргал кадр.
+	// Уличный робот в дом не заходит — узлы дома для него закрыты.
+	const allowed = i => !graph[i].cut && (indoor || !graph[i].house);
 	function shortest(from, to) {
-		const dd = new Array(graph.length).fill(Infinity), back = new Array(graph.length).fill(-1), done = new Set();
+		const dd = new Float64Array(graph.length).fill(Infinity), back = new Int32Array(graph.length).fill(-1);
+		const heap = [[0, from]];
 		dd[from] = 0;
-		while (done.size < graph.length) {
-			let u = -1;
-			for (let i = 0; i < graph.length; i++) if (!done.has(i) && (u < 0 || dd[i] < dd[u])) u = i;
-			if (u < 0 || dd[u] === Infinity) break;
-			done.add(u);
+		const push = e => { heap.push(e); let i = heap.length - 1; while (i) { const p = (i - 1) >> 1; if (heap[p][0] <= e[0]) break; heap[i] = heap[p]; i = p; } heap[i] = e; };
+		const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { let i = 0; for (;;) { let c = 2 * i + 1; if (c >= heap.length) break; if (c + 1 < heap.length && heap[c + 1][0] < heap[c][0]) c++; if (heap[c][0] >= last[0]) break; heap[i] = heap[c]; i = c; } heap[i] = last; } return top; };
+		while (heap.length) {
+			const [du, u] = pop();
+			if (du > dd[u]) continue;
 			if (u === to) break;
-			for (const v of graph[u].nb) if (dd[u] + dist(u, v) < dd[v]) { dd[v] = dd[u] + dist(u, v); back[v] = u; }
+			for (const v of graph[u].nb) {
+				if (!allowed(v)) continue;
+				const nd = du + dist(u, v);
+				if (nd < dd[v]) { dd[v] = nd; back[v] = u; push([nd, v]); }
+			}
 		}
 		const path = [];
 		for (let v = to; v !== -1 && v !== from; v = back[v]) path.unshift(v);
@@ -344,8 +373,10 @@ function makeAgent(root, C, V, can, graph, rand, startNode) {
 	}
 	function nextNode() {
 		while (!route.length) {
-			const least = Math.min(...visits.filter((_, i) => i !== cur));
-			const pool = graph.map((_, i) => i).filter(i => i !== cur && visits[i] === least);
+			let least = Infinity;
+			for (let i = 0; i < graph.length; i++) if (i !== cur && allowed(i) && visits[i] < least) least = visits[i];
+			const pool = [];
+			for (let i = 0; i < graph.length; i++) if (i !== cur && allowed(i) && visits[i] === least) pool.push(i);
 			route = shortest(cur, pool[Math.floor(rand() * pool.length)]);
 			if (!route.length) visits[cur]++;   // недостижимо — не зацикливаться
 		}
@@ -388,6 +419,7 @@ function makeAgent(root, C, V, can, graph, rand, startNode) {
 		if (scare && mode === "idle") { scare = false; return "back"; }
 		// Прямо из стойки в бег и из бега в стойку — если есть такие клипы; иначе через шаг.
 		if (mode === "idle") {
+			if (indoors()) return "walk";
 			if (can.back && rand() < 0.06) return "back";
 			if (can.crouch && rand() < crouchBias) return "crouch";
 			return A.idle_run && V.run && rand() < runBias * 0.5 ? "run" : "walk";
@@ -396,6 +428,7 @@ function makeAgent(root, C, V, can, graph, rand, startNode) {
 		if (mode === "sneak") return "crouch";
 		if (mode === "back") return "idle";
 		if (mode === "run") return A.run_idle && can.idle && rand() < 0.3 ? "idle" : "walk";
+		if (indoors()) return can.idle && rand() < 0.5 ? "idle" : null;   // в доме не бегают
 		if (can.run && can.idle) return rand() < runBias ? "run" : "idle";
 		return can.run ? "run" : can.idle ? "idle" : null;
 	}
@@ -513,7 +546,7 @@ function makeAgent(root, C, V, can, graph, rand, startNode) {
 		// Шаг или бег перевалил через фазу 0 — изредка спотыкается (руины под ногами).
 		const trips = TRIPS[mode];
 		if (trips && trips.length && !pending && t < lastT && rand() < tripChance) {
-			if (FALL && rand() < 0.2) { startFall(); return; }   // иногда не удержался — упал
+			if (FALL && rand() < 0.2 && !indoors()) { startFall(); return; }   // иногда не удержался — упал
 			startGesture(trips[Math.floor(rand() * trips.length)], mode);
 			return;
 		}
@@ -545,7 +578,8 @@ function makeAgent(root, C, V, can, graph, rand, startNode) {
 		gait(dt);
 		const tp = graph[target].p;
 		let dx = tp[0] - pos.x, dz = tp[1] - pos.y;
-		if (Math.hypot(dx, dz) < 0.9) {
+		// в доме узлы тесные (двери, марши) — подходим ближе, чем на улице
+		if (Math.hypot(dx, dz) < (graph[target].r ?? 0.9)) {
 			target = nextNode();
 			dx = graph[target].p[0] - pos.x; dz = graph[target].p[1] - pos.y;
 		}
@@ -554,13 +588,20 @@ function makeAgent(root, C, V, can, graph, rand, startNode) {
 		const want = Math.atan2(dx, dz);
 		const diff = Math.atan2(Math.sin(want - heading), Math.cos(want - heading));
 		// пятясь, не рулит: доворот при отрицательной скорости крутил бы в обратную сторону
-		const turn = speed > 0 ? speed / TURN_R : 0;
+		const turn = speed > 0 ? speed / (indoors() ? TURN_R_IN : TURN_R) : 0;
 		heading += Math.sign(diff) * Math.min(Math.abs(diff), turn * dt);
 		pos.x += Math.sin(heading) * speed * dt;
 		pos.y += Math.cos(heading) * speed * dt;
 		// расхождение со встречными: плавный сдвиг вбок от оси дорожки (crowdStep задаёт цель)
 		lat += (latTarget - lat) * Math.min(1, dt * 2.5);
-		root.position.set(pos.x + Math.cos(heading) * lat, 0, pos.y - Math.sin(heading) * lat);
+		// высота: между предыдущим узлом и целью — по пройденной доле (марши, крыльцо)
+		const NA = graph[prev >= 0 ? prev : target], NB = graph[target];
+		const segL = Math.hypot(NB.p[0] - NA.p[0], NB.p[1] - NA.p[1]), left = Math.hypot(NB.p[0] - pos.x, NB.p[1] - pos.y);
+		const k = segL > 1e-3 ? Math.min(1, Math.max(0, 1 - left / segL)) : 1;
+		const y = (NA.y || 0) + ((NB.y || 0) - (NA.y || 0)) * k;
+		// в доме сдвиг вбок меньше: прихожие в метр шириной
+		const la = indoors() ? Math.max(-0.25, Math.min(0.25, lat)) : lat;
+		root.position.set(pos.x + Math.cos(heading) * la, y, pos.y - Math.sin(heading) * la);
 		root.rotation.y = heading;
 	}
 	update(0);
@@ -573,7 +614,7 @@ function makeAgent(root, C, V, can, graph, rand, startNode) {
 	}
 
 	return {
-		object: root, update, offPath,
+		object: root, update, offPath, indoor,
 		get heading() { return heading; }, get speed() { return speed; }, get mode() { return mode; },
 		setAvoid(v) { latTarget = v; },
 		// испуг от встречного: только стоя или на ходу, с шансом — отшатнуться и попятиться
