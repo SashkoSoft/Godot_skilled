@@ -216,7 +216,10 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 		const winByFloor = {};
 		for (const w of info.windows) (winByFloor[w.floor] ||= []).push(w);
 		const apSeed = {};
+		let tick = performance.now();
 		for (const rm of info.rooms) {
+			// отдать кадр: модели уже в памяти, и расстановка шла бы одним куском на секунды
+			if (performance.now() - tick > 8) { await new Promise(r => setTimeout(r, 0)); tick = performance.now(); }
 			// магазин: зал, подсобки, кабинет — свои раскладки
 			if (H.b.kind === "shop" && rm.floor === 0 && (!H.roomFilter || H.roomFilter(rm))) {
 				const R3 = rng(hashStr(rm.id));
@@ -337,6 +340,9 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 		}
 		// экземпляры: по детали модели на всё здание
 		const group = new THREE.Group(); group.name = "Interior-" + b.id;
+		// мебель и мелочь (хлам, товар, тряпки) — отдельно: у каждой своя кнопка
+		const furnG = new THREE.Group(), clutG = new THREE.Group(); furnG.name = "Furniture"; clutG.name = "Clutter";
+		group.add(furnG, clutG); H.furnG = furnG; H.clutG = clutG;
 		const byModel = {};
 		for (const p of plan) (byModel[p.n] ||= []).push(p);
 		const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1);
@@ -355,7 +361,7 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 				});
 				im.castShadow = false; im.receiveShadow = true;
 				im.computeBoundingSphere();   // отсечение — по дому целиком
-				group.add(im); calls++;
+				(n.startsWith("clutter:") ? clutG : furnG).add(im); calls++;
 			}
 		}
 		scene.add(group);
@@ -367,7 +373,7 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 		return group;
 	}
 
-	let building = null;
+	let building = null, shown = true, clutterShown = true;   // кнопки «мебель» и «мелочь»
 	function update(camera) {
 		for (const H of houses) {
 			const d = H.center.distanceTo(camera.position);
@@ -376,7 +382,7 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 				H.built = building = build(H).then(g => { H.group = g; g.visible = H.center.distanceTo(camera.position) < FAR; })
 					.catch(e => console.error("[улица] мебель", H.b.id, e)).finally(() => { building = null; });
 			}
-			if (H.group) H.group.visible = d < FAR;
+			if (H.group) { H.group.visible = d < FAR; H.furnG.visible = shown; H.clutG.visible = clutterShown; }
 		}
 	}
 
@@ -698,7 +704,7 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 
 	/** Коробки расставленной мебели во всех построенных домах (мир). */
 	const boxes = () => houses.flatMap(H => H.boxes || []);
-	return { addHouse, update, boxes, lootAt, lootStats, lootSpots, lootNear, take };
+	return { addHouse, update, boxes, lootAt, lootStats, lootSpots, lootNear, take, set shown(v) { shown = v; }, get shown() { return shown; }, set clutter(v) { clutterShown = v; }, get clutter() { return clutterShown; } };
 }
 
 function rectOf(rm) {

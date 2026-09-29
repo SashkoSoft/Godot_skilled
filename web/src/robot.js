@@ -429,7 +429,9 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false, LC =
 		return dd[to] < Infinity ? path : [];
 	}
 	function nextNode() {
-		while (!route.length) {
+		// не дольше 12 попыток: цель недостижима — ей +1 посещение (в пул больше не попадёт);
+		// раньше +1 шло самому роботу, и пул не менялся — вечный цикл, игра висла
+		for (let tries = 0; !route.length && tries < 12; tries++) {
 			// обходчик доделывает свой дом: в другой — только когда в своём всё обойдено не реже
 			if (graph[cur].hid) home = graph[cur].hid;
 			const leastOf = f => { let m = Infinity; for (let i = 0; i < graph.length; i++) if (i !== cur && f(i) && visits[i] < m) m = visits[i]; return m; };
@@ -438,9 +440,13 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false, LC =
 			const least = leastOf(pick);
 			const pool = [];
 			for (let i = 0; i < graph.length; i++) if (i !== cur && pick(i) && visits[i] === least) pool.push(i);
-			route = shortest(cur, pool[Math.floor(rand() * pool.length)]);
-			if (!route.length) visits[cur]++;   // недостижимо — не зацикливаться
+			if (!pool.length) break;
+			const tgt = pool[Math.floor(rand() * pool.length)];
+			route = shortest(cur, tgt);
+			if (!route.length) visits[tgt]++;
 		}
+		// некуда идти — ближайший сосед (или стоим на месте)
+		if (!route.length) route = graph[cur].nb.length ? [graph[cur].nb[Math.floor(rand() * graph[cur].nb.length)]] : [cur];
 		prev = cur;
 		cur = route.shift();
 		visits[cur]++;

@@ -766,7 +766,7 @@ async function startPlay() {
 	player.root.visible = true;
 	follow = false; if (ride >= 0) setRide(-1);
 	playing = true;
-	say("игра: WASD — бег, Shift — шагом, пробел — прыжок, мышь — осмотреться · Enter — выйти");
+	say("игра: WASD — бег, Shift — рывок, Ctrl — шагом, пробел — прыжок, E — обыскать, мышь — осмотреться · Enter — выйти");
 }
 function stopPlay() { playing = false; if (player) player.root.visible = false; say("свободная камера"); }
 /* ── наблюдение: камера за роботом-обходчиком в доме ────────────────────
@@ -879,6 +879,21 @@ review = createReview({ scene, camera, canvas, renderer, say,
 	where: p => (world.houseInfo.length ? whereIs(p) : ""),
 	context: () => ({ mode: playing ? "игра" : watch ? "наблюдение" : follow ? "за роботом" : "свободная камера", hash: location.hash }) });
 { const b = document.getElementById("btn-review"); if (b) b.addEventListener("click", () => review.toggle()); }
+// Слева — две кнопки: «мебель» и «мелочь» (хлам, товар, тряпки) в домах; лут и столкновения остаются
+{
+	const box = document.createElement("div");
+	box.style.cssText = "position:fixed;left:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;z-index:15";
+	const mk = (label, key) => {
+		const b = document.createElement("button");
+		b.type = "button"; b.textContent = label;
+		b.style.cssText = "padding:8px 12px;border-radius:8px;border:1px solid #3a4048;background:rgba(20,24,28,.85);color:#e8e2d6;font:14px system-ui,sans-serif;cursor:pointer";
+		const paint = on => { b.style.opacity = on ? "1" : "0.45"; b.style.textDecoration = on ? "none" : "line-through"; };
+		b.addEventListener("click", () => { if (!interiors) return; interiors[key] = !interiors[key]; paint(interiors[key]); say(`${label}: ${interiors[key] ? "вкл" : "выкл"}`); b.blur(); });
+		paint(true); box.appendChild(b);
+	};
+	mk("мебель", "shown"); mk("мелочь", "clutter");
+	document.body.appendChild(box);
+}
 const lootMap = makeLootMap();
 scene.add(lootMap);
 if (q.has("lootmap")) lootMap.visible = true;
@@ -976,7 +991,7 @@ function playTick(dt) {
 		else move.set(dx / dd, 0, dz / dd);
 		autoT += dt; if (autoT > 1) { autoT = 0; console.log(`PLAYERDBG ${player.pos.toArray().map(v => v.toFixed(2)).join(",")} ground=${player.onGround}`); }
 	}
-	player.update(dt, move, { run: !(keys.has("ShiftLeft") || keys.has("ShiftRight")), jump: keys.has("Space") });
+	player.update(dt, move, { run: !(keys.has("ControlLeft") || keys.has("ControlRight")), sprint: keys.has("ShiftLeft") || keys.has("ShiftRight"), jump: keys.has("Space") });
 	// роботы — твёрдые: сквозь встречного не пробежать (круг 0.6 м, тот же этаж)
 	for (const rb of crowd) {
 		const o = rb.object.position, dx = player.pos.x - o.x, dz = player.pos.z - o.z, dd = Math.hypot(dx, dz);

@@ -174,10 +174,11 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 
 	// Обыск мебели — клипы лута blend (как у роботов): подойти → открыть → порыться → достать
 	// или «пусто» → отойти. Пока идёт, герой не ходит; по концу — onDone.
-	let lootRun = null;
+	let lootRun = null, skipT = 0;   // skipT — после пропуска обыска пробел не прыгает
 	const lootClip = n => { const c = clip(n); if (!c) return null; const a = mixer.clipAction(c); return a; };
 	function loot(kind, found, spot, onDone) {
 		const seq = lootSequence(kind, found, Math.random, n => !!clip(n));
+		for (const s of seq) if (s[1] !== undefined) s[1] = 0.6;   // герой роется недолго (роботы — 2–5 с)
 		lootRun = { seq, k: -1, t: 0, dur: 0, spot, heading: spot.heading, to: new THREE.Vector3(spot.use[0], pos.y, spot.use[1]), onDone };
 		vel.set(0, 0, 0);
 	}
@@ -203,16 +204,20 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 
 	const input = new THREE.Vector3();
 	/** move — направление в мире (длина 0..1), run — бег, jump — прыжок. */
-	function update(dt, move, { run = true, jump = false } = {}) {
+	function update(dt, move, { run = true, jump = false, sprint = false } = {}) {
 		if (!bvh) return;
+		// пробел — пропустить обыск: сразу результат и стойка
+		if (lootRun && jump && lootRun.k >= 0) { const L = lootRun; lootRun = null; skipT = 0.5; if (L.spot.open) L.spot.open(1); fade(act.idle, 0.15); L.onDone(); mixer.update(dt); return; }
 		if (lootRun) { lootTick(dt); root.position.copy(pos); root.rotation.y = heading; mixer.update(dt); return; }
 		// по лестнице не разбежаться: бегом — через ступеньку быстрее, шагом — со скоростью клипа
-		const speed = move.lengthSq() > 1e-4 ? (onStairs ? (run ? 1.3 : 0.45) : run ? V.run : V.walk) : 0;
+		// бег 4.5 м/с, рывок (Shift) 8, шагом (Ctrl) — скорость клипа шага
+		const speed = move.lengthSq() > 1e-4 ? (onStairs ? (run ? 1.6 : 0.45) : !run ? V.walk : sprint ? 8 : 4.5) : 0;
 		input.copy(move).setY(0); if (input.lengthSq() > 1) input.normalize();
 		// разгон к нужной скорости (не мгновенно — меньше дрожи)
 		const k = Math.min(1, dt * (onGround ? 12 : 2));
 		vel.x += (input.x * speed - vel.x) * k; vel.z += (input.z * speed - vel.z) * k;
-		if (onGround && jump) { vel.y = JUMP; onGround = false; if (act.jump) fade(act.jump, 0.1); }
+		skipT -= dt;
+		if (onGround && jump && skipT <= 0) { vel.y = JUMP; onGround = false; if (act.jump) fade(act.jump, 0.1); }
 		vel.y += GRAV * dt;
 		pos.addScaledVector(vel, dt);
 		// капсула над ногами: выталкивание из стен
@@ -275,7 +280,7 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 		else if (onGround && cur !== act.jump) {
 			if (hs < 0.15) fade(act.idle);
 			else if (hs < 1.4 || !act.run) { fade(act.walk); act.walk.timeScale = hs / V.walk; }
-			else { fade(act.run); act.run.timeScale = hs / V.run; }
+			else { fade(act.run); act.run.timeScale = Math.min(1.9, hs / V.run); }   // на рывке ноги не молотят втрое
 		} else if (onGround && cur === act.jump && vel.y <= 0) fade(act.idle, 0.15);
 		mixer.update(dt);
 	}
