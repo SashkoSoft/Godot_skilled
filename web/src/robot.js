@@ -204,7 +204,8 @@ export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap
 		"LootDrawer-open", "LootDrawer-search-loop", "LootDrawer-take", "LootDrawer-empty", "LootDrawer-leave",
 		"LootLowDoor-open-L", "LootLowDoor-open-R", "LootLowDoor-search-loop", "LootLowDoor-take", "LootLowDoor-leave",
 		"LootFloor-enter", "LootFloor-search-loop", "LootFloor-take", "LootFloor-empty", "LootFloor-leave",
-		"Notice", "Watch-loop", "Point", "Call", "Watch-end"]) LC[n] = byName(n);   // и «заметил игрока»
+		"Notice", "Watch-loop", "Point", "Call", "Watch-end", "Call-R", "Point-L",
+		"Point-start", "Point-hold-loop", "Point-end", "Point-L-start", "Point-L-hold-loop", "Point-L-end"]) LC[n] = byName(n);   // и «заметил игрока»
 	// сумка на поясе: вершины — в пространстве модели робота, вешается на кость Hips
 	const bagG = await loader.loadAsync(DIR + "loot_bag_web.glb").catch(() => null);
 	console.log(`[улица] робот: клипы ${gltf.animations.map(a => `${a.name} ${a.duration.toFixed(2)}с`).join(", ")}`);
@@ -733,7 +734,8 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false, LC =
 	let watchP = null, wPhase = null, wAct = null, wT = 0, pointPending = false, headW = 0;
 	const neck = root.getObjectByName("Neck");
 	const _up = new THREE.Vector3(0, 1, 0), _pq = new THREE.Quaternion(), _ax = new THREE.Vector3(), _q = new THREE.Quaternion();
-	const alert = n => { const c = LC[n]; if (!c) return null; const a = mixer.clipAction(c); a.setLoop(n === "Watch-loop" ? THREE.LoopRepeat : THREE.LoopOnce, Infinity); a.clampWhenFinished = n !== "Watch-loop"; return a; };
+	const alert = n => { const c = LC[n]; if (!c) return null; const a = mixer.clipAction(c); const loop = /-loop$/.test(n); a.setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce, Infinity); a.clampWhenFinished = !loop; return a; };
+	let hand = "", callSide = "", holdT = 0;   // рука указания ("" — правая, "-L" — левая); куда звать: "" — влево, "-R" — вправо
 	function wPlay(n, fade = 0.25) {
 		const a = alert(n);
 		if (!a) return false;
@@ -743,7 +745,8 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false, LC =
 		wAct = a; wPhase = n; wT = 0;
 		return true;
 	}
-	function setWatch(p, point = false) {
+	function setWatch(p, point = false, side = null) {
+		if (side) callSide = side === "right" ? "-R" : "";
 		if (!p) {
 			if (watchP && wPhase !== "Watch-end") { if (!wPlay("Watch-end")) wEnd(); }
 			watchP = null;
@@ -752,6 +755,13 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false, LC =
 		if (!watchP && wPhase !== "Watch-end") { pointPending = point; if (!wPlay("Notice", 0.2)) { wPhase = "Watch-loop"; } }
 		else if (point) pointPending = true;
 		watchP = p;
+	}
+	function startPoint() {
+		pointPending = false;
+		// рука — со стороны цели: у модели +X — левый бок (смотрит в +Z)
+		const dx = watchP.x - pos.x, dz = watchP.z - pos.y, lx = Math.cos(heading) * dx - Math.sin(heading) * dz;
+		hand = lx > 0.4 && LC["Point-L-start"] ? "-L" : "";
+		if (!wPlay(`Point${hand}-start`) && !wPlay(`Point${hand}`)) wPlay("Watch-loop");
 	}
 	function wEnd() {
 		A.idle.reset().play(); (wAct || active).crossFadeTo(A.idle, 0.25, false);
@@ -763,23 +773,26 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false, LC =
 		speed = 0;
 		const dur = wAct ? wAct.getClip().duration : 0, done = wAct && wAct.loop === THREE.LoopOnce && wT >= dur - 1e-3;
 		// вес процедурной головы
+		if (/^Call/.test(wPhase) || wPhase === "Notice") {}
 		if (wPhase === "Notice") headW = Math.min(1, wT / 1.29);
-		else if (wPhase === "Call") headW = Math.max(0, headW - dt * 4);
+		else if (/^Call/.test(wPhase)) headW = Math.max(0, headW - dt * 4);
 		else if (wPhase === "Watch-end") headW = Math.max(0, 1 - wT / (dur * 0.7));
 		else headW = Math.min(1, headW + dt * 3);
 		if (wPhase === "Watch-end") { if (done) wEnd(); return; }
 		if (done || !wAct) {
-			if (wPhase === "Notice" || wPhase === "Point" || wPhase === "Call" || !wAct) {
-				if (wPhase === "Point" && LC["Call"]) wPlay("Call");
-				else if (pointPending && LC["Point"]) { pointPending = false; wPlay("Point"); }
-				else wPlay("Watch-loop");
+			if (/^Point.*-start$/.test(wPhase)) { holdT = 0; wPlay(`Point${hand}-hold-loop`); }
+			else if (/^Point/.test(wPhase) && LC["Call" + callSide]) wPlay("Call" + callSide);
+			else if (wPhase === "Notice" || /^Call/.test(wPhase) || !wAct) {
+				if (pointPending) startPoint(); else wPlay("Watch-loop");
 			}
-		} else if (wPhase === "Watch-loop" && pointPending && LC["Point"]) { pointPending = false; wPlay("Point"); }
+		} else if (wPhase === "Watch-loop" && pointPending) startPoint();
+		// держит руку, пока видит игрока (живая точка), но не дольше 6 с
+		if (/-hold-loop$/.test(wPhase) && ((holdT += dt) > 6 || !watchP)) wPlay(`Point${hand}-end`);
 		// корпус к цели: в Point — точно, иначе — если цель сбоку больше 60°
-		if (wPhase !== "Call") {
+		if (!/^Call/.test(wPhase)) {
 			const want = Math.atan2(watchP.x - pos.x, watchP.z - pos.y);
 			const d = Math.atan2(Math.sin(want - heading), Math.cos(want - heading));
-			const lim = wPhase === "Point" ? 0.02 : 1.05;
+			const lim = /^Point/.test(wPhase) ? 0.02 : 1.05;
 			if (Math.abs(d) > lim) heading += Math.sign(d) * Math.min(Math.abs(d) - lim * 0.6, dt * 1.8);
 		}
 	}
@@ -875,7 +888,7 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false, LC =
 		object: root, update, offPath, indoor,
 		/** Что делает сейчас — словами (подпись в режиме наблюдения). */
 		get action() {
-			if (wPhase && !ex) return { Notice: "заметил игрока", Point: "показывает на игрока", Call: "зовёт остальных", "Watch-end": "отворачивается" }[wPhase] || "следит за игроком";
+			if (wPhase && !ex) return (/^Point/.test(wPhase) ? "показывает на игрока" : /^Call/.test(wPhase) ? "зовёт остальных" : { Notice: "заметил игрока", "Watch-end": "отворачивается" }[wPhase]) || "следит за игроком";
 			if (ex) return ex.phase === "loot" ? (ex.cur ? ACT_RU[ex.cur.getClip().name.replace(/-(L|R)$/, "")] || "обыскивает" : "подходит к мебели") : ex.phase === "go" ? "идёт к мебели" : "возвращается";
 			if (fall) return "упал";
 			if (stairs) return stairs === A.stairsUp ? "поднимается по лестнице" : "спускается по лестнице";

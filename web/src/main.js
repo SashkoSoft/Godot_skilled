@@ -931,7 +931,12 @@ function noticeTick(dt) {
 			if (!r.watching) {
 				const point = now - lastPoint > 6000;
 				if (point) lastPoint = now;
-				r.setWatch(P, point);
+				// звать — в ту сторону, где больше соседей (слева/справа от робота)
+				let L = 0, Rr = 0;
+				for (const q of crowd) { if (q === r) continue; const qp = q.object.position, ddx = qp.x - o.x, ddz = qp.z - o.z;
+					if (Math.hypot(ddx, ddz) > 15 || Math.abs(qp.y - o.y) > 2.2) continue;
+					(Math.cos(r.heading) * ddx - Math.sin(r.heading) * ddz > 0 ? L++ : Rr++); }
+				r.setWatch(P, point, Rr > L ? "right" : "left");
 				// соседи оборачиваются — им показали
 				if (point) for (const s of crowd) if (s !== r && !s.watching && s.object.position.distanceTo(o) < 12 && Math.abs(s.object.position.y - o.y) < 2.2) { s.setWatch(P, false); s.seenAt = now; }
 			}
