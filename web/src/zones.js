@@ -98,7 +98,7 @@ const blank = () => blankTex ||= Object.assign(new THREE.DataTexture(new Uint8Ar
 
 const matCache = {};
 // uvM — сколько метров в единице UV модели (у целого дома 1, у руины hou 2);
-// double — двусторонний (руина: у колотых кусков открытые оболочки и развёрнутые грани)
+// double — двусторонний (сейчас не нужен: развёрнутые грани руины hou исправила)
 function material(set, floor, uvM = 1, double = false) {
 	const band = PAINT.test(set);
 	const key = set + (band ? `@${floor.base}/${floor.pitch}` : "") + `*${uvM}` + (double ? "d" : "");
@@ -200,7 +200,7 @@ export function dressZones(root, info) {
 		g.clearGroups();
 		for (const [set, list] of bySet) {
 			g.addGroup(out.length, list.length, mats.length);
-			mats.push(material(set, floor, info.uv_m || 1, info.kind === "ruin"));
+			mats.push(material(set, floor, info.uv_m || 1));
 			for (const i of list) out.push(i);
 		}
 		g.setIndex(out);
