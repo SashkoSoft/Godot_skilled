@@ -54,6 +54,7 @@ function rule(zone, room, panel, info, stairColor) {
 			// пол площадок — метлахская плитка (monolith — бетон с отпечатком опалубки, для стен)
 			if (!type || STAIR_TYPES.test(type)) return { set: "floor_metlakh", tone: 1, grime: 1 };
 			if (type === "sanuzel" || type === "tualet") return { set: "linoleum_tiles", tone: 1, grime: 0.6 };
+			if (type === "shop") return { set: "floor_metlakh", tone: 1, grime: 1 };   // торговый зал — метлахская плитка
 			if (type === "zhilaya") return { set: hash(room + 7) < 0.7 ? "parquet_herring" : "linoleum_wood", tone: 0.92 + 0.16 * hash(room + 3), grime: 0.5 };
 			return { set: "linoleum_wood", tone: 0.92 + 0.16 * hash(room + 3), grime: 0.6 };
 		}
@@ -64,6 +65,7 @@ function rule(zone, room, panel, info, stairColor) {
 			return { set: stairColor, tone: 1, grime: 1 };
 		case "wall_room": {
 			if (type && STAIR_TYPES.test(type)) return { set: stairColor, tone: 1, grime: 1 };
+			if (type === "shop") return { set: "room_paint_green", tone: 1, grime: 0.8 };   // торговый зал — масляная панель
 			// кухня — чистая масляная панель до 1.5 м; санузел — панель или плитка
 			if (type === "kuhnya") return { set: hash(room + 19) < 0.5 ? "room_paint_beige" : "room_paint_green", tone: 1, grime: 0.6 };
 			if (type === "sanuzel" || type === "tualet") {

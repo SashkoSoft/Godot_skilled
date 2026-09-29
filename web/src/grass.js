@@ -1,3 +1,4 @@
+import { pavingPads } from "./paving.js";
 import * as THREE from "three";
 import { rectsOf, streetRect, walkLines } from "./district.js";
 import { windUniforms } from "./wind.js";
@@ -78,6 +79,8 @@ export function buildGrassMap(d, piles = [], ground = null) {
 		stamp([Math.min(a[0], b[0]) - pad, Math.min(a[1], b[1]) - pad, Math.max(a[0], b[0]) + pad, Math.max(a[1], b[1]) + pad],
 			(k, x, z) => { if (segDist(x, z, a, b) < pad) hard[k] = 1; });
 	}
+	// площадки и площади из плитки (paving.js) — без травы
+	for (const r of pavingPads(d)) stamp([r[0] - CELL, r[1] - CELL, r[2] + CELL, r[3] + CELL], k => { hard[k] = 1; });
 
 	// в текстуру; лёгкое размытие 3×3 — чтобы кромки не были ступенькой в полметра
 	const data = new Uint8Array(W * H * 4);

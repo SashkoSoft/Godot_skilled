@@ -14,6 +14,16 @@ const TEX = "../game/assets/textures/";
 /** Прямоугольники площадок [x0, z0, x1, z1] — их же обходят плиты подходов (slabs.js). */
 export function pavingPads(d) {
 	const out = [];
+	const snap = v => Math.round(v * 2) / 2;
+	// площадь перед зданием (b.plaza: side, depth, margin) — вдоль всей стороны, с запасом по краям
+	for (const b of d.buildings) {
+		const P = b.plaza, r = b.rect;
+		if (!P || !r) continue;
+		const m = P.margin || 0, dep = P.depth;
+		const R = { N: [r[0] - m, r[1] - dep, r[2] + m, r[1]], S: [r[0] - m, r[3], r[2] + m, r[3] + dep],
+			W: [r[0] - dep, r[1] - m, r[0], r[3] + m], E: [r[2], r[1] - m, r[2] + dep, r[3] + m] }[P.side];
+		if (R) out.push(R.map(snap));
+	}
 	for (const b of d.buildings) for (const e of [].concat(b.entrances || [])) {
 		const { p, n } = entrancePoint(b, e);
 		const shop = b.kind === "shop";
