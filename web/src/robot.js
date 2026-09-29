@@ -3,7 +3,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { walkLines } from "./district.js";
-import { addHouseToGraph } from "./housenav.js";
+import { addHouseToGraph, addTunnelsToGraph } from "./housenav.js";
 import { inPlace, stairsPose } from "./stairs.js";
 
 // Роботы бродят по кварталу: сеть проездов и троп из district.json превращается
@@ -150,7 +150,7 @@ function rng(seed) {
  * своя фаза шага, свои длительности шага/стояния/бега и склонность бегать.
  */
 // houses — [{ info }] описания домов hou: их комнаты, двери и марши продолжают граф улицы (housenav.js)
-export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap = null, houses = [] } = {}) {
+export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap = null, houses = [], tunnels = [] } = {}) {
 	const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 	const gltfs = await Promise.all(LOD_FILES.map(f => loader.loadAsync(DIR + f)));
 	const gltf = gltfs[0], proto = gltf.scene;
@@ -228,7 +228,9 @@ export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap
 	};
 
 	const graph = buildWalkGraph(d);
-	for (const H of houses) addHouseToGraph(graph, H.info, H);
+	const roomNodes = {};
+	for (const H of houses) roomNodes[H.info.id] = addHouseToGraph(graph, H.info, H).roomNode;
+	addTunnelsToGraph(graph, tunnels, roomNodes);   // подвалы соседних домов — под землёй
 	// Дом без маршей в описании (старые b1, b5, b6) — острова квартир, с улицы в них не попасть:
 	// такие узлы закрыты (cut), в них не стартуют и не ходят.
 	const reach = new Uint8Array(graph.length), st = [];

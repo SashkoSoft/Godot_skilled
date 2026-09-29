@@ -35,6 +35,9 @@ export function addHouseToGraph(nodes, info, { roomOk = () => true } = {}) {
 	const add = (x, y, z, r = 0.35) => { nodes.push({ p: [x, z], y, nb: [], r, house: true, hid: info.id }); return nodes.length - 1; };
 	const link = (i, j) => { if (i !== j && i >= 0 && j >= 0 && !nodes[i].nb.includes(j)) { nodes[i].nb.push(j); nodes[j].nb.push(i); } };
 	const byId = Object.fromEntries(info.rooms.map(r => [r.id, r]));
+	for (const L of info.landings_mid || []) if (L.kind === "vestibule") byId["vestibule_" + L.section] = { id: "vestibule_" + L.section, type: "vestibule", y: L.y, polygon_xz: L.polygon_xz };
+	// дверь в подвал — только если есть и марш вниз (у руины его пока нет — тамбур не пересчитан)
+	const hasBasementFlight = (info.flights || []).some(f => f.kind === "basement");
 	const roomPts = {};   // комната → её узлы (у дверей)
 	// пол площадки — только ploshchadka: у lestnica y — отметка этажа, а в её прямоугольнике
 	// марши и тамбур (центр «висел» бы над ступенями)
@@ -57,6 +60,7 @@ export function addHouseToGraph(nodes, info, { roomOk = () => true } = {}) {
 	for (const d of info.doors) {
 		const [a, b] = d.rooms.map(id => byId[id]);
 		if (!a || !b || !roomOk(a) || !roomOk(b) || SKIP.test(a.type) || SKIP.test(b.type)) continue;
+		if (d.kind === "basement" && !hasBasementFlight) continue;
 		passage(a, b, d.pos);
 	}
 	// Прихожая квартиры нарезана на несколько прямоугольников (коридор буквой Г/Т) — между
@@ -80,16 +84,18 @@ export function addHouseToGraph(nodes, info, { roomOk = () => true } = {}) {
 	// внутри комнаты — точки у дверей между собой
 	for (const pts of Object.values(roomPts)) for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) link(pts[i], pts[j]);
 	// площадки: этажные — центр комнаты (+ её точки у дверей), промежуточные/тамбур/крыльцо — центр
-	const landings = [];
+	const landings = [], roomNode = {};   // roomNode — узел помещения (подвал: для связи с туннелем)
 	for (const rm of info.rooms) {
-		if (!LAND.test(rm.type) || !roomOk(rm)) continue;
+		if (!(LAND.test(rm.type) || rm.floor === -1) || !roomOk(rm)) continue;
 		const [x0, z0, x1, z1] = rectOf(rm), n = add((x0 + x1) / 2, rm.y, (z0 + z1) / 2, 0.4);
 		for (const p of roomPts[rm.id] || []) link(n, p);
 		landings.push({ n, rect: [x0, z0, x1, z1], y: rm.y });
+		roomNode[rm.id] = n;
 	}
 	for (const L of info.landings_mid || []) {
 		const [x0, z0, x1, z1] = rectOf(L), n = add((x0 + x1) / 2, L.y, (z0 + z1) / 2, 0.4);
 		landings.push({ n, rect: [x0, z0, x1, z1], y: L.y, kind: L.kind });
+		if (L.kind === "vestibule") for (const p of roomPts["vestibule_" + L.section] || []) link(n, p);
 	}
 	// соседние площадки одной высоты (коридор, клетка) — связаны
 	// допуск 0.3 м — толщина стены с проёмом (крыльцо ↔ тамбур: 0.12 м)
@@ -123,10 +129,42 @@ export function addHouseToGraph(nodes, info, { roomOk = () => true } = {}) {
 		// дальше последнего, у крыльца — на нём самом (замер лучом): d1 — от b до первого спуска
 		nodes[a].flight = nodes[b].flight = flightShape(f);
 		link(b, nearLanding(f.b[0], f.b[1], f.b[2]));
-		if (f.kind === "porch") link(a, nearStreet(f.a[0], f.a[2]));
+		if (f.kind === "porch" || f.kind === "pit") link(a, nearStreet(f.a[0], f.a[2]));   // крыльцо, приямок — с улицы
 		else link(a, nearLanding(f.a[0], f.a[1], f.a[2]));
 		flights++;
 	}
 	console.log(`[улица] граф дома: узлов ${nodes.length - first}, маршей ${flights}`);
-	return nodes.length - first;
+	return { count: nodes.length - first, roomNode };
+}
+
+/**
+ * Туннели между подвалами (tunnels.json hou): ход — цепочка узлов по станциям polyline
+ * (y по длине), комнаты хода — подряд; из пролома в полу подвала — земляная лестница
+ * (flights kind tunnel_stair: a — пол подвала, b — начало хода), связь — links (house, room).
+ * roomNodes — { id дома: roomNode из addHouseToGraph }.
+ */
+export function addTunnelsToGraph(nodes, tunnels, roomNodes) {
+	for (const T of tunnels) {
+		const add = (x, y, z, r = 0.4) => { nodes.push({ p: [x, z], y, nb: [], r, house: true, hid: T.id }); return nodes.length - 1; };
+		const link = (i, j) => { if (i !== j && i >= 0 && j >= 0 && !nodes[i].nb.includes(j)) { nodes[i].nb.push(j); nodes[j].nb.push(i); } };
+		const stations = [];
+		let last = -1;
+		for (const rm of T.rooms) for (const [x, y, z] of rm.polyline) { const n = add(x, y, z); link(last, n); last = n; stations.push(n); }
+		const nearStation = (x, y, z) => {
+			let best = -1, bd = 3;
+			for (const s of stations) { const d = Math.hypot(nodes[s].p[0] - x, nodes[s].p[1] - z) + Math.abs(nodes[s].y - y); if (d < bd) { bd = d; best = s; } }
+			return best;
+		};
+		let n = 0;
+		for (const L of T.links || []) {
+			const f = (T.flights || [])[L.stair], rn = roomNodes[L.house] && roomNodes[L.house][L.room];
+			if (!f || rn === undefined) continue;
+			const a = add(f.a[0], f.a[1], f.a[2], 0.2), b = add(f.b[0], f.b[1], f.b[2], 0.2);
+			link(a, b);
+			nodes[a].flight = nodes[b].flight = flightShape(f);
+			link(a, rn); link(b, nearStation(f.b[0], f.b[1], f.b[2]));
+			n++;
+		}
+		console.log(`[улица] туннель ${T.id}: узлов ${stations.length}, выходов в подвалы ${n}`);
+	}
 }

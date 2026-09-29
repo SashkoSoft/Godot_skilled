@@ -735,31 +735,88 @@
  ],
  "stairs_note": "kryl'co +0.45 (stupeni s poruchnyami, kozyrek na stenkah) -> tambur -> korotkiy marsh do pola 1 etazha (+1.5); dalee parnye marshi, promezhutochnye ploshchadki u fasada vhoda",
  "tris": {
-  "lod0": 128027,
-  "lod1": 53567,
-  "lod2": 18600,
-  "col": 19044
+  "lod0": 124081,
+  "lod1": 49439,
+  "lod2": 16962,
+  "col": 19056,
+  "basement": 3832,
+  "basement_col": 1800
  },
  "files": {
   "lod0": "b4_lod0.glb",
   "lod1": "b4_lod1.glb",
   "lod2": "b4_lod2.glb",
-  "col": "b4_col.glb"
+  "col": "b4_col.glb",
+  "basement": "b4_basement.glb",
+  "basement_col": "b4_basement_col.glb"
+ },
+ "basement": {
+  "floor_y": -1.2,
+  "ceiling_y": 1.28,
+  "slab": 0.2,
+  "note": "etazh -1, otdel'nyy fayl; potolok - niz plity 1-go etazha v faile doma (zona slab_under s _room pomeshcheniya podvala); vhod iz tambura (flights kind basement, dver' kind basement), priyamok s torca (flights kind pit, room type priyamok, dver' kind pit); v zemle u priyamka nuzhen vyrez po polygon_xz komnaty pit",
+  "rooms": 16,
+  "doors": 28,
+  "breaches": [
+   {
+    "room": "fb_r012",
+    "side": "f",
+    "floor_y": -1.2,
+    "out_dir_xz": [
+     0.0,
+     -1.0
+    ],
+    "wall_point_xz": [
+     101.5,
+     14.0
+    ],
+    "tunnel_floor_y": -3.6,
+    "hole_polygon_xz": [
+     [
+      102.2,
+      18.3
+     ],
+     [
+      100.8,
+      18.3
+     ],
+     [
+      100.8,
+      14.8
+     ],
+     [
+      102.2,
+      14.8
+     ]
+    ],
+    "tunnel": "tunnel_b3_b4"
+   }
+  ],
+  "tunnels": [
+   "tunnel_b3_b4"
+  ]
  },
  "node_naming": "<id>_<part>_fNN, extras.floor, extras.part; slab_fNN = pol etazha NN (slab_f12 — krovlya)",
  "uv": "metry: 1 edinica UV = 1 m, proekciya po osi grani",
  "materials": [
+  "basement_floor",
+  "basement_wall",
   "blocks",
   "brick",
   "brick_facade",
+  "cable_tray",
+  "column",
   "concrete",
   "concrete_panel",
   "door_wood",
+  "equipment",
   "facade_panel",
   "glass",
   "gypsum",
   "metal_painted",
   "monolith",
+  "pipe",
+  "planks",
   "plinth",
   "roof",
   "rubble",
@@ -767,6 +824,7 @@
   "slab_top",
   "slab_under",
   "stairwell_wall",
+  "storage_grid",
   "wall_room",
   "window_frame"
  ],
@@ -790,6 +848,25 @@
  },
  "flights": [
   {
+   "kind": "basement",
+   "section": 0,
+   "floor": -1,
+   "steps": 10,
+   "rise": 0.165,
+   "tread": 0.267,
+   "width": 1.3,
+   "a": [
+    109.23,
+    -1.2,
+    28.71
+   ],
+   "b": [
+    109.23,
+    0.45,
+    31.38
+   ]
+  },
+  {
    "kind": "entry",
    "section": 0,
    "floor": 0,
@@ -1224,6 +1301,25 @@
     107.77,
     34.5,
     28.777
+   ]
+  },
+  {
+   "kind": "basement",
+   "section": 1,
+   "floor": -1,
+   "steps": 10,
+   "rise": 0.165,
+   "tread": 0.267,
+   "width": 1.3,
+   "a": [
+    88.23,
+    -1.2,
+    28.71
+   ],
+   "b": [
+    88.23,
+    0.45,
+    31.38
    ]
   },
   {
@@ -1699,6 +1795,25 @@
     87.5,
     0.45,
     34.3
+   ]
+  },
+  {
+   "kind": "pit",
+   "section": -1,
+   "floor": -1,
+   "steps": 8,
+   "rise": 0.15,
+   "tread": 0.3,
+   "width": 1.4,
+   "a": [
+    119.4,
+    0.0,
+    28.0
+   ],
+   "b": [
+    117.3,
+    -1.2,
+    28.0
    ]
   }
  ],
@@ -2330,6 +2445,46 @@
  ],
  "door_leaves": [
   {
+   "door": 540,
+   "hinge": [
+    109.616,
+    0.45,
+    31.48
+   ],
+   "swing": 1,
+   "rest_center": [
+    109.23,
+    1.472,
+    31.459
+   ],
+   "open_into": "vestibule_0",
+   "width": 0.772,
+   "leaf": "single",
+   "kind": "basement",
+   "floor": 0,
+   "node": "b4_door_000"
+  },
+  {
+   "door": 541,
+   "hinge": [
+    88.616,
+    0.45,
+    31.48
+   ],
+   "swing": 1,
+   "rest_center": [
+    88.23,
+    1.472,
+    31.459
+   ],
+   "open_into": "vestibule_1",
+   "width": 0.772,
+   "leaf": "single",
+   "kind": "basement",
+   "floor": 0,
+   "node": "b4_door_001"
+  },
+  {
    "door": null,
    "hinge": [
     109.13,
@@ -2348,7 +2503,7 @@
    "kind": "entrance",
    "floor": 0,
    "entrance": 0,
-   "node": "b4_door_000"
+   "node": "b4_door_002"
   },
   {
    "door": null,
@@ -2369,7 +2524,7 @@
    "kind": "entrance",
    "floor": 0,
    "entrance": 0,
-   "node": "b4_door_001"
+   "node": "b4_door_003"
   },
   {
    "door": null,
@@ -2390,7 +2545,7 @@
    "kind": "entrance",
    "floor": 0,
    "entrance": 1,
-   "node": "b4_door_002"
+   "node": "b4_door_004"
   },
   {
    "door": 0,
@@ -2410,7 +2565,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 0,
-   "node": "b4_door_003"
+   "node": "b4_door_005"
   },
   {
    "door": 1,
@@ -2430,7 +2585,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 0,
-   "node": "b4_door_004"
+   "node": "b4_door_006"
   },
   {
    "door": 2,
@@ -2450,7 +2605,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 0,
-   "node": "b4_door_005"
+   "node": "b4_door_007"
   },
   {
    "door": 3,
@@ -2470,7 +2625,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 0,
-   "node": "b4_door_006"
+   "node": "b4_door_008"
   },
   {
    "door": 4,
@@ -2490,7 +2645,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 0,
-   "node": "b4_door_007"
+   "node": "b4_door_009"
   },
   {
    "door": 5,
@@ -2510,7 +2665,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_008"
+   "node": "b4_door_010"
   },
   {
    "door": 6,
@@ -2530,7 +2685,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_009"
+   "node": "b4_door_011"
   },
   {
    "door": 7,
@@ -2550,7 +2705,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_010"
+   "node": "b4_door_012"
   },
   {
    "door": 8,
@@ -2570,7 +2725,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_011"
+   "node": "b4_door_013"
   },
   {
    "door": 9,
@@ -2590,7 +2745,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_012"
+   "node": "b4_door_014"
   },
   {
    "door": 10,
@@ -2610,7 +2765,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 0,
-   "node": "b4_door_013"
+   "node": "b4_door_015"
   },
   {
    "door": 11,
@@ -2630,7 +2785,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 0,
-   "node": "b4_door_014"
+   "node": "b4_door_016"
   },
   {
    "door": 12,
@@ -2650,7 +2805,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_015"
+   "node": "b4_door_017"
   },
   {
    "door": 13,
@@ -2670,7 +2825,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_016"
+   "node": "b4_door_018"
   },
   {
    "door": 14,
@@ -2690,7 +2845,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_017"
+   "node": "b4_door_019"
   },
   {
    "door": 15,
@@ -2710,7 +2865,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_018"
+   "node": "b4_door_020"
   },
   {
    "door": 16,
@@ -2730,7 +2885,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 0,
-   "node": "b4_door_019"
+   "node": "b4_door_021"
   },
   {
    "door": 17,
@@ -2750,7 +2905,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 0,
-   "node": "b4_door_020"
+   "node": "b4_door_022"
   },
   {
    "door": 18,
@@ -2770,7 +2925,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_021"
+   "node": "b4_door_023"
   },
   {
    "door": 19,
@@ -2790,7 +2945,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_022"
+   "node": "b4_door_024"
   },
   {
    "door": 20,
@@ -2810,7 +2965,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_023"
+   "node": "b4_door_025"
   },
   {
    "door": 21,
@@ -2830,7 +2985,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 0,
-   "node": "b4_door_024"
+   "node": "b4_door_026"
   },
   {
    "door": 22,
@@ -2850,7 +3005,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 0,
-   "node": "b4_door_025"
+   "node": "b4_door_027"
   },
   {
    "door": 23,
@@ -2870,7 +3025,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 0,
-   "node": "b4_door_026"
+   "node": "b4_door_028"
   },
   {
    "door": 24,
@@ -2890,7 +3045,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 0,
-   "node": "b4_door_027"
+   "node": "b4_door_029"
   },
   {
    "door": 25,
@@ -2910,7 +3065,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_028"
+   "node": "b4_door_030"
   },
   {
    "door": 26,
@@ -2930,7 +3085,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 0,
-   "node": "b4_door_029"
+   "node": "b4_door_031"
   },
   {
    "door": 27,
@@ -2950,7 +3105,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 0,
-   "node": "b4_door_030"
+   "node": "b4_door_032"
   },
   {
    "door": 28,
@@ -2970,7 +3125,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_031"
+   "node": "b4_door_033"
   },
   {
    "door": 29,
@@ -2990,7 +3145,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_032"
+   "node": "b4_door_034"
   },
   {
    "door": 30,
@@ -3010,7 +3165,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_033"
+   "node": "b4_door_035"
   },
   {
    "door": 31,
@@ -3030,7 +3185,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_034"
+   "node": "b4_door_036"
   },
   {
    "door": 32,
@@ -3050,7 +3205,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 0,
-   "node": "b4_door_035"
+   "node": "b4_door_037"
   },
   {
    "door": 33,
@@ -3070,7 +3225,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 0,
-   "node": "b4_door_036"
+   "node": "b4_door_038"
   },
   {
    "door": 34,
@@ -3090,7 +3245,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_037"
+   "node": "b4_door_039"
   },
   {
    "door": 35,
@@ -3110,7 +3265,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_038"
+   "node": "b4_door_040"
   },
   {
    "door": 36,
@@ -3130,7 +3285,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_039"
+   "node": "b4_door_041"
   },
   {
    "door": 37,
@@ -3150,7 +3305,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 0,
-   "node": "b4_door_040"
+   "node": "b4_door_042"
   },
   {
    "door": 38,
@@ -3170,7 +3325,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 0,
-   "node": "b4_door_041"
+   "node": "b4_door_043"
   },
   {
    "door": 39,
@@ -3190,7 +3345,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_042"
+   "node": "b4_door_044"
   },
   {
    "door": 40,
@@ -3210,7 +3365,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_043"
+   "node": "b4_door_045"
   },
   {
    "door": 41,
@@ -3230,7 +3385,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 0,
-   "node": "b4_door_044"
+   "node": "b4_door_046"
   },
   {
    "door": 42,
@@ -3250,7 +3405,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 0,
-   "node": "b4_door_045"
+   "node": "b4_door_047"
   },
   {
    "door": 43,
@@ -3270,7 +3425,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_046"
+   "node": "b4_door_048"
   },
   {
    "door": 44,
@@ -3290,7 +3445,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 0,
-   "node": "b4_door_047"
+   "node": "b4_door_049"
   },
   {
    "door": 45,
@@ -3310,7 +3465,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 1,
-   "node": "b4_door_048"
+   "node": "b4_door_050"
   },
   {
    "door": 46,
@@ -3330,7 +3485,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 1,
-   "node": "b4_door_049"
+   "node": "b4_door_051"
   },
   {
    "door": 47,
@@ -3350,7 +3505,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 1,
-   "node": "b4_door_050"
+   "node": "b4_door_052"
   },
   {
    "door": 48,
@@ -3370,7 +3525,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 1,
-   "node": "b4_door_051"
+   "node": "b4_door_053"
   },
   {
    "door": 49,
@@ -3390,7 +3545,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 1,
-   "node": "b4_door_052"
+   "node": "b4_door_054"
   },
   {
    "door": 50,
@@ -3410,7 +3565,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_053"
+   "node": "b4_door_055"
   },
   {
    "door": 51,
@@ -3430,7 +3585,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_054"
+   "node": "b4_door_056"
   },
   {
    "door": 52,
@@ -3450,7 +3605,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_055"
+   "node": "b4_door_057"
   },
   {
    "door": 53,
@@ -3470,7 +3625,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_056"
+   "node": "b4_door_058"
   },
   {
    "door": 54,
@@ -3490,7 +3645,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_057"
+   "node": "b4_door_059"
   },
   {
    "door": 55,
@@ -3510,7 +3665,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 1,
-   "node": "b4_door_058"
+   "node": "b4_door_060"
   },
   {
    "door": 56,
@@ -3530,7 +3685,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 1,
-   "node": "b4_door_059"
+   "node": "b4_door_061"
   },
   {
    "door": 57,
@@ -3550,7 +3705,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_060"
+   "node": "b4_door_062"
   },
   {
    "door": 58,
@@ -3570,7 +3725,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_061"
+   "node": "b4_door_063"
   },
   {
    "door": 59,
@@ -3590,7 +3745,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_062"
+   "node": "b4_door_064"
   },
   {
    "door": 60,
@@ -3610,7 +3765,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_063"
+   "node": "b4_door_065"
   },
   {
    "door": 61,
@@ -3630,7 +3785,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 1,
-   "node": "b4_door_064"
+   "node": "b4_door_066"
   },
   {
    "door": 62,
@@ -3650,7 +3805,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 1,
-   "node": "b4_door_065"
+   "node": "b4_door_067"
   },
   {
    "door": 63,
@@ -3670,7 +3825,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_066"
+   "node": "b4_door_068"
   },
   {
    "door": 64,
@@ -3690,7 +3845,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_067"
+   "node": "b4_door_069"
   },
   {
    "door": 65,
@@ -3710,7 +3865,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_068"
+   "node": "b4_door_070"
   },
   {
    "door": 66,
@@ -3730,7 +3885,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 1,
-   "node": "b4_door_069"
+   "node": "b4_door_071"
   },
   {
    "door": 67,
@@ -3750,7 +3905,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 1,
-   "node": "b4_door_070"
+   "node": "b4_door_072"
   },
   {
    "door": 68,
@@ -3770,7 +3925,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 1,
-   "node": "b4_door_071"
+   "node": "b4_door_073"
   },
   {
    "door": 69,
@@ -3790,7 +3945,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 1,
-   "node": "b4_door_072"
+   "node": "b4_door_074"
   },
   {
    "door": 70,
@@ -3810,7 +3965,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_073"
+   "node": "b4_door_075"
   },
   {
    "door": 71,
@@ -3830,7 +3985,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 1,
-   "node": "b4_door_074"
+   "node": "b4_door_076"
   },
   {
    "door": 72,
@@ -3850,7 +4005,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 1,
-   "node": "b4_door_075"
+   "node": "b4_door_077"
   },
   {
    "door": 73,
@@ -3870,7 +4025,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_076"
+   "node": "b4_door_078"
   },
   {
    "door": 74,
@@ -3890,7 +4045,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_077"
+   "node": "b4_door_079"
   },
   {
    "door": 75,
@@ -3910,7 +4065,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_078"
+   "node": "b4_door_080"
   },
   {
    "door": 76,
@@ -3930,7 +4085,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_079"
+   "node": "b4_door_081"
   },
   {
    "door": 77,
@@ -3950,7 +4105,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 1,
-   "node": "b4_door_080"
+   "node": "b4_door_082"
   },
   {
    "door": 78,
@@ -3970,7 +4125,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 1,
-   "node": "b4_door_081"
+   "node": "b4_door_083"
   },
   {
    "door": 79,
@@ -3990,7 +4145,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_082"
+   "node": "b4_door_084"
   },
   {
    "door": 80,
@@ -4010,7 +4165,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_083"
+   "node": "b4_door_085"
   },
   {
    "door": 81,
@@ -4030,7 +4185,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_084"
+   "node": "b4_door_086"
   },
   {
    "door": 82,
@@ -4050,7 +4205,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 1,
-   "node": "b4_door_085"
+   "node": "b4_door_087"
   },
   {
    "door": 83,
@@ -4070,7 +4225,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 1,
-   "node": "b4_door_086"
+   "node": "b4_door_088"
   },
   {
    "door": 84,
@@ -4090,7 +4245,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_087"
+   "node": "b4_door_089"
   },
   {
    "door": 85,
@@ -4110,7 +4265,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_088"
+   "node": "b4_door_090"
   },
   {
    "door": 86,
@@ -4130,7 +4285,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 1,
-   "node": "b4_door_089"
+   "node": "b4_door_091"
   },
   {
    "door": 87,
@@ -4150,7 +4305,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 1,
-   "node": "b4_door_090"
+   "node": "b4_door_092"
   },
   {
    "door": 88,
@@ -4170,7 +4325,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_091"
+   "node": "b4_door_093"
   },
   {
    "door": 89,
@@ -4190,7 +4345,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 1,
-   "node": "b4_door_092"
+   "node": "b4_door_094"
   },
   {
    "door": 90,
@@ -4210,7 +4365,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 2,
-   "node": "b4_door_093"
+   "node": "b4_door_095"
   },
   {
    "door": 91,
@@ -4230,7 +4385,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 2,
-   "node": "b4_door_094"
+   "node": "b4_door_096"
   },
   {
    "door": 92,
@@ -4250,7 +4405,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 2,
-   "node": "b4_door_095"
+   "node": "b4_door_097"
   },
   {
    "door": 93,
@@ -4270,7 +4425,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 2,
-   "node": "b4_door_096"
+   "node": "b4_door_098"
   },
   {
    "door": 94,
@@ -4290,7 +4445,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 2,
-   "node": "b4_door_097"
+   "node": "b4_door_099"
   },
   {
    "door": 95,
@@ -4310,7 +4465,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_098"
+   "node": "b4_door_100"
   },
   {
    "door": 96,
@@ -4330,7 +4485,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_099"
+   "node": "b4_door_101"
   },
   {
    "door": 97,
@@ -4350,7 +4505,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_100"
+   "node": "b4_door_102"
   },
   {
    "door": 98,
@@ -4370,7 +4525,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_101"
+   "node": "b4_door_103"
   },
   {
    "door": 99,
@@ -4390,7 +4545,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_102"
+   "node": "b4_door_104"
   },
   {
    "door": 100,
@@ -4410,7 +4565,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 2,
-   "node": "b4_door_103"
+   "node": "b4_door_105"
   },
   {
    "door": 101,
@@ -4430,7 +4585,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 2,
-   "node": "b4_door_104"
+   "node": "b4_door_106"
   },
   {
    "door": 102,
@@ -4450,7 +4605,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_105"
+   "node": "b4_door_107"
   },
   {
    "door": 103,
@@ -4470,7 +4625,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_106"
+   "node": "b4_door_108"
   },
   {
    "door": 104,
@@ -4490,7 +4645,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_107"
+   "node": "b4_door_109"
   },
   {
    "door": 105,
@@ -4510,7 +4665,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_108"
+   "node": "b4_door_110"
   },
   {
    "door": 106,
@@ -4530,7 +4685,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 2,
-   "node": "b4_door_109"
+   "node": "b4_door_111"
   },
   {
    "door": 107,
@@ -4550,7 +4705,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 2,
-   "node": "b4_door_110"
+   "node": "b4_door_112"
   },
   {
    "door": 108,
@@ -4570,7 +4725,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_111"
+   "node": "b4_door_113"
   },
   {
    "door": 109,
@@ -4590,7 +4745,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_112"
+   "node": "b4_door_114"
   },
   {
    "door": 110,
@@ -4610,7 +4765,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_113"
+   "node": "b4_door_115"
   },
   {
    "door": 111,
@@ -4630,7 +4785,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 2,
-   "node": "b4_door_114"
+   "node": "b4_door_116"
   },
   {
    "door": 112,
@@ -4650,7 +4805,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 2,
-   "node": "b4_door_115"
+   "node": "b4_door_117"
   },
   {
    "door": 113,
@@ -4670,7 +4825,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 2,
-   "node": "b4_door_116"
+   "node": "b4_door_118"
   },
   {
    "door": 114,
@@ -4690,7 +4845,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 2,
-   "node": "b4_door_117"
+   "node": "b4_door_119"
   },
   {
    "door": 115,
@@ -4710,7 +4865,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_118"
+   "node": "b4_door_120"
   },
   {
    "door": 116,
@@ -4730,7 +4885,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 2,
-   "node": "b4_door_119"
+   "node": "b4_door_121"
   },
   {
    "door": 117,
@@ -4750,7 +4905,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 2,
-   "node": "b4_door_120"
+   "node": "b4_door_122"
   },
   {
    "door": 118,
@@ -4770,7 +4925,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_121"
+   "node": "b4_door_123"
   },
   {
    "door": 119,
@@ -4790,7 +4945,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_122"
+   "node": "b4_door_124"
   },
   {
    "door": 120,
@@ -4810,7 +4965,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_123"
+   "node": "b4_door_125"
   },
   {
    "door": 121,
@@ -4830,7 +4985,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_124"
+   "node": "b4_door_126"
   },
   {
    "door": 122,
@@ -4850,7 +5005,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 2,
-   "node": "b4_door_125"
+   "node": "b4_door_127"
   },
   {
    "door": 123,
@@ -4870,7 +5025,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 2,
-   "node": "b4_door_126"
+   "node": "b4_door_128"
   },
   {
    "door": 124,
@@ -4890,7 +5045,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_127"
+   "node": "b4_door_129"
   },
   {
    "door": 125,
@@ -4910,7 +5065,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_128"
+   "node": "b4_door_130"
   },
   {
    "door": 126,
@@ -4930,7 +5085,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_129"
+   "node": "b4_door_131"
   },
   {
    "door": 127,
@@ -4950,7 +5105,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 2,
-   "node": "b4_door_130"
+   "node": "b4_door_132"
   },
   {
    "door": 128,
@@ -4970,7 +5125,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 2,
-   "node": "b4_door_131"
+   "node": "b4_door_133"
   },
   {
    "door": 129,
@@ -4990,7 +5145,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_132"
+   "node": "b4_door_134"
   },
   {
    "door": 130,
@@ -5010,7 +5165,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_133"
+   "node": "b4_door_135"
   },
   {
    "door": 131,
@@ -5030,7 +5185,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 2,
-   "node": "b4_door_134"
+   "node": "b4_door_136"
   },
   {
    "door": 132,
@@ -5050,7 +5205,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 2,
-   "node": "b4_door_135"
+   "node": "b4_door_137"
   },
   {
    "door": 133,
@@ -5070,7 +5225,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_136"
+   "node": "b4_door_138"
   },
   {
    "door": 134,
@@ -5090,7 +5245,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 2,
-   "node": "b4_door_137"
+   "node": "b4_door_139"
   },
   {
    "door": 135,
@@ -5110,7 +5265,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 3,
-   "node": "b4_door_138"
+   "node": "b4_door_140"
   },
   {
    "door": 136,
@@ -5130,7 +5285,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 3,
-   "node": "b4_door_139"
+   "node": "b4_door_141"
   },
   {
    "door": 137,
@@ -5150,7 +5305,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 3,
-   "node": "b4_door_140"
+   "node": "b4_door_142"
   },
   {
    "door": 138,
@@ -5170,7 +5325,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 3,
-   "node": "b4_door_141"
+   "node": "b4_door_143"
   },
   {
    "door": 139,
@@ -5190,7 +5345,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 3,
-   "node": "b4_door_142"
+   "node": "b4_door_144"
   },
   {
    "door": 140,
@@ -5210,7 +5365,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_143"
+   "node": "b4_door_145"
   },
   {
    "door": 141,
@@ -5230,7 +5385,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_144"
+   "node": "b4_door_146"
   },
   {
    "door": 142,
@@ -5250,7 +5405,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_145"
+   "node": "b4_door_147"
   },
   {
    "door": 143,
@@ -5270,7 +5425,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_146"
+   "node": "b4_door_148"
   },
   {
    "door": 144,
@@ -5290,7 +5445,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_147"
+   "node": "b4_door_149"
   },
   {
    "door": 145,
@@ -5310,7 +5465,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 3,
-   "node": "b4_door_148"
+   "node": "b4_door_150"
   },
   {
    "door": 146,
@@ -5330,7 +5485,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 3,
-   "node": "b4_door_149"
+   "node": "b4_door_151"
   },
   {
    "door": 147,
@@ -5350,7 +5505,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_150"
+   "node": "b4_door_152"
   },
   {
    "door": 148,
@@ -5370,7 +5525,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_151"
+   "node": "b4_door_153"
   },
   {
    "door": 149,
@@ -5390,7 +5545,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_152"
+   "node": "b4_door_154"
   },
   {
    "door": 150,
@@ -5410,7 +5565,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_153"
+   "node": "b4_door_155"
   },
   {
    "door": 151,
@@ -5430,7 +5585,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 3,
-   "node": "b4_door_154"
+   "node": "b4_door_156"
   },
   {
    "door": 152,
@@ -5450,7 +5605,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 3,
-   "node": "b4_door_155"
+   "node": "b4_door_157"
   },
   {
    "door": 153,
@@ -5470,7 +5625,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_156"
+   "node": "b4_door_158"
   },
   {
    "door": 154,
@@ -5490,7 +5645,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_157"
+   "node": "b4_door_159"
   },
   {
    "door": 155,
@@ -5510,7 +5665,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_158"
+   "node": "b4_door_160"
   },
   {
    "door": 156,
@@ -5530,7 +5685,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 3,
-   "node": "b4_door_159"
+   "node": "b4_door_161"
   },
   {
    "door": 157,
@@ -5550,7 +5705,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 3,
-   "node": "b4_door_160"
+   "node": "b4_door_162"
   },
   {
    "door": 158,
@@ -5570,7 +5725,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 3,
-   "node": "b4_door_161"
+   "node": "b4_door_163"
   },
   {
    "door": 159,
@@ -5590,7 +5745,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 3,
-   "node": "b4_door_162"
+   "node": "b4_door_164"
   },
   {
    "door": 160,
@@ -5610,7 +5765,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_163"
+   "node": "b4_door_165"
   },
   {
    "door": 161,
@@ -5630,7 +5785,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 3,
-   "node": "b4_door_164"
+   "node": "b4_door_166"
   },
   {
    "door": 162,
@@ -5650,7 +5805,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 3,
-   "node": "b4_door_165"
+   "node": "b4_door_167"
   },
   {
    "door": 163,
@@ -5670,7 +5825,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_166"
+   "node": "b4_door_168"
   },
   {
    "door": 164,
@@ -5690,7 +5845,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_167"
+   "node": "b4_door_169"
   },
   {
    "door": 165,
@@ -5710,7 +5865,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_168"
+   "node": "b4_door_170"
   },
   {
    "door": 166,
@@ -5730,7 +5885,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_169"
+   "node": "b4_door_171"
   },
   {
    "door": 167,
@@ -5750,7 +5905,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 3,
-   "node": "b4_door_170"
+   "node": "b4_door_172"
   },
   {
    "door": 168,
@@ -5770,7 +5925,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 3,
-   "node": "b4_door_171"
+   "node": "b4_door_173"
   },
   {
    "door": 169,
@@ -5790,7 +5945,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_172"
+   "node": "b4_door_174"
   },
   {
    "door": 170,
@@ -5810,7 +5965,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_173"
+   "node": "b4_door_175"
   },
   {
    "door": 171,
@@ -5830,7 +5985,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_174"
+   "node": "b4_door_176"
   },
   {
    "door": 172,
@@ -5850,7 +6005,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 3,
-   "node": "b4_door_175"
+   "node": "b4_door_177"
   },
   {
    "door": 173,
@@ -5870,7 +6025,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 3,
-   "node": "b4_door_176"
+   "node": "b4_door_178"
   },
   {
    "door": 174,
@@ -5890,7 +6045,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_177"
+   "node": "b4_door_179"
   },
   {
    "door": 175,
@@ -5910,7 +6065,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_178"
+   "node": "b4_door_180"
   },
   {
    "door": 176,
@@ -5930,7 +6085,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 3,
-   "node": "b4_door_179"
+   "node": "b4_door_181"
   },
   {
    "door": 177,
@@ -5950,7 +6105,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 3,
-   "node": "b4_door_180"
+   "node": "b4_door_182"
   },
   {
    "door": 178,
@@ -5970,7 +6125,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_181"
+   "node": "b4_door_183"
   },
   {
    "door": 179,
@@ -5990,7 +6145,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 3,
-   "node": "b4_door_182"
+   "node": "b4_door_184"
   },
   {
    "door": 180,
@@ -6010,7 +6165,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 4,
-   "node": "b4_door_183"
+   "node": "b4_door_185"
   },
   {
    "door": 181,
@@ -6030,7 +6185,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 4,
-   "node": "b4_door_184"
+   "node": "b4_door_186"
   },
   {
    "door": 182,
@@ -6050,7 +6205,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 4,
-   "node": "b4_door_185"
+   "node": "b4_door_187"
   },
   {
    "door": 183,
@@ -6070,7 +6225,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 4,
-   "node": "b4_door_186"
+   "node": "b4_door_188"
   },
   {
    "door": 184,
@@ -6090,7 +6245,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 4,
-   "node": "b4_door_187"
+   "node": "b4_door_189"
   },
   {
    "door": 185,
@@ -6110,7 +6265,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_188"
+   "node": "b4_door_190"
   },
   {
    "door": 186,
@@ -6130,7 +6285,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_189"
+   "node": "b4_door_191"
   },
   {
    "door": 187,
@@ -6150,7 +6305,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_190"
+   "node": "b4_door_192"
   },
   {
    "door": 188,
@@ -6170,7 +6325,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_191"
+   "node": "b4_door_193"
   },
   {
    "door": 189,
@@ -6190,7 +6345,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_192"
+   "node": "b4_door_194"
   },
   {
    "door": 190,
@@ -6210,7 +6365,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 4,
-   "node": "b4_door_193"
+   "node": "b4_door_195"
   },
   {
    "door": 191,
@@ -6230,7 +6385,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 4,
-   "node": "b4_door_194"
+   "node": "b4_door_196"
   },
   {
    "door": 192,
@@ -6250,7 +6405,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_195"
+   "node": "b4_door_197"
   },
   {
    "door": 193,
@@ -6270,7 +6425,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_196"
+   "node": "b4_door_198"
   },
   {
    "door": 194,
@@ -6290,7 +6445,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_197"
+   "node": "b4_door_199"
   },
   {
    "door": 195,
@@ -6310,7 +6465,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_198"
+   "node": "b4_door_200"
   },
   {
    "door": 196,
@@ -6330,7 +6485,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 4,
-   "node": "b4_door_199"
+   "node": "b4_door_201"
   },
   {
    "door": 197,
@@ -6350,7 +6505,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 4,
-   "node": "b4_door_200"
+   "node": "b4_door_202"
   },
   {
    "door": 198,
@@ -6370,7 +6525,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_201"
+   "node": "b4_door_203"
   },
   {
    "door": 199,
@@ -6390,7 +6545,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_202"
+   "node": "b4_door_204"
   },
   {
    "door": 200,
@@ -6410,7 +6565,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_203"
+   "node": "b4_door_205"
   },
   {
    "door": 201,
@@ -6430,7 +6585,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 4,
-   "node": "b4_door_204"
+   "node": "b4_door_206"
   },
   {
    "door": 202,
@@ -6450,7 +6605,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 4,
-   "node": "b4_door_205"
+   "node": "b4_door_207"
   },
   {
    "door": 203,
@@ -6470,7 +6625,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 4,
-   "node": "b4_door_206"
+   "node": "b4_door_208"
   },
   {
    "door": 204,
@@ -6490,7 +6645,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 4,
-   "node": "b4_door_207"
+   "node": "b4_door_209"
   },
   {
    "door": 205,
@@ -6510,7 +6665,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_208"
+   "node": "b4_door_210"
   },
   {
    "door": 206,
@@ -6530,7 +6685,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 4,
-   "node": "b4_door_209"
+   "node": "b4_door_211"
   },
   {
    "door": 207,
@@ -6550,7 +6705,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 4,
-   "node": "b4_door_210"
+   "node": "b4_door_212"
   },
   {
    "door": 208,
@@ -6570,7 +6725,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_211"
+   "node": "b4_door_213"
   },
   {
    "door": 209,
@@ -6590,7 +6745,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_212"
+   "node": "b4_door_214"
   },
   {
    "door": 210,
@@ -6610,7 +6765,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_213"
+   "node": "b4_door_215"
   },
   {
    "door": 211,
@@ -6630,7 +6785,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_214"
+   "node": "b4_door_216"
   },
   {
    "door": 212,
@@ -6650,7 +6805,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 4,
-   "node": "b4_door_215"
+   "node": "b4_door_217"
   },
   {
    "door": 213,
@@ -6670,7 +6825,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 4,
-   "node": "b4_door_216"
+   "node": "b4_door_218"
   },
   {
    "door": 214,
@@ -6690,7 +6845,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_217"
+   "node": "b4_door_219"
   },
   {
    "door": 215,
@@ -6710,7 +6865,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_218"
+   "node": "b4_door_220"
   },
   {
    "door": 216,
@@ -6730,7 +6885,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_219"
+   "node": "b4_door_221"
   },
   {
    "door": 217,
@@ -6750,7 +6905,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 4,
-   "node": "b4_door_220"
+   "node": "b4_door_222"
   },
   {
    "door": 218,
@@ -6770,7 +6925,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 4,
-   "node": "b4_door_221"
+   "node": "b4_door_223"
   },
   {
    "door": 219,
@@ -6790,7 +6945,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_222"
+   "node": "b4_door_224"
   },
   {
    "door": 220,
@@ -6810,7 +6965,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_223"
+   "node": "b4_door_225"
   },
   {
    "door": 221,
@@ -6830,7 +6985,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 4,
-   "node": "b4_door_224"
+   "node": "b4_door_226"
   },
   {
    "door": 222,
@@ -6850,7 +7005,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 4,
-   "node": "b4_door_225"
+   "node": "b4_door_227"
   },
   {
    "door": 223,
@@ -6870,7 +7025,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_226"
+   "node": "b4_door_228"
   },
   {
    "door": 224,
@@ -6890,7 +7045,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 4,
-   "node": "b4_door_227"
+   "node": "b4_door_229"
   },
   {
    "door": 225,
@@ -6910,7 +7065,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 5,
-   "node": "b4_door_228"
+   "node": "b4_door_230"
   },
   {
    "door": 226,
@@ -6930,7 +7085,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 5,
-   "node": "b4_door_229"
+   "node": "b4_door_231"
   },
   {
    "door": 227,
@@ -6950,7 +7105,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 5,
-   "node": "b4_door_230"
+   "node": "b4_door_232"
   },
   {
    "door": 228,
@@ -6970,7 +7125,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 5,
-   "node": "b4_door_231"
+   "node": "b4_door_233"
   },
   {
    "door": 229,
@@ -6990,7 +7145,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 5,
-   "node": "b4_door_232"
+   "node": "b4_door_234"
   },
   {
    "door": 230,
@@ -7010,7 +7165,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_233"
+   "node": "b4_door_235"
   },
   {
    "door": 231,
@@ -7030,7 +7185,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_234"
+   "node": "b4_door_236"
   },
   {
    "door": 232,
@@ -7050,7 +7205,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_235"
+   "node": "b4_door_237"
   },
   {
    "door": 233,
@@ -7070,7 +7225,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_236"
+   "node": "b4_door_238"
   },
   {
    "door": 234,
@@ -7090,7 +7245,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_237"
+   "node": "b4_door_239"
   },
   {
    "door": 235,
@@ -7110,7 +7265,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 5,
-   "node": "b4_door_238"
+   "node": "b4_door_240"
   },
   {
    "door": 236,
@@ -7130,7 +7285,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 5,
-   "node": "b4_door_239"
+   "node": "b4_door_241"
   },
   {
    "door": 237,
@@ -7150,7 +7305,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_240"
+   "node": "b4_door_242"
   },
   {
    "door": 238,
@@ -7170,7 +7325,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_241"
+   "node": "b4_door_243"
   },
   {
    "door": 239,
@@ -7190,7 +7345,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_242"
+   "node": "b4_door_244"
   },
   {
    "door": 240,
@@ -7210,7 +7365,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_243"
+   "node": "b4_door_245"
   },
   {
    "door": 241,
@@ -7230,7 +7385,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 5,
-   "node": "b4_door_244"
+   "node": "b4_door_246"
   },
   {
    "door": 242,
@@ -7250,7 +7405,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 5,
-   "node": "b4_door_245"
+   "node": "b4_door_247"
   },
   {
    "door": 243,
@@ -7270,7 +7425,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_246"
+   "node": "b4_door_248"
   },
   {
    "door": 244,
@@ -7290,7 +7445,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_247"
+   "node": "b4_door_249"
   },
   {
    "door": 245,
@@ -7310,7 +7465,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_248"
+   "node": "b4_door_250"
   },
   {
    "door": 246,
@@ -7330,7 +7485,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 5,
-   "node": "b4_door_249"
+   "node": "b4_door_251"
   },
   {
    "door": 247,
@@ -7350,7 +7505,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 5,
-   "node": "b4_door_250"
+   "node": "b4_door_252"
   },
   {
    "door": 248,
@@ -7370,7 +7525,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 5,
-   "node": "b4_door_251"
+   "node": "b4_door_253"
   },
   {
    "door": 249,
@@ -7390,7 +7545,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 5,
-   "node": "b4_door_252"
+   "node": "b4_door_254"
   },
   {
    "door": 250,
@@ -7410,7 +7565,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_253"
+   "node": "b4_door_255"
   },
   {
    "door": 251,
@@ -7430,7 +7585,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 5,
-   "node": "b4_door_254"
+   "node": "b4_door_256"
   },
   {
    "door": 252,
@@ -7450,7 +7605,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 5,
-   "node": "b4_door_255"
+   "node": "b4_door_257"
   },
   {
    "door": 253,
@@ -7470,7 +7625,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_256"
+   "node": "b4_door_258"
   },
   {
    "door": 254,
@@ -7490,7 +7645,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_257"
+   "node": "b4_door_259"
   },
   {
    "door": 255,
@@ -7510,7 +7665,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_258"
+   "node": "b4_door_260"
   },
   {
    "door": 256,
@@ -7530,7 +7685,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_259"
+   "node": "b4_door_261"
   },
   {
    "door": 257,
@@ -7550,7 +7705,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 5,
-   "node": "b4_door_260"
+   "node": "b4_door_262"
   },
   {
    "door": 258,
@@ -7570,7 +7725,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 5,
-   "node": "b4_door_261"
+   "node": "b4_door_263"
   },
   {
    "door": 259,
@@ -7590,7 +7745,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_262"
+   "node": "b4_door_264"
   },
   {
    "door": 260,
@@ -7610,7 +7765,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_263"
+   "node": "b4_door_265"
   },
   {
    "door": 261,
@@ -7630,7 +7785,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_264"
+   "node": "b4_door_266"
   },
   {
    "door": 262,
@@ -7650,7 +7805,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 5,
-   "node": "b4_door_265"
+   "node": "b4_door_267"
   },
   {
    "door": 263,
@@ -7670,7 +7825,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 5,
-   "node": "b4_door_266"
+   "node": "b4_door_268"
   },
   {
    "door": 264,
@@ -7690,7 +7845,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_267"
+   "node": "b4_door_269"
   },
   {
    "door": 265,
@@ -7710,7 +7865,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_268"
+   "node": "b4_door_270"
   },
   {
    "door": 266,
@@ -7730,7 +7885,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 5,
-   "node": "b4_door_269"
+   "node": "b4_door_271"
   },
   {
    "door": 267,
@@ -7750,7 +7905,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 5,
-   "node": "b4_door_270"
+   "node": "b4_door_272"
   },
   {
    "door": 268,
@@ -7770,7 +7925,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_271"
+   "node": "b4_door_273"
   },
   {
    "door": 269,
@@ -7790,7 +7945,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 5,
-   "node": "b4_door_272"
+   "node": "b4_door_274"
   },
   {
    "door": 270,
@@ -7810,7 +7965,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 6,
-   "node": "b4_door_273"
+   "node": "b4_door_275"
   },
   {
    "door": 271,
@@ -7830,7 +7985,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 6,
-   "node": "b4_door_274"
+   "node": "b4_door_276"
   },
   {
    "door": 272,
@@ -7850,7 +8005,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 6,
-   "node": "b4_door_275"
+   "node": "b4_door_277"
   },
   {
    "door": 273,
@@ -7870,7 +8025,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 6,
-   "node": "b4_door_276"
+   "node": "b4_door_278"
   },
   {
    "door": 274,
@@ -7890,7 +8045,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 6,
-   "node": "b4_door_277"
+   "node": "b4_door_279"
   },
   {
    "door": 275,
@@ -7910,7 +8065,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_278"
+   "node": "b4_door_280"
   },
   {
    "door": 276,
@@ -7930,7 +8085,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_279"
+   "node": "b4_door_281"
   },
   {
    "door": 277,
@@ -7950,7 +8105,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_280"
+   "node": "b4_door_282"
   },
   {
    "door": 278,
@@ -7970,7 +8125,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_281"
+   "node": "b4_door_283"
   },
   {
    "door": 279,
@@ -7990,7 +8145,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_282"
+   "node": "b4_door_284"
   },
   {
    "door": 280,
@@ -8010,7 +8165,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 6,
-   "node": "b4_door_283"
+   "node": "b4_door_285"
   },
   {
    "door": 281,
@@ -8030,7 +8185,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 6,
-   "node": "b4_door_284"
+   "node": "b4_door_286"
   },
   {
    "door": 282,
@@ -8050,7 +8205,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_285"
+   "node": "b4_door_287"
   },
   {
    "door": 283,
@@ -8070,7 +8225,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_286"
+   "node": "b4_door_288"
   },
   {
    "door": 284,
@@ -8090,7 +8245,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_287"
+   "node": "b4_door_289"
   },
   {
    "door": 285,
@@ -8110,7 +8265,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_288"
+   "node": "b4_door_290"
   },
   {
    "door": 286,
@@ -8130,7 +8285,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 6,
-   "node": "b4_door_289"
+   "node": "b4_door_291"
   },
   {
    "door": 287,
@@ -8150,7 +8305,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 6,
-   "node": "b4_door_290"
+   "node": "b4_door_292"
   },
   {
    "door": 288,
@@ -8170,7 +8325,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_291"
+   "node": "b4_door_293"
   },
   {
    "door": 289,
@@ -8190,7 +8345,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_292"
+   "node": "b4_door_294"
   },
   {
    "door": 290,
@@ -8210,7 +8365,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_293"
+   "node": "b4_door_295"
   },
   {
    "door": 291,
@@ -8230,7 +8385,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 6,
-   "node": "b4_door_294"
+   "node": "b4_door_296"
   },
   {
    "door": 292,
@@ -8250,7 +8405,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 6,
-   "node": "b4_door_295"
+   "node": "b4_door_297"
   },
   {
    "door": 293,
@@ -8270,7 +8425,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 6,
-   "node": "b4_door_296"
+   "node": "b4_door_298"
   },
   {
    "door": 294,
@@ -8290,7 +8445,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 6,
-   "node": "b4_door_297"
+   "node": "b4_door_299"
   },
   {
    "door": 295,
@@ -8310,7 +8465,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_298"
+   "node": "b4_door_300"
   },
   {
    "door": 296,
@@ -8330,7 +8485,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 6,
-   "node": "b4_door_299"
+   "node": "b4_door_301"
   },
   {
    "door": 297,
@@ -8350,7 +8505,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 6,
-   "node": "b4_door_300"
+   "node": "b4_door_302"
   },
   {
    "door": 298,
@@ -8370,7 +8525,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_301"
+   "node": "b4_door_303"
   },
   {
    "door": 299,
@@ -8390,7 +8545,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_302"
+   "node": "b4_door_304"
   },
   {
    "door": 300,
@@ -8410,7 +8565,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_303"
+   "node": "b4_door_305"
   },
   {
    "door": 301,
@@ -8430,7 +8585,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_304"
+   "node": "b4_door_306"
   },
   {
    "door": 302,
@@ -8450,7 +8605,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 6,
-   "node": "b4_door_305"
+   "node": "b4_door_307"
   },
   {
    "door": 303,
@@ -8470,7 +8625,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 6,
-   "node": "b4_door_306"
+   "node": "b4_door_308"
   },
   {
    "door": 304,
@@ -8490,7 +8645,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_307"
+   "node": "b4_door_309"
   },
   {
    "door": 305,
@@ -8510,7 +8665,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_308"
+   "node": "b4_door_310"
   },
   {
    "door": 306,
@@ -8530,7 +8685,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_309"
+   "node": "b4_door_311"
   },
   {
    "door": 307,
@@ -8550,7 +8705,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 6,
-   "node": "b4_door_310"
+   "node": "b4_door_312"
   },
   {
    "door": 308,
@@ -8570,7 +8725,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 6,
-   "node": "b4_door_311"
+   "node": "b4_door_313"
   },
   {
    "door": 309,
@@ -8590,7 +8745,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_312"
+   "node": "b4_door_314"
   },
   {
    "door": 310,
@@ -8610,7 +8765,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_313"
+   "node": "b4_door_315"
   },
   {
    "door": 311,
@@ -8630,7 +8785,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 6,
-   "node": "b4_door_314"
+   "node": "b4_door_316"
   },
   {
    "door": 312,
@@ -8650,7 +8805,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 6,
-   "node": "b4_door_315"
+   "node": "b4_door_317"
   },
   {
    "door": 313,
@@ -8670,7 +8825,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_316"
+   "node": "b4_door_318"
   },
   {
    "door": 314,
@@ -8690,7 +8845,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 6,
-   "node": "b4_door_317"
+   "node": "b4_door_319"
   },
   {
    "door": 315,
@@ -8710,7 +8865,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 7,
-   "node": "b4_door_318"
+   "node": "b4_door_320"
   },
   {
    "door": 316,
@@ -8730,7 +8885,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 7,
-   "node": "b4_door_319"
+   "node": "b4_door_321"
   },
   {
    "door": 317,
@@ -8750,7 +8905,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 7,
-   "node": "b4_door_320"
+   "node": "b4_door_322"
   },
   {
    "door": 318,
@@ -8770,7 +8925,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 7,
-   "node": "b4_door_321"
+   "node": "b4_door_323"
   },
   {
    "door": 319,
@@ -8790,7 +8945,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 7,
-   "node": "b4_door_322"
+   "node": "b4_door_324"
   },
   {
    "door": 320,
@@ -8810,7 +8965,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_323"
+   "node": "b4_door_325"
   },
   {
    "door": 321,
@@ -8830,7 +8985,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_324"
+   "node": "b4_door_326"
   },
   {
    "door": 322,
@@ -8850,7 +9005,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_325"
+   "node": "b4_door_327"
   },
   {
    "door": 323,
@@ -8870,7 +9025,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_326"
+   "node": "b4_door_328"
   },
   {
    "door": 324,
@@ -8890,7 +9045,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_327"
+   "node": "b4_door_329"
   },
   {
    "door": 325,
@@ -8910,7 +9065,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 7,
-   "node": "b4_door_328"
+   "node": "b4_door_330"
   },
   {
    "door": 326,
@@ -8930,7 +9085,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 7,
-   "node": "b4_door_329"
+   "node": "b4_door_331"
   },
   {
    "door": 327,
@@ -8950,7 +9105,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_330"
+   "node": "b4_door_332"
   },
   {
    "door": 328,
@@ -8970,7 +9125,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_331"
+   "node": "b4_door_333"
   },
   {
    "door": 329,
@@ -8990,7 +9145,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_332"
+   "node": "b4_door_334"
   },
   {
    "door": 330,
@@ -9010,7 +9165,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_333"
+   "node": "b4_door_335"
   },
   {
    "door": 331,
@@ -9030,7 +9185,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 7,
-   "node": "b4_door_334"
+   "node": "b4_door_336"
   },
   {
    "door": 332,
@@ -9050,7 +9205,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 7,
-   "node": "b4_door_335"
+   "node": "b4_door_337"
   },
   {
    "door": 333,
@@ -9070,7 +9225,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_336"
+   "node": "b4_door_338"
   },
   {
    "door": 334,
@@ -9090,7 +9245,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_337"
+   "node": "b4_door_339"
   },
   {
    "door": 335,
@@ -9110,7 +9265,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_338"
+   "node": "b4_door_340"
   },
   {
    "door": 336,
@@ -9130,7 +9285,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 7,
-   "node": "b4_door_339"
+   "node": "b4_door_341"
   },
   {
    "door": 337,
@@ -9150,7 +9305,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 7,
-   "node": "b4_door_340"
+   "node": "b4_door_342"
   },
   {
    "door": 338,
@@ -9170,7 +9325,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 7,
-   "node": "b4_door_341"
+   "node": "b4_door_343"
   },
   {
    "door": 339,
@@ -9190,7 +9345,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 7,
-   "node": "b4_door_342"
+   "node": "b4_door_344"
   },
   {
    "door": 340,
@@ -9210,7 +9365,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_343"
+   "node": "b4_door_345"
   },
   {
    "door": 341,
@@ -9230,7 +9385,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 7,
-   "node": "b4_door_344"
+   "node": "b4_door_346"
   },
   {
    "door": 342,
@@ -9250,7 +9405,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 7,
-   "node": "b4_door_345"
+   "node": "b4_door_347"
   },
   {
    "door": 343,
@@ -9270,7 +9425,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_346"
+   "node": "b4_door_348"
   },
   {
    "door": 344,
@@ -9290,7 +9445,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_347"
+   "node": "b4_door_349"
   },
   {
    "door": 345,
@@ -9310,7 +9465,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_348"
+   "node": "b4_door_350"
   },
   {
    "door": 346,
@@ -9330,7 +9485,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_349"
+   "node": "b4_door_351"
   },
   {
    "door": 347,
@@ -9350,7 +9505,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 7,
-   "node": "b4_door_350"
+   "node": "b4_door_352"
   },
   {
    "door": 348,
@@ -9370,7 +9525,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 7,
-   "node": "b4_door_351"
+   "node": "b4_door_353"
   },
   {
    "door": 349,
@@ -9390,7 +9545,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_352"
+   "node": "b4_door_354"
   },
   {
    "door": 350,
@@ -9410,7 +9565,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_353"
+   "node": "b4_door_355"
   },
   {
    "door": 351,
@@ -9430,7 +9585,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_354"
+   "node": "b4_door_356"
   },
   {
    "door": 352,
@@ -9450,7 +9605,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 7,
-   "node": "b4_door_355"
+   "node": "b4_door_357"
   },
   {
    "door": 353,
@@ -9470,7 +9625,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 7,
-   "node": "b4_door_356"
+   "node": "b4_door_358"
   },
   {
    "door": 354,
@@ -9490,7 +9645,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_357"
+   "node": "b4_door_359"
   },
   {
    "door": 355,
@@ -9510,7 +9665,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_358"
+   "node": "b4_door_360"
   },
   {
    "door": 356,
@@ -9530,7 +9685,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 7,
-   "node": "b4_door_359"
+   "node": "b4_door_361"
   },
   {
    "door": 357,
@@ -9550,7 +9705,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 7,
-   "node": "b4_door_360"
+   "node": "b4_door_362"
   },
   {
    "door": 358,
@@ -9570,7 +9725,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_361"
+   "node": "b4_door_363"
   },
   {
    "door": 359,
@@ -9590,7 +9745,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 7,
-   "node": "b4_door_362"
+   "node": "b4_door_364"
   },
   {
    "door": 360,
@@ -9610,7 +9765,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 8,
-   "node": "b4_door_363"
+   "node": "b4_door_365"
   },
   {
    "door": 361,
@@ -9630,7 +9785,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 8,
-   "node": "b4_door_364"
+   "node": "b4_door_366"
   },
   {
    "door": 362,
@@ -9650,7 +9805,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 8,
-   "node": "b4_door_365"
+   "node": "b4_door_367"
   },
   {
    "door": 363,
@@ -9670,7 +9825,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 8,
-   "node": "b4_door_366"
+   "node": "b4_door_368"
   },
   {
    "door": 364,
@@ -9690,7 +9845,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 8,
-   "node": "b4_door_367"
+   "node": "b4_door_369"
   },
   {
    "door": 365,
@@ -9710,7 +9865,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_368"
+   "node": "b4_door_370"
   },
   {
    "door": 366,
@@ -9730,7 +9885,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_369"
+   "node": "b4_door_371"
   },
   {
    "door": 367,
@@ -9750,7 +9905,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_370"
+   "node": "b4_door_372"
   },
   {
    "door": 368,
@@ -9770,7 +9925,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_371"
+   "node": "b4_door_373"
   },
   {
    "door": 369,
@@ -9790,7 +9945,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_372"
+   "node": "b4_door_374"
   },
   {
    "door": 370,
@@ -9810,7 +9965,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 8,
-   "node": "b4_door_373"
+   "node": "b4_door_375"
   },
   {
    "door": 371,
@@ -9830,7 +9985,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 8,
-   "node": "b4_door_374"
+   "node": "b4_door_376"
   },
   {
    "door": 372,
@@ -9850,7 +10005,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_375"
+   "node": "b4_door_377"
   },
   {
    "door": 373,
@@ -9870,7 +10025,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_376"
+   "node": "b4_door_378"
   },
   {
    "door": 374,
@@ -9890,7 +10045,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_377"
+   "node": "b4_door_379"
   },
   {
    "door": 375,
@@ -9910,7 +10065,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_378"
+   "node": "b4_door_380"
   },
   {
    "door": 376,
@@ -9930,7 +10085,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 8,
-   "node": "b4_door_379"
+   "node": "b4_door_381"
   },
   {
    "door": 377,
@@ -9950,7 +10105,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 8,
-   "node": "b4_door_380"
+   "node": "b4_door_382"
   },
   {
    "door": 378,
@@ -9970,7 +10125,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_381"
+   "node": "b4_door_383"
   },
   {
    "door": 379,
@@ -9990,7 +10145,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_382"
+   "node": "b4_door_384"
   },
   {
    "door": 380,
@@ -10010,7 +10165,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_383"
+   "node": "b4_door_385"
   },
   {
    "door": 381,
@@ -10030,7 +10185,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 8,
-   "node": "b4_door_384"
+   "node": "b4_door_386"
   },
   {
    "door": 382,
@@ -10050,7 +10205,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 8,
-   "node": "b4_door_385"
+   "node": "b4_door_387"
   },
   {
    "door": 383,
@@ -10070,7 +10225,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 8,
-   "node": "b4_door_386"
+   "node": "b4_door_388"
   },
   {
    "door": 384,
@@ -10090,7 +10245,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 8,
-   "node": "b4_door_387"
+   "node": "b4_door_389"
   },
   {
    "door": 385,
@@ -10110,7 +10265,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_388"
+   "node": "b4_door_390"
   },
   {
    "door": 386,
@@ -10130,7 +10285,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 8,
-   "node": "b4_door_389"
+   "node": "b4_door_391"
   },
   {
    "door": 387,
@@ -10150,7 +10305,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 8,
-   "node": "b4_door_390"
+   "node": "b4_door_392"
   },
   {
    "door": 388,
@@ -10170,7 +10325,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_391"
+   "node": "b4_door_393"
   },
   {
    "door": 389,
@@ -10190,7 +10345,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_392"
+   "node": "b4_door_394"
   },
   {
    "door": 390,
@@ -10210,7 +10365,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_393"
+   "node": "b4_door_395"
   },
   {
    "door": 391,
@@ -10230,7 +10385,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_394"
+   "node": "b4_door_396"
   },
   {
    "door": 392,
@@ -10250,7 +10405,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 8,
-   "node": "b4_door_395"
+   "node": "b4_door_397"
   },
   {
    "door": 393,
@@ -10270,7 +10425,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 8,
-   "node": "b4_door_396"
+   "node": "b4_door_398"
   },
   {
    "door": 394,
@@ -10290,7 +10445,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_397"
+   "node": "b4_door_399"
   },
   {
    "door": 395,
@@ -10310,7 +10465,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_398"
+   "node": "b4_door_400"
   },
   {
    "door": 396,
@@ -10330,7 +10485,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_399"
+   "node": "b4_door_401"
   },
   {
    "door": 397,
@@ -10350,7 +10505,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 8,
-   "node": "b4_door_400"
+   "node": "b4_door_402"
   },
   {
    "door": 398,
@@ -10370,7 +10525,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 8,
-   "node": "b4_door_401"
+   "node": "b4_door_403"
   },
   {
    "door": 399,
@@ -10390,7 +10545,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_402"
+   "node": "b4_door_404"
   },
   {
    "door": 400,
@@ -10410,7 +10565,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_403"
+   "node": "b4_door_405"
   },
   {
    "door": 401,
@@ -10430,7 +10585,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 8,
-   "node": "b4_door_404"
+   "node": "b4_door_406"
   },
   {
    "door": 402,
@@ -10450,7 +10605,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 8,
-   "node": "b4_door_405"
+   "node": "b4_door_407"
   },
   {
    "door": 403,
@@ -10470,7 +10625,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_406"
+   "node": "b4_door_408"
   },
   {
    "door": 404,
@@ -10490,7 +10645,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 8,
-   "node": "b4_door_407"
+   "node": "b4_door_409"
   },
   {
    "door": 405,
@@ -10510,7 +10665,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 9,
-   "node": "b4_door_408"
+   "node": "b4_door_410"
   },
   {
    "door": 406,
@@ -10530,7 +10685,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 9,
-   "node": "b4_door_409"
+   "node": "b4_door_411"
   },
   {
    "door": 407,
@@ -10550,7 +10705,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 9,
-   "node": "b4_door_410"
+   "node": "b4_door_412"
   },
   {
    "door": 408,
@@ -10570,7 +10725,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 9,
-   "node": "b4_door_411"
+   "node": "b4_door_413"
   },
   {
    "door": 409,
@@ -10590,7 +10745,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 9,
-   "node": "b4_door_412"
+   "node": "b4_door_414"
   },
   {
    "door": 410,
@@ -10610,7 +10765,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_413"
+   "node": "b4_door_415"
   },
   {
    "door": 411,
@@ -10630,7 +10785,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_414"
+   "node": "b4_door_416"
   },
   {
    "door": 412,
@@ -10650,7 +10805,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_415"
+   "node": "b4_door_417"
   },
   {
    "door": 413,
@@ -10670,7 +10825,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_416"
+   "node": "b4_door_418"
   },
   {
    "door": 414,
@@ -10690,7 +10845,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_417"
+   "node": "b4_door_419"
   },
   {
    "door": 415,
@@ -10710,7 +10865,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 9,
-   "node": "b4_door_418"
+   "node": "b4_door_420"
   },
   {
    "door": 416,
@@ -10730,7 +10885,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 9,
-   "node": "b4_door_419"
+   "node": "b4_door_421"
   },
   {
    "door": 417,
@@ -10750,7 +10905,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_420"
+   "node": "b4_door_422"
   },
   {
    "door": 418,
@@ -10770,7 +10925,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_421"
+   "node": "b4_door_423"
   },
   {
    "door": 419,
@@ -10790,7 +10945,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_422"
+   "node": "b4_door_424"
   },
   {
    "door": 420,
@@ -10810,7 +10965,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_423"
+   "node": "b4_door_425"
   },
   {
    "door": 421,
@@ -10830,7 +10985,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 9,
-   "node": "b4_door_424"
+   "node": "b4_door_426"
   },
   {
    "door": 422,
@@ -10850,7 +11005,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 9,
-   "node": "b4_door_425"
+   "node": "b4_door_427"
   },
   {
    "door": 423,
@@ -10870,7 +11025,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_426"
+   "node": "b4_door_428"
   },
   {
    "door": 424,
@@ -10890,7 +11045,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_427"
+   "node": "b4_door_429"
   },
   {
    "door": 425,
@@ -10910,7 +11065,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_428"
+   "node": "b4_door_430"
   },
   {
    "door": 426,
@@ -10930,7 +11085,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 9,
-   "node": "b4_door_429"
+   "node": "b4_door_431"
   },
   {
    "door": 427,
@@ -10950,7 +11105,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 9,
-   "node": "b4_door_430"
+   "node": "b4_door_432"
   },
   {
    "door": 428,
@@ -10970,7 +11125,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 9,
-   "node": "b4_door_431"
+   "node": "b4_door_433"
   },
   {
    "door": 429,
@@ -10990,7 +11145,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 9,
-   "node": "b4_door_432"
+   "node": "b4_door_434"
   },
   {
    "door": 430,
@@ -11010,7 +11165,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_433"
+   "node": "b4_door_435"
   },
   {
    "door": 431,
@@ -11030,7 +11185,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 9,
-   "node": "b4_door_434"
+   "node": "b4_door_436"
   },
   {
    "door": 432,
@@ -11050,7 +11205,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 9,
-   "node": "b4_door_435"
+   "node": "b4_door_437"
   },
   {
    "door": 433,
@@ -11070,7 +11225,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_436"
+   "node": "b4_door_438"
   },
   {
    "door": 434,
@@ -11090,7 +11245,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_437"
+   "node": "b4_door_439"
   },
   {
    "door": 435,
@@ -11110,7 +11265,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_438"
+   "node": "b4_door_440"
   },
   {
    "door": 436,
@@ -11130,7 +11285,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_439"
+   "node": "b4_door_441"
   },
   {
    "door": 437,
@@ -11150,7 +11305,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 9,
-   "node": "b4_door_440"
+   "node": "b4_door_442"
   },
   {
    "door": 438,
@@ -11170,7 +11325,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 9,
-   "node": "b4_door_441"
+   "node": "b4_door_443"
   },
   {
    "door": 439,
@@ -11190,7 +11345,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_442"
+   "node": "b4_door_444"
   },
   {
    "door": 440,
@@ -11210,7 +11365,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_443"
+   "node": "b4_door_445"
   },
   {
    "door": 441,
@@ -11230,7 +11385,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_444"
+   "node": "b4_door_446"
   },
   {
    "door": 442,
@@ -11250,7 +11405,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 9,
-   "node": "b4_door_445"
+   "node": "b4_door_447"
   },
   {
    "door": 443,
@@ -11270,7 +11425,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 9,
-   "node": "b4_door_446"
+   "node": "b4_door_448"
   },
   {
    "door": 444,
@@ -11290,7 +11445,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_447"
+   "node": "b4_door_449"
   },
   {
    "door": 445,
@@ -11310,7 +11465,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_448"
+   "node": "b4_door_450"
   },
   {
    "door": 446,
@@ -11330,7 +11485,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 9,
-   "node": "b4_door_449"
+   "node": "b4_door_451"
   },
   {
    "door": 447,
@@ -11350,7 +11505,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 9,
-   "node": "b4_door_450"
+   "node": "b4_door_452"
   },
   {
    "door": 448,
@@ -11370,7 +11525,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_451"
+   "node": "b4_door_453"
   },
   {
    "door": 449,
@@ -11390,7 +11545,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 9,
-   "node": "b4_door_452"
+   "node": "b4_door_454"
   },
   {
    "door": 450,
@@ -11410,7 +11565,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 10,
-   "node": "b4_door_453"
+   "node": "b4_door_455"
   },
   {
    "door": 451,
@@ -11430,7 +11585,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 10,
-   "node": "b4_door_454"
+   "node": "b4_door_456"
   },
   {
    "door": 452,
@@ -11450,7 +11605,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 10,
-   "node": "b4_door_455"
+   "node": "b4_door_457"
   },
   {
    "door": 453,
@@ -11470,7 +11625,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 10,
-   "node": "b4_door_456"
+   "node": "b4_door_458"
   },
   {
    "door": 454,
@@ -11490,7 +11645,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 10,
-   "node": "b4_door_457"
+   "node": "b4_door_459"
   },
   {
    "door": 455,
@@ -11510,7 +11665,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_458"
+   "node": "b4_door_460"
   },
   {
    "door": 456,
@@ -11530,7 +11685,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_459"
+   "node": "b4_door_461"
   },
   {
    "door": 457,
@@ -11550,7 +11705,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_460"
+   "node": "b4_door_462"
   },
   {
    "door": 458,
@@ -11570,7 +11725,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_461"
+   "node": "b4_door_463"
   },
   {
    "door": 459,
@@ -11590,7 +11745,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_462"
+   "node": "b4_door_464"
   },
   {
    "door": 460,
@@ -11610,7 +11765,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 10,
-   "node": "b4_door_463"
+   "node": "b4_door_465"
   },
   {
    "door": 461,
@@ -11630,7 +11785,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 10,
-   "node": "b4_door_464"
+   "node": "b4_door_466"
   },
   {
    "door": 462,
@@ -11650,7 +11805,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_465"
+   "node": "b4_door_467"
   },
   {
    "door": 463,
@@ -11670,7 +11825,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_466"
+   "node": "b4_door_468"
   },
   {
    "door": 464,
@@ -11690,7 +11845,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_467"
+   "node": "b4_door_469"
   },
   {
    "door": 465,
@@ -11710,7 +11865,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_468"
+   "node": "b4_door_470"
   },
   {
    "door": 466,
@@ -11730,7 +11885,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 10,
-   "node": "b4_door_469"
+   "node": "b4_door_471"
   },
   {
    "door": 467,
@@ -11750,7 +11905,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 10,
-   "node": "b4_door_470"
+   "node": "b4_door_472"
   },
   {
    "door": 468,
@@ -11770,7 +11925,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_471"
+   "node": "b4_door_473"
   },
   {
    "door": 469,
@@ -11790,7 +11945,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_472"
+   "node": "b4_door_474"
   },
   {
    "door": 470,
@@ -11810,7 +11965,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_473"
+   "node": "b4_door_475"
   },
   {
    "door": 471,
@@ -11830,7 +11985,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 10,
-   "node": "b4_door_474"
+   "node": "b4_door_476"
   },
   {
    "door": 472,
@@ -11850,7 +12005,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 10,
-   "node": "b4_door_475"
+   "node": "b4_door_477"
   },
   {
    "door": 473,
@@ -11870,7 +12025,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 10,
-   "node": "b4_door_476"
+   "node": "b4_door_478"
   },
   {
    "door": 474,
@@ -11890,7 +12045,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 10,
-   "node": "b4_door_477"
+   "node": "b4_door_479"
   },
   {
    "door": 475,
@@ -11910,7 +12065,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_478"
+   "node": "b4_door_480"
   },
   {
    "door": 476,
@@ -11930,7 +12085,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 10,
-   "node": "b4_door_479"
+   "node": "b4_door_481"
   },
   {
    "door": 477,
@@ -11950,7 +12105,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 10,
-   "node": "b4_door_480"
+   "node": "b4_door_482"
   },
   {
    "door": 478,
@@ -11970,7 +12125,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_481"
+   "node": "b4_door_483"
   },
   {
    "door": 479,
@@ -11990,7 +12145,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_482"
+   "node": "b4_door_484"
   },
   {
    "door": 480,
@@ -12010,7 +12165,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_483"
+   "node": "b4_door_485"
   },
   {
    "door": 481,
@@ -12030,7 +12185,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_484"
+   "node": "b4_door_486"
   },
   {
    "door": 482,
@@ -12050,7 +12205,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 10,
-   "node": "b4_door_485"
+   "node": "b4_door_487"
   },
   {
    "door": 483,
@@ -12070,7 +12225,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 10,
-   "node": "b4_door_486"
+   "node": "b4_door_488"
   },
   {
    "door": 484,
@@ -12090,7 +12245,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_487"
+   "node": "b4_door_489"
   },
   {
    "door": 485,
@@ -12110,7 +12265,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_488"
+   "node": "b4_door_490"
   },
   {
    "door": 486,
@@ -12130,7 +12285,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_489"
+   "node": "b4_door_491"
   },
   {
    "door": 487,
@@ -12150,7 +12305,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 10,
-   "node": "b4_door_490"
+   "node": "b4_door_492"
   },
   {
    "door": 488,
@@ -12170,7 +12325,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 10,
-   "node": "b4_door_491"
+   "node": "b4_door_493"
   },
   {
    "door": 489,
@@ -12190,7 +12345,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_492"
+   "node": "b4_door_494"
   },
   {
    "door": 490,
@@ -12210,7 +12365,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_493"
+   "node": "b4_door_495"
   },
   {
    "door": 491,
@@ -12230,7 +12385,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 10,
-   "node": "b4_door_494"
+   "node": "b4_door_496"
   },
   {
    "door": 492,
@@ -12250,7 +12405,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 10,
-   "node": "b4_door_495"
+   "node": "b4_door_497"
   },
   {
    "door": 493,
@@ -12270,7 +12425,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_496"
+   "node": "b4_door_498"
   },
   {
    "door": 494,
@@ -12290,7 +12445,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 10,
-   "node": "b4_door_497"
+   "node": "b4_door_499"
   },
   {
    "door": 495,
@@ -12310,7 +12465,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 11,
-   "node": "b4_door_498"
+   "node": "b4_door_500"
   },
   {
    "door": 496,
@@ -12330,7 +12485,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 11,
-   "node": "b4_door_499"
+   "node": "b4_door_501"
   },
   {
    "door": 497,
@@ -12350,7 +12505,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 11,
-   "node": "b4_door_500"
+   "node": "b4_door_502"
   },
   {
    "door": 498,
@@ -12370,7 +12525,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 11,
-   "node": "b4_door_501"
+   "node": "b4_door_503"
   },
   {
    "door": 499,
@@ -12390,7 +12545,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 11,
-   "node": "b4_door_502"
+   "node": "b4_door_504"
   },
   {
    "door": 500,
@@ -12410,7 +12565,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_503"
+   "node": "b4_door_505"
   },
   {
    "door": 501,
@@ -12430,7 +12585,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_504"
+   "node": "b4_door_506"
   },
   {
    "door": 502,
@@ -12450,7 +12605,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_505"
+   "node": "b4_door_507"
   },
   {
    "door": 503,
@@ -12470,7 +12625,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_506"
+   "node": "b4_door_508"
   },
   {
    "door": 504,
@@ -12490,7 +12645,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_507"
+   "node": "b4_door_509"
   },
   {
    "door": 505,
@@ -12510,7 +12665,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 11,
-   "node": "b4_door_508"
+   "node": "b4_door_510"
   },
   {
    "door": 506,
@@ -12530,7 +12685,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 11,
-   "node": "b4_door_509"
+   "node": "b4_door_511"
   },
   {
    "door": 507,
@@ -12550,7 +12705,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_510"
+   "node": "b4_door_512"
   },
   {
    "door": 508,
@@ -12570,7 +12725,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_511"
+   "node": "b4_door_513"
   },
   {
    "door": 509,
@@ -12590,7 +12745,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_512"
+   "node": "b4_door_514"
   },
   {
    "door": 510,
@@ -12610,7 +12765,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_513"
+   "node": "b4_door_515"
   },
   {
    "door": 511,
@@ -12630,7 +12785,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 11,
-   "node": "b4_door_514"
+   "node": "b4_door_516"
   },
   {
    "door": 512,
@@ -12650,7 +12805,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 11,
-   "node": "b4_door_515"
+   "node": "b4_door_517"
   },
   {
    "door": 513,
@@ -12670,7 +12825,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_516"
+   "node": "b4_door_518"
   },
   {
    "door": 514,
@@ -12690,7 +12845,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_517"
+   "node": "b4_door_519"
   },
   {
    "door": 515,
@@ -12710,7 +12865,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_518"
+   "node": "b4_door_520"
   },
   {
    "door": 516,
@@ -12730,7 +12885,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 11,
-   "node": "b4_door_519"
+   "node": "b4_door_521"
   },
   {
    "door": 517,
@@ -12750,7 +12905,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 11,
-   "node": "b4_door_520"
+   "node": "b4_door_522"
   },
   {
    "door": 518,
@@ -12770,7 +12925,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 11,
-   "node": "b4_door_521"
+   "node": "b4_door_523"
   },
   {
    "door": 519,
@@ -12790,7 +12945,7 @@
    "leaf": "single",
    "kind": "entry",
    "floor": 11,
-   "node": "b4_door_522"
+   "node": "b4_door_524"
   },
   {
    "door": 520,
@@ -12810,7 +12965,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_523"
+   "node": "b4_door_525"
   },
   {
    "door": 521,
@@ -12830,7 +12985,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 11,
-   "node": "b4_door_524"
+   "node": "b4_door_526"
   },
   {
    "door": 522,
@@ -12850,7 +13005,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 11,
-   "node": "b4_door_525"
+   "node": "b4_door_527"
   },
   {
    "door": 523,
@@ -12870,7 +13025,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_526"
+   "node": "b4_door_528"
   },
   {
    "door": 524,
@@ -12890,7 +13045,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_527"
+   "node": "b4_door_529"
   },
   {
    "door": 525,
@@ -12910,7 +13065,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_528"
+   "node": "b4_door_530"
   },
   {
    "door": 526,
@@ -12930,7 +13085,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_529"
+   "node": "b4_door_531"
   },
   {
    "door": 527,
@@ -12950,7 +13105,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 11,
-   "node": "b4_door_530"
+   "node": "b4_door_532"
   },
   {
    "door": 528,
@@ -12970,7 +13125,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 11,
-   "node": "b4_door_531"
+   "node": "b4_door_533"
   },
   {
    "door": 529,
@@ -12990,7 +13145,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_532"
+   "node": "b4_door_534"
   },
   {
    "door": 530,
@@ -13010,7 +13165,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_533"
+   "node": "b4_door_535"
   },
   {
    "door": 531,
@@ -13030,7 +13185,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_534"
+   "node": "b4_door_536"
   },
   {
    "door": 532,
@@ -13050,7 +13205,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 11,
-   "node": "b4_door_535"
+   "node": "b4_door_537"
   },
   {
    "door": 533,
@@ -13070,7 +13225,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 11,
-   "node": "b4_door_536"
+   "node": "b4_door_538"
   },
   {
    "door": 534,
@@ -13090,7 +13245,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_537"
+   "node": "b4_door_539"
   },
   {
    "door": 535,
@@ -13110,7 +13265,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_538"
+   "node": "b4_door_540"
   },
   {
    "door": 536,
@@ -13130,7 +13285,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 11,
-   "node": "b4_door_539"
+   "node": "b4_door_541"
   },
   {
    "door": 537,
@@ -13150,7 +13305,7 @@
    "leaf": "single",
    "kind": "bath",
    "floor": 11,
-   "node": "b4_door_540"
+   "node": "b4_door_542"
   },
   {
    "door": 538,
@@ -13170,7 +13325,7 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_541"
+   "node": "b4_door_543"
   },
   {
    "door": 539,
@@ -13190,7 +13345,107 @@
    "leaf": "single",
    "kind": "room",
    "floor": 11,
-   "node": "b4_door_542"
+   "node": "b4_door_544"
+  },
+  {
+   "door": 548,
+   "hinge": [
+    109.85,
+    -1.2,
+    22.386
+   ],
+   "swing": 1,
+   "rest_center": [
+    109.871,
+    -0.178,
+    22.0
+   ],
+   "open_into": "fb_r011",
+   "width": 0.772,
+   "leaf": "single",
+   "kind": "boiler",
+   "floor": -1,
+   "node": "b4_door_545"
+  },
+  {
+   "door": 552,
+   "hinge": [
+    104.15,
+    -1.2,
+    22.386
+   ],
+   "swing": -1,
+   "rest_center": [
+    104.129,
+    -0.178,
+    22.0
+   ],
+   "open_into": "fb_r011",
+   "width": 0.772,
+   "leaf": "single",
+   "kind": "shelter",
+   "floor": -1,
+   "node": "b4_door_546"
+  },
+  {
+   "door": 553,
+   "hinge": [
+    104.15,
+    -1.2,
+    19.386
+   ],
+   "swing": -1,
+   "rest_center": [
+    104.129,
+    -0.178,
+    19.0
+   ],
+   "open_into": "fb_r011",
+   "width": 0.772,
+   "leaf": "single",
+   "kind": "shelter",
+   "floor": -1,
+   "node": "b4_door_547"
+  },
+  {
+   "door": 562,
+   "hinge": [
+    86.15,
+    -1.2,
+    22.386
+   ],
+   "swing": -1,
+   "rest_center": [
+    86.129,
+    -0.178,
+    22.0
+   ],
+   "open_into": "fb_r013",
+   "width": 0.772,
+   "leaf": "single",
+   "kind": "electrical",
+   "floor": -1,
+   "node": "b4_door_548"
+  },
+  {
+   "door": 567,
+   "hinge": [
+    116.0,
+    -1.2,
+    28.436
+   ],
+   "swing": -1,
+   "rest_center": [
+    115.979,
+    -0.278,
+    28.0
+   ],
+   "open_into": "fb_r015",
+   "width": 0.872,
+   "leaf": "single",
+   "kind": "pit",
+   "floor": -1,
+   "node": "b4_door_549"
   }
  ],
  "apartments": [
@@ -35733,6 +35988,454 @@
    ]
   },
   {
+   "id": "fb_r000",
+   "floor": -1,
+   "y": -1.2,
+   "apartment": null,
+   "type": "lestnica v podval",
+   "kind_en": "stair",
+   "name": "подвал, лестница 1",
+   "area_m2": 10.5,
+   "polygon_xz": [
+    [
+     109.88,
+     31.38
+    ],
+    [
+     107.12,
+     31.38
+    ],
+    [
+     107.12,
+     27.577
+    ],
+    [
+     109.88,
+     27.577
+    ]
+   ]
+  },
+  {
+   "id": "fb_r001",
+   "floor": -1,
+   "y": -1.2,
+   "apartment": null,
+   "type": "lestnica v podval",
+   "kind_en": "stair",
+   "name": "подвал, лестница 2",
+   "area_m2": 10.5,
+   "polygon_xz": [
+    [
+     88.88,
+     31.38
+    ],
+    [
+     86.12,
+     31.38
+    ],
+    [
+     86.12,
+     27.577
+    ],
+    [
+     88.88,
+     27.577
+    ]
+   ]
+  },
+  {
+   "id": "fb_r002",
+   "floor": -1,
+   "y": -1.2,
+   "apartment": null,
+   "type": "kladovki zhil'cov",
+   "kind_en": "storage",
+   "name": "подвал, кладовки жильцов",
+   "area_m2": 54.0,
+   "polygon_xz": [
+    [
+     116.0,
+     32.5
+    ],
+    [
+     110.0,
+     32.5
+    ],
+    [
+     110.0,
+     23.5
+    ],
+    [
+     116.0,
+     23.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r003",
+   "floor": -1,
+   "y": -1.2,
+   "apartment": null,
+   "type": "podval",
+   "kind_en": "basement",
+   "name": "подвал, подвал",
+   "area_m2": 27.0,
+   "polygon_xz": [
+    [
+     107.0,
+     32.5
+    ],
+    [
+     104.0,
+     32.5
+    ],
+    [
+     104.0,
+     23.5
+    ],
+    [
+     107.0,
+     23.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r004",
+   "floor": -1,
+   "y": -1.2,
+   "apartment": null,
+   "type": "podval",
+   "kind_en": "basement",
+   "name": "подвал, подвал",
+   "area_m2": 12.23,
+   "polygon_xz": [
+    [
+     110.0,
+     27.577
+    ],
+    [
+     107.0,
+     27.577
+    ],
+    [
+     107.0,
+     23.5
+    ],
+    [
+     110.0,
+     23.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r005",
+   "floor": -1,
+   "y": -1.2,
+   "apartment": null,
+   "type": "podval",
+   "kind_en": "basement",
+   "name": "подвал, подвал",
+   "area_m2": 54.0,
+   "polygon_xz": [
+    [
+     104.0,
+     32.5
+    ],
+    [
+     98.0,
+     32.5
+    ],
+    [
+     98.0,
+     23.5
+    ],
+    [
+     104.0,
+     23.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r006",
+   "floor": -1,
+   "y": -1.2,
+   "apartment": null,
+   "type": "podval",
+   "kind_en": "basement",
+   "name": "подвал, подвал",
+   "area_m2": 54.0,
+   "polygon_xz": [
+    [
+     98.0,
+     32.5
+    ],
+    [
+     92.0,
+     32.5
+    ],
+    [
+     92.0,
+     23.5
+    ],
+    [
+     98.0,
+     23.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r007",
+   "floor": -1,
+   "y": -1.2,
+   "apartment": null,
+   "type": "podval",
+   "kind_en": "basement",
+   "name": "подвал, подвал",
+   "area_m2": 27.0,
+   "polygon_xz": [
+    [
+     92.0,
+     32.5
+    ],
+    [
+     89.0,
+     32.5
+    ],
+    [
+     89.0,
+     23.5
+    ],
+    [
+     92.0,
+     23.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r008",
+   "floor": -1,
+   "y": -1.2,
+   "apartment": null,
+   "type": "podval",
+   "kind_en": "basement",
+   "name": "подвал, подвал",
+   "area_m2": 12.23,
+   "polygon_xz": [
+    [
+     89.0,
+     27.577
+    ],
+    [
+     86.0,
+     27.577
+    ],
+    [
+     86.0,
+     23.5
+    ],
+    [
+     89.0,
+     23.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r009",
+   "floor": -1,
+   "y": -1.2,
+   "apartment": null,
+   "type": "kladovki zhil'cov",
+   "kind_en": "storage",
+   "name": "подвал, кладовки жильцов",
+   "area_m2": 54.0,
+   "polygon_xz": [
+    [
+     86.0,
+     32.5
+    ],
+    [
+     80.0,
+     32.5
+    ],
+    [
+     80.0,
+     23.5
+    ],
+    [
+     86.0,
+     23.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r010",
+   "floor": -1,
+   "y": -1.2,
+   "apartment": null,
+   "type": "teplovoy uzel",
+   "kind_en": "boiler",
+   "name": "подвал, тепловой узел",
+   "area_m2": 54.0,
+   "polygon_xz": [
+    [
+     116.0,
+     23.5
+    ],
+    [
+     110.0,
+     23.5
+    ],
+    [
+     110.0,
+     14.5
+    ],
+    [
+     116.0,
+     14.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r011",
+   "floor": -1,
+   "y": -1.2,
+   "apartment": null,
+   "type": "podval",
+   "kind_en": "basement",
+   "name": "подвал, подвал",
+   "area_m2": 54.0,
+   "polygon_xz": [
+    [
+     110.0,
+     23.5
+    ],
+    [
+     104.0,
+     23.5
+    ],
+    [
+     104.0,
+     14.5
+    ],
+    [
+     110.0,
+     14.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r012",
+   "floor": -1,
+   "y": -1.2,
+   "apartment": null,
+   "type": "ubezhishche",
+   "kind_en": "shelter",
+   "name": "подвал, убежище",
+   "area_m2": 108.0,
+   "polygon_xz": [
+    [
+     104.0,
+     23.5
+    ],
+    [
+     92.0,
+     23.5
+    ],
+    [
+     92.0,
+     14.5
+    ],
+    [
+     104.0,
+     14.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r013",
+   "floor": -1,
+   "y": -1.2,
+   "apartment": null,
+   "type": "podval",
+   "kind_en": "basement",
+   "name": "подвал, подвал",
+   "area_m2": 54.0,
+   "polygon_xz": [
+    [
+     92.0,
+     23.5
+    ],
+    [
+     86.0,
+     23.5
+    ],
+    [
+     86.0,
+     14.5
+    ],
+    [
+     92.0,
+     14.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r014",
+   "floor": -1,
+   "y": -1.2,
+   "apartment": null,
+   "type": "elektroshchitovaya",
+   "kind_en": "electrical",
+   "name": "подвал, электрощитовая",
+   "area_m2": 54.0,
+   "polygon_xz": [
+    [
+     86.0,
+     23.5
+    ],
+    [
+     80.0,
+     23.5
+    ],
+    [
+     80.0,
+     14.5
+    ],
+    [
+     86.0,
+     14.5
+    ]
+   ]
+  },
+  {
+   "id": "fb_r015",
+   "floor": -1,
+   "y": -1.2,
+   "apartment": null,
+   "type": "priyamok",
+   "kind_en": "pit",
+   "name": "приямок",
+   "area_m2": 4.76,
+   "polygon_xz": [
+    [
+     119.4,
+     28.7
+    ],
+    [
+     116.0,
+     28.7
+    ],
+    [
+     116.0,
+     27.3
+    ],
+    [
+     119.4,
+     27.3
+    ]
+   ]
+  },
+  {
    "id": "f00_lift_-115",
    "floor": 0,
    "y": 1.5,
@@ -43964,6 +44667,398 @@
     81.5,
     34.5,
     21.05
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "vestibule_0",
+    "fb_r000"
+   ],
+   "kind": "basement",
+   "width": 0.9,
+   "pos": [
+    109.23,
+    0.45,
+    31.42
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "vestibule_1",
+    "fb_r001"
+   ],
+   "kind": "basement",
+   "width": 0.9,
+   "pos": [
+    88.23,
+    0.45,
+    31.42
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r003",
+    "fb_r004"
+   ],
+   "kind": "open",
+   "width": 1.2,
+   "pos": [
+    107.0,
+    -1.2,
+    25.538
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r007",
+    "fb_r008"
+   ],
+   "kind": "open",
+   "width": 1.2,
+   "pos": [
+    89.0,
+    -1.2,
+    25.538
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r000",
+    "fb_r004"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    109.23,
+    -1.2,
+    27.577
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r001",
+    "fb_r008"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    88.23,
+    -1.2,
+    27.577
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r002",
+    "fb_r004"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    110.0,
+    -1.2,
+    26.989
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r002",
+    "fb_r004"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    110.0,
+    -1.2,
+    25.0
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r010",
+    "fb_r011"
+   ],
+   "kind": "boiler",
+   "width": 0.9,
+   "pos": [
+    110.0,
+    -1.2,
+    22.0
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r003",
+    "fb_r005"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    104.0,
+    -1.2,
+    30.85
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r003",
+    "fb_r005"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    104.0,
+    -1.2,
+    28.0
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r003",
+    "fb_r005"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    104.0,
+    -1.2,
+    25.0
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r011",
+    "fb_r012"
+   ],
+   "kind": "shelter",
+   "width": 0.9,
+   "pos": [
+    104.0,
+    -1.2,
+    22.0
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r011",
+    "fb_r012"
+   ],
+   "kind": "shelter",
+   "width": 0.9,
+   "pos": [
+    104.0,
+    -1.2,
+    19.0
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r005",
+    "fb_r006"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    98.0,
+    -1.2,
+    30.85
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r005",
+    "fb_r006"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    98.0,
+    -1.2,
+    28.0
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r005",
+    "fb_r006"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    98.0,
+    -1.2,
+    25.0
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r006",
+    "fb_r007"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    92.0,
+    -1.2,
+    30.85
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r006",
+    "fb_r007"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    92.0,
+    -1.2,
+    28.0
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r006",
+    "fb_r007"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    92.0,
+    -1.2,
+    25.0
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r008",
+    "fb_r009"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    86.0,
+    -1.2,
+    26.988
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r008",
+    "fb_r009"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    86.0,
+    -1.2,
+    25.0
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r013",
+    "fb_r014"
+   ],
+   "kind": "electrical",
+   "width": 0.9,
+   "pos": [
+    86.0,
+    -1.2,
+    22.0
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r004",
+    "fb_r011"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    108.5,
+    -1.2,
+    23.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r003",
+    "fb_r011"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    105.5,
+    -1.2,
+    23.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r007",
+    "fb_r013"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    90.5,
+    -1.2,
+    23.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r008",
+    "fb_r013"
+   ],
+   "kind": "opening",
+   "width": 1.2,
+   "pos": [
+    87.5,
+    -1.2,
+    23.5
+   ]
+  },
+  {
+   "floor": -1,
+   "rooms": [
+    "fb_r015",
+    "fb_r002"
+   ],
+   "kind": "pit",
+   "width": 1.0,
+   "pos": [
+    115.85,
+    -1.2,
+    28.0
    ]
   }
  ],

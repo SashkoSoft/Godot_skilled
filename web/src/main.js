@@ -18,7 +18,7 @@ import { buildSky, skyUniforms } from "./sky.js";
 import { MOODS, installAerialFog, addVignette } from "./atmos.js";
 import { breakdown, infoLine, applyOff, runBench } from "./perf.js";
 import { buildGrassMap, setGrassMap, buildGrassBlades, updateGrass } from "./grass.js";
-import { buildGroundMap, setupGround, hardify, loadPitGrass } from "./floor.js";
+import { buildGroundMap, setupGround, hardify, loadPitGrass, setGroundHoles } from "./floor.js";
 import { spawnRobots } from "./robot.js";
 import { spawnDrones } from "./drones.js";
 import { instanceLods } from "./instlod.js";
@@ -68,6 +68,9 @@ renderer.toneMappingExposure = MOOD ? MOOD.exposure : 1.35;
 // на улице возвращается. #indoor=N — множитель (1 — без адаптации).
 const BASE_EXP = renderer.toneMappingExposure, INDOOR = q.has("indoor") ? +q.get("indoor") : 2.2;
 let indoorNow = false, indoorT = 0;
+// под землёй (камера ниже −0.3) — фон и туман тёмные
+const UNDER_BG = new THREE.Color(0x07080a);
+let undergroundNow = false, dayBg = null, dayFog = null;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 
@@ -222,7 +225,7 @@ let player = null, playing = false, robotDbgT = 0;
 let watch = null, watchDist = 3.2, lastLook = 0, watchInfoT = 0;
 // #robotdbg — ручки для консоли: где роботы, игрок, камера
 if (q.has("robotdbg")) window.dbg = { get crowd() { return crowd; }, get player() { return player; }, get cam() { return cam; }, get scene() { return scene; }, set route(v) { autoRoute = v; } };
-const world = { bo: null, fences: null, playground: null, houses: null, boxes: [], flights: [], houseInfo: [], bvh: null, camBvh: null, sig: "" };
+const world = { bo: null, fences: null, playground: null, houses: null, boxes: [], flights: [], houseInfo: [], bvh: null, camBvh: null, holes: [], sig: "" };
 const FOV = 55, RIDE_FOV = 100;   // угол камеры: обычный и в дроне (setRide)
 let ride = -1, rideHeading = 0;
 const cpuMs = { anim: 0, plants: 0, render: 0 };
@@ -375,9 +378,21 @@ if (q.has("sss")) windUniforms.uSSS.value = +q.get("sss");   // сила про�
 	const houseInfo = (await Promise.all(d.buildings.filter(b => b.model).map(b =>
 		fetch(`../game/assets/models/houses/${b.model}/${b.model}.json`).then(r => r.ok ? r.json() : null).catch(() => null))))
 		.filter(i => i && i.rooms).map(info => ({ info, roomOk: roomWalkable }));
-	world.flights = houseInfo.flatMap(h => h.info.flights || []);   // марши — для героя (клип лестницы)
+	const tunnelInfo = await fetch("../game/assets/models/houses/tunnels/tunnels.json").then(r => r.ok ? r.json() : null).catch(() => null);
+	const tunnels = ((tunnelInfo && tunnelInfo.tunnels) || []).filter(t => t.houses.every(h => houseInfo.some(x => x.info.id === h)));
+	world.flights = houseInfo.flatMap(h => h.info.flights || []).concat(tunnels.flatMap(t => t.flights || []));   // марши — для героя (клип лестницы)
 	world.houseInfo = houseInfo.map(h => h.info);   // комнаты — подпись в режиме наблюдения
-	const R = await spawnRobots(d, { count, start: [77, -26], envMap, houses: houseInfo });
+	// Земля квартала — плиты на отметке 0: над подвалом и приямком их вырезаем (в отрисовке —
+	// шейдером земли и мощения, в коллизии — при сборке). Подвал — габарит его помещений.
+	const bboxOf = rs => { const xs = rs.flatMap(r => r.polygon_xz.map(p => p[0])), zs = rs.flatMap(r => r.polygon_xz.map(p => p[1])); return [Math.min(...xs), Math.min(...zs), Math.max(...xs), Math.max(...zs)]; };
+	world.holes = houseInfo.flatMap(h => {
+		const bs = h.info.rooms.filter(r => r.floor === -1);
+		return bs.length ? [bboxOf(bs.filter(r => r.kind_en !== "pit")), ...bs.filter(r => r.kind_en === "pit").map(r => bboxOf([r]))] : [];
+	});
+	setGroundHoles(world.holes);
+	// туннель — как «дом» из своих комнат: подпись, камера, адаптация глаза
+	for (const t of tunnels) world.houseInfo.push({ id: "туннель", rooms: t.rooms.map(r => ({ ...r, y: Math.min(...r.polyline.map(p => p[1])), floor: -2, type: "tunnel" })), flights: [] });
+	const R = await spawnRobots(d, { count, start: [77, -26], envMap, houses: houseInfo, tunnels });
 	crowd = R.robots; robotLod = R.updateLod; crowdStep = R.crowdStep;
 	const robotsGroup = new THREE.Group();
 	robotsGroup.name = "Robots";   // отдельный слой в разбивке цены кадра и в #off=robots
@@ -700,6 +715,7 @@ function collectColliders() {
 	// Дома: коллизия — сама ближняя ступень модели (полы, тамбур, ступени, стены), без
 	// дверных полотен, стёкол и дверей лифта. Отдельная <id>_col.glb у hou упрощена:
 	// в ней нет пола тамбура (+0.45) — игрок проваливался под крыльцом.
+	if (H) for (const t of H.group.children) if (t.name.startsWith("tunnel-")) objs.push(t);
 	if (H) H.group.traverse(o => {
 		if (!o.isLOD) return;
 		o.levels[0].object.traverse(m => { if (m.isMesh && !/doors|door_wood|glass|lift_door|windows/i.test(m.name)) objs.push(m); });
@@ -745,6 +761,8 @@ watchHud.hidden = true;
 document.body.appendChild(watchHud);
 const ROOM_RU = { zhilaya: "комната", kuhnya: "кухня", prihozhaya: "прихожая", sanuzel: "ванная", tualet: "туалет", kladovaya: "кладовка",
 	ploshchadka: "площадка", lestnica: "лестница", lift: "лифт" };
+const BASE_RU = { basement: "отсек", boiler: "тепловой узел", electrical: "электрощитовая", storage: "кладовки жильцов", shelter: "убежище",
+	stair: "лестница в подвал", pit: "приямок" };
 // Камера в комнате: отлёт не дальше стен комнаты, где стоит тот, за кем смотрим. Лучом
 // по стенам мало — выбитое окно на уровне головы выпускало камеру на улицу.
 function roomLimit(p, yaw, pitch, dist) {
@@ -768,7 +786,8 @@ function whereIs(p) {
 		if (p.y < room.y - 0.3 || p.y > room.y + 2.6) continue;
 		const xs = room.polygon_xz.map(v => v[0]), zs = room.polygon_xz.map(v => v[1]);
 		if (p.x >= Math.min(...xs) && p.x <= Math.max(...xs) && p.z >= Math.min(...zs) && p.z <= Math.max(...zs))
-			return `${info.id}, ${room.floor + 1}-й этаж, ${ROOM_RU[room.type] || room.type}`;
+			return room.floor === -2 ? "туннель под двором" : room.floor === -1 ? `${info.id}, подвал, ${BASE_RU[room.kind_en] || "подвал"}`
+				: `${info.id}, ${room.floor + 1}-й этаж, ${ROOM_RU[room.type] || room.type}`;
 	}
 	for (const info of world.houseInfo) for (const f of info.flights || []) {
 		const x0 = Math.min(f.a[0], f.b[0]) - 0.8, x1 = Math.max(f.a[0], f.b[0]) + 0.8, z0 = Math.min(f.a[2], f.b[2]) - 0.8, z1 = Math.max(f.a[2], f.b[2]) + 0.8;
@@ -816,7 +835,9 @@ function refreshCollision(dt) {
 	const s = worldSig();
 	if (s !== world.sig) {
 		world.sig = s;
-		world.bvh = buildCollision(collectColliders(), interiors ? world.boxes.concat(interiors.boxes()) : world.boxes);   // мебель — коробками
+		// земля блок-аута над подвалами вырезана (иначе в подвал не попасть — пол на отметке 0)
+		const objs = collectColliders(), boObjs = new Set(objs.filter(o => { for (let p = o; p; p = p.parent) if (world.bo && p === world.bo.group) return true; return false; }));
+		world.bvh = buildCollision(objs, interiors ? world.boxes.concat(interiors.boxes()) : world.boxes, { objs: boObjs, rects: world.holes });   // мебель — коробками
 		// окна и стёкла — только для камеры: иначе с головой на уровне окна она вылетает на улицу
 		const glass = [];
 		if (world.houses) world.houses.group.traverse(o => { if (o.isLOD) o.levels[0].object.traverse(m => { if (m.isMesh && /glass|windows|window_frame/i.test(m.name + " " + [].concat(m.material).map(x => x.name).join(" "))) glass.push(m); }); });
@@ -934,6 +955,12 @@ function tick(now) {
 		indoorNow = world.houseInfo.length > 0 && whereIs(p) !== "улица";
 	}
 	renderer.toneMappingExposure += (BASE_EXP * (indoorNow ? INDOOR : 1) - renderer.toneMappingExposure) * Math.min(1, dt * 1.5);
+	const under = camera.position.y < -0.3;
+	if (under !== undergroundNow) {
+		undergroundNow = under;
+		if (under) { dayBg = scene.background; dayFog = scene.fog && scene.fog.color.clone(); scene.background = UNDER_BG; if (scene.fog) scene.fog.color.copy(UNDER_BG); }
+		else { scene.background = dayBg; if (scene.fog && dayFog) scene.fog.color.copy(dayFog); }
+	}
 	if (houdiniTrees) houdiniTrees.update(camera, now / 1000);
 	if (undergrowth) undergrowth.update(camera, now / 1000);
 	if (grassBlades) {

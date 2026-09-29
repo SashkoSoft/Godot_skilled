@@ -516,6 +516,8 @@ async function buildOverlayArrays(list, res) {
 /* ── шейдер ──────────────────────────────────────────────────────────── */
 
 export const groundUniforms = {
+	// вырезы в земле и мощении (приямки подвалов): прямоугольники x0, z0, x1, z1 — setGroundHoles
+	uHoles: { value: Array.from({ length: 16 }, () => new THREE.Vector4()) }, uHoleN: { value: 0 },
 	uGW0: { value: null }, uGW1: { value: null },
 	uGOrigin: { value: new THREE.Vector2() }, uGSize: { value: new THREE.Vector2(1, 1) },
 	uGA: { value: null }, uGB: { value: null },
@@ -885,13 +887,22 @@ const VERT_WORLD = (s) => s
  * Газон (цвет, слой 1 травы) там, где его оставила карта травы; в проплешинах
  * и там, где его вытеснили слои, — пол.
  */
+/** Вырезы в земле и мощении: [[x0, z0, x1, z1], …] (до 16) — подвалы и их приямки. */
+export function setGroundHoles(rects) {
+	rects.slice(0, 16).forEach((r, i) => groundUniforms.uHoles.value[i].set(...r));
+	groundUniforms.uHoleN.value = Math.min(16, rects.length);
+}
+
 export function groundify(material) {
 	material.onBeforeCompile = (shader) => {
 		Object.assign(shader.uniforms, grassUniforms, groundUniforms);
 		shader.vertexShader = VERT_WORLD(shader.vertexShader);
 		shader.fragmentShader = shader.fragmentShader
-			.replace("#include <common>", `#include <common>\nvarying vec3 vGWorld;\nvarying float vGUp;\n${GLSL_COMMON}\n${GLSL_GROUND}`)
+			.replace("#include <common>", `#include <common>\nvarying vec3 vGWorld;\nvarying float vGUp;\nuniform vec4 uHoles[16];\nuniform int uHoleN;\n${GLSL_COMMON}\n${GLSL_GROUND}`)
 			.replace("#include <map_fragment>", `#include <map_fragment>
+				// вырезы (приямки подвалов): земли и мощения там нет — видно спуск вниз
+				for (int hi = 0; hi < 16; hi++) { if (hi >= uHoleN) break; vec4 hr = uHoles[hi];
+					if (vGWorld.x > hr.x && vGWorld.x < hr.z && vGWorld.z > hr.y && vGWorld.z < hr.w) discard; }
 				vec2 gXZ = vGWorld.xz;
 				vec4 gMap = grassAt(gXZ);
 				float gTop = smoothstep(-0.2, -0.05, vGWorld.y);                   // только верх плиты
@@ -962,8 +973,11 @@ export function hardify(material, asphalt = 0, { lite = false } = {}) {
 		Object.assign(shader.uniforms, grassUniforms, groundUniforms, own);
 		shader.vertexShader = VERT_WORLD(shader.vertexShader);
 		shader.fragmentShader = shader.fragmentShader
-			.replace("#include <common>", `#include <common>\nvarying vec3 vGWorld;\nvarying float vGUp;\n${GLSL_COMMON}\n${GLSL_GROUND}`)
+			.replace("#include <common>", `#include <common>\nvarying vec3 vGWorld;\nvarying float vGUp;\nuniform vec4 uHoles[16];\nuniform int uHoleN;\n${GLSL_COMMON}\n${GLSL_GROUND}`)
 			.replace("#include <map_fragment>", `#include <map_fragment>
+				// вырезы (приямки подвалов): земли и мощения там нет — видно спуск вниз
+				for (int hi = 0; hi < 16; hi++) { if (hi >= uHoleN) break; vec4 hr = uHoles[hi];
+					if (vGWorld.x > hr.x && vGWorld.x < hr.z && vGWorld.z > hr.y && vGWorld.z < hr.w) discard; }
 				vec2 hXZ = vGWorld.xz;
 				float hTop = smoothstep(0.5, 0.9, vGUp);   // только верхние грани
 				float hNear = 1.0 - smoothstep(20.0, 60.0, length(cameraPosition.xz - hXZ));

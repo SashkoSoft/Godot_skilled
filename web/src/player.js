@@ -20,10 +20,22 @@ import { inPlace, flightShape, stairsPose } from "./stairs.js";
 const DIR = "../game/assets/models/characters/";
 const R = 0.3, STEP = 0.42, HEIGHT = 1.7, GRAV = -18, JUMP = 5.2;
 
-/** Коллизия мира одной BVH (Object3D — все меши внутри; Box3 — коробка): герою и камерам. */
-export function buildCollision(objs, boxes = []) {
+/** Коллизия мира одной BVH (Object3D — все меши внутри; Box3 — коробка): герою и камерам.
+ *  cut — вырезы в земле: у объектов из cut.objs выкидываются треугольники, центр которых над
+ *  прямоугольником cut.rects ([x0, z0, x1, z1]) на высоте −1.1…0.6 (плиты земли над подвалом). */
+export function buildCollision(objs, boxes = [], cut = null) {
 	const parts = [];
+	const cutTri = (pg) => {
+		const a = pg.attributes.position.array, keep = [];
+		for (let i = 0; i < a.length; i += 9) {
+			const cx = (a[i] + a[i + 3] + a[i + 6]) / 3, cy = (a[i + 1] + a[i + 4] + a[i + 7]) / 3, cz = (a[i + 2] + a[i + 5] + a[i + 8]) / 3;
+			if (cy > -1.1 && cy < 0.6 && cut.rects.some(r => cx > r[0] && cx < r[2] && cz > r[1] && cz < r[3])) continue;
+			for (let k = 0; k < 9; k++) keep.push(a[i + k]);
+		}
+		pg.setAttribute("position", new THREE.BufferAttribute(new Float32Array(keep), 3));
+	};
 	for (const o of objs) {
+		const doCut = cut && cut.rects.length && cut.objs.has(o);
 		o.updateMatrixWorld(true);
 		o.traverse(m => {
 			if (!m.isMesh || m.isInstancedMesh || m.isBatchedMesh || m.isSkinnedMesh || !m.geometry.attributes.position) return;
@@ -33,7 +45,9 @@ export function buildCollision(objs, boxes = []) {
 			const src = g.attributes.position, fa = new Float32Array(src.count * 3);
 			for (let i = 0; i < src.count; i++) { fa[i * 3] = src.getX(i); fa[i * 3 + 1] = src.getY(i); fa[i * 3 + 2] = src.getZ(i); }
 			const pg = new THREE.BufferGeometry(); pg.setAttribute("position", new THREE.BufferAttribute(fa, 3));
-			pg.applyMatrix4(m.matrixWorld); parts.push(pg);
+			pg.applyMatrix4(m.matrixWorld);
+			if (doCut) cutTri(pg);
+			parts.push(pg);
 		});
 	}
 	for (const b of boxes) {

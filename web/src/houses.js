@@ -98,6 +98,13 @@ export async function loadHouses(d) {
 			}
 			group.add(lod);
 			ids.push(b.id);
+			// Подвал — отдельной моделью (<id>_basement.glb, мировые оси): один и тот же под целым
+			// домом и под руиной (удар его не задел), лежит в папке целого дома. Виден с ближней
+			// ступенью LOD — снаружи его всё равно не видно.
+			if (info && info.basement) {
+				const bg = await loader.loadAsync(`${BASE}${b.id}/${b.id}_basement.glb`).catch(() => null);
+				if (bg) { dressZones(bg.scene, info); dress(bg.scene, T); l0.scene.add(bg.scene); }
+			}
 			// створки — отдельными узлами у hou: в один BatchedMesh, открываются сами
 			lod.updateMatrixWorld(true);
 			const D = extractDoors(l0.scene);
@@ -112,5 +119,15 @@ export async function loadHouses(d) {
 			console.warn(`[улица] дом ${b.id}: модель ${b.model} не загрузилась — остаётся коробка (${e})`);
 		}
 	}
-	return { group, ids, colliders, doors };
+	// туннели между подвалами (tunnels.json hou): мировые оси, рисуются всегда (под землёй)
+	const tunnels = await fetch(`${BASE}tunnels/tunnels.json`).then(r => r.ok ? r.json() : null).catch(() => null);
+	for (const t of (tunnels && tunnels.tunnels) || []) {
+		if (!t.houses.every(h => ids.includes(h))) continue;
+		const g = await loader.loadAsync(`${BASE}tunnels/${t.file}`).catch(() => null);
+		if (!g) continue;
+		g.scene.name = "tunnel-" + t.id;
+		g.scene.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = true; } });
+		group.add(g.scene);
+	}
+	return { group, ids, colliders, doors, tunnels: (tunnels && tunnels.tunnels) || [] };
 }

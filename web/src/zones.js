@@ -74,10 +74,14 @@ function rule(zone, room, panel, info, stairColor) {
 		case "roof": return { set: "roof_roll", tone: 1, grime: 1 };
 		case "rubble": return { set: "rubble", tone: 1, grime: 1 };
 		case "fracture": return { set: "concrete_fracture", tone: 1, grime: 0.4 };   // свежий скол руины
+		// подвал: голый бетон стен и столбов, стяжка пола — темнее и грязнее
+		case "basement_wall": return { set: "concrete_panel_smooth_v2", tone: 0.82, grime: 1 };
+		case "basement_floor": return { set: "concrete_slab_under", tone: 0.7, grime: 1 };
+		case "column": return { set: "concrete_monolith", tone: 0.85, grime: 0.9 };
 	}
 	return null;
 }
-export const ZONES = new Set(["facade_panel", "plinth", "monolith", "slab_edge", "slab_top", "slab_under", "stairwell_wall", "wall_room", "roof", "rubble", "fracture"]);
+export const ZONES = new Set(["facade_panel", "plinth", "monolith", "slab_edge", "slab_top", "slab_under", "stairwell_wall", "wall_room", "roof", "rubble", "fracture", "basement_wall", "basement_floor", "column"]);
 
 const loader = new THREE.TextureLoader();
 const texCache = {};
