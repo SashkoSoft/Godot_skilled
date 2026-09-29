@@ -217,7 +217,14 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 		for (const w of info.windows) (winByFloor[w.floor] ||= []).push(w);
 		const apSeed = {};
 		for (const rm of info.rooms) {
-			if (rm.type === "shop" && (!H.roomFilter || H.roomFilter(rm))) { await shopHall(H, rm, plan, info, rng(hashStr(rm.id))); continue; }
+			// магазин: зал, подсобки, кабинет — свои раскладки
+			if (H.b.kind === "shop" && rm.floor === 0 && (!H.roomFilter || H.roomFilter(rm))) {
+				const R3 = rng(hashStr(rm.id));
+				if (rm.type === "shop") await shopHall(H, rm, plan, info, R3);
+				else if (rm.type === "kladovaya") await shopStore(H, rm, plan, info, R3);
+				else if (rm.type === "office") await shopOffice(H, rm, plan, info, R3);
+				continue;
+			}
 			const type = TYPE[rm.type];
 			if (!type || (H.roomFilter && !H.roomFilter(rm))) continue;
 			const [gx0, gz0, gx1, gz1] = rectOf(rm);
@@ -373,37 +380,23 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 		}
 	}
 
-	/* ── торговый зал универсама (room type "shop") ─────────────────────────
-	   Мебель blend (props/shop). Зал размечается в осях «вдоль стены входа» (u) и «вглубь» (v):
-	   у входа — турникеты и кассы, за ними лари, дальше ряды гондол поперёк входа, у дальней
-	   стены — стеллажи отделов, вдоль боковой — холодильные прилавки; над рядами — вывески.
-	   Проходы у всех дверей свободны. Товар — на части полок (разграблено), на полу — ящики,
-	   мешки, корзинки. Места лута — по extras.use/use_back самих моделей. */
+	/* ── магазин (дом kind "shop"): зал, склад, кабинет ─────────────────────
+	   Мебель blend (props/shop). Общие помощники: roomPlacer — постановка без пересечений и
+	   с проходами у дверей; useSpots — места лута по extras.use/use_back моделей. */
 	const DEPTS = ["moloko", "bakaleya", "gastronomiya", "khleb", "konditer", "ovoshchi"];
 	const GOODS = {
 		moloko: ["milk_bottle", "kefir_bottle", "milk_pyramid"], bakaleya: ["pack_grain", "pack_salt", "matches_block", "can_stack"],
 		gastronomiya: ["can_stack", "jar", "jar_3l"], khleb: ["bread_tray"], konditer: ["pack_grain", "box_closed"], ovoshchi: ["crate_wood"],
-		gondola: ["can_stack", "pack_grain", "pack_salt", "matches_block", "milk_pyramid", "jar"],
+		gondola: ["can_stack", "pack_grain", "pack_salt", "matches_block", "milk_pyramid", "jar"], store: ["crate_wood", "crate_plastic", "sack", "box_closed", "can_stack", "bidon"],
 	};
 	const SHOP_FLOOR = ["crate_wood", "crate_plastic", "sack", "basket", "can_stack", "milk_bottle", "bidon", "box_crushed_top", "box_flattened", "plate_broken", "bottle", "newspaper"];
-	async function shopHall(H, rm, plan, info, rnd) {
+	function roomPlacer(H, rm, info, plan) {
 		const [gx0, gz0, gx1, gz1] = rectOf(rm), y = rm.y, IN = 0.35;
 		const X0 = gx0 + IN, X1 = gx1 - IN, Z0 = gz0 + IN, Z1 = gz1 - IN;
-		const pick = list => list[Math.floor(rnd() * list.length)];
-		// двери зала: межкомнатные из описания и входы с улицы (district)
 		const doors = info.doors.filter(d => d.rooms.includes(rm.id)).map(d => [d.pos[0], d.pos[2]]);
-		for (const e of H.entrances || []) doors.push(e);
-		// сторона входа — стена, ближайшая к первому входу; u — вдоль неё, v — вглубь
-		const e0 = (H.entrances || [])[0] || [(X0 + X1) / 2, Z0];
-		const dists = [["N", e0[1] - Z0], ["S", Z1 - e0[1]], ["W", e0[0] - X0], ["E", X1 - e0[0]]].sort((a, b) => a[1] - b[1]);
-		const side = dists[0][0];
-		const F = { N: { o: [X0, Z0], u: [1, 0], v: [0, 1], L: X1 - X0, D: Z1 - Z0 }, S: { o: [X1, Z1], u: [-1, 0], v: [0, -1], L: X1 - X0, D: Z1 - Z0 },
-			W: { o: [X0, Z1], u: [0, -1], v: [1, 0], L: Z1 - Z0, D: X1 - X0 }, E: { o: [X1, Z0], u: [0, 1], v: [-1, 0], L: Z1 - Z0, D: X1 - X0 } }[side];
-		const W = (u, v) => [F.o[0] + F.u[0] * u + F.v[0] * v, F.o[1] + F.u[1] * u + F.v[1] * v];
-		const eU = (e0[0] - F.o[0]) * F.u[0] + (e0[1] - F.o[1]) * F.u[1];
-		const occ = [], spots = [], racks = [];
-		const nearDoor = bx => doors.some(([px, pz]) => Math.hypot(Math.max(bx.min.x - px, 0, px - bx.max.x), Math.max(bx.min.z - pz, 0, pz - bx.max.z)) < 1.5);
-		// поставить модель n лицом в сторону face (мировой вектор), центр — (cx, cz)
+		for (const [ex, ez] of H.entrances || []) if (ex > gx0 - 1 && ex < gx1 + 1 && ez > gz0 - 1 && ez < gz1 + 1) doors.push([ex, ez]);
+		const occ = [];
+		const nearDoor = bx => doors.some(([px, pz]) => Math.hypot(Math.max(bx.min.x - px, 0, px - bx.max.x), Math.max(bx.min.z - pz, 0, pz - bx.max.z)) < 1.4);
 		const place = async (n, [cx, cz], face, { free = false } = {}) => {
 			const M = await model(n), fp = footprint(M, face);
 			const bx = new THREE.Box3(new THREE.Vector3(cx - fp.sx / 2, y, cz - fp.sz / 2), new THREE.Vector3(cx + fp.sx / 2, y + fp.h, cz + fp.sz / 2));
@@ -415,52 +408,39 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 			}
 			const entry = { n, x: cx, y: y - fp.minY, z: cz, rotY: fp.rotY, box: free ? null : bx };
 			plan.push(entry);
-			return { n, M, entry, bx };
+			return { n, M, entry, bx, fp };
 		};
-		const back = F.v.map(c => -c), toU = F.u, fromU = F.u.map(c => -c);
-		// турникеты у входа, кассы за ними (кассир лицом к выходу)
-		for (const du of [-1.3, 1.3]) await place("turnstile", W(eU + du, 1.4), F.v);
-		for (let k = -3; k <= 3; k++) {
-			if (k === 0) continue;
-			const r = await place("checkout", W(eU + k * 2.7, 3.6), back);
-			if (r) racks.push(r);
-		}
-		// лари
-		for (let u = 2.5; u < F.L - 2; u += 3.2) { const r = await place("chest_freezer", W(u, 6.2), rnd() < 0.5 ? F.v : back); if (r) racks.push(r); }
-		// ряды гондол поперёк входа, стык к стыку вглубь зала
-		const vFrom = 9, vTo = F.D - 4.2;
-		for (let u = 3.2; u < F.L - 4; u += 3.6) {
-			for (let v = vFrom + 1.2; v + 1.2 <= vTo; v += 2.4) {
-				const r = await place(rnd() < 0.85 ? "gondola_24" : "gondola_12", W(u, v), rnd() < 0.5 ? toU : fromU);
-				if (r) { r.dept = "gondola"; racks.push(r); }
+		// у стены: перебор стен и шага 0.1 м, лицом в комнату
+		const atWall = async (n, sides = [[0, 1], [0, -1], [1, 0], [-1, 0]]) => {
+			for (const face of sides) {
+				const M = await model(n), fp = footprint(M, face), alongX = face[0] === 0;
+				const L = alongX ? fp.sx : fp.sz, D = alongX ? fp.sz : fp.sx, len = alongX ? X1 - X0 : Z1 - Z0;
+				for (let s = 0; s + L <= len + 1e-6; s += 0.1) {
+					const cx = alongX ? X0 + s + L / 2 : (face[0] > 0 ? X0 + D / 2 : X1 - D / 2);
+					const cz = alongX ? (face[1] > 0 ? Z0 + D / 2 : Z1 - D / 2) : Z0 + s + L / 2;
+					const r = await placeTry(n, [cx, cz], face);
+					if (r) return r;
+				}
 			}
-			// вывеска над серединой ряда
-			const [sx, sz] = W(u, (vFrom + vTo) / 2);
-			const ceil = y + ((info.grid && info.grid.floor_h) || 4.5) - ((info.grid && info.grid.slab) || 0.22);
-			const s = await place("sign_" + DEPTS[Math.floor(u / 3.6) % DEPTS.length], [sx, sz], toU, { free: true });
-			if (s) s.entry.y = ceil;
-		}
-		// стеллажи отделов у дальней стены (блоками по 4) — вывеска-короб у них своя
-		let k = 0;
-		for (let u = 0.8; u < F.L - 0.6; u += 1.25, k++) {
-			const dept = DEPTS[Math.floor(k / 4) % DEPTS.length];
-			const M = await model("wall_rack_" + dept), fp = footprint(M, back);
-			const dep = Math.min(fp.sx, fp.sz);
-			const r = await place("wall_rack_" + dept, W(u, F.D - dep / 2), back);
-			if (r) { r.dept = dept; racks.push(r); }
-		}
-		// холодильные прилавки вдоль боковой стены (u = L), покупатель — со стороны зала
-		for (let v = 8; v < F.D - 3; v += 1.9) {
-			const n = rnd() < 0.3 ? "fridge_counter_broken" : "fridge_counter", M = await model(n), fp = footprint(M, fromU);
-			const r = await place(n, W(F.L - Math.min(fp.sx, fp.sz) / 2 - 0.6, v), fromU);
-			if (r) { r.dept = pick(["moloko", "gastronomiya"]); racks.push(r); }
-		}
-		// товар на полках: часть мест пустая (разграблено)
+			return null;
+		};
+		const placeTry = async (n, c, face) => {
+			const M = await model(n), fp = footprint(M, face);
+			const bx = new THREE.Box3(new THREE.Vector3(c[0] - fp.sx / 2, y, c[1] - fp.sz / 2), new THREE.Vector3(c[0] + fp.sx / 2, y + fp.h, c[1] + fp.sz / 2));
+			const s = bx.clone().expandByScalar(-0.02);
+			if (bx.min.x < X0 - 0.01 || bx.max.x > X1 + 0.01 || bx.min.z < Z0 - 0.01 || bx.max.z > Z1 + 0.01 || occ.some(o => o.intersectsBox(s)) || nearDoor(bx)) return null;
+			return place(n, c, face);
+		};
+		return { place, atWall, occ, doors, nearDoor, y, X0, X1, Z0, Z1, rect: [gx0, gz0, gx1, gz1] };
+	}
+	/** Товар на части полок (разграблено): мелочь из списка отдела по слотам модели. */
+	async function stock(racks, plan, y, rnd, share = 0.35) {
+		const pick = list => list[Math.floor(rnd() * list.length)];
 		for (const r of racks) {
 			const ex = r.M.ex || {}, slots = typeof ex.slots === "string" ? JSON.parse(ex.slots) : ex.slots || [];
 			const e = r.entry, c = Math.cos(e.rotY), s = Math.sin(e.rotY);
 			for (const sl of slots) {
-				if (sl.where === "drawer" || rnd() > 0.35) continue;
+				if (sl.where === "drawer" || sl.where === "safe" || rnd() > share) continue;
 				const list = GOODS[r.dept] || GOODS.gondola;
 				for (let i = 1 + Math.floor(rnd() * 3); i > 0; i--) {
 					const g = pick(list), GM = await model("clutter:" + g), gb = GM.box;
@@ -469,19 +449,12 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 				}
 			}
 		}
-		// хлам на полу в проходах
-		for (let i = 0; i < 40; i++) {
-			const g = pick(SHOP_FLOOR), GM = await model("clutter:" + g), b = GM.box, rot = rnd() * Math.PI * 2;
-			const px = X0 + rnd() * (X1 - X0), pz = Z0 + rnd() * (Z1 - Z0), hx = (b.max.x - b.min.x) / 2 + 0.05;
-			const bx = new THREE.Box3(new THREE.Vector3(px - hx, y, pz - hx), new THREE.Vector3(px + hx, y + b.max.y - b.min.y, pz + hx));
-			if (occ.some(o => o.intersectsBox(bx)) || nearDoor(bx)) continue;
-			occ.push(bx);
-			plan.push({ n: "clutter:" + g, x: px, y: y - b.min.y, z: pz, rotY: rot, box: bx });
-		}
-		for (const n of ["clutter:cart", "clutter:basket_stack"]) { const [px, pz] = W(eU + (n.endsWith("cart") ? -4.5 : 4.5), 2.2); await place(n, [px, pz], F.v); }
-		// места лута: точка «встать» из extras.use/use_back модели, в мир
-		const G = roomGrid([gx0, gz0, gx1, gz1], occ);
-		const KIND = n => n.startsWith("chest") ? "floor" : n.startsWith("fridge") ? "lowdoor" : "cabinet";
+	}
+	/** Места лута по extras.use/use_back моделей: встать можно — место есть. */
+	function useSpots(racks, G, rnd, y) {
+		const spots = [];
+		const KIND = n => n.startsWith("chest") || n.startsWith("crate_pile") || n.startsWith("pallet") ? "floor"
+			: n.startsWith("fridge") || n === "safe" ? "lowdoor" : "cabinet";
 		for (const r of racks) {
 			const ex = r.M.ex || {}, e = r.entry, c = Math.cos(e.rotY), s = Math.sin(e.rotY);
 			for (const key of ["use", "use_back"]) {
@@ -491,16 +464,122 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 				const fx = U.facing[0] * c + U.facing[2] * s, fz = -U.facing[0] * s + U.facing[2] * c;
 				const [ui, uj] = cellOf(G, ux, uz);
 				if (!isFree(G, ui, uj)) continue;
-				const money = r.n === "checkout";
-				const item = money ? (rnd() < 0.2 ? "gold" : rnd() < 0.5 ? "silver" : "bronze") : rollItem(rnd);
-				const node = money ? "Drawer_Cash" : r.n === "chest_freezer" ? "Slide_L" : null;
+				// касса и сейф — деньги: золото чаще
+				const rich = r.n === "checkout" || r.n === "safe";
+				const item = rich ? (rnd() < (r.n === "safe" ? 0.45 : 0.2) ? "gold" : rnd() < 0.5 ? "silver" : "bronze") : rollItem(rnd);
+				const node = r.n === "checkout" ? "Drawer_Cash" : r.n === "chest_freezer" ? "Slide_L" : r.n === "safe" ? "Door_Safe"
+					: r.n === "gastro_counter" && key === "use" ? "Drawer_1" : null;
 				spots.push({ kind: KIND(r.n), n: r.n, use: [ux, uz], y, heading: Math.atan2(fx, fz), looted: false, busy: false, item,
 					at: [(r.bx.min.x + r.bx.max.x) / 2, Math.min(r.bx.max.y, y + 1.4), (r.bx.min.z + r.bx.max.z) / 2],
-					entry: e, node, open: null, openT: money ? [0.667, 1.958] : [0.8, 1.8] });
+					entry: e, node, open: null, openT: r.n === "checkout" || r.n === "gastro_counter" ? [0.667, 1.958] : r.n === "safe" ? [1.458, 2.542] : [0.8, 1.8] });
 			}
 		}
-		if (spots.length) H.loot.push({ rect: [gx0, gz0, gx1, gz1], y, G, spots, room: rm.id });
-		console.log(`[улица] зал ${rm.id}: предметов ${plan.length}, мест лута ${spots.length}, вход с ${side}`);
+		return spots;
+	}
+
+	/* Торговый зал (room type "shop"): зал размечается в осях «вдоль стены входа» (u) и
+	   «вглубь» (v): у входа — турникеты и кассы, за ними лари, ряды гондол поперёк входа,
+	   у дальней стены — стеллажи отделов, вдоль боковых — холодильные прилавки и прилавки
+	   «Гастрономия» с весами; над рядами — вывески. */
+	async function shopHall(H, rm, plan, info, rnd) {
+		const R = roomPlacer(H, rm, info, plan), { place, y, X0, X1, Z0, Z1 } = R;
+		const pick = list => list[Math.floor(rnd() * list.length)];
+		const e0 = (H.entrances || [])[0] || [(X0 + X1) / 2, Z0];
+		const dists = [["N", e0[1] - Z0], ["S", Z1 - e0[1]], ["W", e0[0] - X0], ["E", X1 - e0[0]]].sort((a, b) => a[1] - b[1]);
+		const side = dists[0][0];
+		const F = { N: { o: [X0, Z0], u: [1, 0], v: [0, 1], L: X1 - X0, D: Z1 - Z0 }, S: { o: [X1, Z1], u: [-1, 0], v: [0, -1], L: X1 - X0, D: Z1 - Z0 },
+			W: { o: [X0, Z1], u: [0, -1], v: [1, 0], L: Z1 - Z0, D: X1 - X0 }, E: { o: [X1, Z0], u: [0, 1], v: [-1, 0], L: Z1 - Z0, D: X1 - X0 } }[side];
+		const W = (u, v) => [F.o[0] + F.u[0] * u + F.v[0] * v, F.o[1] + F.u[1] * u + F.v[1] * v];
+		const eU = (e0[0] - F.o[0]) * F.u[0] + (e0[1] - F.o[1]) * F.u[1];
+		const racks = [];
+		const back = F.v.map(c => -c), toU = F.u, fromU = F.u.map(c => -c);
+		for (const du of [-1.3, 1.3]) await place("turnstile", W(eU + du, 1.4), F.v);
+		for (let k = -3; k <= 3; k++) {
+			if (k === 0) continue;
+			const r = await place("checkout", W(eU + k * 2.7, 3.6), back);
+			if (r) racks.push(r);
+		}
+		for (let u = 2.5; u < F.L - 2; u += 3.2) { const r = await place("chest_freezer", W(u, 6.2), rnd() < 0.5 ? F.v : back); if (r) racks.push(r); }
+		const vFrom = 9, vTo = F.D - 4.2;
+		const ceil = y + ((info.grid && info.grid.floor_h) || 4.5) - ((info.grid && info.grid.slab) || 0.22);
+		for (let u = 4.8; u < F.L - 4; u += 3.6) {
+			for (let v = vFrom; v < vTo;) {
+				const n = vTo - v >= 3.6 && rnd() < 0.4 ? "gondola_36" : vTo - v >= 2.4 ? "gondola_24" : "gondola_12";
+				const len = n === "gondola_36" ? 3.6 : n === "gondola_24" ? 2.4 : 1.2;
+				if (v + len > vTo) break;
+				const r = await place(n, W(u, v + len / 2), rnd() < 0.5 ? toU : fromU);
+				if (r) { r.dept = "gondola"; racks.push(r); }
+				v += len;
+			}
+			const [sx, sz] = W(u, (vFrom + vTo) / 2);
+			const s = await place("sign_" + DEPTS[Math.floor(u / 3.6) % DEPTS.length], [sx, sz], toU, { free: true });
+			if (s) s.entry.y = ceil;
+		}
+		let k = 0;
+		for (let u = 0.8; u < F.L - 0.6; u += 1.25, k++) {
+			const dept = DEPTS[Math.floor(k / 4) % DEPTS.length];
+			const M = await model("wall_rack_" + dept), fp = footprint(M, back);
+			const r = await place("wall_rack_" + dept, W(u, F.D - Math.min(fp.sx, fp.sz) / 2), back);
+			if (r) { r.dept = dept; racks.push(r); }
+		}
+		// боковая стена u = L: холодильные прилавки; u = 0: «Гастрономия» с весами (продавец — у стены)
+		for (let v = 8; v < F.D - 3; v += 1.9) {
+			const n = rnd() < 0.3 ? "fridge_counter_broken" : "fridge_counter", M = await model(n), fp = footprint(M, fromU);
+			const r = await place(n, W(F.L - Math.min(fp.sx, fp.sz) / 2 - 0.6, v), fromU);
+			if (r) { r.dept = pick(["moloko", "gastronomiya"]); racks.push(r); }
+		}
+		for (let v = 8; v < F.D - 3; v += 2.3) {
+			const M = await model("gastro_counter"), fp = footprint(M, toU);
+			const r = await place("gastro_counter", W(Math.min(fp.sx, fp.sz) / 2 + 0.9, v), toU);
+			if (!r) continue;
+			r.dept = "gastronomiya"; racks.push(r);
+			const ps = M.ex && M.ex.place_scales && (typeof M.ex.place_scales === "string" ? JSON.parse(M.ex.place_scales) : M.ex.place_scales);
+			if (ps && rnd() < 0.7) {
+				const e = r.entry, c = Math.cos(e.rotY), s = Math.sin(e.rotY), SM = await model("clutter:scales_dial");
+				plan.push({ n: "clutter:scales_dial", x: e.x + ps[0] * c + ps[2] * s, y: y + ps[1] - SM.box.min.y, z: e.z - ps[0] * s + ps[2] * c, rotY: e.rotY + Math.PI });
+			}
+		}
+		await stock(racks, plan, y, rnd);
+		for (let i = 0; i < 40; i++) {
+			const g = pick(SHOP_FLOOR), GM = await model("clutter:" + g), b = GM.box, rot = rnd() * Math.PI * 2;
+			const px = X0 + rnd() * (X1 - X0), pz = Z0 + rnd() * (Z1 - Z0), hx = (b.max.x - b.min.x) / 2 + 0.05;
+			const bx = new THREE.Box3(new THREE.Vector3(px - hx, y, pz - hx), new THREE.Vector3(px + hx, y + b.max.y - b.min.y, pz + hx));
+			if (R.occ.some(o => o.intersectsBox(bx)) || R.nearDoor(bx)) continue;
+			R.occ.push(bx);
+			plan.push({ n: "clutter:" + g, x: px, y: y - b.min.y, z: pz, rotY: rot, box: bx });
+		}
+		for (const n of ["clutter:cart", "clutter:basket_stack"]) await place(n, W(eU + (n.endsWith("cart") ? -4.5 : 4.5), 2.2), F.v);
+		const G = roomGrid(R.rect, R.occ), spots = useSpots(racks, G, rnd, y);
+		if (spots.length) H.loot.push({ rect: R.rect, y, G, spots, room: rm.id });
+		console.log(`[улица] зал ${rm.id}: мест лута ${spots.length}, вход с ${side}`);
+	}
+
+	/** Подсобка магазина: деревянные стеллажи по стенам, штабели и поддоны, тележка. */
+	async function shopStore(H, rm, plan, info, rnd) {
+		const R = roomPlacer(H, rm, info, plan), racks = [];
+		for (let i = 0; i < 4; i++) { const r = await R.atWall("rack_wood"); if (r) { r.dept = "store"; racks.push(r); } }
+		const cx = (R.X0 + R.X1) / 2, cz = (R.Z0 + R.Z1) / 2;
+		for (const [n, dx, dz] of [["crate_pile", 0, 0], ["pallet", 0.6, 1.4], ["platform_trolley", -0.6, -1.4]]) {
+			const r = await R.place(n, [cx + dx, cz + dz], [rnd() < 0.5 ? 1 : -1, 0]);
+			if (r && n !== "platform_trolley") { r.dept = "store"; racks.push(r); }
+		}
+		await stock(racks, plan, R.y, rnd, 0.55);
+		const G = roomGrid(R.rect, R.occ), spots = useSpots(racks, G, rnd, R.y);
+		if (spots.length) H.loot.push({ rect: R.rect, y: R.y, G, spots, room: rm.id });
+	}
+
+	/** Кабинет директора: стол, стул, шкаф и сейф (редкий лут). */
+	async function shopOffice(H, rm, plan, info, rnd) {
+		const R = roomPlacer(H, rm, info, plan), racks = [];
+		const pick = list => list[Math.floor(rnd() * list.length)];
+		const desk = await R.atWall(pick(["desk_pedestal", "desk_side_cabinet"]));
+		if (desk) {
+			const f = desk.fp.rotY, fx = -Math.sin(f), fz = -Math.cos(f);   // лицо стола
+			await R.place(pick(["chair_leather", "chair_bent"]), [desk.entry.x + fx * 0.75, desk.entry.z + fz * 0.75], [-fx, -fz]);
+		}
+		for (const n of [pick(["wardrobe_legs", "bookcase_glass_doors"]), "safe"]) { const r = await R.atWall(n); if (r) racks.push(r); }
+		const G = roomGrid(R.rect, R.occ), spots = useSpots(racks, G, rnd, R.y);
+		if (spots.length) H.loot.push({ rect: R.rect, y: R.y, G, spots, room: rm.id });
 	}
 
 	/** Хлам в комнате: у шкафов, у кроватей, сверху на низкой мебели и вразброс. */
