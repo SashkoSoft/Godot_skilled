@@ -34,6 +34,10 @@ import { windUniforms, setWind } from "./wind.js";
    отладки, не эмулируя нажатия клавиш, которых в headless нет.
    Пример: #view=3&debug=1&bump=0; квартал — #level=district */
 const q = new URLSearchParams(location.hash.slice(1));
+// Дома в фокусе (district.json → focus): наполнение — мебель, хлам, лут, обходчики, туннели —
+// только в них, остальные стоят пустыми. Нет поля или #focus=all — все дома.
+let FOCUS = null;
+const inFocus = id => !FOCUS || FOCUS.includes(id);
 const LEVEL = q.get("level") === "district" ? "district" : "street";
 
 const hud = {
@@ -240,6 +244,7 @@ if (LEVEL === "district") {
 	// Квартал — отдельный уровень: улица-стенд покрытий тянется на 440 м по
 	// оси X и прошла бы сквозь дома, поэтому её здесь нет.
 	const d = await (await fetch("../game/district.json", { cache: "no-store" })).json();
+	FOCUS = q.get("focus") === "all" ? null : q.has("focus") ? q.get("focus").split(",") : d.focus || null;
 	// Большие деревья: по умолчанию спрятаны и не грузятся (пользователь попросил
 	// убрать, пока работаем с дорожками). #trees=on — модели HoudiniCOP с LOD,
 	// #trees=box — коробками; клавиша T — показать/спрятать (догрузит при первом нажатии).
@@ -289,7 +294,7 @@ if (LEVEL === "district") {
 		if (q.get("interiors") !== "0") {
 			interiors = createInteriors(scene, { wear: 0.5, clutter: q.has("clutter") ? +q.get("clutter") : 1 });   // #clutter — плотность хлама, 0 — без него
 		if (robotsApi) robotsApi.setLoot(interiors.lootAt);   // обходчики лутят мебель
-			for (const b of d.buildings.filter(b => b.model && H.ids.includes(b.id))) {
+			for (const b of d.buildings.filter(b => b.model && H.ids.includes(b.id) && inFocus(b.id))) {
 				fetch(`../game/assets/models/houses/${b.model}/${b.model}.json`).then(r => r.ok ? r.json() : null)
 					.then(info => { if (info && info.rooms) interiors.addHouse(b, info, { roomFilter: roomFurnishable }); }).catch(() => {});
 			}
@@ -379,7 +384,7 @@ if (q.has("sss")) windUniforms.uSSS.value = +q.get("sss");   // сила про�
 	// #env=0 — без отражений на хроме (A/B и проверка, что тормозит именно оно)
 	const envMap = q.get("env") === "0" ? null : skyEnvMap();
 	// дома hou: их комнаты, двери и марши — продолжение графа улицы (роботы ходят и внутри)
-	const houseInfo = (await Promise.all(d.buildings.filter(b => b.model).map(b =>
+	const houseInfo = (await Promise.all(d.buildings.filter(b => b.model && inFocus(b.id)).map(b =>
 		fetch(`../game/assets/models/houses/${b.model}/${b.model}.json`).then(r => r.ok ? r.json() : null).catch(() => null))))
 		.filter(i => i && i.rooms).map(info => ({ info, roomOk: roomWalkable }));
 	const tunnelInfo = await fetch("../game/assets/models/houses/tunnels/tunnels.json").then(r => r.ok ? r.json() : null).catch(() => null);
@@ -858,7 +863,7 @@ function drawInventory() {
 		`<span style="color:${LOOT_COLOR[k]}">●</span> ${LOOT_RU[k]}: ${inventory[k]}`).join("<br>");
 }
 drawInventory();
-const FURN_RU = { cabinet: "шкаф", drawer: "ящики", lowdoor: "тумбочку" };
+const FURN_RU = { cabinet: "шкаф", drawer: "ящики", lowdoor: "тумбочку", floor: "кучу вещей" };
 let nearSpot = null;
 function tryLoot() {
 	if (!player || player.looting || !nearSpot || !interiors) return;

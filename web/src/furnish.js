@@ -321,8 +321,8 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 					// кадры клипа: рука на ручке → дверца/ящик открыты (robot_clip_extras blend)
 					openT: L[1] === "cabinet" ? [0.667, 1.958] : L[1] === "drawer" ? [1.792, 2.333] : [1.458, 2.542] });
 			}
+			if (clutter > 0) await scatter(rm, kind, placed, occ, inside, y, rnd, (info.kind === "ruin" ? 1.6 : 1) * clutter, plan, G, spots);
 			if (spots.length) H.loot.push({ rect: [gx0, gz0, gx1, gz1], y, G, spots, room: rm.id });
-			if (clutter > 0) await scatter(rm, kind, placed, occ, inside, y, rnd, (info.kind === "ruin" ? 1.6 : 1) * clutter, plan);
 		}
 		// экземпляры: по детали модели на всё здание
 		const group = new THREE.Group(); group.name = "Interior-" + b.id;
@@ -369,7 +369,7 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 		}
 	}
 	/** Хлам в комнате: у шкафов, у кроватей, сверху на низкой мебели и вразброс. */
-	async function scatter(rm, kind, placed, occ, inside, y, rnd, k, plan) {
+	async function scatter(rm, kind, placed, occ, inside, y, rnd, k, plan, G, spots) {
 		const items = [];   // габариты уже брошенных вещей
 		const pick = list => list[Math.floor(rnd() * list.length)];
 		const fits = bx => {
@@ -394,12 +394,28 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 			return false;
 		};
 		const count = (lo, hi) => Math.round((lo + rnd() * (hi - lo)) * k);
+		// Куча и место, откуда в ней рыться (клип LootFloor: куча в 0.5 м перед Root и 0.25 м
+		// вправо — работает правая рука). Робот подходит со стороны середины комнаты.
+		const [rx0, rz0, rx1, rz1] = rectOf(rm), mx = (rx0 + rx1) / 2, mz = (rz0 + rz1) / 2;
+		const pile = async (px, pz, r) => {
+			const n = pick(["pile3_0", "pile3_1", "pile5_0", "pile5_1", "pile8_0"]);
+			const before = plan.length;
+			if (!(await drop(n, px, pz, r))) return false;
+			const p = plan[before], h = Math.atan2(p.x - mx, p.z - mz), s = Math.sin(h), c = Math.cos(h);
+			const ux = p.x + 0.25 * c - 0.5 * s, uz = p.z - 0.25 * s - 0.5 * c;
+			const [ui, uj] = cellOf(G, ux, uz);
+			if (isFree(G, ui, uj)) spots.push({ kind: "floor", n, use: [ux, uz], y, heading: h, looted: false, busy: false,
+				item: rollItem(rnd), at: [p.x, y + 0.4, p.z], entry: null, node: null, open: null, openT: [0, 0] });
+			return true;
+		};
 		for (const P of placed) {
 			const { bx } = P, cx = (bx.min.x + bx.max.x) / 2, cz = (bx.min.z + bx.max.z) / 2;
 			const f = P.face || [0, 0], half = Math.max(bx.max.x - bx.min.x, bx.max.z - bx.min.z) / 2;
 			if (STORAGE.test(P.n)) {
 				// перед шкафом веером: центр — на 0.6 м от лица, разброс по ширине шкафа
 				const fx = f[0] ? (f[0] > 0 ? bx.max.x : bx.min.x) + f[0] * 0.6 : cx, fz = f[1] ? (f[1] > 0 ? bx.max.z : bx.min.z) + f[1] * 0.6 : cz;
+				// иногда — куча одежды (blend + HoudiniCOP), в ней можно рыться: место лута на полу
+				if (rnd() < 0.45 * Math.min(1, k) && await pile(fx, fz, Math.max(0.4, half * 0.6))) continue;
 				for (let i = count(2, 6); i > 0; i--) await drop(pick(CLUTTER.storage), fx, fz, Math.max(0.6, half));
 			} else if (BED.test(P.n)) {
 				for (let i = count(1, 3); i > 0; i--) await drop(pick(CLUTTER.bed), cx, cz, half + 0.7);

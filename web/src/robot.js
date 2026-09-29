@@ -5,6 +5,7 @@ import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { walkLines } from "./district.js";
 import { addHouseToGraph, addTunnelsToGraph } from "./housenav.js";
 import { inPlace, stairsPose } from "./stairs.js";
+import { lootSequence } from "./lootui.js";
 
 // Роботы бродят по кварталу: сеть проездов и троп из district.json превращается
 // в граф, на развилке выбирается случайный путь, в тупике — разворот.
@@ -201,7 +202,8 @@ export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap
 	const LC = {};
 	for (const n of ["LootCabinet-open-L", "LootCabinet-open-R", "LootCabinet-search-loop", "LootCabinet-take", "LootCabinet-empty", "LootCabinet-leave",
 		"LootDrawer-open", "LootDrawer-search-loop", "LootDrawer-take", "LootDrawer-empty", "LootDrawer-leave",
-		"LootLowDoor-open-L", "LootLowDoor-open-R", "LootLowDoor-search-loop", "LootLowDoor-take", "LootLowDoor-leave"]) LC[n] = byName(n);
+		"LootLowDoor-open-L", "LootLowDoor-open-R", "LootLowDoor-search-loop", "LootLowDoor-take", "LootLowDoor-leave",
+		"LootFloor-enter", "LootFloor-search-loop", "LootFloor-take", "LootFloor-empty", "LootFloor-leave"]) LC[n] = byName(n);
 	// сумка на поясе: вершины — в пространстве модели робота, вешается на кость Hips
 	const bagG = await loader.loadAsync(DIR + "loot_bag_web.glb").catch(() => null);
 	console.log(`[улица] робот: клипы ${gltf.animations.map(a => `${a.name} ${a.duration.toFixed(2)}с`).join(", ")}`);
@@ -356,6 +358,8 @@ const ACT_RU = {
 	"LootDrawer-empty": "пусто — разводит руками", "LootDrawer-leave": "встаёт от ящика",
 	"LootLowDoor-open": "открывает тумбочку", "LootLowDoor-search-loop": "роется в тумбочке", "LootLowDoor-take": "достаёт находку в сумку",
 	"LootLowDoor-leave": "встаёт от тумбочки",
+	"LootFloor-enter": "склоняется к куче", "LootFloor-search-loop": "роется в куче вещей", "LootFloor-take": "достаёт находку в сумку",
+	"LootFloor-empty": "пусто — выпрямляется", "LootFloor-leave": "выпрямляется",
 };
 function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false, LC = {}, getLoot = () => null) {
 	const mixer = new THREE.AnimationMixer(root);
@@ -666,12 +670,7 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false, LC =
 	const lootAction = (n, loop) => { const c = LC[n]; if (!c) return null; const a = mixer.clipAction(c); a.setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce, Infinity); a.clampWhenFinished = !loop; return a; };
 	function lootSeq(kind) {
 		const side = rand() < 0.5 ? "L" : "R", found = !!ex.spot.item;   // находит то, что лежит (карта лута)
-		const P = kind === "cabinet" ? "LootCabinet" : kind === "drawer" ? "LootDrawer" : "LootLowDoor";
-		const open = kind === "drawer" ? `${P}-open` : `${P}-open-${side}`;
-		const seq = [[open], [`${P}-search-loop`, 2 + rand() * 3]];
-		if (found || !LC[`${P}-empty`]) seq.push([`${P}-take`]); else seq.push([`${P}-empty`]);
-		seq.push([`${P}-leave`]);
-		return seq.filter(([n]) => LC[n]);
+		return lootSequence(kind, found, rand, n => !!LC[n]);
 	}
 	function exStart(res) {
 		ex = { spot: res.spot, pts: res.pts, i: 0, y: res.y, phase: "go", seq: null, step: -1, t: 0, cur: null };

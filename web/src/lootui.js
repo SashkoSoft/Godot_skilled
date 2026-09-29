@@ -7,6 +7,20 @@ export const LOOT_KINDS = ["gold", "silver", "bronze"];
 export const LOOT_RU = { gold: "золото", silver: "серебро", bronze: "бронза" };
 export const LOOT_COLOR = { gold: "#f2c14e", silver: "#c9d1d9", bronze: "#c07a45" };
 
+/**
+ * Цепочка клипов обыска (blend): открыть/склониться → порыться → достать в сумку → отойти;
+ * «пусто» (-empty) сам кончается стойкой — после него не отходят. has(n) — есть ли клип.
+ */
+export function lootSequence(kind, found, rand, has) {
+	const P = { cabinet: "LootCabinet", drawer: "LootDrawer", lowdoor: "LootLowDoor", floor: "LootFloor" }[kind] || "LootCabinet";
+	const side = rand() < 0.5 ? "L" : "R";
+	const first = kind === "floor" ? `${P}-enter` : kind === "drawer" ? `${P}-open` : `${P}-open-${side}`;
+	const seq = [[first], [`${P}-search-loop`, 2 + rand() * 3]];
+	if (found || !has(`${P}-empty`)) seq.push([`${P}-take`], [`${P}-leave`]);
+	else seq.push([`${P}-empty`]);
+	return seq.filter(([n]) => has(n));
+}
+
 /** Табличка над роботом: три кружка со счётом. Холст перерисовывается только при изменении. */
 export function makeBagLabel() {
 	const cv = document.createElement("canvas");

@@ -4,6 +4,7 @@ import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { MeshBVH } from "../vendor/three-mesh-bvh/index.module.js";
 import { inPlace, flightShape, stairsPose } from "./stairs.js";
+import { lootSequence } from "./lootui.js";
 
 // Игрок: робот-герой от третьего лица, бегает по кварталу и внутри домов.
 //
@@ -176,10 +177,7 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 	let lootRun = null;
 	const lootClip = n => { const c = clip(n); if (!c) return null; const a = mixer.clipAction(c); return a; };
 	function loot(kind, found, spot, onDone) {
-		const P = kind === "cabinet" ? "LootCabinet" : kind === "drawer" ? "LootDrawer" : "LootLowDoor";
-		const side = Math.random() < 0.5 ? "L" : "R";
-		const seq = [[kind === "drawer" ? `${P}-open` : `${P}-open-${side}`], [`${P}-search-loop`, 2], [found || !clip(`${P}-empty`) ? `${P}-take` : `${P}-empty`], [`${P}-leave`]]
-			.filter(([n]) => clip(n));
+		const seq = lootSequence(kind, found, Math.random, n => !!clip(n));
 		lootRun = { seq, k: -1, t: 0, dur: 0, spot, heading: spot.heading, to: new THREE.Vector3(spot.use[0], pos.y, spot.use[1]), onDone };
 		vel.set(0, 0, 0);
 	}
