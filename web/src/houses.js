@@ -70,7 +70,7 @@ export async function loadHouses(d, focus = null) {
 				gl.forEach((g, i) => { if (g) [l0, l1, l2][i].scene.add(g.scene); });
 			}
 			if (info && info.zones) {
-				const z = [l0, l1, l2].map(g => dressZones(g.scene, info));
+				const z = [l0, l1, l2].map((g, i) => dressZones(g.scene, info, { coarse: i > 0 }));   // дальние ступени — без разбивки по комнатам
 				console.log(`[улица] дом ${b.id}: зоны отделки на ступенях LOD ${z.join("/")} мешей`);
 			}
 			const lod = new THREE.LOD();

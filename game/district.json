@@ -134,7 +134,6 @@
 				{ "item": "seesaw", "at": [0, -7], "rot": 0 },
 				{ "item": "rocket", "at": [-1.5, -1], "rot": 20 },
 				{ "item": "slide_tower", "at": [1, 9.2], "rot": 180 },
-				{ "item": "ice_slide", "at": [-11, -2], "rot": 0 },
 				{ "item": "dome_climber", "at": [9, -2], "rot": 0 },
 				{ "item": "horizontal_bars", "at": [-10.5, 8.5], "rot": 0 },
 				{ "item": "wall_bars", "at": [10.5, 8.8], "rot": 180 },

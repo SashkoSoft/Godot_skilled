@@ -242,12 +242,13 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 			const occ = [...(doorBoxes[rm.id] || [])];
 			// окна комнаты: перед окном нельзя высокое
 			const tall = [];
-			for (const w of winByFloor[rm.floor] || []) {
+			for (const w of info.windows) {
+				if (Math.abs(w.pos[1] - (rm.y + 0.9)) > 1.6) continue;   // окно этой комнаты по высоте (номер этажа у окон бывает сдвинут)
 				const [wx, , wz] = w.pos;
 				if (wx < gx0 - 0.4 || wx > gx1 + 0.4 || wz < gz0 - 0.4 || wz > gz1 + 0.4) continue;
 				const hw = w.width / 2 + 0.15, alongX = w.normal ? Math.abs(w.normal[2]) > 0.5
 					: Math.min(Math.abs(wz - gz0), Math.abs(wz - gz1)) < Math.min(Math.abs(wx - gx0), Math.abs(wx - gx1));   // старые дома (b1, b5, b6): нормали нет — по ближней стене
-				tall.push(new THREE.Box3(new THREE.Vector3(wx - (alongX ? hw : 0.6), -1, wz - (alongX ? 0.6 : hw)), new THREE.Vector3(wx + (alongX ? hw : 0.6), 3, wz + (alongX ? 0.6 : hw))));
+				tall.push(new THREE.Box3(new THREE.Vector3(wx - (alongX ? hw : 1.0), -1, wz - (alongX ? 1.0 : hw)), new THREE.Vector3(wx + (alongX ? hw : 1.0), 99, wz + (alongX ? 1.0 : hw))));
 			}
 			const hit = (bx, isTall) => {
 				const s = bx.clone().expandByScalar(-0.02);

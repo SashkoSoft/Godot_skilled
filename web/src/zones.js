@@ -175,7 +175,7 @@ function material(set, floor, uvM = 1, double = false) {
  * Разложить зоны дома по наборам. root — сцена LOD (любая ступень), info — <id>.json.
  * Без атрибутов _room/_panel (дальние ступени) — вариант по умолчанию для всей зоны.
  */
-export function dressZones(root, info) {
+export function dressZones(root, info, { coarse = false } = {}) {
 	if (!info || !info.zones) return 0;
 	// отметка пола 1-го этажа и шаг этажей — из комнат
 	const ys = [...new Set(info.rooms.filter(r => r.floor >= 0).map(r => r.y))].sort((a, b) => a - b);
@@ -198,7 +198,9 @@ export function dressZones(root, info) {
 		const sgn = a => a ? (i => { const x = a.getX(i); return x >= 2147483648 ? x - 4294967296 : x; }) : () => -1;   // -1 записан как uint32
 		// после сжатия (tools/attr2uv.py) комната и панель — в uv2: x — комната, y — панель
 		const u2 = !room && g.attributes.uv2;
-		const R = u2 ? (i => Math.round(u2.getX(i))) : sgn(room), P = u2 ? (i => Math.round(u2.getY(i))) : sgn(panel);
+		const R0 = u2 ? (i => Math.round(u2.getX(i))) : sgn(room), P = u2 ? (i => Math.round(u2.getY(i))) : sgn(panel);
+		// дальние LOD: комната перенесена с ближней точки и прыгает — одни обои и один пол на дом
+		const R = coarse ? (() => -1) : R0;
 		const idx = g.index ? g.index.array : Array.from({ length: pos.count }, (_, i) => i);
 		const zv = new Float32Array(pos.count * 2);
 		const bySet = new Map();
