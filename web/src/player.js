@@ -93,7 +93,7 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 	}
 
 	// Марши домов (<id>.json → flights): на марше — клип лестницы, ноги по ступеням (stairs.js)
-	let flights = [], onStairs = null;
+	let flights = [], onStairs = null, doorSegs = null;
 	function setFlights(list) {
 		flights = list.filter(f => f.passable !== false).map(f => {
 			const F = flightShape(f);
@@ -141,6 +141,14 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 				},
 			});
 			if (!pushed) break;
+		}
+		// створки дверей (doors.js): твёрдые отрезки, круг капсулы выталкивается
+		if (doorSegs) for (const [x0, z0, x1, z1] of doorSegs(pos)) {
+			const dx = x1 - x0, dz = z1 - z0, L2 = dx * dx + dz * dz || 1;
+			const t = Math.max(0, Math.min(1, ((pos.x - x0) * dx + (pos.z - z0) * dz) / L2));
+			const cx = x0 + dx * t, cz = z0 + dz * t, ox = pos.x - cx, oz = pos.z - cz, d = Math.hypot(ox, oz);
+			const need = R + 0.03;
+			if (d < need && d > 1e-5) { pos.x = cx + ox / d * need; pos.z = cz + oz / d * need; }
 		}
 		// пол
 		const g = groundAt(pos, vel.y <= 0 ? 0.25 : -1);
@@ -192,5 +200,5 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 		camera.position.copy(camPos); camera.lookAt(head);
 	}
 
-	return { root, pos, setColliders, setFlights, update, cameraAt, get onStairs() { return !!onStairs; }, get onGround() { return onGround; }, get bvh() { return bvh; } };
+	return { root, pos, setColliders, setFlights, setDoors(fn) { doorSegs = fn; }, update, cameraAt, get onStairs() { return !!onStairs; }, get onGround() { return onGround; }, get bvh() { return bvh; } };
 }

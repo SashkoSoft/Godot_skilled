@@ -709,6 +709,8 @@ async function startPlay() {
 			: q.get("spawn") ? q.get("spawn").split(",").map(Number) : [108.5, 0.1, -20];
 		player = await createPlayer(scene, { spawn, envMap: skyEnvMap() });
 		player.setFlights(world.flights);
+		// створки: отрезки ближних (все дома)
+		player.setDoors(p => (world.houses ? world.houses.doors.flatMap(D => D.segments(p)) : []));
 		cam.yaw = 0; cam.pitch = -12;
 	}
 	player.root.visible = true;
@@ -797,6 +799,12 @@ function tick(now) {
 	const cpu0 = performance.now();
 	for (const r of crowd) r.update(dt);
 	if (robotLod) robotLod(camera);
+	// двери открываются перед игроком и роботами
+	if (world.houses && world.houses.doors.length && layerOn.houses) {
+		const agents = crowd.map(r => r.object.position);
+		if (playing && player) agents.push(player.pos);
+		for (const D of world.houses.doors) D.update(dt, agents);
+	}
 	// #robotdbg — раз в 5 с где обходчики (проверка маршрутов по дому)
 	if (q.has("robotdbg") && (robotDbgT -= dt) < 0) { robotDbgT = 5; console.log("ROBODBG " + crowd.filter(r => r.indoor).map(r => r.object.position.toArray().map(v => v.toFixed(1)).join(",") + ":" + r.mode).join(" ")); }
 	// игрок — встречный, которому уступают дорогу (сам он не сворачивает)

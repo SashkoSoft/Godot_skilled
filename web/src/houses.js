@@ -3,6 +3,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { houseTiles, textureSet } from "./facades.js";
 import { dressZones } from "./zones.js";
+import { extractDoors } from "./doors.js";
 
 // Дома квартала от сессии hou: game/assets/models/houses/<id>/<id>_lod{0,1,2}.glb.
 // Пивот — центр прямоугольника rect из district.json на уровне тротуара, оси
@@ -55,7 +56,7 @@ export async function loadHouses(d) {
 	const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);   // руины сжаты (tools/ruin_import.py)
 	const group = new THREE.Group();
 	group.name = "Houses";
-	const ids = [], colliders = [];   // коллизия домов (<id>_col.glb) — в мировых координатах, для игрока
+	const ids = [], colliders = [], doors = [];   // doors — управление створками (doors.js), по дому   // коллизия домов (<id>_col.glb) — в мировых координатах, для игрока
 	for (const b of d.buildings.filter(b => b.model)) {
 		try {
 			const dir = `${BASE}${b.model}/${b.model}`;
@@ -97,6 +98,10 @@ export async function loadHouses(d) {
 			}
 			group.add(lod);
 			ids.push(b.id);
+			// створки — отдельными узлами у hou: в один BatchedMesh, открываются сами
+			lod.updateMatrixWorld(true);
+			const D = extractDoors(l0.scene);
+			if (D) doors.push(D);
 			// коллизия — фоном; её нет — игрок упирается в коробку габарита (см. player.js)
 			loader.loadAsync(`${dir}_col.glb`).then(g => {
 				g.scene.position.copy(lod.position); if (inRect) g.scene.position.set(0, 0, 0);
@@ -107,5 +112,5 @@ export async function loadHouses(d) {
 			console.warn(`[улица] дом ${b.id}: модель ${b.model} не загрузилась — остаётся коробка (${e})`);
 		}
 	}
-	return { group, ids, colliders };
+	return { group, ids, colliders, doors };
 }
