@@ -285,7 +285,8 @@ export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap
 		root.lodSets = lods; root.lodCur = 0;
 		let startNode;
 		// каждый третий (кроме первого — за ним камера F) — обходчик домов, стартует внутри
-		const indoor = houseNodes.length > 0 && i > 0 && i % 3 === 0;
+		// все — обходчики (ищут лут), кроме первого: за ним камера F на улице
+		const indoor = houseNodes.length > 0 && i > 0;
 		if (i === 0 && start) {
 			let best = Infinity;
 			graph.forEach((n, j) => { if (n.house) return; const dd = Math.hypot(n.p[0] - start[0], n.p[1] - start[1]); if (dd < best) { best = dd; startNode = j; } });
@@ -721,8 +722,60 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false, LC =
 		pos.x += Math.sin(heading) * speed * dt; pos.y += Math.cos(heading) * speed * dt;
 	}
 
+	/* ── заметил игрока ──────────────────────────────────────────────────
+	   setWatch(p, point): p — точка (Vector3, живая: позиция игрока), point — показать на неё
+	   рукой. Стоит (стойка), корпусом доворачивает, если цель сбоку больше 60°; голова (Neck)
+	   ведёт за целью поверх клипа (±70° по курсу, ±30° по высоте). Обыск не прерывает.
+	   Клипы blend Notice / Watch-loop / Point / Call — когда придут; пока стойка и взмах. */
+	let watchP = null, watchT = 0, pointAt = -1;
+	const neck = root.getObjectByName("Neck");
+	const _up = new THREE.Vector3(0, 1, 0), _pq = new THREE.Quaternion(), _ax = new THREE.Vector3(), _q = new THREE.Quaternion();
+	const WAVE = VARS.find(a => /Idle_Wave/i.test(a.getClip().name));
+	function setWatch(p, point = false) {
+		if (!p) { watchP = null; return; }
+		if (!watchP) { watchT = 0; pointAt = point ? 0.9 : -1; }
+		watchP = p;
+	}
+	function watchTick(dt) {
+		watchT += dt;
+		speed = 0;
+		// из шага/бега — в стойку (перетеканием)
+		if (!fall && !gesture && active !== A.idle && !trans) {
+			A.idle.reset().play(); active.crossFadeTo(A.idle, 0.35, false); active = A.idle; mode = "idle"; pending = null; strafe = null;
+			modeHold = 1e9; modeTime = 0;
+		}
+		if (pointAt >= 0 && watchT > pointAt && WAVE && !gesture) { pointAt = -1; startGesture(WAVE, "idle"); }
+		if (gesture && (gesture.paused || gesture.time >= gesture.getClip().duration - 1e-4)) {
+			A.idle.reset().play(); gesture.crossFadeTo(A.idle, 0.2, false); active = A.idle; gesture = null;
+		}
+		const want = Math.atan2(watchP.x - pos.x, watchP.z - pos.y);
+		const d = Math.atan2(Math.sin(want - heading), Math.cos(want - heading));
+		if (Math.abs(d) > 1.05) heading += Math.sign(d) * Math.min(Math.abs(d) - 0.6, dt * 1.6);
+	}
+	function lookAtWatch() {
+		if (!neck || !watchP) return;
+		const want = Math.atan2(watchP.x - root.position.x, watchP.z - root.position.z);
+		const yaw = Math.max(-1.2, Math.min(1.2, Math.atan2(Math.sin(want - heading), Math.cos(want - heading))));
+		const dy = watchP.y + 1.3 - (root.position.y + 2.1), dh = Math.hypot(watchP.x - root.position.x, watchP.z - root.position.z);
+		const pitch = Math.max(-0.5, Math.min(0.5, Math.atan2(dy, dh)));
+		neck.parent.updateWorldMatrix(true, false);
+		neck.parent.getWorldQuaternion(_pq).invert();
+		_ax.copy(_up).applyQuaternion(_pq);            // мировая вертикаль в осях родителя шеи
+		neck.quaternion.premultiply(_q.setFromAxisAngle(_ax, yaw));
+		// кивок — вокруг горизонтали, перпендикулярной взгляду
+		_ax.set(Math.cos(want), 0, -Math.sin(want)).applyQuaternion(_pq);
+		neck.quaternion.premultiply(_q.setFromAxisAngle(_ax, -pitch));
+	}
+
 	function update(dt) {
 		mixer.update(dt);
+		if (watchP && !ex && !stairs) {
+			watchTick(dt);
+			root.position.set(pos.x, root.position.y, pos.y); root.rotation.y = heading;
+			root.updateMatrixWorld(true); lookAtWatch();
+			return;
+		}
+		if (watchP === null && modeHold > 1e8) { modeHold = range(...HOLD.idle); }
 		if (ex) {
 			exTick(dt);
 			if (ex) { root.position.set(pos.x, ex.y, pos.y); root.rotation.y = heading; return; }
@@ -790,6 +843,7 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false, LC =
 		object: root, update, offPath, indoor,
 		/** Что делает сейчас — словами (подпись в режиме наблюдения). */
 		get action() {
+			if (watchP && !ex) return gesture ? "показывает на игрока" : "следит за игроком";
 			if (ex) return ex.phase === "loot" ? (ex.cur ? ACT_RU[ex.cur.getClip().name.replace(/-(L|R)$/, "")] || "обыскивает" : "подходит к мебели") : ex.phase === "go" ? "идёт к мебели" : "возвращается";
 			if (fall) return "упал";
 			if (stairs) return stairs === A.stairsUp ? "поднимается по лестнице" : "спускается по лестнице";
@@ -797,7 +851,7 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false, LC =
 			if (gesture) return turnSign ? "поворачивается" : (ACT_RU[gesture.getClip().name] || "жест");
 			if (trans) return ACT_RU[trans.to] || trans.to;
 			return ACT_RU[mode] || mode;
-		}, bag, get onStairs() { return !!stairs; }, get looting() { return ex ? ex.phase : null; }, get strafing() { return !!strafe; },
+		}, bag, setWatch, get watching() { return !!watchP; }, get onStairs() { return !!stairs; }, get looting() { return ex ? ex.phase : null; }, get strafing() { return !!strafe; },
 		get heading() { return heading; }, get speed() { return speed; }, get mode() { return mode; },
 		setAvoid(v) { latTarget = v; },
 		// испуг от встречного: только стоя или на ходу, с шансом — отшатнуться и попятиться

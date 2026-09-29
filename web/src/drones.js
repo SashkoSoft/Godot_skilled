@@ -72,7 +72,32 @@ export async function spawnDrones(d, { count = 3, robots = () => [] } = {}) {
 	const want = new THREE.Vector3(), tmp = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), q = new THREE.Quaternion();
 	const euler = new THREE.Euler(0, 0, 0, "YXZ"), inv = new THREE.Matrix4();
 
+	// Поле зрения камеры дрона — пятно на земле: куда смотрит подвес, с раствором FOV_HALF.
+	// Эллипс (наклонный луч вытягивает пятно), мягкий край, кольцо-развёртка бежит от центра;
+	// следит за целью — пятно краснеет. Плоскость чуть над землёй, видна сквозь траву.
+	const FOV_HALF = 0.32;
+	const fovMat = new THREE.ShaderMaterial({
+		transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
+		uniforms: { uT: { value: 0 } },
+		vertexShader: `attribute float aLock; varying vec2 vUv; varying float vLock; void main() { vUv = uv * 2.0 - 1.0; vLock = aLock;
+			gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0); }`,
+		fragmentShader: `uniform float uT; varying vec2 vUv; varying float vLock; void main() {
+			float r = length(vUv); if (r > 1.0) discard;
+			float edge = smoothstep(1.0, 0.93, r) * (1.0 - smoothstep(0.93, 0.8, r));      // кромка
+			float fill = (1.0 - r) * 0.10;
+			float scan = smoothstep(0.06, 0.0, abs(r - fract(uT * 0.45))) * 0.35;
+			vec3 c = mix(vec3(1.0, 0.72, 0.25), vec3(1.0, 0.18, 0.12), vLock);
+			gl_FragColor = vec4(c * (edge * 0.9 + fill + scan), 1.0); }`,
+	});
+	const fovGeo = new THREE.PlaneGeometry(2, 2).rotateX(-Math.PI / 2);
+	const fov = new THREE.InstancedMesh(fovGeo, fovMat, Math.max(1, drones.length));
+	fov.geometry.setAttribute("aLock", new THREE.InstancedBufferAttribute(new Float32Array(Math.max(1, drones.length)), 1));
+	fov.name = "DroneFOV"; fov.frustumCulled = false; fov.renderOrder = 5;
+	group.add(fov);
+	const _fd = new THREE.Vector3(), _fp = new THREE.Vector3(), _fm = new THREE.Matrix4(), _fq = new THREE.Quaternion(), _fs = new THREE.Vector3();
+
 	function update(dt, t) {
+		fovMat.uniforms.uT.value = t;
 		for (const D of drones) {
 			const p = D.lod.position;
 			D.timer -= dt;
@@ -148,6 +173,25 @@ export async function spawnDrones(d, { count = 3, robots = () => [] } = {}) {
 				q.setFromEuler(euler).premultiply(T.base);
 				T.o.quaternion.slerp(q, Math.min(1, dt * 2));   // подвес плавный — из него смотрят
 			}
+			// пятно обзора: луч подвеса (−Z) до земли
+			const i = drones.indexOf(D), T0 = D.turrets[0];
+			let shown = false;
+			if (T0) {
+				T0.o.updateWorldMatrix(true, false);
+				T0.o.getWorldPosition(_fp);
+				_fd.set(0, 0, -1).transformDirection(T0.o.matrixWorld);
+				if (_fd.y < -0.08) {
+					const k = -(_fp.y - 0.08) / _fd.y, hx = _fp.x + _fd.x * k, hz = _fp.z + _fd.z * k;
+					const dist = k, r = dist * Math.tan(FOV_HALF), stretch = Math.min(3, 1 / Math.max(0.33, -_fd.y));
+					_fq.setFromAxisAngle(up, Math.atan2(_fd.x, _fd.z));
+					_fm.compose(_fs.set(hx, 0.08, hz), _fq, _fp.set(r, 1, r * stretch));
+					fov.setMatrixAt(i, _fm);
+					fov.geometry.attributes.aLock.array[i] = D.state === "watch" ? 1 : 0;
+					shown = true;
+				}
+			}
+			if (!shown) { _fm.makeScale(0, 0, 0); fov.setMatrixAt(i, _fm); }
+			fov.instanceMatrix.needsUpdate = true; fov.geometry.attributes.aLock.needsUpdate = true;
 		}
 	}
 	console.log(`[дроны] разведчиков: ${drones.length}`);

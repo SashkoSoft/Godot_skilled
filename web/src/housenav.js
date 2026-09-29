@@ -30,7 +30,7 @@ function rectOf(rm) {
  * Добавить дом в граф. nodes — массив узлов улицы (изменяется: дописываются узлы дома).
  * roomOk(room) — фильтр (руина: только уцелевшие); по умолчанию все.
  */
-export function addHouseToGraph(nodes, info, { roomOk = () => true } = {}) {
+export function addHouseToGraph(nodes, info, { roomOk = () => true, entrances = [] } = {}) {
 	const first = nodes.length;
 	const add = (x, y, z, r = 0.35) => { nodes.push({ p: [x, z], y, nb: [], r, house: true, hid: info.id }); return nodes.length - 1; };
 	const link = (i, j) => { if (i !== j && i >= 0 && j >= 0 && !nodes[i].nb.includes(j)) { nodes[i].nb.push(j); nodes[j].nb.push(i); } };
@@ -86,7 +86,7 @@ export function addHouseToGraph(nodes, info, { roomOk = () => true } = {}) {
 	// площадки: этажные — центр комнаты (+ её точки у дверей), промежуточные/тамбур/крыльцо — центр
 	const landings = [], roomNode = {};   // roomNode — узел помещения (подвал: для связи с туннелем)
 	for (const rm of info.rooms) {
-		if (!(LAND.test(rm.type) || rm.floor === -1) || !roomOk(rm)) continue;
+		if (!(LAND.test(rm.type) || rm.floor === -1 || rm.type === "shop") || !roomOk(rm)) continue;
 		const [x0, z0, x1, z1] = rectOf(rm), n = add((x0 + x1) / 2, rm.y, (z0 + z1) / 2, 0.4);
 		for (const p of roomPts[rm.id] || []) link(n, p);
 		landings.push({ n, rect: [x0, z0, x1, z1], y: rm.y });
@@ -119,6 +119,17 @@ export function addHouseToGraph(nodes, info, { roomOk = () => true } = {}) {
 		for (let i = 0; i < first; i++) { const dd = Math.hypot(nodes[i].p[0] - x, nodes[i].p[1] - z); if (dd < bd) { bd = dd; best = i; } }
 		return best;
 	};
+	// входы с улицы (district: точки на стене) — в помещение за стеной, если оно — зал с узлом
+	for (const [ex, ez] of entrances) {
+		for (const rm of info.rooms) {
+			if (rm.floor !== 0 || roomNode[rm.id] === undefined) continue;
+			const [x0, z0, x1, z1] = rectOf(rm);
+			if (ex < x0 - 0.6 || ex > x1 + 0.6 || ez < z0 - 0.6 || ez > z1 + 0.6) continue;
+			const cx = Math.max(x0 + 1, Math.min(x1 - 1, ex)), cz = Math.max(z0 + 1, Math.min(z1 - 1, ez));
+			const out = add(ex + Math.sign(ex - cx) * 0.8, rm.y, ez + Math.sign(ez - cz) * 0.8, 0.4), inn = add(cx, rm.y, cz, 0.4);
+			link(out, inn); link(inn, roomNode[rm.id]); link(out, nearStreet(nodes[out].p[0], nodes[out].p[1]));
+		}
+	}
 	let flights = 0;
 	for (const f of info.flights || []) {
 		if (f.passable === false) continue;

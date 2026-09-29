@@ -4,7 +4,7 @@ import { buildGround } from "./ground.js";
 import { setSurfaceUniform } from "./surface.js";
 import { loadProps } from "./props.js";
 import { buildBlockout, groundMaterial, hardMaterials, dressBoxes } from "./blockout.js";
-import { undergrowthPositions } from "./district.js";
+import { undergrowthPositions, entrancePoint } from "./district.js";
 import { loadHouses } from "./houses.js";
 import { loadFences } from "./fences.js";
 import { loadPlayground } from "./playground.js";
@@ -295,8 +295,9 @@ if (LEVEL === "district") {
 			interiors = createInteriors(scene, { wear: 0.5, clutter: q.has("clutter") ? +q.get("clutter") : 1 });   // #clutter — плотность хлама, 0 — без него
 		if (robotsApi) robotsApi.setLoot(interiors.lootAt);   // обходчики лутят мебель
 			for (const b of d.buildings.filter(b => b.model && H.ids.includes(b.id) && inFocus(b.id))) {
+				const ents = [].concat(b.entrances || []).map(e => entrancePoint(b, e).p);
 				fetch(`../game/assets/models/houses/${b.model}/${b.model}.json`).then(r => r.ok ? r.json() : null)
-					.then(info => { if (info && info.rooms) interiors.addHouse(b, info, { roomFilter: roomFurnishable }); }).catch(() => {});
+					.then(info => { if (info && info.rooms) interiors.addHouse(b, info, { roomFilter: roomFurnishable, entrances: ents }); }).catch(() => {});
 			}
 		}
 	} };
@@ -384,9 +385,10 @@ if (q.has("sss")) windUniforms.uSSS.value = +q.get("sss");   // сила про�
 	// #env=0 — без отражений на хроме (A/B и проверка, что тормозит именно оно)
 	const envMap = q.get("env") === "0" ? null : skyEnvMap();
 	// дома hou: их комнаты, двери и марши — продолжение графа улицы (роботы ходят и внутри)
-	const houseInfo = (await Promise.all(d.buildings.filter(b => b.model && inFocus(b.id)).map(b =>
-		fetch(`../game/assets/models/houses/${b.model}/${b.model}.json`).then(r => r.ok ? r.json() : null).catch(() => null))))
-		.filter(i => i && i.rooms).map(info => ({ info, roomOk: roomWalkable }));
+	const houseInfo = (await Promise.all(d.buildings.filter(b => b.model && inFocus(b.id)).map(b =>   // входы с улицы — к залам (магазин)
+		fetch(`../game/assets/models/houses/${b.model}/${b.model}.json`).then(r => r.ok ? r.json() : null)
+			.then(info => info && { info, roomOk: roomWalkable, entrances: [].concat(b.entrances || []).map(e => entrancePoint(b, e).p) }).catch(() => null))))
+		.filter(h => h && h.info.rooms);
 	const tunnelInfo = await fetch("../game/assets/models/houses/tunnels/tunnels.json").then(r => r.ok ? r.json() : null).catch(() => null);
 	const tunnels = ((tunnelInfo && tunnelInfo.tunnels) || []).filter(t => t.houses.every(h => houseInfo.some(x => x.info.id === h)));
 	world.flights = houseInfo.flatMap(h => h.info.flights || []).concat(tunnels.flatMap(t => t.flights || []));   // марши — для героя (клип лестницы)
@@ -902,6 +904,40 @@ function lootTick(dt) {
 		L.userData.set(r.bag || {});
 	}
 }
+/* Роботы замечают игрока: ближе 18 м, в конусе взгляда (±60°, уже следящий — ±110°),
+   тот же этаж, между ними нет стены (луч по коллизии мира). Первый заметивший показывает
+   на игрока, соседи ближе 12 м оборачиваются следом. Потерял из виду на 4 с — идёт дальше. */
+let noticeT = 0, lastPoint = 0;
+const _nr = new THREE.Ray();
+function noticeTick(dt) {
+	if (!playing || !player || !world.bvh) { for (const r of crowd) if (r.watching) r.setWatch(null); return; }
+	if ((noticeT -= dt) > 0) return;
+	noticeT = 0.2;
+	const P = player.pos, now = performance.now();
+	for (const r of crowd) {
+		const o = r.object.position, dx = P.x - o.x, dz = P.z - o.z, d = Math.hypot(dx, dz);
+		let sees = false;
+		if (d < 18 && Math.abs(P.y - o.y) < 2.2) {
+			const off = Math.abs(Math.atan2(Math.sin(Math.atan2(dx, dz) - r.heading), Math.cos(Math.atan2(dx, dz) - r.heading)));
+			if (off < (r.watching ? 1.9 : 1.05)) {
+				_nr.origin.set(o.x, o.y + 2.0, o.z);
+				_nr.direction.set(dx, P.y + 1.3 - (o.y + 2.0), dz).normalize();
+				const hit = world.bvh.raycastFirst(_nr, THREE.DoubleSide), full = Math.hypot(d, P.y + 1.3 - o.y - 2.0);
+				sees = !hit || hit.distance > full - 0.5;
+			}
+		}
+		if (sees) {
+			r.seenAt = now;
+			if (!r.watching) {
+				const point = now - lastPoint > 6000;
+				if (point) lastPoint = now;
+				r.setWatch(P, point);
+				// соседи оборачиваются — им показали
+				if (point) for (const s of crowd) if (s !== r && !s.watching && s.object.position.distanceTo(o) < 12 && Math.abs(s.object.position.y - o.y) < 2.2) { s.setWatch(P, false); s.seenAt = now; }
+			}
+		} else if (r.watching && now - (r.seenAt || 0) > 4000) r.setWatch(null);
+	}
+}
 let sigTimer = 0;
 // коллизия мира — одна на героя и камеру наблюдения; раз в секунду: не догрузилось ли новое
 function refreshCollision(dt) {
@@ -997,6 +1033,7 @@ function tick(now) {
 	for (const r of crowd) r.update(dt);
 	if (robotLod) robotLod(camera);
 	lootTick(dt);
+	noticeTick(dt);
 	if (review) review.update(dt);
 	// двери открываются перед игроком и роботами
 	if (world.houses && world.houses.doors.length && layerOn.houses) {
