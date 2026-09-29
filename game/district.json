@@ -138,7 +138,9 @@
 				{ "item": "dome_climber", "at": [9, -2], "rot": 0 },
 				{ "item": "horizontal_bars", "at": [-10.5, 8.5], "rot": 0 },
 				{ "item": "wall_bars", "at": [10.5, 8.8], "rot": 180 },
-				{ "item": "parallel_bars", "at": [-4, 8.5], "rot": 90 }
+				{ "item": "parallel_bars", "at": [-4, 8.5], "rot": 90 },
+				{ "item": "rocket_tunnel", "at": [5, -9], "rot": 0 },
+				{ "item": "rocket_slide", "at": [-6, -8.5], "rot": 0 }
 			], "note": "equipment: at — от центра площадки, м; rot — градусы по часовой на карте; scale — во сколько раз крупнее модели" },
 		{ "id": "a-box", "name": "Хоккейная коробка", "kind": "sport", "rect": [-36, -52, -6, -37] },
 		{ "id": "a-sq", "name": "Сквер", "kind": "green", "poly": [[-38, -24], [30, -26], [30, 26], [-38, 30]], "note": "бывший сквер, зарос — логово растений" },

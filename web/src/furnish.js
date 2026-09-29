@@ -30,14 +30,14 @@ const CLUT = "../game/assets/models/clutter/";   // разбросанные в�
 // Плотность — #clutter (1 по умолчанию, 0 — без хлама).
 const CLUTTER = {
 	storage: ["book_closed", "book_open", "book_stack", "newspaper", "magazine_pile", "box_open", "drawer_floor_empty", "drawer_floor_full",
-		"photo_frame", "vinyl_records", "casket", "suitcase", "iron", "slippers", "cable_coil"],
-	bed: ["slippers", "book_open", "magazine_pile", "alarm_clock", "cup", "newspaper", "photo_frame", "bottle", "tablet_broken"],
+		"photo_frame", "vinyl_records", "casket", "suitcase", "iron", "slippers", "cable_coil", "rag_sheet_scrap_0", "rag_sheet_scrap_1", "rag_sheet_scrap_2", "rag_wool_scrap_0", "rag_wool_scrap_1", "rag_wool_scrap_2", "rag_pillowcase_0", "rag_pillowcase_1", "rag_pillowcase_2", "rag_towel_blue_0", "rag_towel_blue_1", "rag_towel_blue_2", "rag_blanket_0", "rag_blanket_1", "rag_blanket_2"],
+	bed: ["slippers", "book_open", "magazine_pile", "alarm_clock", "cup", "newspaper", "photo_frame", "bottle", "tablet_broken", "rag_blanket_0", "rag_blanket_1", "rag_blanket_2", "rag_sheet_0", "rag_sheet_1", "rag_sheet_2", "rag_pillowcase_0", "rag_pillowcase_1", "rag_pillowcase_2"],
 	top: ["alarm_clock", "radio", "phone_rotary", "photo_frame", "cup", "book_closed", "jar", "flower_pot_dead", "casket", "battery_lamp", "ar_glasses"],
-	kitchen: ["plate", "plate_broken", "cup", "pot", "kettle", "frying_pan", "jar", "jar_3l", "can_open", "bottle", "bucket", "box_soggy"],
+	kitchen: ["plate", "plate_broken", "cup", "pot", "kettle", "frying_pan", "jar", "jar_3l", "can_open", "bottle", "bucket", "box_soggy", "rag_kitchen_cloth_0", "rag_kitchen_cloth_1", "rag_kitchen_cloth_2", "rag_tablecloth_0", "rag_tablecloth_1", "rag_tablecloth_2", "rag_floor_rag_0", "rag_floor_rag_1", "rag_floor_rag_2"],
 	room: ["book_closed", "newspaper", "newspaper_bundle", "vinyl_records", "radio", "tv_portable", "flower_pot_dead", "magazine_pile", "bottle",
-		"box_closed", "box_crushed_top", "box_crushed_side", "box_flattened", "box_torn_flap", "box_crushed_open", "toy_blocks", "ball", "cable_bundle", "drone_debris", "robot_arm", "robot_head"],
-	hall: ["boots", "slippers", "suitcase", "box_closed", "box_crushed_side", "box_flattened", "newspaper_bundle", "bucket"],
-	bath: ["bucket", "bottle", "jar"],
+		"box_closed", "box_crushed_top", "box_crushed_side", "box_flattened", "box_torn_flap", "box_crushed_open", "toy_blocks", "ball", "cable_bundle", "drone_debris", "robot_arm", "robot_head", "rag_sheet_strip_0", "rag_sheet_strip_1", "rag_sheet_strip_2", "rag_sheet_scrap_0", "rag_sheet_scrap_1", "rag_sheet_scrap_2", "rag_burlap_sack_0", "rag_burlap_sack_1", "rag_burlap_sack_2", "rag_wool_scrap_0", "rag_wool_scrap_1", "rag_wool_scrap_2", "rag_floor_rag_0", "rag_floor_rag_1", "rag_floor_rag_2"],
+	hall: ["boots", "slippers", "suitcase", "box_closed", "box_crushed_side", "box_flattened", "newspaper_bundle", "bucket", "rag_floor_rag_0", "rag_floor_rag_1", "rag_floor_rag_2", "rag_burlap_sack_0", "rag_burlap_sack_1", "rag_burlap_sack_2"],
+	bath: ["bucket", "bottle", "jar", "rag_towel_blue_0", "rag_towel_blue_1", "rag_towel_blue_2", "rag_towel_pink_0", "rag_towel_pink_1", "rag_towel_pink_2", "rag_floor_rag_0", "rag_floor_rag_1", "rag_floor_rag_2"],
 };
 const STORAGE = /wardrobe|stenka|sideboard|bookcase|dresser|hall_shoe/, BED = /^bed_/;
 
@@ -389,7 +389,7 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 		gastronomiya: ["can_stack", "jar", "jar_3l"], khleb: ["bread_tray"], konditer: ["candy_box_assorti", "candy_box_ptichye", "candy_tray", "cake", "cake_box"], ovoshchi: ["crate_wood"],
 		gondola: ["can_stack", "pack_grain", "pack_salt", "matches_block", "milk_pyramid", "jar"], store: ["crate_wood", "crate_plastic", "sack", "box_closed", "can_stack", "bidon"],
 	};
-	const SHOP_FLOOR = ["crate_wood", "crate_plastic", "sack", "basket", "can_stack", "milk_bottle", "bidon", "box_crushed_top", "box_flattened", "plate_broken", "bottle", "newspaper"];
+	const SHOP_FLOOR = ["rag_floor_rag_0", "rag_burlap_sack_1", "rag_sheet_strip_2", "crate_wood", "crate_plastic", "sack", "basket", "can_stack", "milk_bottle", "bidon", "box_crushed_top", "box_flattened", "plate_broken", "bottle", "newspaper"];
 	function roomPlacer(H, rm, info, plan) {
 		const [gx0, gz0, gx1, gz1] = rectOf(rm), y = rm.y, IN = 0.35;
 		const X0 = gx0 + IN, X1 = gx1 - IN, Z0 = gz0 + IN, Z1 = gz1 - IN;
