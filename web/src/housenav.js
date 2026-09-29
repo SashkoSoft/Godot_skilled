@@ -109,8 +109,13 @@ export function addHouseToGraph(nodes, info, { roomOk = () => true } = {}) {
 	let flights = 0;
 	for (const f of info.flights || []) {
 		if (f.passable === false) continue;
-		const a = add(f.a[0], f.a[1], f.a[2], 0.3), b = add(f.b[0], f.b[1], f.b[2], 0.3);
+		// у концов марша подходим вплотную (0.2): раньше свернуть — клип лестницы начнётся до ступеней
+		const a = add(f.a[0], f.a[1], f.a[2], 0.2), b = add(f.b[0], f.b[1], f.b[2], 0.2);
 		link(a, b);
+		// ребро a–b — марш (клипы лестницы). a — у первого подступенка; b у маршей — на проступь
+		// дальше последнего, у крыльца — на нём самом (замер лучом): d1 — от b до первого спуска
+		const len = Math.hypot(f.b[0] - f.a[0], f.b[2] - f.a[2]);
+		nodes[a].flight = nodes[b].flight = { rise: f.rise, tread: f.tread, d1: Math.max(0, len - (f.steps - 1) * f.tread) };
 		link(b, nearLanding(f.b[0], f.b[1], f.b[2]));
 		if (f.kind === "porch") link(a, nearStreet(f.a[0], f.a[2]));
 		else link(a, nearLanding(f.a[0], f.a[1], f.a[2]));

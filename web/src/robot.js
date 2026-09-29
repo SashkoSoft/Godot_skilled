@@ -189,6 +189,13 @@ export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap
 	// Падение: упал вперёд → лежит → встаёт. Кость Root в этих клипах сама уезжает
 	// вперёд; в конце подъёма тело стоит на FALL_SHIFT впереди места падения.
 	C.fall = byName("Fall_Forward"); C.lie = byName("Lie-loop"); C.getup = byName("GetUp");
+	// Лестница (blend, под ступени hou 0.1667×0.267): в цикле кость Root сама уезжает на две
+	// ступени (0.534 м вперёд, 0.333 вверх). Движение из клипа вынимается, тело ведёт граф
+	// по маршу с той же скоростью — ноги попадают на ступени.
+	const inPlace = c => { if (!c) return null; const k = c.clone(); k.tracks = k.tracks.filter(t => t.name !== "Root.position"); return k; };
+	C.stairsUp = inPlace(byName("StairsUp-loop")); C.stairsDown = inPlace(byName("StairsDown-loop"));
+	// Шаг в сторону на ходу (уступить дорогу): 25° от курса, 0.71 м/с вперёд и 0.33 вбок
+	C.strafeL = byName("WalkStrafe-L-loop"); C.strafeR = byName("WalkStrafe-R-loop");
 	console.log(`[улица] робот: клипы ${gltf.animations.map(a => `${a.name} ${a.duration.toFixed(2)}с`).join(", ")}`);
 
 	// Скорость каждого цикла — замером по его же анимации. Клип обязан играть
@@ -203,10 +210,13 @@ export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap
 		return v > 0.1 ? v : null;
 	}
 	const measured = measure(C.walk);
+	// скорость по маршу (по горизонтали) — из смещения Root за цикл
+	const stairV = c => { const t = c && byName(c.name)?.tracks.find(t => t.name === "Root.position"); return t ? Math.abs(t.values[t.values.length - 1] - t.values[2]) / c.duration : null; };
 	if (!measured) console.warn("[улица] робот: скорость шага не измерена, беру 1.2 м/с");
 	const V = { idle: 0, walk: measured || 1.2, run: C.run ? measure(C.run) : null, crouch: 0 };
 	V.sneak = C.sneak ? (measure(C.sneak) || 0.42) : null;
 	V.back = C.back ? -(measure(C.back, -1) || 0.56) : null;   // назад: скорость со знаком минус
+	V.stairsUp = stairV(C.stairsUp); V.stairsDown = stairV(C.stairsDown);
 	probe.stopAllAction();
 	// Режимы, для которых есть и цикл, и оба перехода. Нет — робот просто ходит.
 	const can = {
@@ -573,9 +583,56 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false) {
 		lastT = t;
 	}
 
+	// Марш: ребро между низом и верхом одного марша (housenav: flight). На нём — цикл
+	// лестницы вверх или вниз поверх любой походки; сошёл — обратно в шаг.
+	let stairs = null, strafe = null;
+	const onFlight = () => prev >= 0 && graph[prev].flight && graph[prev].flight === graph[target].flight;
+	function stairsStep() {
+		const up = (graph[target].y || 0) > (graph[prev].y || 0), want = up ? A.stairsUp : A.stairsDown;
+		if (stairs !== want) {
+			const from = stairs || gesture || (trans && trans.action) || active;
+			gesture = null; trans = null; pending = null; turnSign = 0; strafe = null;
+			want.reset().play(); from.crossFadeTo(want, 0.25, false);
+			stairs = want;
+		}
+		// две ступени за цикл — по проступи этого марша (у крыльца она шире)
+		speed = 2 * graph[target].flight.tread / want.getClip().duration;
+	}
+	// Привязка клипа к ступеням (профили blend, stairs_profiles.json): в начале цикла вверх
+	// подступенок — в 0.116 м впереди Root, проступь за ним — на 0.103 выше Root; вниз — край
+	// в 0.054 м впереди, проступь под ногами — на 0.063 выше Root. Высота тела — прямая через
+	// эти точки, фаза клипа — от пройденного по маршу (две ступени на цикл).
+	function stairsPose(NA, NB, f) {
+		const F = NB.flight, k = F.tread / 0.267, sc = F.rise / 0.1667, s = F.rise / F.tread;
+		let y, f0;
+		if (NB.y > NA.y) { f0 = -0.116 * k; y = NA.y + F.rise - 0.103 * sc + (f - f0) * s; }
+		else { f0 = F.d1 - 0.054 * k; y = NA.y - 0.063 * sc - (f - f0) * s; }
+		const p = (f - f0) / (2 * F.tread), dur = stairs.getClip().duration;
+		stairs.time = (p - Math.floor(p)) * dur;
+		return Math.min(Math.max(NA.y, NB.y), Math.max(Math.min(NA.y, NB.y), y));
+	}
+	function leaveStairs() {
+		A.walk.reset().play(); stairs.crossFadeTo(A.walk, 0.25, false);
+		active = A.walk; mode = "walk"; modeTime = 0; modeHold = range(...HOLD.walk); lastT = 0; stairs = null;
+	}
+
 	function update(dt) {
 		mixer.update(dt);
-		gait(dt);
+		if (A.stairsUp && A.stairsDown && V.stairsUp && onFlight()) stairsStep();
+		else { if (stairs) leaveStairs(); gait(dt); }
+		// Уступить дорогу — шаг в сторону на ходу (клип), а не скольжение вбок
+		const dl = latTarget - lat;
+		if (!stairs && mode === "walk" && !trans && !gesture && A.strafeL && A.strafeR) {
+			const want = Math.abs(dl) > 0.1 ? (dl > 0 ? A.strafeL : A.strafeR) : null;   // +lat — влево (к +X при взгляде в +Z)
+			if (want !== strafe) {
+				const to = want || A.walk;
+				to.reset().play(); (strafe || A.walk).crossFadeTo(to, 0.25, false);
+				active = to; strafe = want;
+			}
+		} else if (strafe && active === strafe) {   // походку сменили не мы — вернуть шаг
+			A.walk.reset().play(); strafe.crossFadeTo(A.walk, 0.2, false); active = A.walk; strafe = null;
+		} else strafe = null;
+		if (strafe) speed = V.walk * 0.91;   // по курсу 0.71 из 0.78
 		const tp = graph[target].p;
 		let dx = tp[0] - pos.x, dz = tp[1] - pos.y;
 		// в доме узлы тесные (двери, марши) — подходим ближе, чем на улице
@@ -593,12 +650,13 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false) {
 		pos.x += Math.sin(heading) * speed * dt;
 		pos.y += Math.cos(heading) * speed * dt;
 		// расхождение со встречными: плавный сдвиг вбок от оси дорожки (crowdStep задаёт цель)
-		lat += (latTarget - lat) * Math.min(1, dt * 2.5);
+		if (strafe) lat += Math.sign(dl) * Math.min(Math.abs(dl), 0.33 * dt);   // вбок — со скоростью клипа
+		else lat += (latTarget - lat) * Math.min(1, dt * 2.5);
 		// высота: между предыдущим узлом и целью — по пройденной доле (марши, крыльцо)
 		const NA = graph[prev >= 0 ? prev : target], NB = graph[target];
 		const segL = Math.hypot(NB.p[0] - NA.p[0], NB.p[1] - NA.p[1]), left = Math.hypot(NB.p[0] - pos.x, NB.p[1] - pos.y);
 		const k = segL > 1e-3 ? Math.min(1, Math.max(0, 1 - left / segL)) : 1;
-		const y = (NA.y || 0) + ((NB.y || 0) - (NA.y || 0)) * k;
+		const y = stairs && NA.flight && NA.flight === NB.flight ? stairsPose(NA, NB, segL - left) : (NA.y || 0) + ((NB.y || 0) - (NA.y || 0)) * k;
 		// в доме сдвиг вбок меньше: прихожие в метр шириной
 		const la = indoors() ? Math.max(-0.25, Math.min(0.25, lat)) : lat;
 		root.position.set(pos.x + Math.cos(heading) * la, y, pos.y - Math.sin(heading) * la);
@@ -614,7 +672,7 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false) {
 	}
 
 	return {
-		object: root, update, offPath, indoor,
+		object: root, update, offPath, indoor, get onStairs() { return !!stairs; }, get strafing() { return !!strafe; },
 		get heading() { return heading; }, get speed() { return speed; }, get mode() { return mode; },
 		setAvoid(v) { latTarget = v; },
 		// испуг от встречного: только стоя или на ходу, с шансом — отшатнуться и попятиться
