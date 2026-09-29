@@ -72,7 +72,7 @@ function rule(zone, room, panel, info, stairColor) {
 			if (type === "kuhnya") return { set: hash(room + 19) < 0.5 ? "room_paint_beige" : "room_paint_green", tone: 1, grime: 0.6 };
 			if (type === "sanuzel" || type === "tualet") {
 				const h = hash(room + 17);
-				return { set: h < 0.4 ? "room_paint_blue" : h < 0.7 ? "tile22_white" : "tile22_blue", tone: 1, grime: h < 0.4 ? 0.6 : 0 };
+				return { set: h < 0.6 ? "room_paint_blue" : "room_paint_beige", tone: 1, grime: 0.6 };   // плитка 15×15 заказана у blend
 			}
 			// прихожая нарезана кусками — обои одни на всю квартиру, не по куску
 			const k = rm && rm.apartment && type === "prihozhaya" ? hashApt(rm.apartment) : room >= 0 ? room : 0;
@@ -128,12 +128,14 @@ function material(set, floor, uvM = 1, double = false) {
 	const mask = NO_MASK.has(set) ? blank() : tex(set, "mask");
 	m.onBeforeCompile = sh => {
 		sh.uniforms.zMask = { value: mask };
-		sh.uniforms.zBand = { value: new THREE.Vector3(band ? 1 : 0, floor.base, floor.pitch) };
+		const wall = /^(stair_(green|blue|beige|brownred)|room_paint_|wallpaper_)/.test(set);   // стены: грязь у пола
+		sh.uniforms.zBand = { value: new THREE.Vector4(band ? 1 : 0, floor.base, floor.pitch, wall ? 1 : 0) };
 		sh.uniforms.zUvM = { value: uvM };
 		sh.vertexShader = sh.vertexShader
-			.replace("#include <common>", "#include <common>\nattribute vec2 zv;\nvarying vec2 vZv;\nuniform vec3 zBand;\nuniform float zUvM;")
+			.replace("#include <common>", "#include <common>\nattribute vec2 zv;\nvarying vec2 vZv;\nvarying float vZWorldY;\nuniform vec4 zBand;\nuniform float zUvM;")
 			.replace("#include <uv_vertex>", `#include <uv_vertex>
 	vZv = zv;
+	vZWorldY = (modelMatrix * vec4(position, 1.0)).y;
 	// UV модели не в метрах (руина: 2 м на единицу) — повтор тайла считан в метрах
 	vMapUv *= zUvM;
 	#ifdef USE_NORMALMAP
@@ -161,13 +163,21 @@ function material(set, floor, uvM = 1, double = false) {
 		#endif
 	}`);
 		sh.fragmentShader = sh.fragmentShader
-			.replace("#include <common>", "#include <common>\nvarying vec2 vZv;\nuniform sampler2D zMask;")
+			.replace("#include <common>", "#include <common>\nvarying vec2 vZv;\nvarying float vZWorldY;\nuniform sampler2D zMask;\nuniform vec4 zBand;")
 			.replace("#include <map_fragment>", `#include <map_fragment>
 	// тон панели/комнаты и грязь по маске набора (G), сила — по панели/комнате
 	vec4 zm = texture2D(zMask, vMapUv);
-	diffuseColor.rgb *= vZv.x * (1.0 - 0.45 * clamp(zm.g * vZv.y, 0.0, 1.0));`);
+	diffuseColor.rgb *= vZv.x * (1.0 - 0.45 * clamp(zm.g * vZv.y, 0.0, 1.0));
+	// пятна вдвое-втрое крупнее тайла — ломают повтор
+	float zmac = texture2D(zMask, vMapUv * 0.37 + 0.13).g * texture2D(zMask, vMapUv * 0.19 + 0.61).g;
+	diffuseColor.rgb *= 1.0 - 0.28 * smoothstep(0.15, 0.6, zmac) * vZv.y;
+	// стены: тёмная полоса грязи у пола каждого этажа (стык со стяжкой, плинтус)
+	if (zBand.w > 0.5) {
+		float fy = mod(vZWorldY - zBand.y + 0.02, zBand.z);
+		diffuseColor.rgb *= mix(0.45, 1.0, smoothstep(0.02, 0.16, fy)) * mix(0.8, 1.0, smoothstep(0.1, 0.45, fy));
+	}`);
 	};
-	m.customProgramCacheKey = () => "zone" + (band ? "b" : "");
+	m.customProgramCacheKey = () => "zone2" + (band ? "b" : "");
 	return (matCache[key] = m);
 }
 
