@@ -17,7 +17,7 @@ import { loadRocks } from "./rocks.js";
 import { buildSky, skyUniforms } from "./sky.js";
 import { MOODS, installAerialFog, addVignette } from "./atmos.js";
 import { breakdown, infoLine, applyOff, runBench } from "./perf.js";
-import { buildGrassMap, setGrassMap, buildGrassBlades, updateGrass } from "./grass.js";
+import { buildGrassMap, setGrassMap, buildGrassBlades, updateGrass, clearGrass } from "./grass.js";
 import { buildGroundMap, setupGround, hardify, loadPitGrass, setGroundHoles } from "./floor.js";
 import { spawnRobots } from "./robot.js";
 import { spawnDrones } from "./drones.js";
@@ -309,7 +309,7 @@ if (LEVEL === "district") {
 				if (r && r.pits) loadPitGrass(r.pits).then(g => scene.add(g));
 			})   // опад и камешки и на плитах
 			.catch(e => console.error("[улица] пол:", e));
-		loadRocks(groundMap, slabs ? slabs.list : []).then(R => { scene.add(R.group); rocks = R; }).catch(e => console.error("[улица] камешки:", e));
+		loadRocks(groundMap, slabs ? slabs.list : []).then(R => { scene.add(R.group); rocks = R; R.holes = world.holes; }).catch(e => console.error("[улица] камешки:", e));
 		if (q.get("grass") !== "0") {
 			const phone = matchMedia("(pointer: coarse)").matches;
 			// LOD: ближний участок + кольцо реже и шире; дальше — только цвет земли.
@@ -390,6 +390,8 @@ if (q.has("sss")) windUniforms.uSSS.value = +q.get("sss");   // сила про�
 		return bs.length ? [bboxOf(bs.filter(r => r.kind_en !== "pit")), ...bs.filter(r => r.kind_en === "pit").map(r => bboxOf([r]))] : [];
 	});
 	setGroundHoles(world.holes);
+	if (rocks) rocks.holes = world.holes;
+	clearGrass(world.holes);
 	// туннель — как «дом» из своих комнат: подпись, камера, адаптация глаза
 	for (const t of tunnels) world.houseInfo.push({ id: "туннель", rooms: t.rooms.map(r => ({ ...r, y: Math.min(...r.polyline.map(p => p[1])), floor: -2, type: "tunnel" })), flights: [] });
 	const R = await spawnRobots(d, { count, start: [77, -26], envMap, houses: houseInfo, tunnels });
@@ -725,7 +727,7 @@ function collectColliders() {
 }
 function worldSig() {
 	const H = world.houses;
-	return [!!world.bo, !!world.fences, !!world.playground, H ? H.ids.length : -1, world.boxes.length, interiors ? interiors.boxes().length : 0].join("|");
+	return [!!world.bo, !!world.fences, !!world.playground, H ? H.ids.length : -1, world.boxes.length, interiors ? interiors.boxes().length : 0, world.holes.length].join("|");   // вырезы над подвалами — тоже
 }
 async function startPlay() {
 	if (LEVEL !== "district") { say("игра — на уровне квартала (#level=district)"); return; }
@@ -776,7 +778,9 @@ function roomLimit(p, yaw, pitch, dist) {
 		let t = dist;
 		if (dx > 1e-3) t = Math.min(t, (x1 - m - p.x) / dx); else if (dx < -1e-3) t = Math.min(t, (x0 + m - p.x) / dx);
 		if (dz > 1e-3) t = Math.min(t, (z1 - m - p.z) / dz); else if (dz < -1e-3) t = Math.min(t, (z0 + m - p.z) / dz);
-		if (dy > 1e-3) t = Math.min(t, (room.y + 2.55 - (p.y + 1.45)) / dy);
+		// потолок: у подвала — ceiling_y из описания, у этажей — шаг минус плита; 0.35 м запаса
+		const ceil = room.floor === -1 && info.basement ? info.basement.ceiling_y : room.floor === -2 ? room.y + (room.height || 2.0) : room.y + 2.78;
+		if (dy > 1e-3) t = Math.min(t, (ceil - 0.35 - (p.y + 1.45)) / dy);
 		return Math.max(0.4, t);
 	}
 	return dist;
@@ -958,6 +962,8 @@ function tick(now) {
 	const under = camera.position.y < -0.3;
 	if (under !== undergroundNow) {
 		undergroundNow = under;
+		const skyObj = scene.getObjectByName("Sky");
+		if (skyObj) skyObj.visible = !under;   // купол неба под землёй виден сквозь щели
 		if (under) { dayBg = scene.background; dayFog = scene.fog && scene.fog.color.clone(); scene.background = UNDER_BG; if (scene.fog) scene.fog.color.copy(UNDER_BG); }
 		else { scene.background = dayBg; if (scene.fog && dayFog) scene.fog.color.copy(dayFog); }
 	}

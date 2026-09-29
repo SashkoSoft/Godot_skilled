@@ -148,6 +148,19 @@ export const grassUniforms = {
 	uPushers: { value: Array.from({ length: 8 }, () => new THREE.Vector3(0, -99, 0)) },
 };
 
+/** Убрать траву в прямоугольниках [x0, z0, x1, z1] (вырезы над подвалами): травинки иначе висят в подвале. */
+export function clearGrass(rects) {
+	const tex = grassUniforms.uGrassMap.value;
+	if (!tex || !rects.length) return;
+	const { data, width: W, height: H } = tex.image, o = grassUniforms.uGrassOrigin.value, s = grassUniforms.uGrassSize.value;
+	for (const [x0, z0, x1, z1] of rects) {
+		const i0 = Math.max(0, Math.floor((x0 - o.x) / s.x * W)), i1 = Math.min(W - 1, Math.ceil((x1 - o.x) / s.x * W));
+		const j0 = Math.max(0, Math.floor((z0 - o.y) / s.y * H)), j1 = Math.min(H - 1, Math.ceil((z1 - o.y) / s.y * H));
+		for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) data[(j * W + i) * 4] = 0;
+	}
+	tex.needsUpdate = true;
+}
+
 export function setGrassMap(map) {
 	grassUniforms.uGrassMap.value = map.tex;
 	grassUniforms.uGrassOrigin.value.copy(map.origin);

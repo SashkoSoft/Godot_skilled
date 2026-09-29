@@ -25,12 +25,41 @@ const R = 0.3, STEP = 0.42, HEIGHT = 1.7, GRAV = -18, JUMP = 5.2;
  *  прямоугольником cut.rects ([x0, z0, x1, z1]) на высоте −1.1…0.6 (плиты земли над подвалом). */
 export function buildCollision(objs, boxes = [], cut = null) {
 	const parts = [];
+	// Горизонтальный треугольник земли, задевающий вырез, режется сеткой по краям вырезов:
+	// каждая клетка сетки либо целиком в вырезе (выкидывается), либо целиком вне — тогда она
+	// подрезается по треугольнику (Сазерленд — Ходжман) и раскладывается веером. Плиты земли —
+	// огромные треугольники на весь двор, фильтр по центру треугольника их не видел.
+	const clipPoly = (poly, ax, az, bx, bz) => {   // оставить часть слева от ребра a→b
+		const out = [], side = q => (bx - ax) * (q[2] - az) - (bz - az) * (q[0] - ax);
+		for (let k = 0; k < poly.length; k++) {
+			const P = poly[k], Q = poly[(k + 1) % poly.length], sp = side(P), sq = side(Q);
+			if (sp >= 0) out.push(P);
+			if ((sp >= 0) !== (sq >= 0)) { const u = sp / (sp - sq); out.push([P[0] + (Q[0] - P[0]) * u, P[1] + (Q[1] - P[1]) * u, P[2] + (Q[2] - P[2]) * u]); }
+		}
+		return out;
+	};
 	const cutTri = (pg) => {
 		const a = pg.attributes.position.array, keep = [];
 		for (let i = 0; i < a.length; i += 9) {
-			const cx = (a[i] + a[i + 3] + a[i + 6]) / 3, cy = (a[i + 1] + a[i + 4] + a[i + 7]) / 3, cz = (a[i + 2] + a[i + 5] + a[i + 8]) / 3;
-			if (cy > -1.1 && cy < 0.6 && cut.rects.some(r => cx > r[0] && cx < r[2] && cz > r[1] && cz < r[3])) continue;
-			for (let k = 0; k < 9; k++) keep.push(a[i + k]);
+			const T = [[a[i], a[i + 1], a[i + 2]], [a[i + 3], a[i + 4], a[i + 5]], [a[i + 6], a[i + 7], a[i + 8]]];
+			const cy = (T[0][1] + T[1][1] + T[2][1]) / 3;
+			const x0 = Math.min(T[0][0], T[1][0], T[2][0]), x1 = Math.max(T[0][0], T[1][0], T[2][0]);
+			const z0 = Math.min(T[0][2], T[1][2], T[2][2]), z1 = Math.max(T[0][2], T[1][2], T[2][2]);
+			const flat = Math.abs(T[0][1] - T[1][1]) < 0.05 && Math.abs(T[0][1] - T[2][1]) < 0.05;
+			const hit = cut.rects.filter(r => r[0] < x1 && r[2] > x0 && r[1] < z1 && r[3] > z0);
+			if (!(flat && cy > -1.1 && cy < 0.6 && hit.length)) { for (let k = 0; k < 9; k++) keep.push(a[i + k]); continue; }
+			const xs = [...new Set([x0, x1, ...hit.flatMap(r => [r[0], r[2]]).filter(v => v > x0 && v < x1)])].sort((p, q) => p - q);
+			const zs = [...new Set([z0, z1, ...hit.flatMap(r => [r[1], r[3]]).filter(v => v > z0 && v < z1)])].sort((p, q) => p - q);
+			// обход треугольника — против часовой в плане, иначе отсечение «слева» перевернётся
+			const ccw = (T[1][0] - T[0][0]) * (T[2][2] - T[0][2]) - (T[1][2] - T[0][2]) * (T[2][0] - T[0][0]) > 0;
+			const E = ccw ? [T[0], T[1], T[2]] : [T[0], T[2], T[1]];
+			for (let xi = 0; xi + 1 < xs.length; xi++) for (let zi = 0; zi + 1 < zs.length; zi++) {
+				const cx = (xs[xi] + xs[xi + 1]) / 2, cz = (zs[zi] + zs[zi + 1]) / 2;
+				if (hit.some(r => cx > r[0] && cx < r[2] && cz > r[1] && cz < r[3])) continue;   // клетка в вырезе
+				let poly = [[xs[xi], cy, zs[zi]], [xs[xi + 1], cy, zs[zi]], [xs[xi + 1], cy, zs[zi + 1]], [xs[xi], cy, zs[zi + 1]]];
+				for (let k = 0; k < 3 && poly.length; k++) poly = clipPoly(poly, E[k][0], E[k][2], E[(k + 1) % 3][0], E[(k + 1) % 3][2]);
+				for (let k = 1; k + 1 < poly.length; k++) keep.push(...poly[0], ...poly[k], ...poly[k + 1]);
+			}
 		}
 		pg.setAttribute("position", new THREE.BufferAttribute(new Float32Array(keep), 3));
 	};

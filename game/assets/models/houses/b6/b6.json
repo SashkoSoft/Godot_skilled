@@ -412,10 +412,10 @@
  ],
  "stairs_note": "kryl'co +0.45 (stupeni s poruchnyami, kozyrek na stenkah) -> tambur -> korotkiy marsh do pola 1 etazha (+1.5); dalee parnye marshi, promezhutochnye ploshchadki u fasada vhoda",
  "tris": {
-  "lod0": 57590,
+  "lod0": 57356,
   "lod1": 17748,
   "lod2": 5891,
-  "col": 10272,
+  "col": 10260,
   "basement": 4224,
   "basement_col": 1824
  },

@@ -129,6 +129,8 @@ export async function loadRocks(map, slabs = []) {
 				const list = buckets.get(bx + "," + bz);
 				if (!list) continue;
 				for (const [kind, p] of list) {
+					// над подвалами и приямками земли нет — камешков тоже (иначе висят в воздухе подвала)
+					if (api.holes.some(r => p[0] > r[0] && p[0] < r[2] && p[1] > r[1] && p[1] < r[3])) continue;
 					const dd = Math.hypot(p[0] - cp.x, p[1] - cp.z, cp.y);
 					if (dd > FAR) continue;
 					const shape = Math.floor(p[4] * 4) % 4;
@@ -142,5 +144,6 @@ export async function loadRocks(map, slabs = []) {
 		}
 	}
 	console.log(`[улица] камешки: галька ${pts.pebble.length}, камни ${pts.rock.length}, рисуются до ${FAR} м`);
-	return { group, update };
+	const api = { group, update, holes: [] };   // holes — вырезы в земле [x0, z0, x1, z1] (main.js)
+	return api;
 }
