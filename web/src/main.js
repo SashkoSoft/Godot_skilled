@@ -23,7 +23,7 @@ import { spawnRobots } from "./robot.js";
 import { spawnDrones } from "./drones.js";
 import { instanceLods } from "./instlod.js";
 import { createInteriors } from "./furnish.js";
-import { createPlayer } from "./player.js";
+import { createPlayer, buildCollision, cameraOrbit } from "./player.js";
 import { roomWalkable, roomFurnishable } from "./housenav.js";
 import { buildHoudiniTrees } from "./trees.js";
 import { windUniforms, setWind } from "./wind.js";
@@ -213,9 +213,11 @@ let robot = null;          // тот, за кем камера
 let drones = null, fenceIvy = null, interiors = null;
 // игра: герой бегает по кварталу и в домах (player.js); world — что берём в коллизию
 let player = null, playing = false, robotDbgT = 0;
+// наблюдение за обходчиком (объявлено здесь: мышь и клавиши работают и пока квартал грузится)
+let watch = null, watchDist = 3.2, lastLook = 0, watchInfoT = 0;
 // #robotdbg — ручки для консоли: где роботы, игрок, камера
 if (q.has("robotdbg")) window.dbg = { get crowd() { return crowd; }, get player() { return player; }, get cam() { return cam; }, get scene() { return scene; }, set route(v) { autoRoute = v; } };
-const world = { bo: null, fences: null, playground: null, houses: null, boxes: [], flights: [], sig: "" };
+const world = { bo: null, fences: null, playground: null, houses: null, boxes: [], flights: [], houseInfo: [], bvh: null, sig: "" };
 const FOV = 55, RIDE_FOV = 100;   // угол камеры: обычный и в дроне (setRide)
 let ride = -1, rideHeading = 0;
 const cpuMs = { anim: 0, plants: 0, render: 0 };
@@ -369,6 +371,7 @@ if (q.has("sss")) windUniforms.uSSS.value = +q.get("sss");   // сила про�
 		fetch(`../game/assets/models/houses/${b.model}/${b.model}.json`).then(r => r.ok ? r.json() : null).catch(() => null))))
 		.filter(i => i && i.rooms).map(info => ({ info, roomOk: roomWalkable }));
 	world.flights = houseInfo.flatMap(h => h.info.flights || []);   // марши — для героя (клип лестницы)
+	world.houseInfo = houseInfo.map(h => h.info);   // комнаты — подпись в режиме наблюдения
 	const R = await spawnRobots(d, { count, start: [77, -26], envMap, houses: houseInfo });
 	crowd = R.robots; robotLod = R.updateLod; crowdStep = R.crowdStep;
 	const robotsGroup = new THREE.Group();
@@ -445,6 +448,8 @@ addEventListener("keydown", (e) => {
 	if (e.code === "KeyF" && robot) { toggleFollow(); return; }
 	if (e.code === "KeyV") { nextRide(); return; }
 	if (e.code === "Enter") { playing ? stopPlay() : startPlay(); return; }
+	if (e.code === "KeyH") { nextWatch(e.shiftKey ? -1 : 1); return; }
+	if (e.code === "Escape" && watch) { stopWatch(); return; }
 	if (e.code === "KeyT" && loadTrees) { toggleLayer("trees"); return; }
 	if (e.code === "KeyP" && hud.perfTable) {
 		// разбивка цены кадра по слоям — что дорогое; время — только A/B на устройстве
@@ -610,7 +615,8 @@ function panGround(dx, dy) {
 }
 function orbit(dx, dy, k = 0.25) {
 	cam.yaw -= dx * k;
-	const lo = follow ? -85 : -89, hi = follow ? -5 : 60;
+	const lo = follow ? -85 : watch ? -70 : -89, hi = follow ? -5 : watch ? 35 : 60;
+	lastLook = performance.now();
 	cam.pitch = Math.max(lo, Math.min(hi, cam.pitch - dy * k));
 }
 
@@ -637,12 +643,13 @@ canvas.addEventListener("pointermove", (e) => {
 	const dx = e.clientX - t.x, dy = e.clientY - t.y;
 	t.x = e.clientX; t.y = e.clientY;
 	if (touches.size === 1) {
-		if (follow) orbit(dx, dy);
+		if (follow || watch) orbit(dx, dy);
 		else panGround(dx, dy);
 	} else if (touches.size === 2 && lastPinch) {
 		const p = pinch();
 		const zoom = lastPinch.d / Math.max(1, p.d);          // >1 — пальцы сошлись, отдаляем
-		if (follow) followDist = Math.max(4, Math.min(200, followDist * zoom));
+		if (watch) watchDist = Math.max(1.2, Math.min(10, watchDist * zoom));
+		else if (follow) followDist = Math.max(4, Math.min(200, followDist * zoom));
 		else {
 			// свободно: ближе/дальше вдоль взгляда, шаг от высоты
 			const f = new THREE.Vector3();
@@ -658,13 +665,14 @@ canvas.addEventListener("pointermove", (e) => {
 
 // Кнопки на экране (для телефона; на компьютере те же действия на клавишах)
 for (const [id, fn] of [["btn-prev", () => nextRobot(-1)], ["btn-next", () => nextRobot(1)],
-	["btn-follow", toggleFollow], ["btn-all", overview], ["btn-drone", nextRide], ["btn-play", () => playing ? stopPlay() : startPlay()]]) {
+	["btn-follow", toggleFollow], ["btn-all", overview], ["btn-drone", nextRide], ["btn-play", () => playing ? stopPlay() : startPlay()], ["btn-watch", () => nextWatch(1)]]) {
 	const b = document.getElementById(id);
 	if (b) b.addEventListener("click", fn);
 }
 canvas.addEventListener("wheel", (e) => {
 	e.preventDefault();
 	if (playing) { playDist = Math.max(1.5, Math.min(12, playDist * (e.deltaY > 0 ? 1.12 : 0.89))); return; }
+	if (watch) { watchDist = Math.max(1.2, Math.min(10, watchDist * (e.deltaY > 0 ? 1.12 : 0.89))); return; }
 	if (follow) { followDist = Math.max(4, Math.min(200, followDist * (e.deltaY > 0 ? 1.12 : 0.89))); return; }
 	cam.speed = Math.max(0.5, Math.min(60, cam.speed * (e.deltaY > 0 ? 0.85 : 1.18)));
 }, { passive: false });
@@ -700,6 +708,7 @@ function worldSig() {
 }
 async function startPlay() {
 	if (LEVEL !== "district") { say("игра — на уровне квартала (#level=district)"); return; }
+	if (watch) stopWatch();
 	if (!layerOn.houses) await toggleLayer("houses");
 	if (!player) {
 		// #spawn=x,y,z — старт в другом месте (проверки внутри дома)
@@ -719,14 +728,77 @@ async function startPlay() {
 	say("игра: WASD — бег, Shift — шагом, пробел — прыжок, мышь — осмотреться · Enter — выйти");
 }
 function stopPlay() { playing = false; if (player) player.root.visible = false; say("свободная камера"); }
-let sigTimer = 0;
-function playTick(dt) {
-	sigTimer -= dt;
-	if (sigTimer <= 0) {   // раз в секунду: не догрузилось ли что-то в коллизию
-		sigTimer = 1;
-		const s = worldSig();
-		if (s !== world.sig) { world.sig = s; player.setColliders(collectColliders(), interiors ? world.boxes.concat(interiors.boxes()) : world.boxes); }   // мебель — коробками
+/* ── наблюдение: камера за роботом-обходчиком в доме ────────────────────
+   H / кнопка «в доме» — следующий обходчик (Shift+H — предыдущий), Esc или WASD — выйти.
+   Камера за спиной, как у героя: стены её придвигают (общая коллизия мира); мышь или
+   палец — осмотреться, колесо или щипок — ближе/дальше; не трогаешь 2 с — сама заходит
+   за спину. Внизу — где он (этаж, комната) и что делает. */
+const watchHud = Object.assign(document.createElement("div"), { id: "watch-info" });
+watchHud.style.cssText = "position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);" +
+	"padding:6px 14px;border-radius:8px;background:rgba(10,12,14,.72);color:#e8e2d6;font:14px/1.4 system-ui,sans-serif;pointer-events:none;white-space:nowrap";
+watchHud.hidden = true;
+document.body.appendChild(watchHud);
+const ROOM_RU = { zhilaya: "комната", kuhnya: "кухня", prihozhaya: "прихожая", sanuzel: "ванная", tualet: "туалет", kladovaya: "кладовка",
+	ploshchadka: "площадка", lestnica: "лестница", lift: "лифт" };
+function whereIs(p) {
+	for (const info of world.houseInfo) for (const room of info.rooms) {
+		if (p.y < room.y - 0.3 || p.y > room.y + 2.6) continue;
+		const xs = room.polygon_xz.map(v => v[0]), zs = room.polygon_xz.map(v => v[1]);
+		if (p.x >= Math.min(...xs) && p.x <= Math.max(...xs) && p.z >= Math.min(...zs) && p.z <= Math.max(...zs))
+			return `${info.id}, ${room.floor + 1}-й этаж, ${ROOM_RU[room.type] || room.type}`;
 	}
+	for (const info of world.houseInfo) for (const f of info.flights || []) {
+		const x0 = Math.min(f.a[0], f.b[0]) - 0.8, x1 = Math.max(f.a[0], f.b[0]) + 0.8, z0 = Math.min(f.a[2], f.b[2]) - 0.8, z1 = Math.max(f.a[2], f.b[2]) + 0.8;
+		if (p.x > x0 && p.x < x1 && p.z > z0 && p.z < z1 && p.y > Math.min(f.a[1], f.b[1]) - 0.3 && p.y < Math.max(f.a[1], f.b[1]) + 0.3)
+			return `${info.id}, ${f.kind === "porch" ? "крыльцо" : "подъезд"}`;
+	}
+	return "улица";
+}
+async function nextWatch(step) {
+	const ind = crowd.filter(r => r.indoor);
+	if (!ind.length) { say("обходчиков нет — дома не загружены"); return; }
+	if (playing) stopPlay();
+	follow = false; if (ride >= 0) setRide(-1);
+	if (!layerOn.houses) await toggleLayer("houses");
+	let i = watch ? ind.indexOf(watch) : -1;
+	i = (i + step + ind.length) % ind.length;
+	watch = ind[i];
+	cam.yaw = watch.heading * 180 / Math.PI + 180; cam.pitch = -15;   // за спину
+	world.sig = "";   // коллизию — сразу
+	watchHud.hidden = false;
+	say(`обходчик №${i + 1} из ${ind.length} · H — следующий, мышь — осмотреться, колесо — ближе/дальше, Esc — выйти`);
+}
+function stopWatch() { watch = null; watchHud.hidden = true; say("свободная камера"); }
+const watchHead = new THREE.Vector3();
+function watchTick(dt) {
+	refreshCollision(dt);
+	const o = watch.object.position;
+	// не трогаешь камеру — сама плавно заходит за спину
+	if (performance.now() - lastLook > 2000) {
+		const want = watch.heading * 180 / Math.PI + 180;
+		const d = ((want - cam.yaw) % 360 + 540) % 360 - 180;
+		cam.yaw += d * Math.min(1, dt * 1.5);
+	}
+	watchHead.set(o.x, o.y + 1.45, o.z);
+	cameraOrbit(camera, world.bvh, watchHead, cam.yaw, cam.pitch, watchDist);
+	cam.p.copy(camera.position);
+	if ((watchInfoT -= dt) < 0) { watchInfoT = 0.3; watchHud.textContent = `${whereIs(o)} · ${watch.action}`; }
+}
+let sigTimer = 0;
+// коллизия мира — одна на героя и камеру наблюдения; раз в секунду: не догрузилось ли новое
+function refreshCollision(dt) {
+	sigTimer -= dt;
+	if (sigTimer > 0 && world.sig) return;
+	sigTimer = 1;
+	const s = worldSig();
+	if (s !== world.sig) {
+		world.sig = s;
+		world.bvh = buildCollision(collectColliders(), interiors ? world.boxes.concat(interiors.boxes()) : world.boxes);   // мебель — коробками
+		if (player) player.setBVH(world.bvh);
+	}
+}
+function playTick(dt) {
+	refreshCollision(dt);
 	const y = cam.yaw * Math.PI / 180, f = new THREE.Vector3(-Math.sin(y), 0, -Math.cos(y)), r = new THREE.Vector3(Math.cos(y), 0, -Math.sin(y));
 	move.set(0, 0, 0);
 	if (keys.has("KeyW") || keys.has("ArrowUp")) move.add(f);
@@ -777,7 +849,8 @@ function tick(now) {
 
 	resize();
 
-	if (playing && player) { playTick(dt); } else {
+	if (playing && player) { playTick(dt); } else if (watch && !["KeyW", "KeyA", "KeyS", "KeyD"].some(k => keys.has(k))) { watchTick(dt); } else {
+	if (watch) stopWatch();   // пошёл сам — отпускаем обходчика
 	move.set(0, 0, 0);
 	camera.getWorldDirection(fwd);
 	right.crossVectors(fwd, camera.up).normalize();

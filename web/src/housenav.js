@@ -32,7 +32,7 @@ function rectOf(rm) {
  */
 export function addHouseToGraph(nodes, info, { roomOk = () => true } = {}) {
 	const first = nodes.length;
-	const add = (x, y, z, r = 0.35) => { nodes.push({ p: [x, z], y, nb: [], r, house: true }); return nodes.length - 1; };
+	const add = (x, y, z, r = 0.35) => { nodes.push({ p: [x, z], y, nb: [], r, house: true, hid: info.id }); return nodes.length - 1; };
 	const link = (i, j) => { if (i !== j && i >= 0 && j >= 0 && !nodes[i].nb.includes(j)) { nodes[i].nb.push(j); nodes[j].nb.push(i); } };
 	const byId = Object.fromEntries(info.rooms.map(r => [r.id, r]));
 	const roomPts = {};   // комната → её узлы (у дверей)

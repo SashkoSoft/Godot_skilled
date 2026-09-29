@@ -20,6 +20,46 @@ import { inPlace, flightShape, stairsPose } from "./stairs.js";
 const DIR = "../game/assets/models/characters/";
 const R = 0.3, STEP = 0.42, HEIGHT = 1.7, GRAV = -18, JUMP = 5.2;
 
+/** Коллизия мира одной BVH (Object3D — все меши внутри; Box3 — коробка): герою и камерам. */
+export function buildCollision(objs, boxes = []) {
+	const parts = [];
+	for (const o of objs) {
+		o.updateMatrixWorld(true);
+		o.traverse(m => {
+			if (!m.isMesh || m.isInstancedMesh || m.isBatchedMesh || m.isSkinnedMesh || !m.geometry.attributes.position) return;
+			const g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry;
+			// вершины — во float: у сжатых моделей (руина, meshopt) они в int16 с нормализацией,
+			// и applyMatrix4 записал бы мировые координаты обратно в int16 — пол руины пропадал
+			const src = g.attributes.position, fa = new Float32Array(src.count * 3);
+			for (let i = 0; i < src.count; i++) { fa[i * 3] = src.getX(i); fa[i * 3 + 1] = src.getY(i); fa[i * 3 + 2] = src.getZ(i); }
+			const pg = new THREE.BufferGeometry(); pg.setAttribute("position", new THREE.BufferAttribute(fa, 3));
+			pg.applyMatrix4(m.matrixWorld); parts.push(pg);
+		});
+	}
+	for (const b of boxes) {
+		const s = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
+		const g = new THREE.BoxGeometry(s.x, s.y, s.z).toNonIndexed(); g.translate(c.x, c.y, c.z);
+		const pg = new THREE.BufferGeometry(); pg.setAttribute("position", g.attributes.position); parts.push(pg);
+	}
+	let n = 0; for (const p of parts) n += p.attributes.position.count;
+	const arr = new Float32Array(n * 3); let o = 0;
+	for (const p of parts) { arr.set(p.attributes.position.array, o); o += p.attributes.position.array.length; }
+	const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(arr, 3));
+	console.log(`[игрок] коллизия: ${(n / 3) | 0} треугольников`);
+	return new MeshBVH(geo);
+}
+
+/** Камера вокруг точки head: yaw/pitch в градусах, dist — отлёт; стена между — придвигает. */
+const _ray = new THREE.Ray(), _dir = new THREE.Vector3();
+export function cameraOrbit(camera, bvh, head, yaw, pitch, dist) {
+	const y = yaw * Math.PI / 180, p = pitch * Math.PI / 180;
+	_dir.set(Math.sin(y) * Math.cos(p), -Math.sin(p), Math.cos(y) * Math.cos(p));   // от головы к камере
+	let d = dist;
+	if (bvh) { _ray.origin.copy(head); _ray.direction.copy(_dir); const hit = bvh.raycastFirst(_ray, THREE.DoubleSide); if (hit && hit.distance < d + 0.2) d = Math.max(0.4, hit.distance - 0.25); }
+	camera.position.copy(head).addScaledVector(_dir, d);
+	camera.lookAt(head);
+}
+
 export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2a } = {}) {
 	const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 	const gltf = await loader.loadAsync(DIR + "robot_web.glb");
@@ -52,39 +92,12 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 	const fade = (a, t = 0.25) => { if (!a || a === cur) return; a.reset().play(); cur.crossFadeTo(a, t, false); cur = a; };
 
 	const pos = new THREE.Vector3(...(spawn || [0, 0, 0])), vel = new THREE.Vector3();
-	let heading = 0, onGround = false, bvh = null, colGeo = null;
+	let heading = 0, onGround = false, bvh = null;
 	const seg = new THREE.Line3(), box = new THREE.Box3(), triPt = new THREE.Vector3(), segPt = new THREE.Vector3();
 	const ray = new THREE.Ray(), down = new THREE.Vector3(0, -1, 0);
 
 	/** Собрать коллизию из объектов (Object3D — всё, что внутри; Box3 — коробка). */
-	function setColliders(objs, boxes = []) {
-		const parts = [];
-		for (const o of objs) {
-			o.updateMatrixWorld(true);
-			o.traverse(m => {
-				if (!m.isMesh || m.isInstancedMesh || m.isSkinnedMesh || !m.geometry.attributes.position) return;
-				const g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry;
-				// вершины — во float: у сжатых моделей (руина, meshopt) они в int16 с нормализацией,
-				// и applyMatrix4 записал бы мировые координаты обратно в int16 — пол руины пропадал
-				const src = g.attributes.position, fa = new Float32Array(src.count * 3);
-				for (let i = 0; i < src.count; i++) { fa[i * 3] = src.getX(i); fa[i * 3 + 1] = src.getY(i); fa[i * 3 + 2] = src.getZ(i); }
-				const pg = new THREE.BufferGeometry(); pg.setAttribute("position", new THREE.BufferAttribute(fa, 3));
-				pg.applyMatrix4(m.matrixWorld); parts.push(pg);
-			});
-		}
-		for (const b of boxes) {
-			const s = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
-			const g = new THREE.BoxGeometry(s.x, s.y, s.z).toNonIndexed(); g.translate(c.x, c.y, c.z);
-			const pg = new THREE.BufferGeometry(); pg.setAttribute("position", g.attributes.position); parts.push(pg);
-		}
-		let n = 0; for (const p of parts) n += p.attributes.position.count;
-		const arr = new Float32Array(n * 3); let o = 0;
-		for (const p of parts) { arr.set(p.attributes.position.array, o); o += p.attributes.position.array.length; }
-		colGeo?.dispose();
-		colGeo = new THREE.BufferGeometry(); colGeo.setAttribute("position", new THREE.BufferAttribute(arr, 3));
-		bvh = new MeshBVH(colGeo);
-		console.log(`[игрок] коллизия: ${(n / 3) | 0} треугольников`);
-	}
+	function setColliders(objs, boxes = []) { bvh = buildCollision(objs, boxes); }
 
 	function groundAt(p, maxDrop) {
 		ray.origin.set(p.x, p.y + STEP + R, p.z); ray.direction.copy(down);
@@ -189,16 +202,11 @@ export async function createPlayer(scene, { spawn, envMap = null, tint = 0xff8a2
 	}
 
 	/** Камера за спиной: yaw/pitch в градусах; стена между — придвигает. */
-	const head = new THREE.Vector3(), camPos = new THREE.Vector3(), dirV = new THREE.Vector3();
+	const head = new THREE.Vector3();
 	function cameraAt(camera, yaw, pitch, dist) {
 		head.set(pos.x, pos.y + 1.45, pos.z);
-		const y = yaw * Math.PI / 180, p = pitch * Math.PI / 180;
-		dirV.set(Math.sin(y) * Math.cos(p), -Math.sin(p), Math.cos(y) * Math.cos(p));   // от головы к камере
-		let d = dist;
-		if (bvh) { ray.origin.copy(head); ray.direction.copy(dirV); const hit = bvh.raycastFirst(ray, THREE.DoubleSide); if (hit && hit.distance < d + 0.2) d = Math.max(0.4, hit.distance - 0.25); }
-		camPos.copy(head).addScaledVector(dirV, d);
-		camera.position.copy(camPos); camera.lookAt(head);
+		cameraOrbit(camera, bvh, head, yaw, pitch, dist);
 	}
 
-	return { root, pos, setColliders, setFlights, setDoors(fn) { doorSegs = fn; }, update, cameraAt, get onStairs() { return !!onStairs; }, get onGround() { return onGround; }, get bvh() { return bvh; } };
+	return { root, pos, setColliders, setBVH(b) { bvh = b; }, setFlights, setDoors(fn) { doorSegs = fn; }, update, cameraAt, get onStairs() { return !!onStairs; }, get onGround() { return onGround; }, get bvh() { return bvh; } };
 }

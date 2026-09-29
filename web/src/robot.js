@@ -320,6 +320,14 @@ export async function spawnRobots(d, { count = 1, seed = 7, start = null, envMap
 
 // indoor — «обходчик»: ходит и по домам (реже всего посещённые узлы — значит, рано или
 // поздно каждая комната каждого этажа); иначе — только улица.
+const ACT_RU = {
+	walk: "идёт", run: "бежит", idle: "стоит", crouch: "присел", sneak: "крадётся", back: "пятится",
+	Idle_LookAround: "оглядывается", Idle_LookAtHand: "разглядывает руку", Idle_Stretch: "потягивается", Idle_Wave: "машет",
+	Idle_Wobble: "покачивается", Emote_Happy: "радуется", Emote_No: "качает головой", Emote_Nod: "кивает", Emote_Shrug: "пожимает плечами",
+	Duck: "пригнулся", Startle: "вздрогнул", Jump_InPlace: "прыгает", Jump_Forward: "прыгает вперёд", Idle_Jump: "подпрыгивает",
+	Walk_Trip: "споткнулся", Walk_Stagger: "пошатнулся", Walk_Jump: "перепрыгивает", Walk_Duck: "пригибается на ходу",
+	Run_Trip: "споткнулся на бегу", Run_Jump: "прыгает на бегу",
+};
 function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false) {
 	const mixer = new THREE.AnimationMixer(root);
 	const A = {};
@@ -361,6 +369,9 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false) {
 	// Дейкстра на двоичной куче: с домами в графе тысячи узлов, перебор за O(n²) дёргал кадр.
 	// Уличный робот в дом не заходит — узлы дома для него закрыты.
 	const allowed = i => !graph[i].cut && (indoor || !graph[i].house);
+	// цели обходчика — только в домах: по улице он лишь переходит из дома в дом
+	const goal = i => allowed(i) && (!indoor || graph[i].house);
+	let home = null;   // дом, который обходчик сейчас обходит
 	function shortest(from, to) {
 		const dd = new Float64Array(graph.length).fill(Infinity), back = new Int32Array(graph.length).fill(-1);
 		const heap = [[0, from]];
@@ -383,10 +394,14 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false) {
 	}
 	function nextNode() {
 		while (!route.length) {
-			let least = Infinity;
-			for (let i = 0; i < graph.length; i++) if (i !== cur && allowed(i) && visits[i] < least) least = visits[i];
+			// обходчик доделывает свой дом: в другой — только когда в своём всё обойдено не реже
+			if (graph[cur].hid) home = graph[cur].hid;
+			const leastOf = f => { let m = Infinity; for (let i = 0; i < graph.length; i++) if (i !== cur && f(i) && visits[i] < m) m = visits[i]; return m; };
+			const inHome = i => goal(i) && graph[i].hid === home;
+			const pick = home && leastOf(inHome) <= leastOf(goal) ? inHome : goal;
+			const least = leastOf(pick);
 			const pool = [];
-			for (let i = 0; i < graph.length; i++) if (i !== cur && allowed(i) && visits[i] === least) pool.push(i);
+			for (let i = 0; i < graph.length; i++) if (i !== cur && pick(i) && visits[i] === least) pool.push(i);
 			route = shortest(cur, pool[Math.floor(rand() * pool.length)]);
 			if (!route.length) visits[cur]++;   // недостижимо — не зацикливаться
 		}
@@ -668,7 +683,16 @@ function makeAgent(root, C, V, can, graph, rand, startNode, indoor = false) {
 	}
 
 	return {
-		object: root, update, offPath, indoor, get onStairs() { return !!stairs; }, get strafing() { return !!strafe; },
+		object: root, update, offPath, indoor,
+		/** Что делает сейчас — словами (подпись в режиме наблюдения). */
+		get action() {
+			if (fall) return "упал";
+			if (stairs) return stairs === A.stairsUp ? "поднимается по лестнице" : "спускается по лестнице";
+			if (strafe) return "уступает дорогу";
+			if (gesture) return turnSign ? "поворачивается" : (ACT_RU[gesture.getClip().name] || "жест");
+			if (trans) return ACT_RU[trans.to] || trans.to;
+			return ACT_RU[mode] || mode;
+		}, get onStairs() { return !!stairs; }, get strafing() { return !!strafe; },
 		get heading() { return heading; }, get speed() { return speed; }, get mode() { return mode; },
 		setAvoid(v) { latTarget = v; },
 		// испуг от встречного: только стоя или на ходу, с шансом — отшатнуться и попятиться
