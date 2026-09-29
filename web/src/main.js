@@ -25,6 +25,7 @@ import { instanceLods } from "./instlod.js";
 import { createInteriors } from "./furnish.js";
 import { createPlayer, buildCollision, cameraOrbit } from "./player.js";
 import { makeBagLabel, makeLootMap, LOOT_KINDS, LOOT_RU, LOOT_COLOR } from "./lootui.js";
+import { createReview } from "./review.js";
 import { roomWalkable, roomFurnishable } from "./housenav.js";
 import { buildHoudiniTrees } from "./trees.js";
 import { windUniforms, setWind } from "./wind.js";
@@ -469,6 +470,8 @@ function updateCamera() {
 
 const keys = new Set();
 addEventListener("keydown", (e) => {
+	if (e.target && e.target.closest && e.target.closest("textarea, input")) return;   // печатают отзыв — клавиши игры молчат
+	if (e.code === "Backquote" && review) { review.toggle(); return; }
 	if (VIEWS[e.code]) { applyView(VIEWS[e.code]); say("ракурс: " + VIEWS[e.code].name); return; }
 	if (e.code === "KeyR" && crowd.length) { nextRobot(1); return; }
 	if (e.code === "KeyF" && robot) { toggleFollow(); return; }
@@ -512,6 +515,8 @@ addEventListener("keydown", (e) => {
 	keys.add(e.code);
 });
 addEventListener("keyup", (e) => keys.delete(e.code));
+// Режим отзывов (review.js): подсветка объектов, клик — комментарий, выгрузка JSON
+let review = null;
 
 let debugMode = 0;
 let bumpOn = true;
@@ -863,6 +868,10 @@ function tryLoot() {
 		if (it) { inventory[it]++; drawInventory(); say(`найдено: ${LOOT_RU[it]}`); } else say("пусто");
 	});
 }
+review = createReview({ scene, camera, canvas, renderer, say,
+	where: p => (world.houseInfo.length ? whereIs(p) : ""),
+	context: () => ({ mode: playing ? "игра" : watch ? "наблюдение" : follow ? "за роботом" : "свободная камера", hash: location.hash }) });
+{ const b = document.getElementById("btn-review"); if (b) b.addEventListener("click", () => review.toggle()); }
 const lootMap = makeLootMap();
 scene.add(lootMap);
 if (q.has("lootmap")) lootMap.visible = true;
@@ -983,6 +992,7 @@ function tick(now) {
 	for (const r of crowd) r.update(dt);
 	if (robotLod) robotLod(camera);
 	lootTick(dt);
+	if (review) review.update(dt);
 	// двери открываются перед игроком и роботами
 	if (world.houses && world.houses.doors.length && layerOn.houses) {
 		const agents = crowd.map(r => r.object.position);

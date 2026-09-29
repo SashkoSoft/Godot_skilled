@@ -335,6 +335,7 @@ export function createInteriors(scene, { wear = 0.5, clutter = 1 } = {}) {
 			list.forEach((p, i) => { p.inst = i; p.ims = []; });
 			for (const part of M.parts) {
 				const im = new THREE.InstancedMesh(part.geo, part.mat, list.length);
+				im.name = n; im.userData.model = n;   // режим отзывов: что за модель
 				if (part.anim) list.forEach(p => p.ims.push({ im, part }));
 				list.forEach((p, i) => {
 					q.setFromAxisAngle(up, p.rotY);
